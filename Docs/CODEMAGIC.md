@@ -1,9 +1,10 @@
 # CineAR Codemagic ve TestFlight kurulumu
 
 Bu depo, `cinear-testflight` is akisi ile Release `.xcarchive` ve imzali `.ipa`
-uretir; basarili IPA'yi App Store Connect'e yukler ve `CineAR Internal Testers`
-grubuna TestFlight dagitimi ister. Is akisi manuel baslatilir; depoya her kod
-gonderildiginde kendiliginden yayin yapmaz.
+uretir ve basarili IPA'yi App Store Connect'e yukler. `CineAR Internal Testers`
+grubunda otomatik dagitim etkin olmalidir; islenen build'i gruba Apple atar. Is
+akisi manuel baslatilir; depoya her kod gonderildiginde kendiliginden yayin
+yapmaz.
 
 ## Apple tarafinda bir kez yapilacaklar
 
@@ -20,8 +21,8 @@ yetkilere sahip ekip uyesi yapmalidir.
    hemen indirin; Apple bu dosyanin yalnizca bir kez indirilmesine izin verir.
    Issuer ID ve Key ID degerlerini not edin.
 4. CineAR uygulamasinda TestFlight > Internal Testing altinda adi tam olarak
-   `CineAR Internal Testers` olan bir grup olusturun ve test edecek App Store
-   Connect kullanicilarini ekleyin.
+   `CineAR Internal Testers` olan bir grup olusturun, otomatik dagitimi
+   etkinlestirin ve test edecek App Store Connect kullanicilarini ekleyin.
 5. App Store Connect > CineAR > General > App Information altindaki sayisal
    Apple ID'yi not edin. Bu deger Bundle ID degildir.
 
@@ -71,8 +72,9 @@ incelemesine uygulama gondermesi mumkun degildir.
   kontrol edin.
 - App bulunamadi/build numarasi alinamadi: `APP_STORE_APPLE_ID` alanina sayisal
   App Store Connect Apple ID yerine Bundle ID yazilmis olabilir.
-- Beta group bulunamadi: Internal Testing grup adi tam olarak
-  `CineAR Internal Testers` olmalidir.
+- Build ic grupta gorunmuyor: `CineAR Internal Testers` grubunda otomatik
+  dagitimin etkin oldugunu kontrol edin veya build'i App Store Connect'ten
+  gruba elle ekleyin.
 
 ## Resmi kaynaklar
 

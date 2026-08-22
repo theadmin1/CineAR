@@ -21,7 +21,6 @@ workflows:
         BUNDLE_ID: "com.cinear.virtualproduction"
         XCODE_PROJECT: "CineAR.xcodeproj"
         XCODE_SCHEME: "CineAR"
-        TESTFLIGHT_BETA_GROUP: "CineAR Internal Testers"
       xcode: 26.4
 
     scripts:
@@ -122,7 +121,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
-        beta_groups:
-          - $TESTFLIGHT_BETA_GROUP
+        # The internal group uses App Store Connect automatic distribution.
+        # Publishing uploads the IPA; Apple assigns processed builds to the group.
         submit_to_app_store: false
