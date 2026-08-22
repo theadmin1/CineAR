@@ -22,7 +22,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yatay/dikey yuzey algilama ve dunya koordinatlarina AR anchor yerlestirme
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ve gercek mekan mesh'i ile occlusion
-- RoomPlan ile ayni AR oturumunda semantik oda taramasi; `room.json` ve `.model` `room.usdz` cikisi
+- RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - Taranan duvar, zemin, tavan, kapi, pencere ve taninan mobilyalari tek dokunusla yeniden kurma
 - Modern, Film Studyosu, Bilimkurgu ve Sicak Loft hazir oda temalari
 - RoomPlan obje rollerine otomatik oturan 14 yerlesik, tema renkli CC0 USDZ mobilya/cihaz modeli
@@ -59,14 +59,15 @@ CineARProjects/MainSet/
   scene.json
   worldmap.arexperience
   room.json
-  room.usdz
   Assets/*.usdz
   Recordings/*.mov
 ```
 
 `scene.json`, dekor kimliklerini ve yerel transformlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
-haritasini ve anchor'larini saklar.
+haritasini ve anchor'larini saklar. Uygulama canli oda renderer'i icin `room.json`
+kullanir; tarama kapanirken gereksiz bellek yukune yol acan ikinci bir RoomPlan
+`room.usdz` arsivi uretmez.
 
 ## Uretim siniri
 

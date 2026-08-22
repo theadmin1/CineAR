@@ -40,6 +40,11 @@ final class ARSessionController: NSObject, ObservableObject {
     private var configurationBeforeInterruption: ARConfiguration?
     private var isRoomScanActive = false
     private var didAttemptSessionFailureRecovery = false
+    private var realityThemeToRestoreAfterScan: RealityThemeID?
+    private var pendingRealityThemeAfterScan: RealityThemeID?
+    private var isPostScanThemeScheduled = false
+    private var postScanThemeGeneration: UInt64 = 0
+    private var isRoomRealityRendering = false
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
 
@@ -100,11 +105,10 @@ final class ARSessionController: NSObject, ObservableObject {
         if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
             configuration.sceneReconstruction = .meshWithClassification
         }
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            configuration.frameSemantics.insert(.sceneDepth)
-        }
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
             configuration.frameSemantics.insert(.personSegmentationWithDepth)
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
         }
         return configuration
     }
@@ -116,6 +120,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         renderGeneration &+= 1
+        cancelPendingPostScanTheme()
         isARReady = false
         isSessionInterrupted = false
         shouldRestoreRoomRealityAfterInterruption = false
@@ -141,8 +146,15 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func pauseForRoomScan() {
+        let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
+        cancelPendingPostScanTheme()
         isRoomScanActive = true
         isARReady = false
+        realityThemeToRestoreAfterScan = themeAwaitingSafeRestore
+            ?? (roomRealityRenderer.isVisible ? activeRealityThemeID : nil)
+        roomRealityRenderer.isVisible = false
+        setPhysicalSceneOcclusion(enabled: false)
+        arView?.isHidden = true
         do {
             try persistAllEntityTransforms()
         } catch {
@@ -158,38 +170,66 @@ final class ARSessionController: NSObject, ObservableObject {
         isSessionInterrupted = false
         shouldRestoreRoomRealityAfterInterruption = false
         configurationBeforeInterruption = nil
-        arView?.session.delegateQueue = .main
-        arView?.session.delegate = self
-        arView?.session.run(configuration(), options: [])
+        arView?.isHidden = false
+        setPhysicalSceneOcclusion(enabled: true)
+
+        var themeToSchedule = realityThemeToRestoreAfterScan
+        var completionStatus: (message: String, color: Color)?
         switch result {
         case .success:
             hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
             roomCoordinateSpaceIsActive = hasScannedRoom
+            roomRealityRenderer.clear()
+            roomRealityRenderer.isVisible = false
+            activeRealityThemeID = nil
+            themeToSchedule = preferredRealityThemeID ?? .modern
             var invalidationMessage: String?
             do {
                 try projectStore.invalidateWorldMapForRoomScan()
             } catch {
                 invalidationMessage = error.localizedDescription
             }
-            selectRealityTheme(preferredRealityThemeID ?? .modern)
             if let invalidationMessage {
-                publishStatus(
+                completionStatus = (
                     "Tema etkin, ancak proje haritası güncellenemedi: \(invalidationMessage)",
-                    color: .red
+                    .red
+                )
+            } else {
+                completionStatus = (
+                    "Tarama kaydedildi — oda gerçekliği kamera takibiyle hizalanıyor",
+                    .yellow
                 )
             }
         case .cancelled:
-            publishStatus("Oda taraması iptal edildi; AR sahnesi devam ediyor", color: .yellow)
+            completionStatus = ("Oda taraması iptal edildi; AR sahnesi devam ediyor", .yellow)
         case .failure(let message):
-            publishStatus("Oda taraması tamamlanamadı: \(message)", color: .red)
+            completionStatus = ("Oda taraması tamamlanamadı: \(message)", .red)
         case nil:
-            publishStatus("Oda taraması kapatıldı; AR sahnesi devam ediyor", color: .yellow)
+            completionStatus = ("Oda taraması kapatıldı; AR sahnesi devam ediyor", .yellow)
+        }
+
+        realityThemeToRestoreAfterScan = nil
+        pendingRealityThemeAfterScan = themeToSchedule
+        arView?.session.delegateQueue = .main
+        arView?.session.delegate = self
+        arView?.session.run(configuration(), options: [])
+
+        if let completionStatus {
+            publishStatus(completionStatus.message, color: completionStatus.color)
+        }
+        if let trackingState = arView?.session.currentFrame?.camera.trackingState {
+            _ = schedulePendingPostScanThemeIfReady(trackingState: trackingState)
         }
     }
 
     func selectRealityTheme(_ id: RealityThemeID) {
+        cancelPendingPostScanTheme()
         guard !isSessionInterrupted else {
             publishStatus("AR oturumu kesintisi bitene kadar oda teması değiştirilemez", color: .yellow)
+            return
+        }
+        guard !isRoomRealityRendering else {
+            publishStatus("Oda gerçekliği hazırlanıyor; lütfen kısa bir süre bekle", color: .yellow)
             return
         }
         guard let arView else {
@@ -205,6 +245,16 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Kayıtlı odayı hizalamak için önce sahne haritasını Yükle", color: .yellow)
             return
         }
+        guard let trackingState = arView.session.currentFrame?.camera.trackingState,
+              case .normal = trackingState else {
+            pendingRealityThemeAfterScan = id
+            publishStatus("Tema, kamera takibi hazır olduğunda uygulanacak", color: .yellow)
+            return
+        }
+
+        isRoomRealityRendering = true
+        setPhysicalSceneOcclusion(enabled: false)
+        defer { isRoomRealityRendering = false }
 
         do {
             roomRealityRenderer.install(in: arView)
@@ -233,11 +283,15 @@ final class ARSessionController: NSObject, ObservableObject {
                 color: notices.isEmpty ? .green : .yellow
             )
         } catch {
+            roomRealityRenderer.isVisible = false
+            activeRealityThemeID = nil
+            setPhysicalSceneOcclusion(enabled: true)
             publishStatus("Oda teması uygulanamadı: \(error.localizedDescription)", color: .red)
         }
     }
 
     func showOriginalReality() {
+        cancelPendingPostScanTheme()
         shouldRestoreRoomRealityAfterInterruption = false
         roomRealityRenderer.isVisible = false
         activeRealityThemeID = nil
@@ -748,7 +802,12 @@ final class ARSessionController: NSObject, ObservableObject {
             setPhysicalSceneOcclusion(enabled: true)
             return
         }
-        selectRealityTheme(preferredRealityThemeID)
+        roomRealityRenderer.isVisible = false
+        setPhysicalSceneOcclusion(enabled: true)
+        pendingRealityThemeAfterScan = preferredRealityThemeID
+        if let trackingState = arView?.session.currentFrame?.camera.trackingState {
+            _ = schedulePendingPostScanThemeIfReady(trackingState: trackingState)
+        }
     }
 
     @discardableResult
@@ -774,6 +833,53 @@ final class ARSessionController: NSObject, ObservableObject {
         shouldRestoreRoomRealityAfterInterruption = false
         roomRealityRenderer.install(in: arView)
         selectRealityTheme(themeID)
+        return true
+    }
+
+    private func cancelPendingPostScanTheme() {
+        postScanThemeGeneration &+= 1
+        pendingRealityThemeAfterScan = nil
+        isPostScanThemeScheduled = false
+    }
+
+    /// RoomPlan görünümü tamamen kapandıktan ve ARKit normal takibe döndükten sonra
+    /// oda geometrisini kurar. Kısa gecikme, iki ağır RealityKit/RoomPlan yaşam döngüsünün
+    /// aynı ana iş parçacığı karesinde üst üste binmesini engeller.
+    @discardableResult
+    private func schedulePendingPostScanThemeIfReady(
+        trackingState: ARCamera.TrackingState?
+    ) -> Bool {
+        guard let themeID = pendingRealityThemeAfterScan else { return false }
+        guard let trackingState, case .normal = trackingState else { return true }
+        guard !isPostScanThemeScheduled else { return true }
+
+        isPostScanThemeScheduled = true
+        postScanThemeGeneration &+= 1
+        let generation = postScanThemeGeneration
+        publishStatus("Oda gerçekliği hazırlanıyor...", color: .yellow)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            guard let self else { return }
+            guard generation == self.postScanThemeGeneration,
+                  self.pendingRealityThemeAfterScan == themeID else { return }
+            self.isPostScanThemeScheduled = false
+            guard
+                  !self.isRoomScanActive,
+                  !self.isSessionInterrupted,
+                  let trackingState = self.arView?.session.currentFrame?.camera.trackingState,
+                  case .normal = trackingState else { return }
+
+            self.pendingRealityThemeAfterScan = nil
+            if self.roomRealityRenderer.lastReport != nil,
+               self.activeRealityThemeID == themeID {
+                self.roomRealityRenderer.isVisible = true
+                self.setPhysicalSceneOcclusion(enabled: false)
+                let theme = RealityThemeCatalog.theme(withID: themeID)
+                self.publishStatus("\(theme.title) oda gerçekliği yeniden hizalandı", color: .green)
+                return
+            }
+            self.selectRealityTheme(themeID)
+        }
         return true
     }
 
@@ -803,6 +909,9 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         case .normal:
             isARReady = true
             didAttemptSessionFailureRecovery = false
+            if schedulePendingPostScanThemeIfReady(trackingState: camera.trackingState) {
+                return
+            }
             if restoreRoomRealityAfterInterruptionIfReady(trackingState: camera.trackingState) {
                 return
             }
@@ -925,6 +1034,14 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             ?? configuration()
         configurationBeforeInterruption = nil
         session.run(resumeConfiguration, options: [])
+
+        if pendingRealityThemeAfterScan != nil {
+            _ = schedulePendingPostScanThemeIfReady(
+                trackingState: session.currentFrame?.camera.trackingState
+            )
+            publishStatus("AR oturumu sürdürülüyor — oda gerçekliği yeniden hizalanıyor", color: .yellow)
+            return
+        }
 
         if shouldRestoreRoomRealityAfterInterruption {
             if !restoreRoomRealityAfterInterruptionIfReady(

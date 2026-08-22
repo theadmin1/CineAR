@@ -69,6 +69,23 @@ final class RoomRealityRenderer {
     private weak var installedARView: ARView?
     private var lastRoom: CapturedRoom?
     private var lastAlignmentTransform = matrix_identity_float4x4
+    private var generatedBoxCount = 0
+
+    /// RoomPlan can return very dense polygons and duplicate classifications. Keeping a
+    /// hard upper bound prevents a malformed or unusually detailed scan from exhausting
+    /// the device while RealityKit is creating the replacement room.
+    private static let maximumGeneratedBoxCount = 600
+    private static let maximumWalls = 24
+    private static let maximumFloors = 8
+    private static let maximumPortalsPerKind = 24
+    private static let maximumObjects = 48
+    private static let maximumSurfaceSegments = 16
+    private static let maximumIrregularBands = 12
+    private static let unitBoxMesh = MeshResource.generateBox(size: 1)
+    private static let roundedUnitBoxMesh = MeshResource.generateBox(
+        size: SIMD3<Float>(repeating: 1),
+        cornerRadius: 0.02
+    )
 
     private(set) var selectedThemeID: RealityThemeID = .modern
     private(set) var lastReport: RoomRealityRenderReport?
@@ -126,22 +143,36 @@ final class RoomRealityRenderer {
             throw RoomRealityRendererError.invalidAlignmentTransform
         }
 
+        generatedBoxCount = 0
+
         let stagingEntity = Entity()
         stagingEntity.name = "cinear.reality.room.content"
         stagingEntity.transform = Transform(matrix: alignmentTransform)
 
-        let apertures = room.doors + room.windows + room.openings
-        let portalAssociations = associate(apertures: apertures, with: room.walls)
+        let walls = Array(room.walls.prefix(Self.maximumWalls))
+        let floors = Array(room.floors.prefix(Self.maximumFloors))
+        let doors = Array(room.doors.prefix(Self.maximumPortalsPerKind))
+        let windows = Array(room.windows.prefix(Self.maximumPortalsPerKind))
+        let openings = Array(room.openings.prefix(Self.maximumPortalsPerKind))
+        let objects = Array(room.objects.prefix(Self.maximumObjects))
+        let apertures = doors + windows + openings
+        let portalAssociations = associate(apertures: apertures, with: walls)
         var wallCount = 0
         var floorCount = 0
         var ceilingCount = 0
         var portalCount = 0
         var objectCount = 0
-        var skippedCount = 0
+        var skippedCount =
+            (room.walls.count - walls.count)
+            + (room.floors.count - floors.count)
+            + (room.doors.count - doors.count)
+            + (room.windows.count - windows.count)
+            + (room.openings.count - openings.count)
+            + (room.objects.count - objects.count)
         var polygonApproximationCount = 0
         var suppressedNestedObjectCount = 0
 
-        for wall in room.walls {
+        for wall in walls {
             let children = portalAssociations.aperturesByWallID[wall.identifier] ?? []
             if let entity = makeWallEntity(wall, apertures: children, theme: theme) {
                 stagingEntity.addChild(entity)
@@ -154,7 +185,7 @@ final class RoomRealityRenderer {
             }
         }
 
-        for floor in room.floors {
+        for floor in floors {
             if let entity = makePlanarSurfaceEntity(floor, role: .floor, theme: theme) {
                 stagingEntity.addChild(entity)
                 floorCount += 1
@@ -166,10 +197,10 @@ final class RoomRealityRenderer {
             }
         }
 
-        if let ceilingY = inferredCeilingY(for: room) {
-            if room.floors.isEmpty {
+        if let ceilingY = inferredCeilingY(walls: walls, floors: floors) {
+            if floors.isEmpty {
                 if let ceiling = makeFallbackCeilingEntity(
-                    from: room.walls,
+                    from: walls,
                     ceilingY: ceilingY,
                     theme: theme
                 ) {
@@ -178,7 +209,7 @@ final class RoomRealityRenderer {
                     polygonApproximationCount += 1
                 }
             } else {
-                for floor in room.floors {
+                for floor in floors {
                     if let ceiling = makeCeilingEntity(
                         from: floor,
                         ceilingY: ceilingY,
@@ -194,7 +225,7 @@ final class RoomRealityRenderer {
             }
         }
 
-        for door in room.doors {
+        for door in doors {
             let role: RealitySurfaceRole
             if case .door(let isOpen) = door.category, isOpen {
                 role = .opening
@@ -212,7 +243,7 @@ final class RoomRealityRenderer {
             }
         }
 
-        for window in room.windows {
+        for window in windows {
             if let entity = makePortalEntity(window, role: .window, theme: theme) {
                 stagingEntity.addChild(entity)
                 portalCount += 1
@@ -224,7 +255,7 @@ final class RoomRealityRenderer {
             }
         }
 
-        for opening in room.openings {
+        for opening in openings {
             if let entity = makePortalEntity(opening, role: .opening, theme: theme) {
                 stagingEntity.addChild(entity)
                 portalCount += 1
@@ -237,12 +268,12 @@ final class RoomRealityRenderer {
         }
 
         var objectsByID: [UUID: CapturedRoom.Object] = [:]
-        for object in room.objects where objectsByID[object.identifier] == nil {
+        for object in objects where objectsByID[object.identifier] == nil {
             objectsByID[object.identifier] = object
         }
         let suppressedObjectIDs = nestedObjectIDsToSuppress(objectsByID: objectsByID)
         suppressedNestedObjectCount = suppressedObjectIDs.count
-        for object in room.objects {
+        for object in objects {
             if suppressedObjectIDs.contains(object.identifier) { continue }
             if let entity = makeObjectEntity(object, theme: theme) {
                 stagingEntity.addChild(entity)
@@ -373,18 +404,20 @@ private extension RoomRealityRenderer {
             material: wallMaterial
         )
 
-        let baseboardHeight = min(max(bounds.height * 0.025, 0.035), 0.09)
-        _ = addPlanarFill(
-            to: root,
-            polygon: polygon,
-            bounds: bounds,
-            cutouts: cutouts,
-            thickness: theme.surfaceThickness * 1.45,
-            material: theme.materialRecipe(for: .trim).makeMaterial(),
-            yClip: (lower: bounds.minY, upper: bounds.minY + baseboardHeight),
-            zOffset: theme.surfaceThickness * 0.18,
-            cornerRadius: 0.006
-        )
+        if generatedBoxCount < 320 {
+            let baseboardHeight = min(max(bounds.height * 0.025, 0.035), 0.09)
+            _ = addPlanarFill(
+                to: root,
+                polygon: polygon,
+                bounds: bounds,
+                cutouts: cutouts,
+                thickness: theme.surfaceThickness * 1.45,
+                material: theme.materialRecipe(for: .trim).makeMaterial(),
+                yClip: (lower: bounds.minY, upper: bounds.minY + baseboardHeight),
+                zOffset: theme.surfaceThickness * 0.18,
+                cornerRadius: 0.006
+            )
+        }
         guard wallSegmentCount > 0 else { return nil }
         return root
     }
@@ -412,8 +445,11 @@ private extension RoomRealityRenderer {
         return segmentCount > 0 ? root : nil
     }
 
-    func inferredCeilingY(for room: CapturedRoom) -> Float? {
-        let wallTops = room.walls.compactMap { wall -> Float? in
+    func inferredCeilingY(
+        walls: [CapturedRoom.Surface],
+        floors: [CapturedRoom.Surface]
+    ) -> Float? {
+        let wallTops = walls.compactMap { wall -> Float? in
             guard let bounds = Self.surfaceBounds(wall),
                   Self.isValidAffineTransform(wall.transform) else { return nil }
             let top = wall.transform * SIMD4<Float>(bounds.center.x, bounds.maxY, 0, 1)
@@ -422,7 +458,7 @@ private extension RoomRealityRenderer {
         guard !wallTops.isEmpty else { return nil }
 
         let medianTop = wallTops[wallTops.count / 2]
-        let floorLevels = room.floors.compactMap { floor -> Float? in
+        let floorLevels = floors.compactMap { floor -> Float? in
             guard Self.isValidAffineTransform(floor.transform) else { return nil }
             let y = floor.transform.columns.3.y
             return y.isFinite ? y : nil
@@ -430,7 +466,7 @@ private extension RoomRealityRenderer {
 
         let floorY: Float
         if floorLevels.isEmpty {
-            let wallBottoms = room.walls.compactMap { wall -> Float? in
+            let wallBottoms = walls.compactMap { wall -> Float? in
                 guard let bounds = Self.surfaceBounds(wall),
                       Self.isValidAffineTransform(wall.transform) else { return nil }
                 let bottom = wall.transform * SIMD4<Float>(bounds.center.x, bounds.minY, 0, 1)
@@ -507,12 +543,12 @@ private extension RoomRealityRenderer {
         let root = Entity()
         root.name = "cinear.reality.ceiling.inferred"
         root.position = [(minX + maxX) * 0.5, ceilingY, (minZ + maxZ) * 0.5]
-        addBox(
+        guard addBox(
             to: root,
             size: [width, theme.surfaceThickness, depth],
             position: .zero,
             material: theme.materialRecipe(for: .ceiling).makeMaterial()
-        )
+        ) else { return nil }
         return root
     }
 
@@ -530,6 +566,7 @@ private extension RoomRealityRenderer {
         let root = Entity()
         root.name = "cinear.reality.portal.\(surface.identifier.uuidString)"
         root.transform = Transform(matrix: surface.transform)
+        var didAddGeometry = false
 
         let panelThickness = theme.surfaceThickness * 0.62
         if role != .opening {
@@ -537,7 +574,7 @@ private extension RoomRealityRenderer {
             let panelCornerRadius: Float = Self.isAxisAlignedRectangle(polygon)
                 ? (role == .door ? 0.012 : 0.004)
                 : 0
-            _ = addPlanarFill(
+            didAddGeometry = addPlanarFill(
                 to: root,
                 polygon: polygon,
                 bounds: bounds,
@@ -546,7 +583,7 @@ private extension RoomRealityRenderer {
                 material: theme.materialRecipe(for: role).makeMaterial(),
                 zOffset: theme.surfaceThickness * 0.62,
                 cornerRadius: panelCornerRadius
-            )
+            ) > 0
         }
 
         let trimWidth = min(max(min(width, height) * 0.035, 0.025), 0.075)
@@ -554,37 +591,37 @@ private extension RoomRealityRenderer {
         let trimMaterial = theme.materialRecipe(for: .trim).makeMaterial()
         let z = theme.surfaceThickness * 0.78
 
-        addBox(
+        if addBox(
             to: root,
             size: [trimWidth, height + trimWidth, trimDepth],
             position: [bounds.minX - trimWidth * 0.5, center.y, z],
             material: trimMaterial,
             cornerRadius: 0.005
-        )
-        addBox(
+        ) { didAddGeometry = true }
+        if addBox(
             to: root,
             size: [trimWidth, height + trimWidth, trimDepth],
             position: [bounds.maxX + trimWidth * 0.5, center.y, z],
             material: trimMaterial,
             cornerRadius: 0.005
-        )
-        addBox(
+        ) { didAddGeometry = true }
+        if addBox(
             to: root,
             size: [width + trimWidth * 2, trimWidth, trimDepth],
             position: [center.x, bounds.maxY + trimWidth * 0.5, z],
             material: trimMaterial,
             cornerRadius: 0.005
-        )
+        ) { didAddGeometry = true }
         if role == .window || role == .opening {
-            addBox(
+            if addBox(
                 to: root,
                 size: [width + trimWidth * 2, trimWidth, trimDepth],
                 position: [center.x, bounds.minY - trimWidth * 0.5, z],
                 material: trimMaterial,
                 cornerRadius: 0.005
-            )
+            ) { didAddGeometry = true }
         }
-        return root
+        return didAddGeometry ? root : nil
     }
 
     func apertureRect(
@@ -640,8 +677,8 @@ private extension RoomRealityRenderer {
         zOffset: Float = 0,
         cornerRadius: Float = 0
     ) -> Int {
+        guard generatedBoxCount < Self.maximumGeneratedBoxCount else { return 0 }
         var xBoundaries = [bounds.minX, bounds.maxX]
-        xBoundaries.append(contentsOf: polygon.map { $0.x })
         for cutout in cutouts {
             xBoundaries.append(cutout.minX)
             xBoundaries.append(cutout.maxX)
@@ -650,7 +687,7 @@ private extension RoomRealityRenderer {
         if !Self.isAxisAlignedRectangle(polygon) {
             let stripCount = min(
                 max(Int((bounds.width / 0.18).rounded(.up)), 1),
-                96
+                Self.maximumIrregularBands
             )
             if stripCount > 1 {
                 for index in 1..<stripCount {
@@ -669,6 +706,10 @@ private extension RoomRealityRenderer {
         guard xBoundaries.count >= 2 else { return 0 }
         var segmentCount = 0
         for index in 0..<(xBoundaries.count - 1) {
+            guard segmentCount < Self.maximumSurfaceSegments,
+                  generatedBoxCount < Self.maximumGeneratedBoxCount else {
+                return segmentCount
+            }
             let bandMinX = xBoundaries[index]
             let bandMaxX = xBoundaries[index + 1]
             let bandWidth = bandMaxX - bandMinX
@@ -700,7 +741,10 @@ private extension RoomRealityRenderer {
                     let blockLower = max(interval.lower, allowedLower)
                     let blockUpper = min(interval.upper, allowedUpper)
                     if blockLower > cursor {
-                        addPlanarSegment(
+                        guard segmentCount < Self.maximumSurfaceSegments else {
+                            return segmentCount
+                        }
+                        if addPlanarSegment(
                             to: root,
                             minX: bandMinX,
                             maxX: bandMaxX,
@@ -710,13 +754,17 @@ private extension RoomRealityRenderer {
                             material: material,
                             zOffset: zOffset,
                             cornerRadius: cornerRadius
-                        )
-                        segmentCount += 1
+                        ) {
+                            segmentCount += 1
+                        }
                     }
                     cursor = max(cursor, blockUpper)
                 }
                 if cursor < allowedUpper {
-                    addPlanarSegment(
+                    guard segmentCount < Self.maximumSurfaceSegments else {
+                        return segmentCount
+                    }
+                    if addPlanarSegment(
                         to: root,
                         minX: bandMinX,
                         maxX: bandMaxX,
@@ -726,8 +774,9 @@ private extension RoomRealityRenderer {
                         material: material,
                         zOffset: zOffset,
                         cornerRadius: cornerRadius
-                    )
-                    segmentCount += 1
+                    ) {
+                        segmentCount += 1
+                    }
                 }
             }
         }
@@ -744,11 +793,11 @@ private extension RoomRealityRenderer {
         material: PhysicallyBasedMaterial,
         zOffset: Float,
         cornerRadius: Float
-    ) {
+    ) -> Bool {
         let width = maxX - minX
         let height = maxY - minY
-        guard width > 0.012, height > 0.012 else { return }
-        addBox(
+        guard width > 0.012, height > 0.012 else { return false }
+        return addBox(
             to: root,
             size: [width, height, thickness],
             position: [(minX + maxX) * 0.5, (minY + maxY) * 0.5, zOffset],
@@ -1065,6 +1114,7 @@ private extension RoomRealityRenderer {
         let primary = recipes.primary.makeMaterial()
         let secondary = recipes.secondary.makeMaterial()
         let detail = recipes.detail.makeMaterial()
+        let generatedBoxCountBeforeObject = generatedBoxCount
 
         switch role {
         case .table:
@@ -1100,7 +1150,7 @@ private extension RoomRealityRenderer {
                 cornerRadius: min(dimensions.x, dimensions.z) * 0.035
             )
         }
-        return root
+        return generatedBoxCount > generatedBoxCountBeforeObject ? root : nil
     }
 
     func buildTable(
@@ -1474,26 +1524,37 @@ private extension RoomRealityRenderer {
 // MARK: - Shared helpers
 
 private extension RoomRealityRenderer {
+    @discardableResult
     func addBox(
         to parent: Entity,
         size: SIMD3<Float>,
         position: SIMD3<Float>,
         material: PhysicallyBasedMaterial,
         cornerRadius: Float = 0.003
-    ) {
+    ) -> Bool {
+        guard generatedBoxCount < Self.maximumGeneratedBoxCount,
+              size.x.isFinite, size.y.isFinite, size.z.isFinite,
+              position.x.isFinite, position.y.isFinite, position.z.isFinite,
+              cornerRadius.isFinite else { return false }
+
         let safeSize = SIMD3<Float>(
             max(abs(size.x), 0.005),
             max(abs(size.y), 0.005),
             max(abs(size.z), 0.005)
         )
-        let radiusLimit = min(safeSize.x, min(safeSize.y, safeSize.z)) * 0.49
-        let mesh = MeshResource.generateBox(
-            size: safeSize,
-            cornerRadius: min(max(cornerRadius, 0), radiusLimit)
-        )
+        guard safeSize.x <= 100, safeSize.y <= 100, safeSize.z <= 100 else {
+            return false
+        }
+
+        // All procedural pieces share one mesh. Per-entity scale preserves dimensions
+        // without allocating hundreds of independent MeshResource objects.
+        let mesh = cornerRadius > 0.000_1 ? Self.roundedUnitBoxMesh : Self.unitBoxMesh
         let entity = ModelEntity(mesh: mesh, materials: [material])
+        entity.scale = safeSize
         entity.position = position
         parent.addChild(entity)
+        generatedBoxCount += 1
+        return true
     }
 
     static func planarDimensions(_ dimensions: SIMD3<Float>) -> SIMD2<Float>? {

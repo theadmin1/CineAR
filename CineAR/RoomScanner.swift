@@ -26,11 +26,12 @@ enum CapturedRoomStoreError: LocalizedError {
     }
 }
 
-/// Keeps RoomPlan's semantic JSON and its USDZ representation in one staged transaction.
-/// Staged files remain private to the scan flow until the user explicitly accepts the scan.
+/// Keeps RoomPlan's semantic JSON in a staged transaction until the user accepts the scan.
+/// The live renderer consumes this JSON directly. Generating an additional RoomPlan USDZ
+/// during preview teardown caused an avoidable memory spike on real devices, so stale
+/// `room.usdz` archives are removed when a new semantic scan is committed.
 struct CapturedRoomStore {
-    struct StagedArtifacts: Equatable {
-        let modelURL: URL
+    struct StagedArtifacts: Equatable, Sendable {
         let roomJSONURL: URL
     }
 
@@ -59,34 +60,21 @@ struct CapturedRoomStore {
     }
 
     func stage(_ room: CapturedRoom) throws -> StagedArtifacts {
-        try prepareParentDirectory(for: modelURL)
         try prepareParentDirectory(for: roomJSONURL)
 
         let identifier = UUID().uuidString
-        let stagedModelURL = temporarySibling(
-            of: modelURL,
-            identifier: identifier,
-            pathExtension: "usdz"
-        )
         let stagedJSONURL = temporarySibling(
             of: roomJSONURL,
             identifier: identifier,
             pathExtension: "json"
         )
-        let artifacts = StagedArtifacts(
-            modelURL: stagedModelURL,
-            roomJSONURL: stagedJSONURL
-        )
+        let artifacts = StagedArtifacts(roomJSONURL: stagedJSONURL)
 
         do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-            let roomData = try encoder.encode(room)
+            // Keep the mobile critical path compact. Pretty-printing and key sorting
+            // temporarily duplicate a large RoomPlan result without helping the renderer.
+            let roomData = try JSONEncoder().encode(room)
             try roomData.write(to: stagedJSONURL, options: .atomic)
-            // The semantic, editable source of truth is room.json. The USDZ is a
-            // visual archive, so preserve polygonal walls and wall cutouts and
-            // keep it ready for a future RoomPlan ModelProvider asset catalog.
-            try room.export(to: stagedModelURL, exportOptions: .model)
             return artifacts
         } catch {
             discard(artifacts)
@@ -94,35 +82,25 @@ struct CapturedRoomStore {
         }
     }
 
-    /// Installs both artifacts and restores the previous pair if either installation fails.
-    /// Each individual replacement is an atomic same-volume file operation.
+    /// Atomically installs the semantic room and restores the previous JSON on failure.
     func commit(_ staged: StagedArtifacts) throws {
-        try requireStagedFile(at: staged.modelURL)
         try requireStagedFile(at: staged.roomJSONURL)
 
         let identifier = UUID().uuidString
-        let modelBackupURL = backupSibling(of: modelURL, identifier: identifier)
         let jsonBackupURL = backupSibling(of: roomJSONURL, identifier: identifier)
-        let hadModel = fileManager.fileExists(atPath: modelURL.path)
         let hadJSON = fileManager.fileExists(atPath: roomJSONURL.path)
-        var installedModel = false
         var installedJSON = false
 
         do {
-            if hadModel {
-                try fileManager.copyItem(at: modelURL, to: modelBackupURL)
-            }
             if hadJSON {
                 try fileManager.copyItem(at: roomJSONURL, to: jsonBackupURL)
             }
 
             try install(staged.roomJSONURL, at: roomJSONURL)
             installedJSON = true
-            try install(staged.modelURL, at: modelURL)
-            installedModel = true
 
-            removeIfPresent(modelBackupURL)
             removeIfPresent(jsonBackupURL)
+            removeIfPresent(modelURL)
         } catch {
             let originalMessage = error.localizedDescription
             var rollbackMessages: [String] = []
@@ -139,20 +117,7 @@ struct CapturedRoomStore {
                 }
             }
 
-            if installedModel {
-                do {
-                    try restore(
-                        finalURL: modelURL,
-                        backupURL: modelBackupURL,
-                        previouslyExisted: hadModel
-                    )
-                } catch {
-                    rollbackMessages.append(error.localizedDescription)
-                }
-            }
-
             discard(staged)
-            removeIfPresent(modelBackupURL)
             removeIfPresent(jsonBackupURL)
             throw CapturedRoomStoreError.commitFailed(
                 original: originalMessage,
@@ -162,7 +127,6 @@ struct CapturedRoomStore {
     }
 
     func discard(_ staged: StagedArtifacts) {
-        removeIfPresent(staged.modelURL)
         removeIfPresent(staged.roomJSONURL)
     }
 
@@ -221,6 +185,12 @@ struct CapturedRoomStore {
     }
 }
 
+private struct CapturedRoomStageOutcome: Sendable {
+    let artifacts: CapturedRoomStore.StagedArtifacts?
+    let failureMessage: String?
+}
+
+@MainActor
 final class RoomScannerController: NSObject, ObservableObject {
     static var isSupported: Bool { RoomCaptureSession.isSupported }
 
@@ -237,7 +207,10 @@ final class RoomScannerController: NSObject, ObservableObject {
     private let preservesSharedARSession: Bool
     private var shouldExport = true
     private var isSessionRunning = false
+    private var isTornDown = false
     private var pendingArtifacts: CapturedRoomStore.StagedArtifacts?
+    private var scanGeneration: UInt64 = 0
+    private var stagingTask: Task<CapturedRoomStageOutcome, Never>?
 
     init(
         exportURL: URL,
@@ -274,8 +247,11 @@ final class RoomScannerController: NSObject, ObservableObject {
             recordFailure("RoomPlan için LiDAR destekli cihaz gerekli")
             return
         }
-        guard !isSessionRunning, !isProcessing else { return }
+        guard !isTornDown, !isSessionRunning, !isProcessing else { return }
 
+        scanGeneration &+= 1
+        stagingTask?.cancel()
+        stagingTask = nil
         shouldExport = true
         discardPendingExport()
         exportSucceeded = false
@@ -296,13 +272,7 @@ final class RoomScannerController: NSObject, ObservableObject {
     }
 
     func cancel() {
-        shouldExport = false
-        isProcessing = false
-        discardPendingExport()
-        guard isSessionRunning else { return }
-
-        isSessionRunning = false
-        stopCaptureSession()
+        teardownForDismissal()
     }
 
     func commitExport() -> URL? {
@@ -314,7 +284,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         do {
             try roomStore.commit(pendingArtifacts)
             self.pendingArtifacts = nil
-            return roomStore.modelURL
+            return roomStore.roomJSONURL
         } catch {
             recordFailure("Oda taraması kullanıma alınamadı: \(error.localizedDescription)")
             return nil
@@ -322,6 +292,9 @@ final class RoomScannerController: NSObject, ObservableObject {
     }
 
     private func recordFailure(_ message: String) {
+        scanGeneration &+= 1
+        stagingTask?.cancel()
+        stagingTask = nil
         shouldExport = false
         discardPendingExport()
         exportSucceeded = false
@@ -337,6 +310,25 @@ final class RoomScannerController: NSObject, ObservableObject {
         self.pendingArtifacts = nil
     }
 
+    func teardownForDismissal(discardPendingExport shouldDiscard: Bool = true) {
+        guard !isTornDown else { return }
+        isTornDown = true
+        scanGeneration &+= 1
+        stagingTask?.cancel()
+        stagingTask = nil
+        shouldExport = false
+        isProcessing = false
+        if isSessionRunning {
+            isSessionRunning = false
+            stopCaptureSession()
+        }
+        captureView.delegate = nil
+        captureView.captureSession.delegate = nil
+        if shouldDiscard {
+            discardPendingExport()
+        }
+    }
+
     private func stopCaptureSession() {
         if preservesSharedARSession {
             captureView.captureSession.stop(pauseARSession: false)
@@ -346,7 +338,7 @@ final class RoomScannerController: NSObject, ObservableObject {
     }
 }
 
-extension RoomScannerController: RoomCaptureSessionDelegate {
+extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
     func captureSession(
         _ session: RoomCaptureSession,
         didEndWith data: CapturedRoomData,
@@ -354,14 +346,17 @@ extension RoomScannerController: RoomCaptureSessionDelegate {
     ) {
         guard let error else { return }
         let message = "Tarama hatası: \(error.localizedDescription)"
+        let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.shouldExport else { return }
+            guard let self,
+                  self.scanGeneration == generation,
+                  self.shouldExport else { return }
             self.recordFailure(message)
         }
     }
 }
 
-extension RoomScannerController: RoomCaptureViewDelegate {
+extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
     func captureView(
         shouldPresent roomDataForProcessing: CapturedRoomData,
         error: Error?
@@ -370,32 +365,93 @@ extension RoomScannerController: RoomCaptureViewDelegate {
         guard let error else { return true }
 
         let message = "Tarama hatası: \(error.localizedDescription)"
+        let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.shouldExport else { return }
+            guard let self,
+                  self.scanGeneration == generation,
+                  self.shouldExport else { return }
             self.recordFailure(message)
         }
         return false
     }
 
     func captureView(didPresent processedResult: CapturedRoom, error: Error?) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            guard self.shouldExport else {
-                self.isProcessing = false
+        guard shouldExport, isProcessing, !isSessionRunning, !isTornDown else { return }
+
+        let modelURL = roomStore.modelURL
+        let roomJSONURL = roomStore.roomJSONURL
+        let callbackError = error?.localizedDescription
+        scanGeneration &+= 1
+        let generation = scanGeneration
+        stagingTask?.cancel()
+
+        statusText = "Oda verisi güvenli biçimde hazırlanıyor..."
+        let worker = Task.detached(priority: .userInitiated) {
+            guard !Task.isCancelled else {
+                return CapturedRoomStageOutcome(artifacts: nil, failureMessage: nil)
+            }
+            if let callbackError {
+                return CapturedRoomStageOutcome(
+                    artifacts: nil,
+                    failureMessage: callbackError
+                )
+            }
+            do {
+                let store = CapturedRoomStore(
+                    modelURL: modelURL,
+                    roomJSONURL: roomJSONURL
+                )
+                let artifacts = try store.stage(processedResult)
+                guard !Task.isCancelled else {
+                    store.discard(artifacts)
+                    return CapturedRoomStageOutcome(artifacts: nil, failureMessage: nil)
+                }
+                return CapturedRoomStageOutcome(
+                    artifacts: artifacts,
+                    failureMessage: nil
+                )
+            } catch {
+                return CapturedRoomStageOutcome(
+                    artifacts: nil,
+                    failureMessage: error.localizedDescription
+                )
+            }
+        }
+        stagingTask = worker
+
+        Task { @MainActor [weak self] in
+            let outcome = await worker.value
+            guard let self else {
+                if let artifacts = outcome.artifacts {
+                    CapturedRoomStore(
+                        modelURL: modelURL,
+                        roomJSONURL: roomJSONURL
+                    ).discard(artifacts)
+                }
                 return
             }
+            guard self.scanGeneration == generation,
+                  self.shouldExport,
+                  !self.isTornDown else {
+                if let artifacts = outcome.artifacts {
+                    self.roomStore.discard(artifacts)
+                }
+                return
+            }
+            self.stagingTask = nil
 
-            do {
-                if let error { throw error }
-                self.discardPendingExport()
-                self.pendingArtifacts = try self.roomStore.stage(processedResult)
+            self.discardPendingExport()
+            if let artifacts = outcome.artifacts {
+                self.pendingArtifacts = artifacts
                 self.statusText = "Oda modeli ve mekân verisi hazır"
                 self.exportSucceeded = true
                 self.failureMessage = nil
-            } catch {
-                self.recordFailure("Oda verisi dışa aktarılamadı: \(error.localizedDescription)")
+                self.isProcessing = false
+            } else if let failureMessage = outcome.failureMessage {
+                self.recordFailure(
+                    "Oda verisi dışa aktarılamadı: " + failureMessage
+                )
             }
-            self.isProcessing = false
         }
     }
 }
@@ -496,7 +552,7 @@ struct RoomScannerScreen: View {
 
         switch result {
         case .success:
-            break
+            scanner.teardownForDismissal(discardPendingExport: false)
         case .cancelled, .failure:
             scanner.cancel()
         }
@@ -527,7 +583,7 @@ private struct RoomCaptureContainer: UIViewRepresentable {
     func updateUIView(_ uiView: RoomCaptureView, context: Context) {}
 
     static func dismantleUIView(_ uiView: RoomCaptureView, coordinator: Coordinator) {
-        coordinator.controller?.cancel()
+        coordinator.controller?.teardownForDismissal()
     }
 }
 

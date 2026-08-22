@@ -9,8 +9,8 @@
 
 ## Fonksiyon testi
 
-1. Odayi RoomPlan ile tamamen tara; `room.json` ve `room.usdz` olustugunu Files
-   uygulamasinda dogrula.
+1. Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
+   sonrasinda uygulamanin kapanmadigini dogrula.
 2. Modern temanin tarama onayindan sonra otomatik acildigini; duvar, zemin,
    tavan, kapi/pencere bosluklari ve taninan buyuk objelerle hizalandigini kontrol et.
    Sandalye, masa/yatak ve bir cihaz kategorisinde yerlesik USDZ modelin gercek
