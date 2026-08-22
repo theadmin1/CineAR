@@ -25,45 +25,22 @@ yetkilere sahip ekip uyesi yapmalidir.
 5. App Store Connect > CineAR > General > App Information altindaki sayisal
    Apple ID'yi not edin. Bu deger Bundle ID degildir.
 
-## Dagitim sertifikasi icin ozel anahtar
+## Codemagic Apple entegrasyonu ve degisken grubu
 
-Codemagic'in Apple Distribution sertifikasini bulabilmesi veya olusturabilmesi
-icin sifresiz 2048-bit RSA private key gerekir. Mevcut dagitim sertifikasinin
-private key'i yoksa yeni bir tane olusturun:
-
-```sh
-ssh-keygen -t rsa -b 2048 -m PEM -f ios_distribution_private_key -q -N ""
-```
-
-`ios_distribution_private_key.pub` kullanilmaz. `ios_distribution_private_key`
-dosyasinin `BEGIN RSA PRIVATE KEY` ile `END RSA PRIVATE KEY` dahil tum icerigi
-Codemagic'e eklenecektir. Bu anahtari Git'e veya mesajlasma uygulamasina
-yuklemeyin.
-
-## Codemagic UI degisken gruplari
+Team settings > Integrations > Apple Developer Portal altinda App Store Connect
+API anahtarini `Apple` adiyla baglayin. Anahtarin App Manager yetkisi olmalidir.
+`codemagic.yaml`, imzalama ve yayinlama icin bu entegrasyonu dogrudan kullanir;
+API private key'ini uygulama environment variables ekranina tekrar eklemeyin.
 
 Codemagic'te Git deposunu ekledikten sonra App settings > Environment variables
-altinda su iki grubu olusturun.
-
-### `appstore_credentials`
-
-Asagidaki dort degiskenin her birinde `Secret` secili olmalidir:
-
-| Degisken | Deger |
-| --- | --- |
-| `APP_STORE_CONNECT_ISSUER_ID` | Apple API Issuer ID |
-| `APP_STORE_CONNECT_KEY_IDENTIFIER` | Apple API Key ID |
-| `APP_STORE_CONNECT_PRIVATE_KEY` | Indirilen `.p8` dosyasinin eksiksiz icerigi |
-| `CERTIFICATE_PRIVATE_KEY` | `ios_distribution_private_key` dosyasinin eksiksiz icerigi |
-
-### `cinear_config`
+altinda `cinear_config` grubunu olusturun.
 
 | Degisken | Deger |
 | --- | --- |
 | `APP_STORE_APPLE_ID` | App Store Connect'teki CineAR uygulamasinin sayisal Apple ID'si |
 
-Apple ID gizli bir anahtar degildir; `Secret` secilmesi gerekmez. Grup ve
-degisken adlari buyuk/kucuk harf dahil burada yazildigi gibi olmalidir.
+Apple ID gizli bir anahtar degildir; `Secret` secilmesi gerekmez. Entegrasyon,
+grup ve degisken adlari buyuk/kucuk harf dahil burada yazildigi gibi olmalidir.
 
 ## Ilk derleme
 
@@ -87,11 +64,11 @@ incelemesine uygulama gondermesi mumkun degildir.
 
 - `Bundle ID mismatch`: Xcode projesi ve YAML ayni
   `com.cinear.virtualproduction` kimligini kullanmiyor.
-- `Missing Codemagic environment variable`: UI grubunun adi, degisken adi veya
-  dal erisimi yanlis.
-- Certificate/profile hatasi: API key rolunun `App Manager` oldugunu, Apple
-  Developer uyeliginin aktif oldugunu ve `CERTIFICATE_PRIVATE_KEY` degerinin
-  PEM baslik/sonlariyla eksiksiz yapistirildigini kontrol edin.
+- `Missing Codemagic environment variable`: `cinear_config` grubunun adi,
+  `APP_STORE_APPLE_ID` degiskeni veya dal erisimi yanlis.
+- Certificate/profile hatasi: `Apple` entegrasyonunun etkin oldugunu, API key
+  rolunun `App Manager` oldugunu ve Apple Developer uyeliginin aktif oldugunu
+  kontrol edin.
 - App bulunamadi/build numarasi alinamadi: `APP_STORE_APPLE_ID` alanina sayisal
   App Store Connect Apple ID yerine Bundle ID yazilmis olabilir.
 - Beta group bulunamadi: Internal Testing grup adi tam olarak
