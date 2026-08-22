@@ -1,0 +1,135 @@
+workflows:
+  cinear-testflight:
+    name: CineAR - TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    environment:
+      groups:
+        # Codemagic UI'da Secret olarak saklanir:
+        # APP_STORE_CONNECT_ISSUER_ID
+        # APP_STORE_CONNECT_KEY_IDENTIFIER
+        # APP_STORE_CONNECT_PRIVATE_KEY
+        # CERTIFICATE_PRIVATE_KEY
+        - appstore_credentials
+
+        # Codemagic UI'da Secret olmasi gerekmez:
+        # APP_STORE_APPLE_ID
+        - cinear_config
+
+      vars:
+        BUNDLE_ID: "com.cinear.virtualproduction"
+        XCODE_PROJECT: "CineAR.xcodeproj"
+        XCODE_SCHEME: "CineAR"
+        TESTFLIGHT_BETA_GROUP: "CineAR Internal Testers"
+      xcode: 26.4
+
+    scripts:
+      - name: Validate project and required variables
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+
+          required_variables=(
+            APP_STORE_CONNECT_ISSUER_ID
+            APP_STORE_CONNECT_KEY_IDENTIFIER
+            APP_STORE_CONNECT_PRIVATE_KEY
+            CERTIFICATE_PRIVATE_KEY
+            APP_STORE_APPLE_ID
+          )
+
+          for variable_name in "${required_variables[@]}"; do
+            if [[ -z "${!variable_name:-}" ]]; then
+              echo "Missing Codemagic environment variable: ${variable_name}" >&2
+              exit 1
+            fi
+          done
+
+          if [[ ! "$APP_STORE_APPLE_ID" =~ ^[0-9]+$ ]]; then
+            echo "APP_STORE_APPLE_ID must be the numeric Apple ID from App Store Connect." >&2
+            exit 1
+          fi
+
+          if [[ ! -d "$CM_BUILD_DIR/$XCODE_PROJECT" ]]; then
+            echo "Xcode project not found: $CM_BUILD_DIR/$XCODE_PROJECT" >&2
+            exit 1
+          fi
+
+          build_settings="$(
+            xcodebuild \
+              -project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+              -scheme "$XCODE_SCHEME" \
+              -configuration Release \
+              -showBuildSettings
+          )"
+          project_bundle_id="$(
+            awk -F ' = ' \
+              '/^[[:space:]]*PRODUCT_BUNDLE_IDENTIFIER = / && !found { print $2; found=1 }' \
+              <<< "$build_settings"
+          )"
+
+          if [[ "$project_bundle_id" != "$BUNDLE_ID" ]]; then
+            echo "Bundle ID mismatch. Project: ${project_bundle_id:-not found}; workflow: $BUNDLE_ID" >&2
+            exit 1
+          fi
+
+      - name: Initialize signing keychain
+        script: keychain initialize
+
+      - name: Fetch or create App Store signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --platform IOS \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: Install signing certificate
+        script: keychain add-certificates
+
+      - name: Apply provisioning profile
+        script: xcode-project use-profiles
+
+      - name: Increment build number from App Store Connect
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+
+          latest_build_number="$(
+            app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" \
+              --platform IOS \
+              --all-versions
+          )"
+
+          if [[ ! "$latest_build_number" =~ ^[0-9]+$ ]]; then
+            echo "App Store Connect returned an invalid build number: $latest_build_number" >&2
+            exit 1
+          fi
+
+          next_build_number="$((latest_build_number + 1))"
+          xcrun agvtool new-version -all "$next_build_number"
+          echo "CineAR build number: $next_build_number"
+
+      - name: Build Release archive and IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --config Release \
+            --clean
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/xcarchive/*.xcarchive
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        beta_groups:
+          - $TESTFLIGHT_BETA_GROUP
+        submit_to_app_store: false

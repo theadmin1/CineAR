@@ -1,0 +1,19 @@
+# Xcode local state and build output
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+.DS_Store
+
+# Apple signing secrets — never commit these
+*.p8
+*.p12
+*.mobileprovision
+ios_distribution_private_key*
+
+# Local environment files
+.env
+.env.*
+
