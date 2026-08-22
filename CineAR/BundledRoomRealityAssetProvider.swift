@@ -75,7 +75,7 @@ private extension BundledRoomRealityAssetProvider {
     static let minimumFitScale: Float = 0.005
     static let maximumFitScale: Float = 200
 
-    func prototype(named assetName: String) -> Prototype? {
+    private func prototype(named assetName: String) -> Prototype? {
         if let cached = prototypes[assetName] { return cached }
         guard !unavailableAssetNames.contains(assetName),
               let url = assetURL(named: assetName) else {
