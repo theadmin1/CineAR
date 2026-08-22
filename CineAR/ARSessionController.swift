@@ -4,6 +4,7 @@ import RealityKit
 import SwiftUI
 import UIKit
 
+@MainActor
 final class ARSessionController: NSObject, ObservableObject {
     @Published var selectedProp: PropKind = .crate
     @Published var selectedEntityID: UUID?
@@ -14,10 +15,16 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published var lastRecordingURL: URL?
     @Published private(set) var importedAssetURLs: [URL] = []
     @Published var selectedAssetURL: URL?
+    @Published private(set) var activeRealityThemeID: RealityThemeID?
+    @Published private(set) var hasScannedRoom = false
+    @Published private(set) var isARReady = false
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
     private let recorder = ProfessionalRecorder()
+    private let roomRealityRenderer = RoomRealityRenderer(
+        assetProvider: BundledRoomRealityAssetProvider()
+    )
     private var renderedAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
@@ -26,6 +33,15 @@ final class ARSessionController: NSObject, ObservableObject {
     private weak var coachingOverlay: ARCoachingOverlayView?
     private var isSavingWorldMap = false
     private var recordingPhase: RecordingPhase = .idle
+    private var roomCoordinateSpaceIsActive = false
+    private var preferredRealityThemeID: RealityThemeID?
+    private var isSessionInterrupted = false
+    private var shouldRestoreRoomRealityAfterInterruption = false
+    private var configurationBeforeInterruption: ARConfiguration?
+    private var isRoomScanActive = false
+    private var didAttemptSessionFailureRecovery = false
+
+    private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
 
     private enum RecordingPhase {
         case idle
@@ -35,10 +51,16 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     var roomModelURL: URL { projectStore.roomModelURL }
+    var roomDataURL: URL { projectStore.roomDataURL }
+    var sharedARSession: ARSession? { arView?.session }
 
     override init() {
         super.init()
         importedAssetURLs = projectStore.importedModelURLs
+        hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+        if let storedTheme = UserDefaults.standard.string(forKey: Self.realityThemeDefaultsKey) {
+            preferredRealityThemeID = RealityThemeID(rawValue: storedTheme)
+        }
         if let error = projectStore.initializationError {
             publishStatus(
                 "Kayıtlı scene.json okunamadı: \(error.localizedDescription)",
@@ -52,6 +74,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         let view = ARView(frame: .zero)
         view.automaticallyConfigureSession = false
+        view.session.delegateQueue = .main
         view.session.delegate = self
         view.environment.sceneUnderstanding.options.insert(.occlusion)
 
@@ -93,33 +116,68 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         renderGeneration &+= 1
+        isARReady = false
+        isSessionInterrupted = false
+        shouldRestoreRoomRealityAfterInterruption = false
+        configurationBeforeInterruption = nil
+        didAttemptSessionFailureRecovery = false
         assetLoadSubscriptions.values.forEach { $0.cancel() }
         renderedAnchorIDs.removeAll()
         renderedEntities.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
         selectedEntityID = nil
-        arView?.scene.anchors.removeAll()
-        arView?.session.run(
+        guard let arView else { return }
+        arView.scene.anchors.removeAll()
+        roomCoordinateSpaceIsActive = initialWorldMap != nil
+        arView.session.delegateQueue = .main
+        arView.session.delegate = self
+        arView.session.run(
             configuration(initialWorldMap: initialWorldMap),
             options: [.resetTracking, .removeExistingAnchors]
         )
+        roomRealityRenderer.install(in: arView)
+        restoreRoomRealityIfPossible()
     }
 
     func pauseForRoomScan() {
+        isRoomScanActive = true
+        isARReady = false
         do {
             try persistAllEntityTransforms()
         } catch {
             publishStatus("Dekor konumları kaydedilemedi: \(error.localizedDescription)", color: .red)
         }
-        arView?.session.pause()
+        publishStatus("Oda taraması açılıyor; aynı dünya koordinatları korunuyor", color: .yellow)
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
+        isRoomScanActive = false
+        isARReady = false
+        didAttemptSessionFailureRecovery = false
+        isSessionInterrupted = false
+        shouldRestoreRoomRealityAfterInterruption = false
+        configurationBeforeInterruption = nil
+        arView?.session.delegateQueue = .main
+        arView?.session.delegate = self
         arView?.session.run(configuration(), options: [])
         switch result {
         case .success:
-            publishStatus("Oda modeli USDZ olarak kaydedildi", color: .green)
+            hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+            roomCoordinateSpaceIsActive = hasScannedRoom
+            var invalidationMessage: String?
+            do {
+                try projectStore.invalidateWorldMapForRoomScan()
+            } catch {
+                invalidationMessage = error.localizedDescription
+            }
+            selectRealityTheme(preferredRealityThemeID ?? .modern)
+            if let invalidationMessage {
+                publishStatus(
+                    "Tema etkin, ancak proje haritası güncellenemedi: \(invalidationMessage)",
+                    color: .red
+                )
+            }
         case .cancelled:
             publishStatus("Oda taraması iptal edildi; AR sahnesi devam ediyor", color: .yellow)
         case .failure(let message):
@@ -127,6 +185,66 @@ final class ARSessionController: NSObject, ObservableObject {
         case nil:
             publishStatus("Oda taraması kapatıldı; AR sahnesi devam ediyor", color: .yellow)
         }
+    }
+
+    func selectRealityTheme(_ id: RealityThemeID) {
+        guard !isSessionInterrupted else {
+            publishStatus("AR oturumu kesintisi bitene kadar oda teması değiştirilemez", color: .yellow)
+            return
+        }
+        guard let arView else {
+            publishStatus("AR görünümü henüz hazır değil", color: .red)
+            return
+        }
+        guard FileManager.default.fileExists(atPath: roomDataURL.path) else {
+            hasScannedRoom = false
+            publishStatus("Önce Oda Tara ile alanın duvar ve nesnelerini tara", color: .yellow)
+            return
+        }
+        guard roomCoordinateSpaceIsActive else {
+            publishStatus("Kayıtlı odayı hizalamak için önce sahne haritasını Yükle", color: .yellow)
+            return
+        }
+
+        do {
+            roomRealityRenderer.install(in: arView)
+            let theme = RealityThemeCatalog.theme(withID: id)
+            let report = try roomRealityRenderer.render(
+                roomJSONURL: roomDataURL,
+                theme: theme
+            )
+            roomRealityRenderer.isVisible = true
+            activeRealityThemeID = id
+            preferredRealityThemeID = id
+            hasScannedRoom = true
+            UserDefaults.standard.set(id.rawValue, forKey: Self.realityThemeDefaultsKey)
+            setPhysicalSceneOcclusion(enabled: false)
+            var notices: [String] = []
+            if report.polygonApproximationCount > 0 {
+                notices.append("\(report.polygonApproximationCount) yüzey yaklaşıklandı")
+            }
+            let omittedCount = report.skippedElementCount + report.unmatchedPortalCount
+            if omittedCount > 0 {
+                notices.append("\(omittedCount) öğe eşleşmedi")
+            }
+            let detail = notices.isEmpty ? "" : " • " + notices.joined(separator: ", ")
+            publishStatus(
+                "\(theme.title) etkin — \(report.renderedElementCount) oda öğesi değiştirildi\(detail)",
+                color: notices.isEmpty ? .green : .yellow
+            )
+        } catch {
+            publishStatus("Oda teması uygulanamadı: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func showOriginalReality() {
+        shouldRestoreRoomRealityAfterInterruption = false
+        roomRealityRenderer.isVisible = false
+        activeRealityThemeID = nil
+        preferredRealityThemeID = nil
+        UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
+        setPhysicalSceneOcclusion(enabled: true)
+        publishStatus("Gerçek oda görünümü etkin; eklediğin objeler korunuyor", color: .green)
     }
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
@@ -230,7 +348,7 @@ final class ARSessionController: NSObject, ObservableObject {
         for anchor in propAnchors {
             arView.session.remove(anchor: anchor)
         }
-        arView.scene.anchors.removeAll()
+        renderedEntities.values.forEach { $0.parent?.removeFromParent() }
         renderedAnchorIDs.removeAll()
         renderedEntities.removeAll()
         selectedEntityID = nil
@@ -621,9 +739,55 @@ final class ARSessionController: NSObject, ObservableObject {
             self?.trackingColor = color
         }
     }
+
+    private func restoreRoomRealityIfPossible() {
+        guard roomCoordinateSpaceIsActive,
+              let preferredRealityThemeID,
+              FileManager.default.fileExists(atPath: roomDataURL.path) else {
+            roomRealityRenderer.isVisible = false
+            setPhysicalSceneOcclusion(enabled: true)
+            return
+        }
+        selectRealityTheme(preferredRealityThemeID)
+    }
+
+    @discardableResult
+    private func restoreRoomRealityAfterInterruptionIfReady(
+        trackingState: ARCamera.TrackingState?
+    ) -> Bool {
+        guard shouldRestoreRoomRealityAfterInterruption else { return false }
+        guard !isSessionInterrupted,
+              roomCoordinateSpaceIsActive,
+              let arView,
+              let themeID = activeRealityThemeID ?? preferredRealityThemeID,
+              FileManager.default.fileExists(atPath: roomDataURL.path) else {
+            shouldRestoreRoomRealityAfterInterruption = false
+            roomRealityRenderer.isVisible = false
+            setPhysicalSceneOcclusion(enabled: true)
+            return false
+        }
+
+        if let trackingState {
+            guard case .normal = trackingState else { return false }
+        }
+
+        shouldRestoreRoomRealityAfterInterruption = false
+        roomRealityRenderer.install(in: arView)
+        selectRealityTheme(themeID)
+        return true
+    }
+
+    private func setPhysicalSceneOcclusion(enabled: Bool) {
+        guard let arView else { return }
+        if enabled {
+            arView.environment.sceneUnderstanding.options.insert(.occlusion)
+        } else {
+            arView.environment.sceneUnderstanding.options.remove(.occlusion)
+        }
+    }
 }
 
-extension ARSessionController: ARSessionDelegate {
+extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
@@ -634,12 +798,20 @@ extension ARSessionController: ARSessionDelegate {
     }
 
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
+        guard !isSessionInterrupted, !isRoomScanActive else { return }
         switch camera.trackingState {
         case .normal:
+            isARReady = true
+            didAttemptSessionFailureRecovery = false
+            if restoreRoomRealityAfterInterruptionIfReady(trackingState: camera.trackingState) {
+                return
+            }
             publishStatus("Takip hazır — dekor seçip yüzeye dokun", color: .green)
         case .notAvailable:
+            isARReady = false
             publishStatus("Kamera takibi kullanılamıyor", color: .red)
         case .limited(let reason):
+            isARReady = true
             let message: String
             switch reason {
             case .initializing: message = "AR oturumu hazırlanıyor"
@@ -653,7 +825,120 @@ extension ARSessionController: ARSessionDelegate {
     }
 
     func session(_ session: ARSession, didFailWithError error: Error) {
-        publishStatus("AR hatası: \(error.localizedDescription)", color: .red)
+        guard let arView, session === arView.session else {
+            publishStatus("AR hatası: \(error.localizedDescription)", color: .red)
+            return
+        }
+
+        isARReady = false
+        guard !isRoomScanActive else {
+            publishStatus(
+                "Oda taraması sırasında AR durdu; taramayı kapatıp yeniden dene: "
+                    + error.localizedDescription,
+                color: .red
+            )
+            return
+        }
+
+        shouldRestoreRoomRealityAfterInterruption =
+            shouldRestoreRoomRealityAfterInterruption
+            || (
+                roomCoordinateSpaceIsActive
+                && activeRealityThemeID != nil
+                && roomRealityRenderer.isVisible
+            )
+        roomRealityRenderer.isVisible = false
+        setPhysicalSceneOcclusion(enabled: true)
+
+        guard !didAttemptSessionFailureRecovery else {
+            publishStatus(
+                "AR yeniden başlatılamadı; uygulamayı yeniden aç: \(error.localizedDescription)",
+                color: .red
+            )
+            return
+        }
+
+        didAttemptSessionFailureRecovery = true
+        isSessionInterrupted = false
+        configurationBeforeInterruption = nil
+        session.delegateQueue = .main
+        session.delegate = self
+        session.run(session.configuration ?? configuration(), options: [])
+        publishStatus(
+            "AR oturumu durdu; içerikler korunarak otomatik yeniden başlatılıyor",
+            color: .yellow
+        )
+    }
+
+    func sessionWasInterrupted(_ session: ARSession) {
+        guard !isSessionInterrupted else { return }
+
+        isARReady = false
+        isSessionInterrupted = true
+        configurationBeforeInterruption = session.configuration
+        guard !isRoomScanActive else {
+            publishStatus(
+                "Oda taraması kesildi; taramayı kapatıp yeniden dene",
+                color: .yellow
+            )
+            return
+        }
+
+        shouldRestoreRoomRealityAfterInterruption =
+            roomCoordinateSpaceIsActive
+            && activeRealityThemeID != nil
+            && roomRealityRenderer.isVisible
+        roomRealityRenderer.isVisible = false
+        setPhysicalSceneOcclusion(enabled: true)
+        publishStatus("AR oturumu kesildi — aynı alanda kalın", color: .yellow)
+    }
+
+    func sessionShouldAttemptRelocalization(_ session: ARSession) -> Bool {
+        // Preserve both the scanned-room coordinate space and manually placed anchors.
+        true
+    }
+
+    func sessionInterruptionEnded(_ session: ARSession) {
+        guard isSessionInterrupted else { return }
+
+        isSessionInterrupted = false
+        guard let arView, session === arView.session else {
+            configurationBeforeInterruption = nil
+            shouldRestoreRoomRealityAfterInterruption = false
+            publishStatus("AR oturumu yeniden bağlanamadı", color: .red)
+            return
+        }
+
+        if isRoomScanActive {
+            configurationBeforeInterruption = nil
+            publishStatus(
+                "Oda taraması kesildi; taramayı kapatıp yeniden dene",
+                color: .yellow
+            )
+            return
+        }
+
+        session.delegateQueue = .main
+        session.delegate = self
+        let resumeConfiguration = configurationBeforeInterruption
+            ?? session.configuration
+            ?? configuration()
+        configurationBeforeInterruption = nil
+        session.run(resumeConfiguration, options: [])
+
+        if shouldRestoreRoomRealityAfterInterruption {
+            if !restoreRoomRealityAfterInterruptionIfReady(
+                trackingState: session.currentFrame?.camera.trackingState
+            ) {
+                publishStatus(
+                    "AR oturumu sürdürülüyor — oda yeniden hizalanıyor",
+                    color: .yellow
+                )
+            }
+        } else {
+            setPhysicalSceneOcclusion(enabled: true)
+            publishStatus("AR oturumu sürdürüldü", color: .yellow)
+        }
     }
 }
 

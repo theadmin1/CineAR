@@ -9,22 +9,35 @@
 
 ## Fonksiyon testi
 
-1. Odayi RoomPlan ile tamamen tara ve `room.usdz` olustugunu Files uygulamasinda
-   dogrula.
-2. Duvar, platform ve en az iki farkli USDZ model yerlestir.
-3. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-4. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-5. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
+1. Odayi RoomPlan ile tamamen tara; `room.json` ve `room.usdz` olustugunu Files
+   uygulamasinda dogrula.
+2. Modern temanin tarama onayindan sonra otomatik acildigini; duvar, zemin,
+   tavan, kapi/pencere bosluklari ve taninan buyuk objelerle hizalandigini kontrol et.
+   Sandalye, masa/yatak ve bir cihaz kategorisinde yerlesik USDZ modelin gercek
+   objenin merkezine ve RoomPlan boyutlarina oturdugunu ayri ayri olc.
+3. Dort temayi arka arkaya sec, sonra `Gercek` gorunumune don. Tema degisiminde
+   geometri kaymasi, sahne kopyalanmasi veya uygulama kapanmasi olmamali.
+4. Duvar, platform ve en az iki farkli USDZ model yerlestir. Tema degistirirken
+   bu manuel objelerin konumunun ve parmak hareketlerinin korundugunu dogrula.
+5. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
+6. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+7. Relocalization tamamlandiktan sonra tema ve dekorlarin referans isaretlerine gore
    konum farkini olc.
-6. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
+8. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
    hatalarini kaydet.
-7. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-8. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+9. `Tumunu Sil` ile yalniz manuel objelerin silindigini, oda temasinin kaldigini test et.
+10. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli, tema ve manuel
+    objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
+    gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
+11. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+12. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
 - Elde relocalization hatasi: 5 cm'den az
+- Tema yuzeyi ile gercek duvar/zemin hizasi: referans noktalarda 3 cm'den az
+- Kapi ve pencere boslugu kenar hatasi: 5 cm'den az
 - Kayit: hedef cihazda sabit 30 fps, gorunur tekrar eden kare olmamali
 - Ses-goruntu senkron farki: 40 ms'den az
 - Kritik termal durum veya uygulama kapanmasi: olmamali
@@ -41,4 +54,3 @@ isik, mekan dokusu ve sahne buyuklugu ile birlikte kaydedilmelidir.
 - Derinlik maskesi, clean plate ve alpha/segmentation pass ciktilari
 - Gercek nesne silme icin sahneye ozel ML modeli ve temporal stabilizasyon
 - GPU/CPU/termal profilleme ve birden cok iPhone modelinde regresyon testi
-

@@ -1,3 +1,4 @@
+import ARKit
 import RoomPlan
 import SwiftUI
 import UIKit
@@ -8,6 +9,218 @@ enum RoomScanResult: Equatable, Sendable {
     case failure(String)
 }
 
+enum CapturedRoomStoreError: LocalizedError {
+    case missingStagedArtifact(String)
+    case commitFailed(original: String, rollback: String?)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingStagedArtifact(let filename):
+            return "Geçici oda dosyası bulunamadı: \(filename)"
+        case .commitFailed(let original, let rollback):
+            guard let rollback else {
+                return "Oda dosyaları kullanıma alınamadı: \(original)"
+            }
+            return "Oda dosyaları kullanıma alınamadı: \(original). Önceki sürüm geri yüklenemedi: \(rollback)"
+        }
+    }
+}
+
+/// Keeps RoomPlan's semantic JSON and its USDZ representation in one staged transaction.
+/// Staged files remain private to the scan flow until the user explicitly accepts the scan.
+struct CapturedRoomStore {
+    struct StagedArtifacts: Equatable {
+        let modelURL: URL
+        let roomJSONURL: URL
+    }
+
+    let modelURL: URL
+    let roomJSONURL: URL
+
+    private let fileManager: FileManager
+
+    init(
+        modelURL: URL,
+        roomJSONURL: URL? = nil,
+        fileManager: FileManager = .default
+    ) {
+        self.modelURL = modelURL
+        self.roomJSONURL = roomJSONURL ?? Self.defaultRoomJSONURL(for: modelURL)
+        self.fileManager = fileManager
+    }
+
+    static func defaultRoomJSONURL(for modelURL: URL) -> URL {
+        modelURL.deletingLastPathComponent().appendingPathComponent("room.json")
+    }
+
+    func loadCapturedRoom() throws -> CapturedRoom {
+        let data = try Data(contentsOf: roomJSONURL, options: [.mappedIfSafe])
+        return try JSONDecoder().decode(CapturedRoom.self, from: data)
+    }
+
+    func stage(_ room: CapturedRoom) throws -> StagedArtifacts {
+        try prepareParentDirectory(for: modelURL)
+        try prepareParentDirectory(for: roomJSONURL)
+
+        let identifier = UUID().uuidString
+        let stagedModelURL = temporarySibling(
+            of: modelURL,
+            identifier: identifier,
+            pathExtension: "usdz"
+        )
+        let stagedJSONURL = temporarySibling(
+            of: roomJSONURL,
+            identifier: identifier,
+            pathExtension: "json"
+        )
+        let artifacts = StagedArtifacts(
+            modelURL: stagedModelURL,
+            roomJSONURL: stagedJSONURL
+        )
+
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            let roomData = try encoder.encode(room)
+            try roomData.write(to: stagedJSONURL, options: .atomic)
+            // The semantic, editable source of truth is room.json. The USDZ is a
+            // visual archive, so preserve polygonal walls and wall cutouts and
+            // keep it ready for a future RoomPlan ModelProvider asset catalog.
+            try room.export(to: stagedModelURL, exportOptions: .model)
+            return artifacts
+        } catch {
+            discard(artifacts)
+            throw error
+        }
+    }
+
+    /// Installs both artifacts and restores the previous pair if either installation fails.
+    /// Each individual replacement is an atomic same-volume file operation.
+    func commit(_ staged: StagedArtifacts) throws {
+        try requireStagedFile(at: staged.modelURL)
+        try requireStagedFile(at: staged.roomJSONURL)
+
+        let identifier = UUID().uuidString
+        let modelBackupURL = backupSibling(of: modelURL, identifier: identifier)
+        let jsonBackupURL = backupSibling(of: roomJSONURL, identifier: identifier)
+        let hadModel = fileManager.fileExists(atPath: modelURL.path)
+        let hadJSON = fileManager.fileExists(atPath: roomJSONURL.path)
+        var installedModel = false
+        var installedJSON = false
+
+        do {
+            if hadModel {
+                try fileManager.copyItem(at: modelURL, to: modelBackupURL)
+            }
+            if hadJSON {
+                try fileManager.copyItem(at: roomJSONURL, to: jsonBackupURL)
+            }
+
+            try install(staged.roomJSONURL, at: roomJSONURL)
+            installedJSON = true
+            try install(staged.modelURL, at: modelURL)
+            installedModel = true
+
+            removeIfPresent(modelBackupURL)
+            removeIfPresent(jsonBackupURL)
+        } catch {
+            let originalMessage = error.localizedDescription
+            var rollbackMessages: [String] = []
+
+            if installedJSON {
+                do {
+                    try restore(
+                        finalURL: roomJSONURL,
+                        backupURL: jsonBackupURL,
+                        previouslyExisted: hadJSON
+                    )
+                } catch {
+                    rollbackMessages.append(error.localizedDescription)
+                }
+            }
+
+            if installedModel {
+                do {
+                    try restore(
+                        finalURL: modelURL,
+                        backupURL: modelBackupURL,
+                        previouslyExisted: hadModel
+                    )
+                } catch {
+                    rollbackMessages.append(error.localizedDescription)
+                }
+            }
+
+            discard(staged)
+            removeIfPresent(modelBackupURL)
+            removeIfPresent(jsonBackupURL)
+            throw CapturedRoomStoreError.commitFailed(
+                original: originalMessage,
+                rollback: rollbackMessages.isEmpty ? nil : rollbackMessages.joined(separator: "; ")
+            )
+        }
+    }
+
+    func discard(_ staged: StagedArtifacts) {
+        removeIfPresent(staged.modelURL)
+        removeIfPresent(staged.roomJSONURL)
+    }
+
+    private func prepareParentDirectory(for url: URL) throws {
+        try fileManager.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+    }
+
+    private func temporarySibling(
+        of url: URL,
+        identifier: String,
+        pathExtension: String
+    ) -> URL {
+        url.deletingLastPathComponent()
+            .appendingPathComponent(".RoomScan-\(identifier)-\(UUID().uuidString)")
+            .appendingPathExtension(pathExtension)
+    }
+
+    private func backupSibling(of url: URL, identifier: String) -> URL {
+        url.deletingLastPathComponent()
+            .appendingPathComponent(".RoomScanBackup-\(identifier)-\(url.lastPathComponent)")
+    }
+
+    private func requireStagedFile(at url: URL) throws {
+        guard fileManager.fileExists(atPath: url.path) else {
+            throw CapturedRoomStoreError.missingStagedArtifact(url.lastPathComponent)
+        }
+    }
+
+    private func install(_ stagedURL: URL, at finalURL: URL) throws {
+        if fileManager.fileExists(atPath: finalURL.path) {
+            _ = try fileManager.replaceItemAt(finalURL, withItemAt: stagedURL)
+        } else {
+            try fileManager.moveItem(at: stagedURL, to: finalURL)
+        }
+    }
+
+    private func restore(
+        finalURL: URL,
+        backupURL: URL,
+        previouslyExisted: Bool
+    ) throws {
+        if fileManager.fileExists(atPath: finalURL.path) {
+            try fileManager.removeItem(at: finalURL)
+        }
+        if previouslyExisted {
+            try fileManager.moveItem(at: backupURL, to: finalURL)
+        }
+    }
+
+    private func removeIfPresent(_ url: URL) {
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        try? fileManager.removeItem(at: url)
+    }
+}
+
 final class RoomScannerController: NSObject, ObservableObject {
     static var isSupported: Bool { RoomCaptureSession.isSupported }
 
@@ -16,15 +229,33 @@ final class RoomScannerController: NSObject, ObservableObject {
     @Published private(set) var exportSucceeded = false
     @Published private(set) var failureMessage: String?
 
-    let captureView = RoomCaptureView(frame: .zero)
-    private let exportURL: URL
+    let captureView: RoomCaptureView
+    let roomJSONURL: URL
+
+    private let roomStore: CapturedRoomStore
     private let configuration = RoomCaptureSession.Configuration()
+    private let preservesSharedARSession: Bool
     private var shouldExport = true
     private var isSessionRunning = false
-    private var pendingExportURL: URL?
+    private var pendingArtifacts: CapturedRoomStore.StagedArtifacts?
 
-    init(exportURL: URL) {
-        self.exportURL = exportURL
+    init(
+        exportURL: URL,
+        roomJSONURL: URL? = nil,
+        arSession: ARSession? = nil
+    ) {
+        let store = CapturedRoomStore(
+            modelURL: exportURL,
+            roomJSONURL: roomJSONURL
+        )
+        self.roomStore = store
+        self.roomJSONURL = store.roomJSONURL
+        self.preservesSharedARSession = arSession != nil
+        if let arSession {
+            self.captureView = RoomCaptureView(frame: .zero, arSession: arSession)
+        } else {
+            self.captureView = RoomCaptureView(frame: .zero)
+        }
         super.init()
         captureView.captureSession.delegate = self
         captureView.delegate = self
@@ -61,7 +292,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         isProcessing = true
         statusText = "3B oda modeli işleniyor..."
         isSessionRunning = false
-        captureView.captureSession.stop()
+        stopCaptureSession()
     }
 
     func cancel() {
@@ -71,26 +302,21 @@ final class RoomScannerController: NSObject, ObservableObject {
         guard isSessionRunning else { return }
 
         isSessionRunning = false
-        captureView.captureSession.stop()
+        stopCaptureSession()
     }
 
     func commitExport() -> URL? {
-        guard exportSucceeded, let pendingExportURL else {
+        guard exportSucceeded, let pendingArtifacts else {
             recordFailure("Kaydedilecek oda modeli bulunamadı")
             return nil
         }
 
         do {
-            let fileManager = FileManager.default
-            if fileManager.fileExists(atPath: exportURL.path) {
-                _ = try fileManager.replaceItemAt(exportURL, withItemAt: pendingExportURL)
-            } else {
-                try fileManager.moveItem(at: pendingExportURL, to: exportURL)
-            }
-            self.pendingExportURL = nil
-            return exportURL
+            try roomStore.commit(pendingArtifacts)
+            self.pendingArtifacts = nil
+            return roomStore.modelURL
         } catch {
-            recordFailure("Oda modeli kullanıma alınamadı: \(error.localizedDescription)")
+            recordFailure("Oda taraması kullanıma alınamadı: \(error.localizedDescription)")
             return nil
         }
     }
@@ -106,9 +332,17 @@ final class RoomScannerController: NSObject, ObservableObject {
     }
 
     private func discardPendingExport() {
-        guard let pendingExportURL else { return }
-        try? FileManager.default.removeItem(at: pendingExportURL)
-        self.pendingExportURL = nil
+        guard let pendingArtifacts else { return }
+        roomStore.discard(pendingArtifacts)
+        self.pendingArtifacts = nil
+    }
+
+    private func stopCaptureSession() {
+        if preservesSharedARSession {
+            captureView.captureSession.stop(pauseARSession: false)
+        } else {
+            captureView.captureSession.stop()
+        }
     }
 }
 
@@ -153,35 +387,15 @@ extension RoomScannerController: RoomCaptureViewDelegate {
 
             do {
                 if let error { throw error }
-                self.pendingExportURL = try self.stageExport(processedResult)
-                self.statusText = "Oda modeli kaydedildi"
+                self.discardPendingExport()
+                self.pendingArtifacts = try self.roomStore.stage(processedResult)
+                self.statusText = "Oda modeli ve mekân verisi hazır"
                 self.exportSucceeded = true
                 self.failureMessage = nil
             } catch {
-                self.recordFailure("Model dışa aktarılamadı: \(error.localizedDescription)")
+                self.recordFailure("Oda verisi dışa aktarılamadı: \(error.localizedDescription)")
             }
             self.isProcessing = false
-        }
-    }
-}
-
-private extension RoomScannerController {
-    func stageExport(_ room: CapturedRoom) throws -> URL {
-        let fileManager = FileManager.default
-        let directory = exportURL.deletingLastPathComponent()
-        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-
-        let temporaryURL = directory
-            .appendingPathComponent("RoomScan-\(UUID().uuidString)")
-            .appendingPathExtension("usdz")
-        do {
-            try room.export(to: temporaryURL, exportOptions: .parametric)
-            return temporaryURL
-        } catch {
-            if fileManager.fileExists(atPath: temporaryURL.path) {
-                try? fileManager.removeItem(at: temporaryURL)
-            }
-            throw error
         }
     }
 }
@@ -194,10 +408,18 @@ struct RoomScannerScreen: View {
 
     init(
         exportURL: URL,
+        roomJSONURL: URL? = nil,
+        arSession: ARSession? = nil,
         onComplete: @escaping (RoomScanResult) -> Void = { _ in }
     ) {
         self.onComplete = onComplete
-        _scanner = StateObject(wrappedValue: RoomScannerController(exportURL: exportURL))
+        _scanner = StateObject(
+            wrappedValue: RoomScannerController(
+                exportURL: exportURL,
+                roomJSONURL: roomJSONURL,
+                arSession: arSession
+            )
+        )
     }
 
     var body: some View {

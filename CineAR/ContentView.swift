@@ -37,7 +37,11 @@ struct ContentView: View {
             session.resumeAfterRoomScan(result: roomScanResult)
             roomScanResult = nil
         }) {
-            RoomScannerScreen(exportURL: session.roomModelURL) { result in
+            RoomScannerScreen(
+                exportURL: session.roomModelURL,
+                roomJSONURL: session.roomDataURL,
+                arSession: session.sharedARSession
+            ) { result in
                 roomScanResult = result
             }
         }
@@ -70,6 +74,10 @@ struct ContentView: View {
 
     private var controls: some View {
         VStack(spacing: 12) {
+            roomRealitySelector
+
+            Divider().opacity(0.35)
+
             Text("Dekor seçip yüzeye dokun • Seçili dekoru sürükle, döndür veya ölçekle")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -129,7 +137,7 @@ struct ContentView: View {
                     session.pauseForRoomScan()
                     showingRoomScanner = true
                 }
-                .disabled(!RoomScannerController.isSupported)
+                .disabled(!RoomScannerController.isSupported || !session.isARReady)
 
                 utilityButton("USDZ Ekle", "cube.transparent.fill") {
                     showingAssetImporter = true
@@ -160,6 +168,69 @@ struct ContentView: View {
         }
         .padding(12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var roomRealitySelector: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Label("Oda Gerçekliği", systemImage: "wand.and.stars")
+                    .font(.caption.weight(.bold))
+                Spacer()
+                if !RoomScannerController.isSupported {
+                    Text("LiDAR gerekli")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else if !session.hasScannedRoom {
+                    Text("Önce odayı tara")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    realityButton(
+                        title: "Gerçek",
+                        symbol: "camera.fill",
+                        isSelected: session.activeRealityThemeID == nil
+                    ) {
+                        session.showOriginalReality()
+                    }
+
+                    ForEach(RealityThemeCatalog.all) { theme in
+                        realityButton(
+                            title: theme.title,
+                            symbol: theme.symbolName,
+                            isSelected: session.activeRealityThemeID == theme.id
+                        ) {
+                            session.selectRealityTheme(theme.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func realityButton(
+        title: String,
+        symbol: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: symbol)
+                Text(title).lineLimit(1)
+            }
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .background(
+                isSelected ? Color.accentColor.opacity(0.9) : Color.white.opacity(0.1),
+                in: Capsule()
+            )
+        }
+        .disabled(!session.isARReady)
     }
 
     private func utilityButton(

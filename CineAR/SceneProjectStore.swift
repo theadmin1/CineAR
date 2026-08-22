@@ -123,6 +123,7 @@ final class SceneProjectStore {
     var projectURL: URL { projectDirectory.appendingPathComponent("scene.json") }
     var worldMapURL: URL { projectDirectory.appendingPathComponent("worldmap.arexperience") }
     var roomModelURL: URL { projectDirectory.appendingPathComponent("room.usdz") }
+    var roomDataURL: URL { projectDirectory.appendingPathComponent("room.json") }
     var recordingsDirectory: URL {
         projectDirectory.appendingPathComponent("Recordings", isDirectory: true)
     }
@@ -212,6 +213,12 @@ final class SceneProjectStore {
         try commit(invalidateWorldMap: true) { candidate in
             candidate.placements.removeAll()
         }
+    }
+
+    /// A new RoomPlan scan has a new spatial source of truth. Keep placements,
+    /// but force the user to save a matching ARWorldMap before a later reload.
+    func invalidateWorldMapForRoomScan() throws {
+        try commit(invalidateWorldMap: true) { _ in }
     }
 
     func saveWorldMapData(_ data: Data) throws {

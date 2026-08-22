@@ -1,0 +1,15 @@
+Kenney Furniture Kit 2.0
+
+Created and distributed by Kenney: https://kenney.nl/
+Source: https://kenney.nl/assets/furniture-kit
+
+License: Creative Commons Zero (CC0 1.0 Universal)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The source package states that this content is free to use in personal,
+educational, and commercial projects. Credit is not required. CineAR keeps
+this notice in the application bundle for provenance and reproducibility.
+
+The USDZ files in this folder were converted from the original Kenney GLB
+files with Blender 4.5.0. Geometry and materials remain derived from the CC0
+source models.
