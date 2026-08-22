@@ -79,28 +79,32 @@ workflows:
 
           set +e
           latest_build_output="$(
+            # Keep diagnostic logs on stderr; stdout contains only the build number.
             app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" \
               --platform IOS \
-              --all-versions 2>&1
+              --all-versions
           )"
           latest_build_status=$?
           set -e
 
-          if [[ "$latest_build_output" == *"Did not find any builds"* ]]; then
-            latest_build_number=0
-            echo "No existing App Store Connect build found; starting at build 1."
-          elif [[ $latest_build_status -ne 0 ]]; then
-            echo "$latest_build_output" >&2
-            exit $latest_build_status
-          else
-            latest_build_number="$(printf '%s' "$latest_build_output" | tr -d '[:space:]')"
-            if [[ ! "$latest_build_number" =~ ^[0-9]+$ ]]; then
-              echo "App Store Connect returned an invalid build number: $latest_build_output" >&2
-              exit 1
-            fi
+          if [[ $latest_build_status -ne 0 ]]; then
+            echo "App Store Connect build number query failed." >&2
+            exit "$latest_build_status"
           fi
 
-          next_build_number="$((latest_build_number + 1))"
+          latest_build_number="$(
+            printf '%s' "$latest_build_output" | tr -d '[:space:]'
+          )"
+
+          if [[ -z "$latest_build_number" ]]; then
+            latest_build_number=0
+            echo "No existing App Store Connect build found; starting at build 1."
+          elif [[ ! "$latest_build_number" =~ ^[0-9]+$ ]]; then
+            echo "App Store Connect returned an invalid build number: $latest_build_output" >&2
+            exit 1
+          fi
+
+          next_build_number="$((10#$latest_build_number + 1))"
           xcrun agvtool new-version -all "$next_build_number"
           echo "CineAR build number: $next_build_number"
 
