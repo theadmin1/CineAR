@@ -87,7 +87,7 @@ struct ContentView: View {
                 HStack(spacing: 8) {
                     ForEach(PropKind.allCases) { prop in
                         Button {
-                            session.selectedProp = prop
+                            session.selectProp(prop)
                         } label: {
                             VStack(spacing: 4) {
                                 Text(prop.symbol).font(.title2)

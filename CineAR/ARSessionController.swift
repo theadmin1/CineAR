@@ -26,6 +26,7 @@ final class ARSessionController: NSObject, ObservableObject {
         assetProvider: BundledRoomRealityAssetProvider()
     )
     private var renderedAnchorIDs = Set<UUID>()
+    private var knownPropAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
@@ -85,6 +86,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         tap.cancelsTouchesInView = false
+        tap.delegate = self
         view.addGestureRecognizer(tap)
         addCoachingOverlay(to: view)
 
@@ -128,6 +130,7 @@ final class ARSessionController: NSObject, ObservableObject {
         didAttemptSessionFailureRecovery = false
         assetLoadSubscriptions.values.forEach { $0.cancel() }
         renderedAnchorIDs.removeAll()
+        knownPropAnchorIDs.removeAll()
         renderedEntities.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
@@ -301,6 +304,15 @@ final class ARSessionController: NSObject, ObservableObject {
         publishStatus("Gerçek oda görünümü etkin; eklediğin objeler korunuyor", color: .green)
     }
 
+    func selectProp(_ prop: PropKind) {
+        selectedProp = prop
+        if prop == .custom, selectedAssetURL == nil {
+            publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
+        } else {
+            publishStatus("\(prop.title) seçildi — kameradaki bir yüzeye dokun", color: .blue)
+        }
+    }
+
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
@@ -312,20 +324,11 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
-        let alignment: ARRaycastQuery.TargetAlignment =
-            (selectedProp == .wall || selectedProp == .lightPanel) ? .vertical : .horizontal
-        let existingResults = arView.raycast(
-            from: point,
-            allowing: .existingPlaneGeometry,
-            alignment: alignment
-        )
-        let estimatedResults = arView.raycast(
-            from: point,
-            allowing: .estimatedPlane,
-            alignment: alignment
-        )
-
-        guard let result = existingResults.first ?? estimatedResults.first else {
+        guard let result = placementRaycastResult(
+            in: arView,
+            at: point,
+            for: selectedProp
+        ) else {
             publishStatus("Yüzey bulunamadı; telefonu biraz daha hareket ettir", color: .yellow)
             return
         }
@@ -347,12 +350,48 @@ final class ARSessionController: NSObject, ObservableObject {
                 name: selectedProp.anchorName(id: id),
                 transform: result.worldTransform
             )
+            knownPropAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
-            publishStatus("\(selectedProp.title) sahneye sabitlendi", color: .green)
+            render(prop: selectedProp, id: id, for: anchor)
+            if selectedProp == .custom {
+                publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
+            } else if renderedEntities[id] != nil {
+                publishStatus("\(selectedProp.title) sahneye sabitlendi", color: .green)
+            } else {
+                publishStatus("\(selectedProp.title) hazırlanıyor...", color: .yellow)
+            }
         } catch {
             publishStatus("Proje kaydedilemedi: \(error.localizedDescription)", color: .red)
         }
+    }
+
+    private func placementRaycastResult(
+        in arView: ARView,
+        at point: CGPoint,
+        for prop: PropKind
+    ) -> ARRaycastResult? {
+        let preferredAlignment: ARRaycastQuery.TargetAlignment =
+            (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
+        let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
+            (.existingPlaneGeometry, preferredAlignment),
+            (.existingPlaneInfinite, preferredAlignment),
+            (.estimatedPlane, preferredAlignment),
+            (.existingPlaneGeometry, .any),
+            (.existingPlaneInfinite, .any),
+            (.estimatedPlane, .any)
+        ]
+
+        for (target, alignment) in queries {
+            if let result = arView.raycast(
+                from: point,
+                allowing: target,
+                alignment: alignment
+            ).first {
+                return result
+            }
+        }
+        return nil
     }
 
     func removeSelectedProp() {
@@ -373,6 +412,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if let anchor {
             arView.session.remove(anchor: anchor)
             renderedAnchorIDs.remove(anchor.identifier)
+            knownPropAnchorIDs.remove(anchor.identifier)
         }
         renderedEntities[id]?.parent?.removeFromParent()
         renderedEntities[id] = nil
@@ -404,6 +444,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         renderedEntities.values.forEach { $0.parent?.removeFromParent() }
         renderedAnchorIDs.removeAll()
+        knownPropAnchorIDs.removeAll()
         renderedEntities.removeAll()
         selectedEntityID = nil
         publishStatus("Sanal dekorlar temizlendi", color: .green)
@@ -580,10 +621,8 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func render(prop: PropKind, id: UUID, for anchor: ARAnchor) {
-        guard let arView,
-              arView.session.currentFrame?.anchors.contains(where: {
-                  $0.identifier == anchor.identifier
-              }) == true,
+        guard arView != nil,
+              knownPropAnchorIDs.contains(anchor.identifier),
               !renderedAnchorIDs.contains(anchor.identifier),
               renderedEntities[id] == nil,
               !loadingEntityIDs.contains(id) else { return }
@@ -652,9 +691,7 @@ final class ARSessionController: NSObject, ObservableObject {
     ) {
         guard let arView,
               generation == renderGeneration,
-              arView.session.currentFrame?.anchors.contains(where: {
-                  $0.identifier == anchor.identifier
-              }) == true,
+              knownPropAnchorIDs.contains(anchor.identifier),
               !renderedAnchorIDs.contains(anchor.identifier),
               renderedEntities[id] == nil,
               let placement = projectStore.placement(id: id),
@@ -897,8 +934,25 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
+            knownPropAnchorIDs.insert(anchor.identifier)
             DispatchQueue.main.async { [weak self] in
                 self?.render(prop: descriptor.kind, id: descriptor.id, for: anchor)
+            }
+        }
+    }
+
+    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+        for anchor in anchors {
+            guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
+            knownPropAnchorIDs.remove(anchor.identifier)
+            renderedAnchorIDs.remove(anchor.identifier)
+            loadingEntityIDs.remove(descriptor.id)
+            assetLoadSubscriptions[descriptor.id]?.cancel()
+            assetLoadSubscriptions[descriptor.id] = nil
+            renderedEntities[descriptor.id]?.parent?.removeFromParent()
+            renderedEntities[descriptor.id] = nil
+            if selectedEntityID == descriptor.id {
+                selectedEntityID = nil
             }
         }
     }
@@ -1056,6 +1110,17 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             setPhysicalSceneOcclusion(enabled: true)
             publishStatus("AR oturumu sürdürüldü", color: .yellow)
         }
+    }
+}
+
+extension ARSessionController: @preconcurrency UIGestureRecognizerDelegate {
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        // The placement/selection tap must not disable RealityKit's translation,
+        // rotation and scale recognizers installed on manual props.
+        true
     }
 }
 
