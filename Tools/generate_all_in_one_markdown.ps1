@@ -328,7 +328,8 @@ foreach ($relativePath in $textPaths) {
 $outputDirectory = [System.IO.Path]::GetDirectoryName($outputFullPath)
 [System.IO.Directory]::CreateDirectory($outputDirectory) | Out-Null
 $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
-[System.IO.File]::WriteAllText($outputFullPath, $builder.ToString(), $utf8WithoutBom)
+$finalText = $builder.ToString().TrimEnd([char[]]@("`r", "`n")) + "`n"
+[System.IO.File]::WriteAllText($outputFullPath, $finalText, $utf8WithoutBom)
 
 Write-Host "Generated $outputRelativePath"
 Write-Host "Text sources: $($textPaths.Count)"
