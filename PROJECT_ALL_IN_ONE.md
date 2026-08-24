@@ -6,8 +6,8 @@
 - Uygulama sürümü: `0.3`
 - Proje build numarası: `3`
 - Git dalı: `main`
-- Kaynak commit: `5bbeb64ab66e1c0ab58c929fdeb807103ebde684`
-- Oluşturulma zamanı: `2026-08-24 12:56:27 +03:00`
+- Kaynak commit: `62fbfabd222f752b653cbd2107ec3565d8808433`
+- Oluşturulma zamanı: `2026-08-24 12:58:01 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -191,7 +191,7 @@ Yok.
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
 | `README.md` | 92 | 4503 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
-| `Tools/generate_all_in_one_markdown.ps1` | 337 | 16390 |
+| `Tools/generate_all_in_one_markdown.ps1` | 338 | 16452 |
 | `Tools/render_usdz_thumbnails.py` | 94 | 3522 |
 | `Tools/validate_usdz_assets.py` | 67 | 2269 |
 
@@ -6532,7 +6532,8 @@ foreach ($relativePath in $textPaths) {
 $outputDirectory = [System.IO.Path]::GetDirectoryName($outputFullPath)
 [System.IO.Directory]::CreateDirectory($outputDirectory) | Out-Null
 $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
-[System.IO.File]::WriteAllText($outputFullPath, $builder.ToString(), $utf8WithoutBom)
+$finalText = $builder.ToString().TrimEnd([char[]]@("`r", "`n")) + "`n"
+[System.IO.File]::WriteAllText($outputFullPath, $finalText, $utf8WithoutBom)
 
 Write-Host "Generated $outputRelativePath"
 Write-Host "Text sources: $($textPaths.Count)"
@@ -6708,4 +6709,3 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 ````
-
