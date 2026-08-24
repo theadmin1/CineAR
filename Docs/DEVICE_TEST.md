@@ -17,20 +17,23 @@
    objenin merkezine ve RoomPlan boyutlarina oturdugunu ayri ayri olc.
 3. Dort temayi arka arkaya sec, sonra `Gercek` gorunumune don. Tema degisiminde
    geometri kaymasi, sahne kopyalanmasi veya uygulama kapanmasi olmamali.
-4. Duvar, platform ve en az iki farkli USDZ model yerlestir. Tema degistirirken
+4. Modern tema acikken taranmis zemin, duvar ve taninan bir mobilyanin gorunen
+   yuzeyine ayri ayri dokunarak kasa/isik yerlestir. Nesne dokunulan sanal yuzeyde
+   gorunmeli; duvar ve isik panelleri dik kalip kameraya bakan yone hizalanmali.
+5. Duvar, platform ve en az iki farkli USDZ model yerlestir. Tema degistirirken
    bu manuel objelerin konumunun ve parmak hareketlerinin korundugunu dogrula.
-5. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-6. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-7. Relocalization tamamlandiktan sonra tema ve dekorlarin referans isaretlerine gore
+6. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
+7. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+8. Relocalization tamamlandiktan sonra tema ve dekorlarin referans isaretlerine gore
    konum farkini olc.
-8. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
+9. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
    hatalarini kaydet.
-9. `Tumunu Sil` ile yalniz manuel objelerin silindigini, oda temasinin kaldigini test et.
-10. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli, tema ve manuel
+10. `Tumunu Sil` ile yalniz manuel objelerin silindigini, oda temasinin kaldigini test et.
+11. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli, tema ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-11. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-12. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+12. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+13. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 

@@ -1,6 +1,7 @@
 import ARKit
 import Combine
 import RealityKit
+import simd
 import SwiftUI
 import UIKit
 
@@ -324,7 +325,12 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
-        guard let result = placementRaycastResult(
+        guard !isRoomScanActive, !isSessionInterrupted, isARReady else {
+            publishStatus("Kamera takibi hazır olduğunda tekrar dokun", color: .yellow)
+            return
+        }
+
+        guard let placementTransform = placementWorldTransform(
             in: arView,
             at: point,
             for: selectedProp
@@ -348,7 +354,7 @@ final class ARSessionController: NSObject, ObservableObject {
             try projectStore.upsert(placement)
             let anchor = ARAnchor(
                 name: selectedProp.anchorName(id: id),
-                transform: result.worldTransform
+                transform: placementTransform
             )
             knownPropAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
@@ -366,11 +372,23 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
-    private func placementRaycastResult(
+    private func placementWorldTransform(
         in arView: ARView,
         at point: CGPoint,
         for prop: PropKind
-    ) -> ARRaycastResult? {
+    ) -> simd_float4x4? {
+        // When a room theme is visible, use the geometry the user actually sees. The
+        // RoomPlan replacement scene is virtual RealityKit content, so ARKit's plane
+        // raycast below cannot intersect it on its own.
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point) {
+            return placementTransform(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation
+            )
+        }
+
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
             (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
@@ -388,10 +406,37 @@ final class ARSessionController: NSObject, ObservableObject {
                 allowing: target,
                 alignment: alignment
             ).first {
-                return result
+                return result.worldTransform
             }
         }
         return nil
+    }
+
+    private func placementTransform(
+        position: SIMD3<Float>,
+        normal: SIMD3<Float>,
+        prop: PropKind,
+        cameraPosition: SIMD3<Float>
+    ) -> simd_float4x4 {
+        var transform = matrix_identity_float4x4
+        transform.columns.3 = SIMD4(position.x, position.y, position.z, 1)
+
+        guard prop == .wall || prop == .lightPanel else { return transform }
+
+        // Wall props remain upright and face the camera side of the scanned wall.
+        var forward = SIMD3<Float>(normal.x, 0, normal.z)
+        guard simd_length_squared(forward) > 0.000_001 else { return transform }
+        forward = simd_normalize(forward)
+        let towardCamera = cameraPosition - position
+        if simd_dot(forward, towardCamera) < 0 {
+            forward = -forward
+        }
+        let up = SIMD3<Float>(0, 1, 0)
+        let right = simd_normalize(simd_cross(up, forward))
+        transform.columns.0 = SIMD4(right.x, right.y, right.z, 0)
+        transform.columns.1 = SIMD4(up.x, up.y, up.z, 0)
+        transform.columns.2 = SIMD4(forward.x, forward.y, forward.z, 0)
+        return transform
     }
 
     func removeSelectedProp() {

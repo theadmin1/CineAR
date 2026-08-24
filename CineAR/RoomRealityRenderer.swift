@@ -86,6 +86,9 @@ final class RoomRealityRenderer {
         size: SIMD3<Float>(repeating: 1),
         cornerRadius: 0.02
     )
+    private static let unitBoxCollisionShape = ShapeResource.generateBox(
+        size: SIMD3<Float>(repeating: 1)
+    )
 
     private(set) var selectedThemeID: RealityThemeID = .modern
     private(set) var lastReport: RoomRealityRenderReport?
@@ -118,6 +121,16 @@ final class RoomRealityRenderer {
     func removeFromScene() {
         installedARView?.scene.removeAnchor(rootEntity)
         installedARView = nil
+    }
+
+    /// Returns the closest visible RoomPlan replacement surface below a screen point.
+    /// ARKit raycasts only know about live planes/mesh; they cannot hit this renderer's
+    /// virtual floor, walls, or reconstructed furniture.
+    func placementHit(in arView: ARView, at point: CGPoint) -> CollisionCastHit? {
+        guard installedARView === arView, isVisible else { return nil }
+        return arView.hitTest(point, query: .all, mask: .all).first {
+            belongsToRenderedRoom($0.entity)
+        }
     }
 
     func clear() {
@@ -1107,6 +1120,13 @@ private extension RoomRealityRenderer {
         ) {
             suppliedEntity.name = "cinear.reality.asset.\(object.identifier.uuidString)"
             root.addChild(suppliedEntity)
+            let placementCollider = Entity()
+            placementCollider.name = "cinear.reality.asset.collider.\(object.identifier.uuidString)"
+            placementCollider.scale = dimensions
+            placementCollider.components.set(
+                CollisionComponent(shapes: [Self.unitBoxCollisionShape])
+            )
+            root.addChild(placementCollider)
             return root
         }
 
@@ -1552,9 +1572,22 @@ private extension RoomRealityRenderer {
         let entity = ModelEntity(mesh: mesh, materials: [material])
         entity.scale = safeSize
         entity.position = position
+        // The visual mesh is a shared unit box whose entity scale supplies its actual
+        // dimensions. Reusing the matching unit collision shape keeps hundreds of room
+        // pieces cheap while making the scanned room available to placement hit tests.
+        entity.collision = CollisionComponent(shapes: [Self.unitBoxCollisionShape])
         parent.addChild(entity)
         generatedBoxCount += 1
         return true
+    }
+
+    func belongsToRenderedRoom(_ entity: Entity) -> Bool {
+        var candidate: Entity? = entity
+        while let current = candidate {
+            if current === rootEntity { return true }
+            candidate = current.parent
+        }
+        return false
     }
 
     static func planarDimensions(_ dimensions: SIMD3<Float>) -> SIMD2<Float>? {

@@ -29,6 +29,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Eksik veya bozuk USDZ icin uygulamayi durdurmayan prosedurel 3B model fallback'i
 - Tema ile gercek gorunum arasinda aninda gecis; manuel eklenen objeleri bagimsiz koruma
 - Dekorlari surukleme, dondurme ve olceklendirme
+- Tema acikken taranmis zemin, duvar ve mobilya geometrisine dogrudan dekor yerlestirme
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization

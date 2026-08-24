@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.3`
-- Proje build numarası: `3`
+- Uygulama sürümü: `0.3.1`
+- Proje build numarası: `4`
 - Git dalı: `main`
-- Kaynak commit: `62fbfabd222f752b653cbd2107ec3565d8808433`
-- Oluşturulma zamanı: `2026-08-24 12:58:01 +03:00`
+- Kaynak commit: `8e31ab2c921f07a5ecbf499f11e24723c2221ec7`
+- Oluşturulma zamanı: `2026-08-24 13:29:00 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -166,9 +166,9 @@ Yok.
 | Dosya | Satır | Boyut (byte) |
 | --- | ---: | ---: |
 | `.gitignore` | 25 | 473 |
-| `CineAR.xcodeproj/project.pbxproj` | 272 | 12824 |
+| `CineAR.xcodeproj/project.pbxproj` | 272 | 12828 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 1152 | 45840 |
+| `CineAR/ARSessionController.swift` | 1197 | 47733 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -182,14 +182,14 @@ Yok.
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 15 | 1184 |
-| `CineAR/RoomRealityRenderer.swift` | 1640 | 61434 |
+| `CineAR/RoomRealityRenderer.swift` | 1673 | 63066 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
 | `CineAR/SceneProjectStore.swift` | 352 | 13489 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 57 | 2796 |
+| `Docs/DEVICE_TEST.md` | 60 | 3040 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 92 | 4503 |
+| `README.md` | 93 | 4591 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/generate_all_in_one_markdown.ps1` | 338 | 16452 |
 | `Tools/render_usdz_thumbnails.py` | 94 | 3522 |
@@ -436,13 +436,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.3;
+				MARKETING_VERSION = 0.3.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -459,12 +459,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.3;
+				MARKETING_VERSION = 0.3.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -537,6 +537,7 @@ CineAR-Codemagic-Handoff-*.zip
 import ARKit
 import Combine
 import RealityKit
+import simd
 import SwiftUI
 import UIKit
 
@@ -860,7 +861,12 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
-        guard let result = placementRaycastResult(
+        guard !isRoomScanActive, !isSessionInterrupted, isARReady else {
+            publishStatus("Kamera takibi hazır olduğunda tekrar dokun", color: .yellow)
+            return
+        }
+
+        guard let placementTransform = placementWorldTransform(
             in: arView,
             at: point,
             for: selectedProp
@@ -884,7 +890,7 @@ final class ARSessionController: NSObject, ObservableObject {
             try projectStore.upsert(placement)
             let anchor = ARAnchor(
                 name: selectedProp.anchorName(id: id),
-                transform: result.worldTransform
+                transform: placementTransform
             )
             knownPropAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
@@ -902,11 +908,23 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
-    private func placementRaycastResult(
+    private func placementWorldTransform(
         in arView: ARView,
         at point: CGPoint,
         for prop: PropKind
-    ) -> ARRaycastResult? {
+    ) -> simd_float4x4? {
+        // When a room theme is visible, use the geometry the user actually sees. The
+        // RoomPlan replacement scene is virtual RealityKit content, so ARKit's plane
+        // raycast below cannot intersect it on its own.
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point) {
+            return placementTransform(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation
+            )
+        }
+
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
             (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
@@ -924,10 +942,37 @@ final class ARSessionController: NSObject, ObservableObject {
                 allowing: target,
                 alignment: alignment
             ).first {
-                return result
+                return result.worldTransform
             }
         }
         return nil
+    }
+
+    private func placementTransform(
+        position: SIMD3<Float>,
+        normal: SIMD3<Float>,
+        prop: PropKind,
+        cameraPosition: SIMD3<Float>
+    ) -> simd_float4x4 {
+        var transform = matrix_identity_float4x4
+        transform.columns.3 = SIMD4(position.x, position.y, position.z, 1)
+
+        guard prop == .wall || prop == .lightPanel else { return transform }
+
+        // Wall props remain upright and face the camera side of the scanned wall.
+        var forward = SIMD3<Float>(normal.x, 0, normal.z)
+        guard simd_length_squared(forward) > 0.000_001 else { return transform }
+        forward = simd_normalize(forward)
+        let towardCamera = cameraPosition - position
+        if simd_dot(forward, towardCamera) < 0 {
+            forward = -forward
+        }
+        let up = SIMD3<Float>(0, 1, 0)
+        let right = simd_normalize(simd_cross(up, forward))
+        transform.columns.0 = SIMD4(right.x, right.y, right.z, 0)
+        transform.columns.1 = SIMD4(up.x, up.y, up.z, 0)
+        transform.columns.2 = SIMD4(forward.x, forward.y, forward.z, 0)
+        return transform
     }
 
     func removeSelectedProp() {
@@ -3148,6 +3193,9 @@ final class RoomRealityRenderer {
         size: SIMD3<Float>(repeating: 1),
         cornerRadius: 0.02
     )
+    private static let unitBoxCollisionShape = ShapeResource.generateBox(
+        size: SIMD3<Float>(repeating: 1)
+    )
 
     private(set) var selectedThemeID: RealityThemeID = .modern
     private(set) var lastReport: RoomRealityRenderReport?
@@ -3180,6 +3228,16 @@ final class RoomRealityRenderer {
     func removeFromScene() {
         installedARView?.scene.removeAnchor(rootEntity)
         installedARView = nil
+    }
+
+    /// Returns the closest visible RoomPlan replacement surface below a screen point.
+    /// ARKit raycasts only know about live planes/mesh; they cannot hit this renderer's
+    /// virtual floor, walls, or reconstructed furniture.
+    func placementHit(in arView: ARView, at point: CGPoint) -> CollisionCastHit? {
+        guard installedARView === arView, isVisible else { return nil }
+        return arView.hitTest(point, query: .all, mask: .all).first {
+            belongsToRenderedRoom($0.entity)
+        }
     }
 
     func clear() {
@@ -4169,6 +4227,13 @@ private extension RoomRealityRenderer {
         ) {
             suppliedEntity.name = "cinear.reality.asset.\(object.identifier.uuidString)"
             root.addChild(suppliedEntity)
+            let placementCollider = Entity()
+            placementCollider.name = "cinear.reality.asset.collider.\(object.identifier.uuidString)"
+            placementCollider.scale = dimensions
+            placementCollider.components.set(
+                CollisionComponent(shapes: [Self.unitBoxCollisionShape])
+            )
+            root.addChild(placementCollider)
             return root
         }
 
@@ -4614,9 +4679,22 @@ private extension RoomRealityRenderer {
         let entity = ModelEntity(mesh: mesh, materials: [material])
         entity.scale = safeSize
         entity.position = position
+        // The visual mesh is a shared unit box whose entity scale supplies its actual
+        // dimensions. Reusing the matching unit collision shape keeps hundreds of room
+        // pieces cheap while making the scanned room available to placement hit tests.
+        entity.collision = CollisionComponent(shapes: [Self.unitBoxCollisionShape])
         parent.addChild(entity)
         generatedBoxCount += 1
         return true
+    }
+
+    func belongsToRenderedRoom(_ entity: Entity) -> Bool {
+        var candidate: Entity? = entity
+        while let current = candidate {
+            if current === rootEntity { return true }
+            candidate = current.parent
+        }
+        return false
     }
 
     static func planarDimensions(_ dimensions: SIMD3<Float>) -> SIMD2<Float>? {
@@ -5909,20 +5987,23 @@ incelemesine uygulama gondermesi mumkun degildir.
    objenin merkezine ve RoomPlan boyutlarina oturdugunu ayri ayri olc.
 3. Dort temayi arka arkaya sec, sonra `Gercek` gorunumune don. Tema degisiminde
    geometri kaymasi, sahne kopyalanmasi veya uygulama kapanmasi olmamali.
-4. Duvar, platform ve en az iki farkli USDZ model yerlestir. Tema degistirirken
+4. Modern tema acikken taranmis zemin, duvar ve taninan bir mobilyanin gorunen
+   yuzeyine ayri ayri dokunarak kasa/isik yerlestir. Nesne dokunulan sanal yuzeyde
+   gorunmeli; duvar ve isik panelleri dik kalip kameraya bakan yone hizalanmali.
+5. Duvar, platform ve en az iki farkli USDZ model yerlestir. Tema degistirirken
    bu manuel objelerin konumunun ve parmak hareketlerinin korundugunu dogrula.
-5. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-6. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-7. Relocalization tamamlandiktan sonra tema ve dekorlarin referans isaretlerine gore
+6. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
+7. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+8. Relocalization tamamlandiktan sonra tema ve dekorlarin referans isaretlerine gore
    konum farkini olc.
-8. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
+9. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
    hatalarini kaydet.
-9. `Tumunu Sil` ile yalniz manuel objelerin silindigini, oda temasinin kaldigini test et.
-10. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli, tema ve manuel
+10. `Tumunu Sil` ile yalniz manuel objelerin silindigini, oda temasinin kaldigini test et.
+11. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli, tema ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-11. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-12. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+12. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+13. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
@@ -6011,6 +6092,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Eksik veya bozuk USDZ icin uygulamayi durdurmayan prosedurel 3B model fallback'i
 - Tema ile gercek gorunum arasinda aninda gecis; manuel eklenen objeleri bagimsiz koruma
 - Dekorlari surukleme, dondurme ve olceklendirme
+- Tema acikken taranmis zemin, duvar ve mobilya geometrisine dogrudan dekor yerlestirme
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization
