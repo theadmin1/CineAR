@@ -83,9 +83,7 @@ struct ContentView: View {
 
     private var controls: some View {
         VStack(spacing: 12) {
-            Label("Gerçek kamera • taranan yüzey çizimi kapalı", systemImage: "camera.fill")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            roomRealityControls
 
             Text("Nesne seçildiğinde bu panel kapanır; zeminin istediğin yerine dokunabilirsin")
                 .font(.caption)
@@ -117,7 +115,10 @@ struct ContentView: View {
             Button {
                 showingPropLibrary = true
             } label: {
-                Label("Hazır 3B Nesne Kütüphanesi (14 model)", systemImage: "square.grid.3x3.fill")
+                Label(
+                    "Hazır 3B Nesne Kütüphanesi (\(PropKind.furnitureCases.count) parça)",
+                    systemImage: "square.grid.3x3.fill"
+                )
                     .font(.caption.weight(.bold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -187,6 +188,60 @@ struct ContentView: View {
         }
         .padding(12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var roomRealityControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Oda Gerçekliği", systemImage: "viewfinder.circle.fill")
+                    .font(.subheadline.weight(.bold))
+                Spacer()
+                Text(session.hasScannedRoom ? "Tarama hazır" : "Tarama gerekli")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(session.hasScannedRoom ? .green : .secondary)
+            }
+
+            HStack(spacing: 8) {
+                roomModeButton(
+                    title: "Gerçek",
+                    icon: "camera.fill",
+                    isSelected: !session.isRoomOutlineVisible
+                ) {
+                    session.showOriginalReality()
+                }
+
+                roomModeButton(
+                    title: "Beyaz Hatlar",
+                    icon: "square.dashed.inset.filled",
+                    isSelected: session.isRoomOutlineVisible
+                ) {
+                    session.showRoomOutline()
+                }
+                .disabled(!session.hasScannedRoom || !session.isARReady)
+            }
+
+            Text("Tarama sırasında ve Beyaz Hatlar modunda kamera kapanmaz; katı duvar çizilmez")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func roomModeButton(
+        title: String,
+        icon: String,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon)
+                .font(.caption.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(
+                    isSelected ? Color.accentColor.opacity(0.88) : Color.white.opacity(0.10),
+                    in: Capsule()
+                )
+        }
     }
 
     private var placementBar: some View {

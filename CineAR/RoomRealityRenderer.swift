@@ -92,6 +92,7 @@ final class RoomRealityRenderer {
 
     private(set) var selectedThemeID: RealityThemeID = .modern
     private(set) var lastReport: RoomRealityRenderReport?
+    private(set) var hasPreparedOutline = false
 
     init(assetProvider: (any RoomRealityAssetProviding)? = nil) {
         self.assetProvider = assetProvider
@@ -140,6 +141,7 @@ final class RoomRealityRenderer {
         rootEntity.addChild(contentEntity)
         lastRoom = nil
         lastReport = nil
+        hasPreparedOutline = false
         lastAlignmentTransform = matrix_identity_float4x4
         contentEntity.transform = .identity
     }
@@ -316,6 +318,7 @@ final class RoomRealityRenderer {
         contentEntity = stagingEntity
         rootEntity.addChild(contentEntity)
         selectedThemeID = theme.id
+        hasPreparedOutline = false
         lastRoom = room
         lastAlignmentTransform = alignmentTransform
         lastReport = report
@@ -345,6 +348,128 @@ final class RoomRealityRenderer {
             theme: theme,
             alignmentTransform: alignmentTransform
         )
+    }
+
+    /// Kamerayı kapatmadan RoomPlan sonucunu ince beyaz hatlar halinde gösterir.
+    /// Görsel parçalar collision üretmez; yüzey başına tek görünmez collider kullanılır.
+    /// Böylece hem çizim maliyeti düşük kalır hem de kullanıcı taranmış zeminin tamamına
+    /// dekor yerleştirebilir.
+    @discardableResult
+    func renderOutline(
+        roomJSONURL: URL,
+        alignmentTransform: simd_float4x4 = matrix_identity_float4x4
+    ) throws -> RoomRealityRenderReport {
+        let room = try Self.loadRoomJSON(from: roomJSONURL)
+        return try renderOutline(room: room, alignmentTransform: alignmentTransform)
+    }
+
+    @discardableResult
+    func renderOutline(
+        room: CapturedRoom,
+        alignmentTransform: simd_float4x4 = matrix_identity_float4x4
+    ) throws -> RoomRealityRenderReport {
+        guard Self.isValidAffineTransform(alignmentTransform) else {
+            throw RoomRealityRendererError.invalidAlignmentTransform
+        }
+
+        generatedBoxCount = 0
+        let stagingEntity = Entity()
+        stagingEntity.name = "cinear.reality.room.content"
+        stagingEntity.transform = Transform(matrix: alignmentTransform)
+
+        let walls = Array(room.walls.prefix(Self.maximumWalls))
+        let floors = Array(room.floors.prefix(Self.maximumFloors))
+        let doors = Array(room.doors.prefix(Self.maximumPortalsPerKind))
+        let windows = Array(room.windows.prefix(Self.maximumPortalsPerKind))
+        let openings = Array(room.openings.prefix(Self.maximumPortalsPerKind))
+        let objects = Array(room.objects.prefix(Self.maximumObjects))
+
+        let whiteLine = RealityMaterialRecipe(
+            1, 1, 1,
+            alpha: 0.42,
+            roughness: 0.18
+        ).makeMaterial()
+        let objectLine = RealityMaterialRecipe(
+            0.82, 0.94, 1,
+            alpha: 0.36,
+            roughness: 0.18
+        ).makeMaterial()
+
+        var wallCount = 0
+        var floorCount = 0
+        var portalCount = 0
+        var objectCount = 0
+        var skippedCount =
+            (room.walls.count - walls.count)
+            + (room.floors.count - floors.count)
+            + (room.doors.count - doors.count)
+            + (room.windows.count - windows.count)
+            + (room.openings.count - openings.count)
+            + (room.objects.count - objects.count)
+
+        for surface in walls {
+            if let entity = makeSurfaceOutlineEntity(surface, material: whiteLine) {
+                stagingEntity.addChild(entity)
+                wallCount += 1
+            } else {
+                skippedCount += 1
+            }
+        }
+        for surface in floors {
+            if let entity = makeSurfaceOutlineEntity(surface, material: whiteLine) {
+                stagingEntity.addChild(entity)
+                floorCount += 1
+            } else {
+                skippedCount += 1
+            }
+        }
+        for surface in doors + windows + openings {
+            if let entity = makeSurfaceOutlineEntity(surface, material: whiteLine) {
+                stagingEntity.addChild(entity)
+                portalCount += 1
+            } else {
+                skippedCount += 1
+            }
+        }
+
+        var objectsByID: [UUID: CapturedRoom.Object] = [:]
+        for object in objects where objectsByID[object.identifier] == nil {
+            objectsByID[object.identifier] = object
+        }
+        let suppressedObjectIDs = nestedObjectIDsToSuppress(objectsByID: objectsByID)
+        for object in objects where !suppressedObjectIDs.contains(object.identifier) {
+            if let entity = makeObjectOutlineEntity(object, material: objectLine) {
+                stagingEntity.addChild(entity)
+                objectCount += 1
+            } else {
+                skippedCount += 1
+            }
+        }
+
+        let report = RoomRealityRenderReport(
+            wallCount: wallCount,
+            floorCount: floorCount,
+            ceilingCount: 0,
+            portalCount: portalCount,
+            objectCount: objectCount,
+            skippedElementCount: skippedCount,
+            polygonApproximationCount: 0,
+            inferredPortalAssociationCount: 0,
+            unmatchedPortalCount: 0,
+            suppressedNestedObjectCount: suppressedObjectIDs.count
+        )
+        guard report.renderedElementCount > 0 else {
+            throw RoomRealityRendererError.emptyRoom
+        }
+
+        contentEntity.removeFromParent()
+        contentEntity = stagingEntity
+        rootEntity.addChild(contentEntity)
+        hasPreparedOutline = true
+        lastRoom = room
+        lastAlignmentTransform = alignmentTransform
+        lastReport = report
+        return report
     }
 
     static func loadRoomJSON(from url: URL) throws -> CapturedRoom {
@@ -389,6 +514,61 @@ private extension RoomRealityRenderer {
         var aperturesByWallID: [UUID: [CapturedRoom.Surface]] = [:]
         var inferredCount = 0
         var unmatchedCount = 0
+    }
+
+    func makeSurfaceOutlineEntity(
+        _ surface: CapturedRoom.Surface,
+        material: PhysicallyBasedMaterial
+    ) -> Entity? {
+        guard let bounds = Self.surfaceBounds(surface),
+              Self.isValidAffineTransform(surface.transform) else { return nil }
+
+        let root = Entity()
+        root.name = "cinear.reality.outline.surface.\(surface.identifier.uuidString)"
+        root.transform = Transform(matrix: surface.transform)
+        let lineWidth: Float = 0.012
+        let lineDepth: Float = 0.008
+        let center = bounds.center
+        let countBefore = generatedBoxCount
+
+        addBox(
+            to: root,
+            size: [bounds.width, lineWidth, lineDepth],
+            position: [center.x, bounds.minY, 0],
+            material: material,
+            includeCollision: false
+        )
+        addBox(
+            to: root,
+            size: [bounds.width, lineWidth, lineDepth],
+            position: [center.x, bounds.maxY, 0],
+            material: material,
+            includeCollision: false
+        )
+        addBox(
+            to: root,
+            size: [lineWidth, bounds.height, lineDepth],
+            position: [bounds.minX, center.y, 0],
+            material: material,
+            includeCollision: false
+        )
+        addBox(
+            to: root,
+            size: [lineWidth, bounds.height, lineDepth],
+            position: [bounds.maxX, center.y, 0],
+            material: material,
+            includeCollision: false
+        )
+
+        let collider = Entity()
+        collider.name = "cinear.reality.outline.surface.collider"
+        collider.position = [center.x, center.y, 0]
+        collider.scale = [bounds.width, bounds.height, 0.025]
+        collider.components.set(
+            CollisionComponent(shapes: [Self.unitBoxCollisionShape])
+        )
+        root.addChild(collider)
+        return generatedBoxCount > countBefore ? root : nil
     }
 
     func makeWallEntity(
@@ -1051,6 +1231,64 @@ private extension RoomRealityRenderer {
 // MARK: - Recognized room objects
 
 private extension RoomRealityRenderer {
+    func makeObjectOutlineEntity(
+        _ object: CapturedRoom.Object,
+        material: PhysicallyBasedMaterial
+    ) -> Entity? {
+        guard let size = Self.objectDimensions(object.dimensions),
+              Self.isValidAffineTransform(object.transform) else { return nil }
+
+        let root = Entity()
+        root.name = "cinear.reality.outline.object.\(object.identifier.uuidString)"
+        root.transform = Transform(matrix: object.transform)
+        let half = size * 0.5
+        let lineWidth: Float = 0.012
+        let countBefore = generatedBoxCount
+
+        for y in [-half.y, half.y] {
+            for z in [-half.z, half.z] {
+                addBox(
+                    to: root,
+                    size: [size.x, lineWidth, lineWidth],
+                    position: [0, y, z],
+                    material: material,
+                    includeCollision: false
+                )
+            }
+        }
+        for x in [-half.x, half.x] {
+            for z in [-half.z, half.z] {
+                addBox(
+                    to: root,
+                    size: [lineWidth, size.y, lineWidth],
+                    position: [x, 0, z],
+                    material: material,
+                    includeCollision: false
+                )
+            }
+        }
+        for x in [-half.x, half.x] {
+            for y in [-half.y, half.y] {
+                addBox(
+                    to: root,
+                    size: [lineWidth, lineWidth, size.z],
+                    position: [x, y, 0],
+                    material: material,
+                    includeCollision: false
+                )
+            }
+        }
+
+        let collider = Entity()
+        collider.name = "cinear.reality.outline.object.collider"
+        collider.scale = size
+        collider.components.set(
+            CollisionComponent(shapes: [Self.unitBoxCollisionShape])
+        )
+        root.addChild(collider)
+        return generatedBoxCount > countBefore ? root : nil
+    }
+
     func nestedObjectIDsToSuppress(
         objectsByID: [UUID: CapturedRoom.Object]
     ) -> Set<UUID> {
@@ -1550,7 +1788,8 @@ private extension RoomRealityRenderer {
         size: SIMD3<Float>,
         position: SIMD3<Float>,
         material: PhysicallyBasedMaterial,
-        cornerRadius: Float = 0.003
+        cornerRadius: Float = 0.003,
+        includeCollision: Bool = true
     ) -> Bool {
         guard generatedBoxCount < Self.maximumGeneratedBoxCount,
               size.x.isFinite, size.y.isFinite, size.z.isFinite,
@@ -1575,7 +1814,9 @@ private extension RoomRealityRenderer {
         // The visual mesh is a shared unit box whose entity scale supplies its actual
         // dimensions. Reusing the matching unit collision shape keeps hundreds of room
         // pieces cheap while making the scanned room available to placement hit tests.
-        entity.collision = CollisionComponent(shapes: [Self.unitBoxCollisionShape])
+        if includeCollision {
+            entity.collision = CollisionComponent(shapes: [Self.unitBoxCollisionShape])
+        }
         parent.addChild(entity)
         generatedBoxCount += 1
         return true

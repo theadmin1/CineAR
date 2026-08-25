@@ -19,6 +19,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case toilet
     case washerDryer
     case stairs
+    case plant
+    case floorLamp
+    case rug
+    case backdrop
     case custom
 
     var id: String { rawValue }
@@ -43,6 +47,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .toilet: "Tuvalet"
         case .washerDryer: "Çamaşır Makinesi"
         case .stairs: "Merdiven"
+        case .plant: "Salon Bitkisi"
+        case .floorLamp: "Ayaklı Lamba"
+        case .rug: "Halı"
+        case .backdrop: "Fon Perdesi"
         case .custom: "USDZ"
         }
     }
@@ -67,6 +75,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .toilet: "🚽"
         case .washerDryer: "🧺"
         case .stairs: "🪜"
+        case .plant: "🪴"
+        case .floorLamp: "🏮"
+        case .rug: "🟫"
+        case .backdrop: "🎞️"
         case .custom: "🎭"
         }
     }
@@ -75,7 +87,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
 
     static let furnitureCases: [PropKind] = [
         .chair, .table, .sofa, .bed, .bookcase, .television, .refrigerator,
-        .oven, .stove, .sink, .bathtub, .toilet, .washerDryer, .stairs
+        .oven, .stove, .sink, .bathtub, .toilet, .washerDryer, .stairs,
+        .plant, .floorLamp, .rug, .backdrop
     ]
 
     var bundledAssetName: String? {
@@ -94,7 +107,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .toilet: "toilet"
         case .washerDryer: "washerDryerStacked"
         case .stairs: "stairs"
-        case .wall, .stage, .crate, .lightPanel, .custom: nil
+        case .wall, .stage, .crate, .lightPanel, .plant, .floorLamp,
+             .rug, .backdrop, .custom: nil
         }
     }
 

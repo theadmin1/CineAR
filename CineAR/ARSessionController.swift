@@ -1,6 +1,7 @@
 import ARKit
 import Combine
 import RealityKit
+import RoomPlan
 import simd
 import SwiftUI
 import UIKit
@@ -20,6 +21,7 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var hasScannedRoom = false
     @Published private(set) var isARReady = false
     @Published private(set) var isPlacingProp = false
+    @Published private(set) var isRoomOutlineVisible = false
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -49,6 +51,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var isPostScanThemeScheduled = false
     private var postScanThemeGeneration: UInt64 = 0
     private var isRoomRealityRendering = false
+    private var lastKnownFloorY: Float?
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
 
@@ -86,6 +89,7 @@ final class ARSessionController: NSObject, ObservableObject {
         view.session.delegateQueue = .main
         view.session.delegate = self
         view.environment.sceneUnderstanding.options.insert(.occlusion)
+        view.renderOptions.remove(.disablePersonOcclusion)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         tap.cancelsTouchesInView = false
@@ -144,9 +148,14 @@ final class ARSessionController: NSObject, ObservableObject {
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
         selectedEntityID = nil
+        isRoomOutlineVisible = false
         guard let arView else { return }
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
+        lastKnownFloorY = nil
+        if roomCoordinateSpaceIsActive {
+            updateKnownFloorFromRoomData()
+        }
         arView.session.delegateQueue = .main
         arView.session.delegate = self
         arView.session.run(
@@ -166,6 +175,7 @@ final class ARSessionController: NSObject, ObservableObject {
         realityThemeToRestoreAfterScan = themeAwaitingSafeRestore
             ?? (roomRealityRenderer.isVisible ? activeRealityThemeID : nil)
         roomRealityRenderer.isVisible = false
+        isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         arView?.isHidden = true
         // RoomPlan already performs its own LiDAR processing. Temporarily omit the
@@ -202,6 +212,7 @@ final class ARSessionController: NSObject, ObservableObject {
             roomRealityRenderer.isVisible = false
             activeRealityThemeID = nil
             preferredRealityThemeID = nil
+            isRoomOutlineVisible = false
             themeToSchedule = nil
             UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
             var invalidationMessage: String?
@@ -216,8 +227,9 @@ final class ARSessionController: NSObject, ObservableObject {
                     .red
                 )
             } else {
+                updateKnownFloorFromRoomData()
                 completionStatus = (
-                    "Tarama kaydedildi — yüzey çizimi kapalı, gerçek kamera görünümü etkin",
+                    "Tarama kaydedildi — Gerçek veya Beyaz Hatlar görünümünü seçebilirsin",
                     .green
                 )
             }
@@ -274,7 +286,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         isRoomRealityRendering = true
-        setPhysicalSceneOcclusion(enabled: false)
+        setPhysicalSceneOcclusion(enabled: true)
         defer { isRoomRealityRendering = false }
 
         do {
@@ -287,9 +299,10 @@ final class ARSessionController: NSObject, ObservableObject {
             roomRealityRenderer.isVisible = true
             activeRealityThemeID = id
             preferredRealityThemeID = id
+            isRoomOutlineVisible = false
             hasScannedRoom = true
             UserDefaults.standard.set(id.rawValue, forKey: Self.realityThemeDefaultsKey)
-            setPhysicalSceneOcclusion(enabled: false)
+            setPhysicalSceneOcclusion(enabled: true)
             var notices: [String] = []
             if report.polygonApproximationCount > 0 {
                 notices.append("\(report.polygonApproximationCount) yüzey yaklaşıklandı")
@@ -306,6 +319,7 @@ final class ARSessionController: NSObject, ObservableObject {
         } catch {
             roomRealityRenderer.isVisible = false
             activeRealityThemeID = nil
+            isRoomOutlineVisible = false
             setPhysicalSceneOcclusion(enabled: true)
             publishStatus("Oda teması uygulanamadı: \(error.localizedDescription)", color: .red)
         }
@@ -317,9 +331,64 @@ final class ARSessionController: NSObject, ObservableObject {
         roomRealityRenderer.isVisible = false
         activeRealityThemeID = nil
         preferredRealityThemeID = nil
+        isRoomOutlineVisible = false
         UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
         setPhysicalSceneOcclusion(enabled: true)
         publishStatus("Gerçek oda görünümü etkin; eklediğin objeler korunuyor", color: .green)
+    }
+
+    func showRoomOutline() {
+        cancelPendingPostScanTheme()
+        shouldRestoreRoomRealityAfterInterruption = false
+        guard !isRoomScanActive, !isSessionInterrupted else {
+            publishStatus("Tarama veya AR kesintisi bittiğinde tekrar dene", color: .yellow)
+            return
+        }
+        guard let arView else {
+            publishStatus("AR görünümü henüz hazır değil", color: .red)
+            return
+        }
+        guard FileManager.default.fileExists(atPath: roomDataURL.path) else {
+            hasScannedRoom = false
+            publishStatus("Beyaz oda hatları için önce Oda Tara'yı tamamla", color: .yellow)
+            return
+        }
+        guard roomCoordinateSpaceIsActive else {
+            publishStatus("Kayıtlı oda hatlarını hizalamak için sahne haritasını Yükle", color: .yellow)
+            return
+        }
+        guard let trackingState = arView.session.currentFrame?.camera.trackingState,
+              case .normal = trackingState else {
+            publishStatus("Kamera takibi hazır olduğunda tekrar dene", color: .yellow)
+            return
+        }
+
+        do {
+            roomRealityRenderer.install(in: arView)
+            let report: RoomRealityRenderReport
+            if roomRealityRenderer.hasPreparedOutline,
+               let preparedReport = roomRealityRenderer.lastReport {
+                report = preparedReport
+            } else {
+                report = try roomRealityRenderer.renderOutline(roomJSONURL: roomDataURL)
+            }
+            roomRealityRenderer.isVisible = true
+            isRoomOutlineVisible = true
+            activeRealityThemeID = nil
+            preferredRealityThemeID = nil
+            UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
+            setPhysicalSceneOcclusion(enabled: true)
+            updateKnownFloorFromRoomData()
+            publishStatus(
+                "Beyaz Hatlar etkin — \(report.renderedElementCount) tarama öğesi gösteriliyor",
+                color: .green
+            )
+        } catch {
+            roomRealityRenderer.isVisible = false
+            isRoomOutlineVisible = false
+            setPhysicalSceneOcclusion(enabled: true)
+            publishStatus("Oda hatları gösterilemedi: \(error.localizedDescription)", color: .red)
+        }
     }
 
     func selectProp(_ prop: PropKind) {
@@ -444,6 +513,21 @@ final class ARSessionController: NSObject, ObservableObject {
         // the user's tap meaningful by placing the object along that exact screen ray.
         if let ray = arView.ray(through: point) {
             let direction = simd_normalize(ray.direction)
+            if prop != .wall,
+               prop != .lightPanel,
+               direction.y < -0.025 {
+                let floorY = lastKnownFloorY ?? (ray.origin.y - 1.40)
+                let distance = (floorY - ray.origin.y) / direction.y
+                if distance.isFinite, distance >= 0.20, distance <= 6.0 {
+                    let position = ray.origin + direction * distance
+                    return placementTransform(
+                        position: position,
+                        normal: [0, 1, 0],
+                        prop: prop,
+                        cameraPosition: arView.cameraTransform.translation
+                    )
+                }
+            }
             let position = ray.origin + direction * 1.5
             return placementTransform(
                 position: position,
@@ -453,6 +537,34 @@ final class ARSessionController: NSObject, ObservableObject {
             )
         }
         return nil
+    }
+
+    private func updateKnownFloorFromRoomData() {
+        guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
+        let levels = room.floors.compactMap { floor -> Float? in
+            let y = floor.transform.columns.3.y
+            return y.isFinite ? y : nil
+        }.sorted()
+        if !levels.isEmpty {
+            lastKnownFloorY = levels[levels.count / 2]
+        }
+    }
+
+    private func updateKnownFloor(from anchors: [ARAnchor]) {
+        guard let cameraY = arView?.session.currentFrame?.camera.transform.columns.3.y else { return }
+        let planes = anchors.compactMap { $0 as? ARPlaneAnchor }.filter {
+            $0.alignment == .horizontal
+        }
+        let classifiedFloors = planes.filter { $0.classification == .floor }
+        let candidates = classifiedFloors.isEmpty ? planes : classifiedFloors
+        let levels = candidates.map { $0.transform.columns.3.y }.filter {
+            $0.isFinite && $0 < cameraY - 0.20
+        }
+        if let closest = levels.min(by: {
+            abs($0 - (cameraY - 1.40)) < abs($1 - (cameraY - 1.40))
+        }) {
+            lastKnownFloorY = closest
+        }
     }
 
     private func placementTransform(
@@ -874,6 +986,10 @@ final class ARSessionController: NSObject, ObservableObject {
             switch prop {
             case .stage: height = 0.09
             case .crate: height = 0.275
+            case .plant: height = 0.18
+            case .floorLamp: height = 0.025
+            case .rug: height = 0.006
+            case .backdrop: height = 0.90
             case .lightPanel, .wall, .chair, .table, .sofa, .bed, .bookcase,
                  .television, .refrigerator, .oven, .stove, .sink, .bathtub,
                  .toilet, .washerDryer, .stairs, .custom:
@@ -922,7 +1038,8 @@ final class ARSessionController: NSObject, ObservableObject {
         case .toilet: (.toilet, [0.70, 0.82, 0.76])
         case .washerDryer: (.washerDryer, [0.72, 1.62, 0.72])
         case .stairs: (.stairs, [1.20, 1.20, 2.00])
-        case .wall, .stage, .crate, .lightPanel, .custom: nil
+        case .wall, .stage, .crate, .lightPanel, .plant, .floorLamp,
+             .rug, .backdrop, .custom: nil
         }
     }
 
@@ -956,6 +1073,70 @@ final class ARSessionController: NSObject, ObservableObject {
             var material = UnlitMaterial()
             material.color = .init(tint: .white)
             return ModelEntity(mesh: mesh, materials: [material])
+
+        case .plant:
+            let potMaterial = SimpleMaterial(
+                color: UIColor(red: 0.45, green: 0.20, blue: 0.10, alpha: 1),
+                roughness: 0.88,
+                isMetallic: false
+            )
+            let leafMaterial = SimpleMaterial(
+                color: UIColor(red: 0.10, green: 0.42, blue: 0.16, alpha: 1),
+                roughness: 0.82,
+                isMetallic: false
+            )
+            let root = ModelEntity(
+                mesh: .generateBox(size: [0.34, 0.36, 0.34], cornerRadius: 0.06),
+                materials: [potMaterial]
+            )
+            let foliage = ModelEntity(mesh: .generateSphere(radius: 0.36), materials: [leafMaterial])
+            foliage.position = [0, 0.48, 0]
+            root.addChild(foliage)
+            return root
+
+        case .floorLamp:
+            let frameMaterial = SimpleMaterial(color: .darkGray, roughness: 0.34, isMetallic: true)
+            var lightMaterial = UnlitMaterial()
+            lightMaterial.color = .init(tint: UIColor(red: 1, green: 0.89, blue: 0.65, alpha: 1))
+            let root = ModelEntity(
+                mesh: .generateBox(size: [0.34, 0.05, 0.34], cornerRadius: 0.025),
+                materials: [frameMaterial]
+            )
+            let pole = ModelEntity(
+                mesh: .generateBox(width: 0.035, height: 1.38, depth: 0.035),
+                materials: [frameMaterial]
+            )
+            pole.position = [0, 0.70, 0]
+            let shade = ModelEntity(
+                mesh: .generateBox(size: [0.42, 0.30, 0.42], cornerRadius: 0.06),
+                materials: [lightMaterial]
+            )
+            shade.position = [0, 1.40, 0]
+            root.addChild(pole)
+            root.addChild(shade)
+            return root
+
+        case .rug:
+            let material = SimpleMaterial(
+                color: UIColor(red: 0.26, green: 0.43, blue: 0.52, alpha: 1),
+                roughness: 0.96,
+                isMetallic: false
+            )
+            return ModelEntity(
+                mesh: .generateBox(size: [1.80, 0.012, 1.20], cornerRadius: 0.08),
+                materials: [material]
+            )
+
+        case .backdrop:
+            let material = SimpleMaterial(
+                color: UIColor(red: 0.08, green: 0.10, blue: 0.14, alpha: 1),
+                roughness: 0.76,
+                isMetallic: false
+            )
+            return ModelEntity(
+                mesh: .generateBox(size: [2.40, 1.80, 0.045], cornerRadius: 0.025),
+                materials: [material]
+            )
 
         case .chair, .table, .sofa, .bed, .bookcase, .television,
              .refrigerator, .oven, .stove, .sink, .bathtub, .toilet,
@@ -996,6 +1177,7 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         roomRealityRenderer.isVisible = false
+        isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: true)
         pendingRealityThemeAfterScan = preferredRealityThemeID
         if let trackingState = arView?.session.currentFrame?.camera.trackingState {
@@ -1066,7 +1248,7 @@ final class ARSessionController: NSObject, ObservableObject {
             if self.roomRealityRenderer.lastReport != nil,
                self.activeRealityThemeID == themeID {
                 self.roomRealityRenderer.isVisible = true
-                self.setPhysicalSceneOcclusion(enabled: false)
+                self.setPhysicalSceneOcclusion(enabled: true)
                 let theme = RealityThemeCatalog.theme(withID: themeID)
                 self.publishStatus("\(theme.title) oda gerçekliği yeniden hizalandı", color: .green)
                 return
@@ -1088,6 +1270,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        updateKnownFloor(from: anchors)
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.insert(anchor.identifier)
@@ -1095,6 +1278,10 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
                 self?.render(prop: descriptor.kind, id: descriptor.id, for: anchor)
             }
         }
+    }
+
+    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+        updateKnownFloor(from: anchors)
     }
 
     func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
@@ -1167,6 +1354,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
                 && roomRealityRenderer.isVisible
             )
         roomRealityRenderer.isVisible = false
+        isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: true)
 
         guard !didAttemptSessionFailureRecovery else {
@@ -1208,6 +1396,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             && activeRealityThemeID != nil
             && roomRealityRenderer.isVisible
         roomRealityRenderer.isVisible = false
+        isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: true)
         publishStatus("AR oturumu kesildi — aynı alanda kalın", color: .yellow)
     }

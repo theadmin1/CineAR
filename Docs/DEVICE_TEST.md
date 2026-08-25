@@ -15,24 +15,30 @@
    tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
 3. Tarama boyunca kamera hareketinin akici oldugunu, ana gorunume donuste gercek
    insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
-4. Kasa'yi sec. Alt panel otomatik kapanmali; once zeminin panelin daha once kapattigi
+4. `Beyaz Hatlar`i ac; duvar, zemin, kapi/pencere ve taninan buyuk objelerin yalniz
+   ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
+   butun hatlarin kayboldugunu dogrula.
+5. Kasa'yi sec. Alt panel otomatik kapanmali; once zeminin panelin daha once kapattigi
    alt bolgesine, sonra orta ve uzak bolgesine dokun. Her dokunusta kasa gorunmeli.
-5. Hazir 3B Nesne Kutuphanesi'nden sandalye, masa, koltuk, yatak ve iki cihaz secip
+   Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
+6. Hazir 3B Nesne Kutuphanesi'nden sandalye, masa, koltuk, yatak ve iki cihaz secip
    yerlestir. Boyutlar gercekci olmali ve modeller zeminin altina gomulmemeli.
-6. Duvar, platform ve en az iki farkli USDZ model yerlestir; manuel objelerin
+7. Henuz tam siniflandirilmamis ama kamerada gorunen bir zemin noktasina dokun;
+   fallback yerlestirme nesneyi kamera yuksekliginden tahmin edilen zemine oturtmali.
+8. Duvar, platform ve en az iki farkli USDZ model yerlestir; manuel objelerin
    konumunun ve parmak hareketlerinin korundugunu dogrula.
-7. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-8. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-9. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
+9. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
+10. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+11. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
-10. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
-   hatalarini kaydet.
-11. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
-12. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
+12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
+   modlarinda insan derinlik maskesinin acik kaldigini ve kenar hatalarini kaydet.
+13. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
+14. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-13. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-14. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+15. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+16. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
