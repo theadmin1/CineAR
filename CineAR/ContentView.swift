@@ -92,7 +92,7 @@ struct ContentView: View {
         VStack(spacing: 12) {
             roomRealityControls
 
-            Text("Nesne seçildiğinde bu panel kapanır; zeminin istediğin yerine dokunabilirsin")
+            Text("Nesne seçildiğinde panel kapanır; yeşil takipte algılanmış zemine dokun")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -315,7 +315,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(session.selectedProp.title) yerleştir")
                     .font(.subheadline.weight(.bold))
-                Text("Zemine veya görünen yüzeye dokun")
+                Text("Yeşil takipte algılanmış zemine veya duvara dokun")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

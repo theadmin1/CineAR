@@ -21,7 +21,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 
 - Yatay/dikey yuzey algilama ve dunya koordinatlarina AR anchor yerlestirme
 - LiDAR cihazlarda mesh reconstruction ve scene depth
-- Person segmentation with depth ve gercek mekan mesh'i ile occlusion
+- Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
+  mekan mesh'iyle occlusion
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
 - Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
@@ -34,8 +35,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
-- Dekorlari surukleme, dondurme ve olceklendirme
-- Duzlem bulunamasa bile dokunulan ekran isiniyla tahmini zemini kesistiren yerlestirme fallback'i
+- Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
+- Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
+  tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
+- Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
+- Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization
@@ -55,12 +59,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
    `Hazir 3B Nesne Kutuphanesi` icindeki 18 parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
-7. Kontrol paneli otomatik kapandiginda zeminin istediginiz noktasina dokunun;
-   sonra modeli parmak hareketleriyle duzenleyin. Yerlesimden sonra yalniz kompakt
+7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken algilanmis zemine
+   dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
+   koymaz; zemini yavasca taramanizi ister. Konum dunya anchor'ina kilitlenir;
+   modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
-8. Tarama sonrasinda ilk dunya haritasi otomatik kaydedilir. Dekor ekleyip tasidiktan
-   sonra son konumlari saklamak icin `Kaydet` tusuna basin; takip hazir degilse istek
-   siraya alinir ve otomatik tamamlanir.
+8. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
+   Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
+   degilse istek siraya alinir ve otomatik tamamlanir.
 9. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
 

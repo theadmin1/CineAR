@@ -55,6 +55,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
+    private var pendingAutoSaveAnchorIDs = Set<UUID>()
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
 
@@ -124,8 +125,12 @@ final class ARSessionController: NSObject, ObservableObject {
         if enableAdvancedOcclusion,
            ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
             configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        } else if enableAdvancedOcclusion,
-                  ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+        }
+        // Keep scene depth alongside person depth when the device supports both.
+        // Person segmentation handles people; scene depth/mesh handles furniture
+        // crossing in front of a virtual prop.
+        if enableAdvancedOcclusion,
+           ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
         }
         return configuration
@@ -417,7 +422,7 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
             isPlacingProp = true
-            publishStatus("\(prop.title) seçildi — panel kapandı, istediğin yüzeye dokun", color: .blue)
+            publishStatus("\(prop.title) seçildi — kararlı yüzey görünce dokun", color: .blue)
         }
     }
 
@@ -435,14 +440,18 @@ final class ARSessionController: NSObject, ObservableObject {
            let hitEntity = arView.entity(at: point),
            let id = entityID(from: hitEntity) {
             selectedEntityID = id
-            publishStatus("Dekor seçildi — sürükle, döndür veya ölçekle", color: .blue)
+            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
             return
         }
 
         guard isPlacingProp else { return }
 
-        guard !isRoomScanActive, !isSessionInterrupted, isARReady else {
-            publishStatus("Kamera takibi hazır olduğunda tekrar dokun", color: .yellow)
+        guard !isRoomScanActive,
+              !isSessionInterrupted,
+              isARReady,
+              let trackingState = arView.session.currentFrame?.camera.trackingState,
+              case .normal = trackingState else {
+            publishStatus("Kararlı yerleştirme için telefonu yavaşlat ve yeşil takibi bekle", color: .yellow)
             return
         }
 
@@ -451,7 +460,10 @@ final class ARSessionController: NSObject, ObservableObject {
             at: point,
             for: selectedProp
         ) else {
-            publishStatus("Yüzey bulunamadı; telefonu biraz daha hareket ettir", color: .yellow)
+            publishStatus(
+                "Kararlı yüzey bulunamadı — zemini yavaşça tara, sonra tekrar dokun",
+                color: .yellow
+            )
             return
         }
 
@@ -473,6 +485,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 transform: placementTransform
             )
             knownPropAnchorIDs.insert(anchor.identifier)
+            pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
             isPlacingProp = false
@@ -498,23 +511,25 @@ final class ARSessionController: NSObject, ObservableObject {
         // RoomPlan replacement scene is virtual RealityKit content, so ARKit's plane
         // raycast below cannot intersect it on its own.
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point) {
-            return placementTransform(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: arView.cameraTransform.translation
-            )
+            let verticalComponent = abs(simd_normalize(hit.normal).y)
+            let acceptsSurface = (prop == .wall || prop == .lightPanel)
+                ? verticalComponent < 0.45
+                : verticalComponent > 0.72
+            if acceptsSurface {
+                return placementTransform(
+                    position: hit.position,
+                    normal: hit.normal,
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
+            }
         }
 
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
             (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
             (.existingPlaneGeometry, preferredAlignment),
-            (.existingPlaneInfinite, preferredAlignment),
-            (.estimatedPlane, preferredAlignment),
-            (.existingPlaneGeometry, .any),
-            (.existingPlaneInfinite, .any),
-            (.estimatedPlane, .any)
+            (.existingPlaneInfinite, preferredAlignment)
         ]
 
         for (target, alignment) in queries {
@@ -527,33 +542,9 @@ final class ARSessionController: NSObject, ObservableObject {
             }
         }
 
-        // Last-resort free placement: even before ARKit has classified a plane, keep
-        // the user's tap meaningful by placing the object along that exact screen ray.
-        if let ray = arView.ray(through: point) {
-            let direction = simd_normalize(ray.direction)
-            if prop != .wall,
-               prop != .lightPanel,
-               direction.y < -0.025 {
-                let floorY = lastKnownFloorY ?? (ray.origin.y - 1.40)
-                let distance = (floorY - ray.origin.y) / direction.y
-                if distance.isFinite, distance >= 0.20, distance <= 6.0 {
-                    let position = ray.origin + direction * distance
-                    return placementTransform(
-                        position: position,
-                        normal: [0, 1, 0],
-                        prop: prop,
-                        cameraPosition: arView.cameraTransform.translation
-                    )
-                }
-            }
-            let position = ray.origin + direction * 1.5
-            return placementTransform(
-                position: position,
-                normal: -direction,
-                prop: prop,
-                cameraPosition: arView.cameraTransform.translation
-            )
-        }
+        // Do not fabricate a camera-relative point. Such an object looks acceptable
+        // for a single frame but visibly swims once the camera moves. The user keeps
+        // placement mode active until ARKit has a persistent plane/RoomPlan surface.
         return nil
     }
 
@@ -679,7 +670,7 @@ final class ARSessionController: NSObject, ObservableObject {
             selectedAssetURL = importedURL
             selectedProp = .custom
             isPlacingProp = true
-            publishStatus("\(importedURL.lastPathComponent) seçildi — istediğin yüzeye dokun", color: .green)
+            publishStatus("\(importedURL.lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .green)
         } catch {
             publishStatus("USDZ içe aktarılamadı: \(error.localizedDescription)", color: .red)
         }
@@ -694,7 +685,7 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedProp = .custom
         selectedEntityID = nil
         isPlacingProp = true
-        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — istediğin yüzeye dokun", color: .blue)
+        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .blue)
     }
 
     func saveWorldMap() {
@@ -803,14 +794,8 @@ final class ARSessionController: NSObject, ObservableObject {
                     return
                 }
             case .limited(let reason)?:
-                switch reason {
-                case .initializing, .relocalizing:
-                    self.isARReady = false
-                case .excessiveMotion, .insufficientFeatures:
-                    self.isARReady = true
-                @unknown default:
-                    self.isARReady = false
-                }
+                _ = reason
+                self.isARReady = false
             case .notAvailable?, nil:
                 self.isARReady = false
             }
@@ -1023,10 +1008,13 @@ final class ARSessionController: NSObject, ObservableObject {
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
+        addContactShadow(to: entity, for: prop)
         anchorEntity.addChild(entity)
         arView.scene.addAnchor(anchorEntity)
 
-        arView.installGestures(.all, for: entity)
+        // Translation is deliberately excluded: a placed prop stays bound to its
+        // world anchor. Rotation and scale remain available for art direction.
+        arView.installGestures([.rotation, .scale], for: entity)
 
         renderedAnchorIDs.insert(anchor.identifier)
         renderedEntities[id] = entity
@@ -1123,6 +1111,46 @@ final class ARSessionController: NSObject, ObservableObject {
         return root
     }
 
+    private func addContactShadow(to entity: ModelEntity, for prop: PropKind) {
+        guard let contact = groundContactDescriptor(for: prop) else { return }
+        let material = RealityMaterialRecipe(
+            0.015, 0.018, 0.022,
+            alpha: 0.20,
+            roughness: 1
+        ).makeMaterial()
+        let shadow = ModelEntity(
+            mesh: .generateSphere(radius: 0.5),
+            materials: [material]
+        )
+        shadow.name = "cinear.contact-shadow"
+        shadow.scale = [contact.width, 0.006, contact.depth]
+        shadow.position = [0, contact.localY, 0]
+        entity.addChild(shadow)
+    }
+
+    private func groundContactDescriptor(
+        for prop: PropKind
+    ) -> (width: Float, depth: Float, localY: Float)? {
+        if let descriptor = libraryDescriptor(for: prop) {
+            return (
+                descriptor.dimensions.x * 0.82,
+                descriptor.dimensions.z * 0.82,
+                -descriptor.dimensions.y * 0.5 + 0.004
+            )
+        }
+        switch prop {
+        case .stage: (1.82, 1.22, -0.086)
+        case .crate: (0.48, 0.48, -0.271)
+        case .plant: (0.31, 0.31, -0.176)
+        case .floorLamp: (0.30, 0.30, -0.021)
+        case .backdrop: (2.10, 0.18, -0.896)
+        case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
+             .bed, .bookcase, .television, .refrigerator, .oven, .stove,
+             .sink, .bathtub, .toilet, .washerDryer, .stairs:
+            nil
+        }
+    }
+
     private func libraryDescriptor(
         for prop: PropKind
     ) -> (role: RealityObjectRole, dimensions: SIMD3<Float>)? {
@@ -1199,24 +1227,43 @@ final class ARSessionController: NSObject, ObservableObject {
 
         case .floorLamp:
             let frameMaterial = SimpleMaterial(color: .darkGray, roughness: 0.34, isMetallic: true)
-            var lightMaterial = UnlitMaterial()
-            lightMaterial.color = .init(tint: UIColor(red: 1, green: 0.89, blue: 0.65, alpha: 1))
+            let shadeMaterial = SimpleMaterial(
+                color: UIColor(red: 0.84, green: 0.77, blue: 0.63, alpha: 1),
+                roughness: 0.72,
+                isMetallic: false
+            )
+            var bulbMaterial = UnlitMaterial()
+            bulbMaterial.color = .init(
+                tint: UIColor(red: 1, green: 0.84, blue: 0.54, alpha: 1)
+            )
             let root = ModelEntity(
-                mesh: .generateBox(size: [0.34, 0.05, 0.34], cornerRadius: 0.025),
+                mesh: .generateBox(size: [0.32, 0.045, 0.32], cornerRadius: 0.06),
                 materials: [frameMaterial]
             )
             let pole = ModelEntity(
-                mesh: .generateBox(width: 0.035, height: 1.38, depth: 0.035),
+                mesh: .generateBox(width: 0.025, height: 1.34, depth: 0.025),
                 materials: [frameMaterial]
             )
-            pole.position = [0, 0.70, 0]
-            let shade = ModelEntity(
-                mesh: .generateBox(size: [0.42, 0.30, 0.42], cornerRadius: 0.06),
-                materials: [lightMaterial]
+            pole.position = [0, 0.69, 0]
+            let lowerShade = ModelEntity(
+                mesh: .generateBox(size: [0.36, 0.17, 0.36], cornerRadius: 0.085),
+                materials: [shadeMaterial]
             )
-            shade.position = [0, 1.40, 0]
+            lowerShade.position = [0, 1.34, 0]
+            let upperShade = ModelEntity(
+                mesh: .generateBox(size: [0.28, 0.15, 0.28], cornerRadius: 0.075),
+                materials: [shadeMaterial]
+            )
+            upperShade.position = [0, 1.48, 0]
+            let bulb = ModelEntity(
+                mesh: .generateSphere(radius: 0.065),
+                materials: [bulbMaterial]
+            )
+            bulb.position = [0, 1.31, 0]
             root.addChild(pole)
-            root.addChild(shade)
+            root.addChild(lowerShade)
+            root.addChild(upperShade)
+            root.addChild(bulb)
             return root
 
         case .rug:
@@ -1374,11 +1421,22 @@ final class ARSessionController: NSObject, ObservableObject {
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         updateKnownFloor(from: anchors)
+        var shouldScheduleAutomaticSave = false
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.insert(anchor.identifier)
+            if pendingAutoSaveAnchorIDs.remove(anchor.identifier) != nil {
+                shouldScheduleAutomaticSave = true
+            }
             DispatchQueue.main.async { [weak self] in
                 self?.render(prop: descriptor.kind, id: descriptor.id, for: anchor)
+            }
+        }
+        if shouldScheduleAutomaticSave {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
+                guard let self, !self.isRoomScanActive, !self.isSessionInterrupted else { return }
+                self.shouldSaveWorldMapWhenReady = true
+                self.scheduleReadinessRecovery()
             }
         }
     }
@@ -1428,14 +1486,9 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             isARReady = false
             publishStatus("Kamera takibi kullanılamıyor", color: .red)
         case .limited(let reason):
-            switch reason {
-            case .initializing, .relocalizing:
-                isARReady = false
-            case .excessiveMotion, .insufficientFeatures:
-                isARReady = true
-            @unknown default:
-                isARReady = false
-            }
+            // Limited tracking may still render an existing scene, but accepting a
+            // new anchor here is the main source of visible placement drift.
+            isARReady = false
             let message: String
             switch reason {
             case .initializing: message = "AR oturumu hazırlanıyor"

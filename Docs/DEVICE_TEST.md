@@ -28,14 +28,17 @@
    Ozellikle `Kitaplik` seciminde hata mesaji cikmamali. USDZ bundle yuklemesi yapay
    olarak basarisiz kilindiginda kategoriye uygun prosedurel yedek yine gorunmeli.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
-7. Henuz tam siniflandirilmamis ama kamerada gorunen bir zemin noktasina dokun;
-   fallback yerlestirme nesneyi kamera yuksekliginden tahmin edilen zemine oturtmali.
-8. Duvar, platform ve en az iki farkli USDZ model yerlestir; manuel objelerin
-   konumunun ve parmak hareketlerinin korundugunu dogrula.
-9. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-10. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-    Ayrica yeni bir tarama yapip manuel `Kaydet`e basmadan uygulamayi yeniden ac;
-    tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilabilmeli.
+7. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
+   uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
+   acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
+   hazir oldugunda ayni dokunus nesneyi zemine sabitlemeli.
+8. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
+   golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula.
+9. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
+   olceklendirme calismali. Donus/olcek sonrasinda projeyi kaydet.
+10. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
+    kapat, ayni alanda ac ve projeyi yukle; dekor anchor'i otomatik kayitla gelmeli.
+    Ayrica yeni tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilmali.
 11. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`

@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.6.0`
-- Proje build numarası: `8`
+- Uygulama sürümü: `0.7.0`
+- Proje build numarası: `9`
 - Git dalı: `main`
-- Kaynak commit: `912bb18d69c27fdb3162f58a41ae499f60524743`
-- Oluşturulma zamanı: `2026-08-25 14:49:28 +03:00`
+- Kaynak commit: `e33ce34e5a2ac2ceb25f68a598defdefb9724b76`
+- Oluşturulma zamanı: `2026-08-25 15:40:44 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -175,14 +175,14 @@ Yok.
 | `.gitignore` | 25 | 473 |
 | `CineAR.xcodeproj/project.pbxproj` | 272 | 12828 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 1617 | 64905 |
+| `CineAR/ARSessionController.swift` | 1670 | 67265 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 320 | 13780 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 392 | 14804 |
+| `CineAR/ContentView.swift` | 392 | 14820 |
 | `CineAR/Info.plist` | 49 | 1582 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 136 | 3813 |
@@ -194,9 +194,9 @@ Yok.
 | `CineAR/SceneProjectStore.swift` | 352 | 13489 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 72 | 4010 |
+| `Docs/DEVICE_TEST.md` | 75 | 4282 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 109 | 5816 |
+| `README.md` | 115 | 6288 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/generate_all_in_one_markdown.ps1` | 345 | 17794 |
 | `Tools/render_usdz_thumbnails.py` | 94 | 3522 |
@@ -443,13 +443,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.6.0;
+				MARKETING_VERSION = 0.7.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -466,12 +466,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.6.0;
+				MARKETING_VERSION = 0.7.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -598,6 +598,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
+    private var pendingAutoSaveAnchorIDs = Set<UUID>()
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
 
@@ -667,8 +668,12 @@ final class ARSessionController: NSObject, ObservableObject {
         if enableAdvancedOcclusion,
            ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
             configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        } else if enableAdvancedOcclusion,
-                  ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+        }
+        // Keep scene depth alongside person depth when the device supports both.
+        // Person segmentation handles people; scene depth/mesh handles furniture
+        // crossing in front of a virtual prop.
+        if enableAdvancedOcclusion,
+           ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
         }
         return configuration
@@ -960,7 +965,7 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
             isPlacingProp = true
-            publishStatus("\(prop.title) seçildi — panel kapandı, istediğin yüzeye dokun", color: .blue)
+            publishStatus("\(prop.title) seçildi — kararlı yüzey görünce dokun", color: .blue)
         }
     }
 
@@ -978,14 +983,18 @@ final class ARSessionController: NSObject, ObservableObject {
            let hitEntity = arView.entity(at: point),
            let id = entityID(from: hitEntity) {
             selectedEntityID = id
-            publishStatus("Dekor seçildi — sürükle, döndür veya ölçekle", color: .blue)
+            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
             return
         }
 
         guard isPlacingProp else { return }
 
-        guard !isRoomScanActive, !isSessionInterrupted, isARReady else {
-            publishStatus("Kamera takibi hazır olduğunda tekrar dokun", color: .yellow)
+        guard !isRoomScanActive,
+              !isSessionInterrupted,
+              isARReady,
+              let trackingState = arView.session.currentFrame?.camera.trackingState,
+              case .normal = trackingState else {
+            publishStatus("Kararlı yerleştirme için telefonu yavaşlat ve yeşil takibi bekle", color: .yellow)
             return
         }
 
@@ -994,7 +1003,10 @@ final class ARSessionController: NSObject, ObservableObject {
             at: point,
             for: selectedProp
         ) else {
-            publishStatus("Yüzey bulunamadı; telefonu biraz daha hareket ettir", color: .yellow)
+            publishStatus(
+                "Kararlı yüzey bulunamadı — zemini yavaşça tara, sonra tekrar dokun",
+                color: .yellow
+            )
             return
         }
 
@@ -1016,6 +1028,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 transform: placementTransform
             )
             knownPropAnchorIDs.insert(anchor.identifier)
+            pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
             isPlacingProp = false
@@ -1041,23 +1054,25 @@ final class ARSessionController: NSObject, ObservableObject {
         // RoomPlan replacement scene is virtual RealityKit content, so ARKit's plane
         // raycast below cannot intersect it on its own.
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point) {
-            return placementTransform(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: arView.cameraTransform.translation
-            )
+            let verticalComponent = abs(simd_normalize(hit.normal).y)
+            let acceptsSurface = (prop == .wall || prop == .lightPanel)
+                ? verticalComponent < 0.45
+                : verticalComponent > 0.72
+            if acceptsSurface {
+                return placementTransform(
+                    position: hit.position,
+                    normal: hit.normal,
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
+            }
         }
 
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
             (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
             (.existingPlaneGeometry, preferredAlignment),
-            (.existingPlaneInfinite, preferredAlignment),
-            (.estimatedPlane, preferredAlignment),
-            (.existingPlaneGeometry, .any),
-            (.existingPlaneInfinite, .any),
-            (.estimatedPlane, .any)
+            (.existingPlaneInfinite, preferredAlignment)
         ]
 
         for (target, alignment) in queries {
@@ -1070,33 +1085,9 @@ final class ARSessionController: NSObject, ObservableObject {
             }
         }
 
-        // Last-resort free placement: even before ARKit has classified a plane, keep
-        // the user's tap meaningful by placing the object along that exact screen ray.
-        if let ray = arView.ray(through: point) {
-            let direction = simd_normalize(ray.direction)
-            if prop != .wall,
-               prop != .lightPanel,
-               direction.y < -0.025 {
-                let floorY = lastKnownFloorY ?? (ray.origin.y - 1.40)
-                let distance = (floorY - ray.origin.y) / direction.y
-                if distance.isFinite, distance >= 0.20, distance <= 6.0 {
-                    let position = ray.origin + direction * distance
-                    return placementTransform(
-                        position: position,
-                        normal: [0, 1, 0],
-                        prop: prop,
-                        cameraPosition: arView.cameraTransform.translation
-                    )
-                }
-            }
-            let position = ray.origin + direction * 1.5
-            return placementTransform(
-                position: position,
-                normal: -direction,
-                prop: prop,
-                cameraPosition: arView.cameraTransform.translation
-            )
-        }
+        // Do not fabricate a camera-relative point. Such an object looks acceptable
+        // for a single frame but visibly swims once the camera moves. The user keeps
+        // placement mode active until ARKit has a persistent plane/RoomPlan surface.
         return nil
     }
 
@@ -1222,7 +1213,7 @@ final class ARSessionController: NSObject, ObservableObject {
             selectedAssetURL = importedURL
             selectedProp = .custom
             isPlacingProp = true
-            publishStatus("\(importedURL.lastPathComponent) seçildi — istediğin yüzeye dokun", color: .green)
+            publishStatus("\(importedURL.lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .green)
         } catch {
             publishStatus("USDZ içe aktarılamadı: \(error.localizedDescription)", color: .red)
         }
@@ -1237,7 +1228,7 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedProp = .custom
         selectedEntityID = nil
         isPlacingProp = true
-        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — istediğin yüzeye dokun", color: .blue)
+        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .blue)
     }
 
     func saveWorldMap() {
@@ -1346,14 +1337,8 @@ final class ARSessionController: NSObject, ObservableObject {
                     return
                 }
             case .limited(let reason)?:
-                switch reason {
-                case .initializing, .relocalizing:
-                    self.isARReady = false
-                case .excessiveMotion, .insufficientFeatures:
-                    self.isARReady = true
-                @unknown default:
-                    self.isARReady = false
-                }
+                _ = reason
+                self.isARReady = false
             case .notAvailable?, nil:
                 self.isARReady = false
             }
@@ -1566,10 +1551,13 @@ final class ARSessionController: NSObject, ObservableObject {
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
+        addContactShadow(to: entity, for: prop)
         anchorEntity.addChild(entity)
         arView.scene.addAnchor(anchorEntity)
 
-        arView.installGestures(.all, for: entity)
+        // Translation is deliberately excluded: a placed prop stays bound to its
+        // world anchor. Rotation and scale remain available for art direction.
+        arView.installGestures([.rotation, .scale], for: entity)
 
         renderedAnchorIDs.insert(anchor.identifier)
         renderedEntities[id] = entity
@@ -1666,6 +1654,46 @@ final class ARSessionController: NSObject, ObservableObject {
         return root
     }
 
+    private func addContactShadow(to entity: ModelEntity, for prop: PropKind) {
+        guard let contact = groundContactDescriptor(for: prop) else { return }
+        let material = RealityMaterialRecipe(
+            0.015, 0.018, 0.022,
+            alpha: 0.20,
+            roughness: 1
+        ).makeMaterial()
+        let shadow = ModelEntity(
+            mesh: .generateSphere(radius: 0.5),
+            materials: [material]
+        )
+        shadow.name = "cinear.contact-shadow"
+        shadow.scale = [contact.width, 0.006, contact.depth]
+        shadow.position = [0, contact.localY, 0]
+        entity.addChild(shadow)
+    }
+
+    private func groundContactDescriptor(
+        for prop: PropKind
+    ) -> (width: Float, depth: Float, localY: Float)? {
+        if let descriptor = libraryDescriptor(for: prop) {
+            return (
+                descriptor.dimensions.x * 0.82,
+                descriptor.dimensions.z * 0.82,
+                -descriptor.dimensions.y * 0.5 + 0.004
+            )
+        }
+        switch prop {
+        case .stage: (1.82, 1.22, -0.086)
+        case .crate: (0.48, 0.48, -0.271)
+        case .plant: (0.31, 0.31, -0.176)
+        case .floorLamp: (0.30, 0.30, -0.021)
+        case .backdrop: (2.10, 0.18, -0.896)
+        case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
+             .bed, .bookcase, .television, .refrigerator, .oven, .stove,
+             .sink, .bathtub, .toilet, .washerDryer, .stairs:
+            nil
+        }
+    }
+
     private func libraryDescriptor(
         for prop: PropKind
     ) -> (role: RealityObjectRole, dimensions: SIMD3<Float>)? {
@@ -1742,24 +1770,43 @@ final class ARSessionController: NSObject, ObservableObject {
 
         case .floorLamp:
             let frameMaterial = SimpleMaterial(color: .darkGray, roughness: 0.34, isMetallic: true)
-            var lightMaterial = UnlitMaterial()
-            lightMaterial.color = .init(tint: UIColor(red: 1, green: 0.89, blue: 0.65, alpha: 1))
+            let shadeMaterial = SimpleMaterial(
+                color: UIColor(red: 0.84, green: 0.77, blue: 0.63, alpha: 1),
+                roughness: 0.72,
+                isMetallic: false
+            )
+            var bulbMaterial = UnlitMaterial()
+            bulbMaterial.color = .init(
+                tint: UIColor(red: 1, green: 0.84, blue: 0.54, alpha: 1)
+            )
             let root = ModelEntity(
-                mesh: .generateBox(size: [0.34, 0.05, 0.34], cornerRadius: 0.025),
+                mesh: .generateBox(size: [0.32, 0.045, 0.32], cornerRadius: 0.06),
                 materials: [frameMaterial]
             )
             let pole = ModelEntity(
-                mesh: .generateBox(width: 0.035, height: 1.38, depth: 0.035),
+                mesh: .generateBox(width: 0.025, height: 1.34, depth: 0.025),
                 materials: [frameMaterial]
             )
-            pole.position = [0, 0.70, 0]
-            let shade = ModelEntity(
-                mesh: .generateBox(size: [0.42, 0.30, 0.42], cornerRadius: 0.06),
-                materials: [lightMaterial]
+            pole.position = [0, 0.69, 0]
+            let lowerShade = ModelEntity(
+                mesh: .generateBox(size: [0.36, 0.17, 0.36], cornerRadius: 0.085),
+                materials: [shadeMaterial]
             )
-            shade.position = [0, 1.40, 0]
+            lowerShade.position = [0, 1.34, 0]
+            let upperShade = ModelEntity(
+                mesh: .generateBox(size: [0.28, 0.15, 0.28], cornerRadius: 0.075),
+                materials: [shadeMaterial]
+            )
+            upperShade.position = [0, 1.48, 0]
+            let bulb = ModelEntity(
+                mesh: .generateSphere(radius: 0.065),
+                materials: [bulbMaterial]
+            )
+            bulb.position = [0, 1.31, 0]
             root.addChild(pole)
-            root.addChild(shade)
+            root.addChild(lowerShade)
+            root.addChild(upperShade)
+            root.addChild(bulb)
             return root
 
         case .rug:
@@ -1917,11 +1964,22 @@ final class ARSessionController: NSObject, ObservableObject {
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         updateKnownFloor(from: anchors)
+        var shouldScheduleAutomaticSave = false
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.insert(anchor.identifier)
+            if pendingAutoSaveAnchorIDs.remove(anchor.identifier) != nil {
+                shouldScheduleAutomaticSave = true
+            }
             DispatchQueue.main.async { [weak self] in
                 self?.render(prop: descriptor.kind, id: descriptor.id, for: anchor)
+            }
+        }
+        if shouldScheduleAutomaticSave {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
+                guard let self, !self.isRoomScanActive, !self.isSessionInterrupted else { return }
+                self.shouldSaveWorldMapWhenReady = true
+                self.scheduleReadinessRecovery()
             }
         }
     }
@@ -1971,14 +2029,9 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             isARReady = false
             publishStatus("Kamera takibi kullanılamıyor", color: .red)
         case .limited(let reason):
-            switch reason {
-            case .initializing, .relocalizing:
-                isARReady = false
-            case .excessiveMotion, .insufficientFeatures:
-                isARReady = true
-            @unknown default:
-                isARReady = false
-            }
+            // Limited tracking may still render an existing scene, but accepting a
+            // new anchor here is the main source of visible placement drift.
+            isARReady = false
             let message: String
             switch reason {
             case .initializing: message = "AR oturumu hazırlanıyor"
@@ -2672,7 +2725,7 @@ struct ContentView: View {
         VStack(spacing: 12) {
             roomRealityControls
 
-            Text("Nesne seçildiğinde bu panel kapanır; zeminin istediğin yerine dokunabilirsin")
+            Text("Nesne seçildiğinde panel kapanır; yeşil takipte algılanmış zemine dokun")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -2895,7 +2948,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(session.selectedProp.title) yerleştir")
                     .font(.subheadline.weight(.bold))
-                Text("Zemine veya görünen yüzeye dokun")
+                Text("Yeşil takipte algılanmış zemine veya duvara dokun")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -6996,14 +7049,17 @@ incelemesine uygulama gondermesi mumkun degildir.
    Ozellikle `Kitaplik` seciminde hata mesaji cikmamali. USDZ bundle yuklemesi yapay
    olarak basarisiz kilindiginda kategoriye uygun prosedurel yedek yine gorunmeli.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
-7. Henuz tam siniflandirilmamis ama kamerada gorunen bir zemin noktasina dokun;
-   fallback yerlestirme nesneyi kamera yuksekliginden tahmin edilen zemine oturtmali.
-8. Duvar, platform ve en az iki farkli USDZ model yerlestir; manuel objelerin
-   konumunun ve parmak hareketlerinin korundugunu dogrula.
-9. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-10. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-    Ayrica yeni bir tarama yapip manuel `Kaydet`e basmadan uygulamayi yeniden ac;
-    tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilabilmeli.
+7. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
+   uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
+   acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
+   hazir oldugunda ayni dokunus nesneyi zemine sabitlemeli.
+8. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
+   golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula.
+9. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
+   olceklendirme calismali. Donus/olcek sonrasinda projeyi kaydet.
+10. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
+    kapat, ayni alanda ac ve projeyi yukle; dekor anchor'i otomatik kayitla gelmeli.
+    Ayrica yeni tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilmali.
 11. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
@@ -7094,7 +7150,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 
 - Yatay/dikey yuzey algilama ve dunya koordinatlarina AR anchor yerlestirme
 - LiDAR cihazlarda mesh reconstruction ve scene depth
-- Person segmentation with depth ve gercek mekan mesh'i ile occlusion
+- Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
+  mekan mesh'iyle occlusion
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
 - Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
@@ -7107,8 +7164,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
-- Dekorlari surukleme, dondurme ve olceklendirme
-- Duzlem bulunamasa bile dokunulan ekran isiniyla tahmini zemini kesistiren yerlestirme fallback'i
+- Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
+- Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
+  tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
+- Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
+- Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization
@@ -7128,12 +7188,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
    `Hazir 3B Nesne Kutuphanesi` icindeki 18 parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
-7. Kontrol paneli otomatik kapandiginda zeminin istediginiz noktasina dokunun;
-   sonra modeli parmak hareketleriyle duzenleyin. Yerlesimden sonra yalniz kompakt
+7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken algilanmis zemine
+   dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
+   koymaz; zemini yavasca taramanizi ister. Konum dunya anchor'ina kilitlenir;
+   modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
-8. Tarama sonrasinda ilk dunya haritasi otomatik kaydedilir. Dekor ekleyip tasidiktan
-   sonra son konumlari saklamak icin `Kaydet` tusuna basin; takip hazir degilse istek
-   siraya alinir ve otomatik tamamlanir.
+8. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
+   Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
+   degilse istek siraya alinir ve otomatik tamamlanir.
 9. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
 
