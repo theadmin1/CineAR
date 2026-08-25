@@ -65,6 +65,8 @@ final class RoomRealityRenderer {
     let rootEntity: AnchorEntity
 
     private var contentEntity = Entity()
+    private let physicalOcclusionRootEntity: AnchorEntity
+    private var physicalOcclusionContentEntity = Entity()
     private let assetProvider: (any RoomRealityAssetProviding)?
     private weak var installedARView: ARView?
     private var lastRoom: CapturedRoom?
@@ -93,13 +95,19 @@ final class RoomRealityRenderer {
     private(set) var selectedThemeID: RealityThemeID = .modern
     private(set) var lastReport: RoomRealityRenderReport?
     private(set) var hasPreparedOutline = false
+    private(set) var hasPreparedPhysicalOcclusion = false
 
     init(assetProvider: (any RoomRealityAssetProviding)? = nil) {
         self.assetProvider = assetProvider
         rootEntity = AnchorEntity(world: .zero)
+        physicalOcclusionRootEntity = AnchorEntity(world: .zero)
         rootEntity.name = "cinear.reality.room.root"
         contentEntity.name = "cinear.reality.room.content"
         rootEntity.addChild(contentEntity)
+        physicalOcclusionRootEntity.name = "cinear.reality.physical-occlusion.root"
+        physicalOcclusionContentEntity.name = "cinear.reality.physical-occlusion.content"
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+        physicalOcclusionRootEntity.isEnabled = false
     }
 
     var isVisible: Bool {
@@ -107,20 +115,33 @@ final class RoomRealityRenderer {
         set { rootEntity.isEnabled = newValue }
     }
 
+    var isPhysicalOcclusionVisible: Bool {
+        get { physicalOcclusionRootEntity.isEnabled }
+        set {
+            physicalOcclusionRootEntity.isEnabled = newValue && hasPreparedPhysicalOcclusion
+        }
+    }
+
     /// Renderer kökünü ARView'a yalnız bir kez takar; mevcut manuel dekorlara dokunmaz.
     func install(in arView: ARView) {
         if installedARView !== arView {
             installedARView?.scene.removeAnchor(rootEntity)
+            installedARView?.scene.removeAnchor(physicalOcclusionRootEntity)
         }
         if rootEntity.scene !== arView.scene {
             rootEntity.scene?.removeAnchor(rootEntity)
             arView.scene.addAnchor(rootEntity)
+        }
+        if physicalOcclusionRootEntity.scene !== arView.scene {
+            physicalOcclusionRootEntity.scene?.removeAnchor(physicalOcclusionRootEntity)
+            arView.scene.addAnchor(physicalOcclusionRootEntity)
         }
         installedARView = arView
     }
 
     func removeFromScene() {
         installedARView?.scene.removeAnchor(rootEntity)
+        installedARView?.scene.removeAnchor(physicalOcclusionRootEntity)
         installedARView = nil
     }
 
@@ -139,11 +160,55 @@ final class RoomRealityRenderer {
         contentEntity = Entity()
         contentEntity.name = "cinear.reality.room.content"
         rootEntity.addChild(contentEntity)
+        physicalOcclusionContentEntity.removeFromParent()
+        physicalOcclusionContentEntity = Entity()
+        physicalOcclusionContentEntity.name = "cinear.reality.physical-occlusion.content"
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+        physicalOcclusionRootEntity.isEnabled = false
         lastRoom = nil
         lastReport = nil
         hasPreparedOutline = false
+        hasPreparedPhysicalOcclusion = false
         lastAlignmentTransform = matrix_identity_float4x4
         contentEntity.transform = .identity
+    }
+
+    /// Gerçek kamera görünümünde RoomPlan'ın tanıdığı mobilyaları görünmez derinlik
+    /// yazıcılarına çevirir. Böylece örneğin gerçek bir masa, arkasındaki sanal
+    /// dekoru canlı LiDAR mesh'i kısa süreli kaçırsa bile doğru biçimde örter.
+    @discardableResult
+    func preparePhysicalOcclusion(
+        roomJSONURL: URL,
+        alignmentTransform: simd_float4x4 = matrix_identity_float4x4
+    ) throws -> Int {
+        let room = try Self.loadRoomJSON(from: roomJSONURL)
+        guard Self.isValidAffineTransform(alignmentTransform) else {
+            throw RoomRealityRendererError.invalidAlignmentTransform
+        }
+
+        let stagingEntity = Entity()
+        stagingEntity.name = "cinear.reality.physical-occlusion.content"
+        stagingEntity.transform = Transform(matrix: alignmentTransform)
+
+        let objects = Array(room.objects.prefix(Self.maximumObjects))
+        var objectsByID: [UUID: CapturedRoom.Object] = [:]
+        for object in objects where objectsByID[object.identifier] == nil {
+            objectsByID[object.identifier] = object
+        }
+        let suppressedIDs = nestedObjectIDsToSuppress(objectsByID: objectsByID)
+        var count = 0
+        for object in objects where !suppressedIDs.contains(object.identifier) {
+            guard let occluder = makePhysicalOcclusionEntity(object) else { continue }
+            stagingEntity.addChild(occluder)
+            count += 1
+        }
+
+        physicalOcclusionContentEntity.removeFromParent()
+        physicalOcclusionContentEntity = stagingEntity
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+        hasPreparedPhysicalOcclusion = count > 0
+        physicalOcclusionRootEntity.isEnabled = count > 0
+        return count
     }
 
     /// `alignmentTransform`, taramadaki dünya koordinatlarını etkin ARSession koordinatlarına taşır.
@@ -1231,6 +1296,85 @@ private extension RoomRealityRenderer {
 // MARK: - Recognized room objects
 
 private extension RoomRealityRenderer {
+    func makePhysicalOcclusionEntity(_ object: CapturedRoom.Object) -> Entity? {
+        guard let size = Self.objectDimensions(object.dimensions),
+              Self.isValidAffineTransform(object.transform) else { return nil }
+
+        let root = Entity()
+        root.name = "cinear.reality.physical-occlusion.object.\(object.identifier.uuidString)"
+        root.transform = Transform(matrix: object.transform)
+
+        switch Self.role(for: object.category) {
+        case .table:
+            let topHeight = min(max(size.y * 0.10, 0.035), 0.12)
+            let legWidth = min(max(min(size.x, size.z) * 0.09, 0.025), 0.10)
+            let legHeight = max(size.y - topHeight, 0.03)
+            addPhysicalOcclusionBox(
+                to: root,
+                size: [size.x, topHeight, size.z],
+                position: [0, size.y * 0.5 - topHeight * 0.5, 0]
+            )
+            let insetX = max(size.x * 0.5 - legWidth, 0)
+            let insetZ = max(size.z * 0.5 - legWidth, 0)
+            for x in [-insetX, insetX] {
+                for z in [-insetZ, insetZ] {
+                    addPhysicalOcclusionBox(
+                        to: root,
+                        size: [legWidth, legHeight, legWidth],
+                        position: [x, -topHeight * 0.5, z]
+                    )
+                }
+            }
+        case .chair:
+            let seatHeight = size.y * 0.48
+            let seatThickness = min(max(size.y * 0.10, 0.035), 0.10)
+            let legWidth = min(max(min(size.x, size.z) * 0.09, 0.018), 0.055)
+            addPhysicalOcclusionBox(
+                to: root,
+                size: [size.x * 0.92, seatThickness, size.z * 0.86],
+                position: [0, -size.y * 0.5 + seatHeight, 0]
+            )
+            addPhysicalOcclusionBox(
+                to: root,
+                size: [size.x * 0.92, size.y * 0.48, max(size.z * 0.10, 0.035)],
+                position: [0, size.y * 0.25, -size.z * 0.40]
+            )
+            let insetX = max(size.x * 0.40, 0)
+            let insetZ = max(size.z * 0.34, 0)
+            for x in [-insetX, insetX] {
+                for z in [-insetZ, insetZ] {
+                    addPhysicalOcclusionBox(
+                        to: root,
+                        size: [legWidth, seatHeight, legWidth],
+                        position: [x, -size.y * 0.5 + seatHeight * 0.5, z]
+                    )
+                }
+            }
+        case .unknown:
+            return nil
+        case .bathtub, .bed, .dishwasher, .fireplace, .oven, .refrigerator,
+             .sink, .sofa, .stairs, .storage, .stove, .television, .toilet,
+             .washerDryer:
+            addPhysicalOcclusionBox(to: root, size: size, position: .zero)
+        }
+        return root.children.isEmpty ? nil : root
+    }
+
+    func addPhysicalOcclusionBox(
+        to root: Entity,
+        size: SIMD3<Float>,
+        position: SIMD3<Float>
+    ) {
+        let box = ModelEntity(
+            mesh: Self.unitBoxMesh,
+            materials: [OcclusionMaterial()]
+        )
+        box.name = "cinear.reality.physical-occlusion.box"
+        box.scale = size
+        box.position = position
+        root.addChild(box)
+    }
+
     func makeObjectOutlineEntity(
         _ object: CapturedRoom.Object,
         material: PhysicallyBasedMaterial

@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.7.1`
-- Proje build numarası: `10`
+- Uygulama sürümü: `0.8.0`
+- Proje build numarası: `11`
 - Git dalı: `main`
-- Kaynak commit: `330c124ab41e21a1a849cf8c34e6c9485d8583d6`
-- Oluşturulma zamanı: `2026-08-25 16:04:48 +03:00`
+- Kaynak commit: `0f5a03f1e8530a5f4b231d464e7bf85b5eb01c5d`
+- Oluşturulma zamanı: `2026-08-25 17:01:12 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -175,7 +175,7 @@ Yok.
 | `.gitignore` | 25 | 473 |
 | `CineAR.xcodeproj/project.pbxproj` | 272 | 12830 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 1670 | 67307 |
+| `CineAR/ARSessionController.swift` | 1759 | 71187 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -189,14 +189,14 @@ Yok.
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 15 | 1184 |
-| `CineAR/RoomRealityRenderer.swift` | 1914 | 71849 |
+| `CineAR/RoomRealityRenderer.swift` | 2058 | 78335 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
 | `CineAR/SceneProjectStore.swift` | 352 | 13489 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 75 | 4282 |
+| `Docs/DEVICE_TEST.md` | 80 | 4642 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 115 | 6288 |
+| `README.md` | 120 | 6731 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/generate_all_in_one_markdown.ps1` | 345 | 17794 |
 | `Tools/render_usdz_thumbnails.py` | 94 | 3522 |
@@ -443,13 +443,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.7.1;
+				MARKETING_VERSION = 0.8.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -466,12 +466,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.7.1;
+				MARKETING_VERSION = 0.8.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -636,6 +636,7 @@ final class ARSessionController: NSObject, ObservableObject {
         view.session.delegateQueue = .main
         view.session.delegate = self
         view.environment.sceneUnderstanding.options.insert(.occlusion)
+        view.environment.sceneUnderstanding.options.insert(.collision)
         view.renderOptions.remove(.disablePersonOcclusion)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
@@ -715,6 +716,7 @@ final class ARSessionController: NSObject, ObservableObject {
             options: [.resetTracking, .removeExistingAnchors]
         )
         roomRealityRenderer.install(in: arView)
+        refreshPhysicalRoomOcclusionIfPossible()
         restoreRoomRealityIfPossible()
         scheduleReadinessRecovery()
     }
@@ -730,6 +732,7 @@ final class ARSessionController: NSObject, ObservableObject {
         realityThemeToRestoreAfterScan = themeAwaitingSafeRestore
             ?? (roomRealityRenderer.isVisible ? activeRealityThemeID : nil)
         roomRealityRenderer.isVisible = false
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         arView?.isHidden = true
@@ -804,6 +807,7 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
         arView?.session.run(configuration(), options: [])
+        refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
 
         if let completionStatus {
@@ -845,6 +849,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         isRoomRealityRendering = true
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
         setPhysicalSceneOcclusion(enabled: true)
         defer { isRoomRealityRendering = false }
 
@@ -880,6 +885,7 @@ final class ARSessionController: NSObject, ObservableObject {
             activeRealityThemeID = nil
             isRoomOutlineVisible = false
             setPhysicalSceneOcclusion(enabled: true)
+            refreshPhysicalRoomOcclusionIfPossible()
             publishStatus("Oda teması uygulanamadı: \(error.localizedDescription)", color: .red)
         }
     }
@@ -894,6 +900,7 @@ final class ARSessionController: NSObject, ObservableObject {
         shouldShowRoomOutlineWhenReady = false
         UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
         setPhysicalSceneOcclusion(enabled: true)
+        refreshPhysicalRoomOcclusionIfPossible()
         publishStatus("Gerçek oda görünümü etkin; eklediğin objeler korunuyor", color: .green)
     }
 
@@ -944,6 +951,7 @@ final class ARSessionController: NSObject, ObservableObject {
             UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
             setPhysicalSceneOcclusion(enabled: true)
             updateKnownFloorFromRoomData()
+            refreshPhysicalRoomOcclusionIfPossible()
             publishStatus(
                 "Beyaz Hatlar etkin — \(report.renderedElementCount) tarama öğesi gösteriliyor",
                 color: .green
@@ -1068,6 +1076,26 @@ final class ARSessionController: NSObject, ObservableObject {
             }
         }
 
+        // Scene-understanding collision is backed by the LiDAR reconstruction mesh.
+        // It catches stable horizontal surfaces such as tables even when ARKit has
+        // not promoted that patch to a plane anchor yet.
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
+            entityID(from: $0.entity) == nil && !belongsToRoomReality($0.entity)
+        }) {
+            let verticalComponent = abs(simd_normalize(hit.normal).y)
+            let acceptsSurface = (prop == .wall || prop == .lightPanel)
+                ? verticalComponent < 0.45
+                : verticalComponent > 0.72
+            if acceptsSurface {
+                return placementTransform(
+                    position: hit.position,
+                    normal: hit.normal,
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
+            }
+        }
+
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
             (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
@@ -1082,6 +1110,27 @@ final class ARSessionController: NSObject, ObservableObject {
                 alignment: alignment
             ).first {
                 return result.worldTransform
+            }
+        }
+
+        // A completed RoomPlan scan provides a persistent world-space floor level.
+        // Intersect the exact screen ray with that recorded floor instead of guessing
+        // from camera height. This remains stable while making the full floor tappable.
+        if prop != .wall,
+           prop != .lightPanel,
+           roomCoordinateSpaceIsActive,
+           let floorY = lastKnownFloorY,
+           let ray = arView.ray(through: point) {
+            let direction = simd_normalize(ray.direction)
+            guard direction.y < -0.025 else { return nil }
+            let distance = (floorY - ray.origin.y) / direction.y
+            if distance.isFinite, distance >= 0.20, distance <= 8.0 {
+                return placementTransform(
+                    position: ray.origin + direction * distance,
+                    normal: [0, 1, 0],
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
             }
         }
 
@@ -1612,6 +1661,15 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
+    private func belongsToRoomReality(_ entity: Entity) -> Bool {
+        var candidate: Entity? = entity
+        while let current = candidate {
+            if current.name.hasPrefix("cinear.reality.") { return true }
+            candidate = current.parent
+        }
+        return false
+    }
+
     private func defaultTransform(for prop: PropKind) -> Transform {
         let height: Float
         if let descriptor = libraryDescriptor(for: prop) {
@@ -1867,6 +1925,7 @@ final class ARSessionController: NSObject, ObservableObject {
               FileManager.default.fileExists(atPath: roomDataURL.path) else {
             roomRealityRenderer.isVisible = false
             setPhysicalSceneOcclusion(enabled: true)
+            refreshPhysicalRoomOcclusionIfPossible()
             return
         }
         roomRealityRenderer.isVisible = false
@@ -1951,12 +2010,42 @@ final class ARSessionController: NSObject, ObservableObject {
         return true
     }
 
+    @discardableResult
+    private func refreshPhysicalRoomOcclusionIfPossible() -> Bool {
+        guard !isRoomScanActive,
+              activeRealityThemeID == nil,
+              roomCoordinateSpaceIsActive,
+              let arView,
+              FileManager.default.fileExists(atPath: roomDataURL.path) else {
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            return false
+        }
+
+        roomRealityRenderer.install(in: arView)
+        if roomRealityRenderer.hasPreparedPhysicalOcclusion {
+            roomRealityRenderer.isPhysicalOcclusionVisible = true
+            return true
+        }
+        do {
+            let count = try roomRealityRenderer.preparePhysicalOcclusion(
+                roomJSONURL: roomDataURL
+            )
+            roomRealityRenderer.isPhysicalOcclusionVisible = count > 0
+            return count > 0
+        } catch {
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            return false
+        }
+    }
+
     private func setPhysicalSceneOcclusion(enabled: Bool) {
         guard let arView else { return }
         if enabled {
             arView.environment.sceneUnderstanding.options.insert(.occlusion)
+            arView.environment.sceneUnderstanding.options.insert(.collision)
         } else {
             arView.environment.sceneUnderstanding.options.remove(.occlusion)
+            arView.environment.sceneUnderstanding.options.remove(.collision)
         }
     }
 }
@@ -3982,6 +4071,8 @@ final class RoomRealityRenderer {
     let rootEntity: AnchorEntity
 
     private var contentEntity = Entity()
+    private let physicalOcclusionRootEntity: AnchorEntity
+    private var physicalOcclusionContentEntity = Entity()
     private let assetProvider: (any RoomRealityAssetProviding)?
     private weak var installedARView: ARView?
     private var lastRoom: CapturedRoom?
@@ -4010,13 +4101,19 @@ final class RoomRealityRenderer {
     private(set) var selectedThemeID: RealityThemeID = .modern
     private(set) var lastReport: RoomRealityRenderReport?
     private(set) var hasPreparedOutline = false
+    private(set) var hasPreparedPhysicalOcclusion = false
 
     init(assetProvider: (any RoomRealityAssetProviding)? = nil) {
         self.assetProvider = assetProvider
         rootEntity = AnchorEntity(world: .zero)
+        physicalOcclusionRootEntity = AnchorEntity(world: .zero)
         rootEntity.name = "cinear.reality.room.root"
         contentEntity.name = "cinear.reality.room.content"
         rootEntity.addChild(contentEntity)
+        physicalOcclusionRootEntity.name = "cinear.reality.physical-occlusion.root"
+        physicalOcclusionContentEntity.name = "cinear.reality.physical-occlusion.content"
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+        physicalOcclusionRootEntity.isEnabled = false
     }
 
     var isVisible: Bool {
@@ -4024,20 +4121,33 @@ final class RoomRealityRenderer {
         set { rootEntity.isEnabled = newValue }
     }
 
+    var isPhysicalOcclusionVisible: Bool {
+        get { physicalOcclusionRootEntity.isEnabled }
+        set {
+            physicalOcclusionRootEntity.isEnabled = newValue && hasPreparedPhysicalOcclusion
+        }
+    }
+
     /// Renderer kökünü ARView'a yalnız bir kez takar; mevcut manuel dekorlara dokunmaz.
     func install(in arView: ARView) {
         if installedARView !== arView {
             installedARView?.scene.removeAnchor(rootEntity)
+            installedARView?.scene.removeAnchor(physicalOcclusionRootEntity)
         }
         if rootEntity.scene !== arView.scene {
             rootEntity.scene?.removeAnchor(rootEntity)
             arView.scene.addAnchor(rootEntity)
+        }
+        if physicalOcclusionRootEntity.scene !== arView.scene {
+            physicalOcclusionRootEntity.scene?.removeAnchor(physicalOcclusionRootEntity)
+            arView.scene.addAnchor(physicalOcclusionRootEntity)
         }
         installedARView = arView
     }
 
     func removeFromScene() {
         installedARView?.scene.removeAnchor(rootEntity)
+        installedARView?.scene.removeAnchor(physicalOcclusionRootEntity)
         installedARView = nil
     }
 
@@ -4056,11 +4166,55 @@ final class RoomRealityRenderer {
         contentEntity = Entity()
         contentEntity.name = "cinear.reality.room.content"
         rootEntity.addChild(contentEntity)
+        physicalOcclusionContentEntity.removeFromParent()
+        physicalOcclusionContentEntity = Entity()
+        physicalOcclusionContentEntity.name = "cinear.reality.physical-occlusion.content"
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+        physicalOcclusionRootEntity.isEnabled = false
         lastRoom = nil
         lastReport = nil
         hasPreparedOutline = false
+        hasPreparedPhysicalOcclusion = false
         lastAlignmentTransform = matrix_identity_float4x4
         contentEntity.transform = .identity
+    }
+
+    /// Gerçek kamera görünümünde RoomPlan'ın tanıdığı mobilyaları görünmez derinlik
+    /// yazıcılarına çevirir. Böylece örneğin gerçek bir masa, arkasındaki sanal
+    /// dekoru canlı LiDAR mesh'i kısa süreli kaçırsa bile doğru biçimde örter.
+    @discardableResult
+    func preparePhysicalOcclusion(
+        roomJSONURL: URL,
+        alignmentTransform: simd_float4x4 = matrix_identity_float4x4
+    ) throws -> Int {
+        let room = try Self.loadRoomJSON(from: roomJSONURL)
+        guard Self.isValidAffineTransform(alignmentTransform) else {
+            throw RoomRealityRendererError.invalidAlignmentTransform
+        }
+
+        let stagingEntity = Entity()
+        stagingEntity.name = "cinear.reality.physical-occlusion.content"
+        stagingEntity.transform = Transform(matrix: alignmentTransform)
+
+        let objects = Array(room.objects.prefix(Self.maximumObjects))
+        var objectsByID: [UUID: CapturedRoom.Object] = [:]
+        for object in objects where objectsByID[object.identifier] == nil {
+            objectsByID[object.identifier] = object
+        }
+        let suppressedIDs = nestedObjectIDsToSuppress(objectsByID: objectsByID)
+        var count = 0
+        for object in objects where !suppressedIDs.contains(object.identifier) {
+            guard let occluder = makePhysicalOcclusionEntity(object) else { continue }
+            stagingEntity.addChild(occluder)
+            count += 1
+        }
+
+        physicalOcclusionContentEntity.removeFromParent()
+        physicalOcclusionContentEntity = stagingEntity
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+        hasPreparedPhysicalOcclusion = count > 0
+        physicalOcclusionRootEntity.isEnabled = count > 0
+        return count
     }
 
     /// `alignmentTransform`, taramadaki dünya koordinatlarını etkin ARSession koordinatlarına taşır.
@@ -5148,6 +5302,85 @@ private extension RoomRealityRenderer {
 // MARK: - Recognized room objects
 
 private extension RoomRealityRenderer {
+    func makePhysicalOcclusionEntity(_ object: CapturedRoom.Object) -> Entity? {
+        guard let size = Self.objectDimensions(object.dimensions),
+              Self.isValidAffineTransform(object.transform) else { return nil }
+
+        let root = Entity()
+        root.name = "cinear.reality.physical-occlusion.object.\(object.identifier.uuidString)"
+        root.transform = Transform(matrix: object.transform)
+
+        switch Self.role(for: object.category) {
+        case .table:
+            let topHeight = min(max(size.y * 0.10, 0.035), 0.12)
+            let legWidth = min(max(min(size.x, size.z) * 0.09, 0.025), 0.10)
+            let legHeight = max(size.y - topHeight, 0.03)
+            addPhysicalOcclusionBox(
+                to: root,
+                size: [size.x, topHeight, size.z],
+                position: [0, size.y * 0.5 - topHeight * 0.5, 0]
+            )
+            let insetX = max(size.x * 0.5 - legWidth, 0)
+            let insetZ = max(size.z * 0.5 - legWidth, 0)
+            for x in [-insetX, insetX] {
+                for z in [-insetZ, insetZ] {
+                    addPhysicalOcclusionBox(
+                        to: root,
+                        size: [legWidth, legHeight, legWidth],
+                        position: [x, -topHeight * 0.5, z]
+                    )
+                }
+            }
+        case .chair:
+            let seatHeight = size.y * 0.48
+            let seatThickness = min(max(size.y * 0.10, 0.035), 0.10)
+            let legWidth = min(max(min(size.x, size.z) * 0.09, 0.018), 0.055)
+            addPhysicalOcclusionBox(
+                to: root,
+                size: [size.x * 0.92, seatThickness, size.z * 0.86],
+                position: [0, -size.y * 0.5 + seatHeight, 0]
+            )
+            addPhysicalOcclusionBox(
+                to: root,
+                size: [size.x * 0.92, size.y * 0.48, max(size.z * 0.10, 0.035)],
+                position: [0, size.y * 0.25, -size.z * 0.40]
+            )
+            let insetX = max(size.x * 0.40, 0)
+            let insetZ = max(size.z * 0.34, 0)
+            for x in [-insetX, insetX] {
+                for z in [-insetZ, insetZ] {
+                    addPhysicalOcclusionBox(
+                        to: root,
+                        size: [legWidth, seatHeight, legWidth],
+                        position: [x, -size.y * 0.5 + seatHeight * 0.5, z]
+                    )
+                }
+            }
+        case .unknown:
+            return nil
+        case .bathtub, .bed, .dishwasher, .fireplace, .oven, .refrigerator,
+             .sink, .sofa, .stairs, .storage, .stove, .television, .toilet,
+             .washerDryer:
+            addPhysicalOcclusionBox(to: root, size: size, position: .zero)
+        }
+        return root.children.isEmpty ? nil : root
+    }
+
+    func addPhysicalOcclusionBox(
+        to root: Entity,
+        size: SIMD3<Float>,
+        position: SIMD3<Float>
+    ) {
+        let box = ModelEntity(
+            mesh: Self.unitBoxMesh,
+            materials: [OcclusionMaterial()]
+        )
+        box.name = "cinear.reality.physical-occlusion.box"
+        box.scale = size
+        box.position = position
+        root.addChild(box)
+    }
+
     func makeObjectOutlineEntity(
         _ object: CapturedRoom.Object,
         material: PhysicallyBasedMaterial
@@ -7052,7 +7285,9 @@ incelemesine uygulama gondermesi mumkun degildir.
 7. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
    uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
    acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
-   hazir oldugunda ayni dokunus nesneyi zemine sabitlemeli.
+   hazir oldugunda ayni dokunus nesneyi zemine sabitlemeli. RoomPlan taramasi
+   tamamlandiktan sonra ARKit'in ayri bir plane anchor uretmedigi uzak zemin
+   noktalarinda da kayitli zemin seviyesiyle yerlestirme calismali.
 8. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
    golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula.
 9. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
@@ -7064,6 +7299,9 @@ incelemesine uygulama gondermesi mumkun degildir.
    konum farkini olc.
 12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
    modlarinda insan derinlik maskesinin acik kaldigini ve kenar hatalarini kaydet.
+   RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
+   masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
+   bir kutu gibi gorunmemeli.
 13. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
 14. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
@@ -7167,6 +7405,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
+- LiDAR scene-understanding collision ve kayitli RoomPlan zemin seviyesi sayesinde
+  taranmis zeminin tamaminda kararli yerlestirme
+- RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
+  gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
@@ -7190,7 +7432,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken algilanmis zemine
    dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
-   koymaz; zemini yavasca taramanizi ister. Konum dunya anchor'ina kilitlenir;
+   koymaz; zemini yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
+   kayitli zemin duzlemi tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
    modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
 8. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
@@ -7238,7 +7481,7 @@ ayni rollere takmak icin hazirdir. Eski opak oda tema renderer'i kaynakta deneys
 olarak korunur; ana arayuzde onun yerine akici `Gercek` / `Beyaz Hatlar` gecisi vardir.
 Kamera goruntusundeki gercek mobilyayi yapay
 zekayla silip arka plani tamamlama (video inpainting) bu surumde yoktur; sanal
-yuzeyler ve derinlik/insan occlusion'i kullanilir.
+yuzeyler, RoomPlan mobilya derinlik vekilleri ve derinlik/insan occlusion'i kullanilir.
 
 Ayrintili kabul kriterleri icin `Docs/DEVICE_TEST.md` dosyasina bakin.
 ````

@@ -93,6 +93,7 @@ final class ARSessionController: NSObject, ObservableObject {
         view.session.delegateQueue = .main
         view.session.delegate = self
         view.environment.sceneUnderstanding.options.insert(.occlusion)
+        view.environment.sceneUnderstanding.options.insert(.collision)
         view.renderOptions.remove(.disablePersonOcclusion)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
@@ -172,6 +173,7 @@ final class ARSessionController: NSObject, ObservableObject {
             options: [.resetTracking, .removeExistingAnchors]
         )
         roomRealityRenderer.install(in: arView)
+        refreshPhysicalRoomOcclusionIfPossible()
         restoreRoomRealityIfPossible()
         scheduleReadinessRecovery()
     }
@@ -187,6 +189,7 @@ final class ARSessionController: NSObject, ObservableObject {
         realityThemeToRestoreAfterScan = themeAwaitingSafeRestore
             ?? (roomRealityRenderer.isVisible ? activeRealityThemeID : nil)
         roomRealityRenderer.isVisible = false
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         arView?.isHidden = true
@@ -261,6 +264,7 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
         arView?.session.run(configuration(), options: [])
+        refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
 
         if let completionStatus {
@@ -302,6 +306,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         isRoomRealityRendering = true
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
         setPhysicalSceneOcclusion(enabled: true)
         defer { isRoomRealityRendering = false }
 
@@ -337,6 +342,7 @@ final class ARSessionController: NSObject, ObservableObject {
             activeRealityThemeID = nil
             isRoomOutlineVisible = false
             setPhysicalSceneOcclusion(enabled: true)
+            refreshPhysicalRoomOcclusionIfPossible()
             publishStatus("Oda teması uygulanamadı: \(error.localizedDescription)", color: .red)
         }
     }
@@ -351,6 +357,7 @@ final class ARSessionController: NSObject, ObservableObject {
         shouldShowRoomOutlineWhenReady = false
         UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
         setPhysicalSceneOcclusion(enabled: true)
+        refreshPhysicalRoomOcclusionIfPossible()
         publishStatus("Gerçek oda görünümü etkin; eklediğin objeler korunuyor", color: .green)
     }
 
@@ -401,6 +408,7 @@ final class ARSessionController: NSObject, ObservableObject {
             UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
             setPhysicalSceneOcclusion(enabled: true)
             updateKnownFloorFromRoomData()
+            refreshPhysicalRoomOcclusionIfPossible()
             publishStatus(
                 "Beyaz Hatlar etkin — \(report.renderedElementCount) tarama öğesi gösteriliyor",
                 color: .green
@@ -525,6 +533,26 @@ final class ARSessionController: NSObject, ObservableObject {
             }
         }
 
+        // Scene-understanding collision is backed by the LiDAR reconstruction mesh.
+        // It catches stable horizontal surfaces such as tables even when ARKit has
+        // not promoted that patch to a plane anchor yet.
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
+            entityID(from: $0.entity) == nil && !belongsToRoomReality($0.entity)
+        }) {
+            let verticalComponent = abs(simd_normalize(hit.normal).y)
+            let acceptsSurface = (prop == .wall || prop == .lightPanel)
+                ? verticalComponent < 0.45
+                : verticalComponent > 0.72
+            if acceptsSurface {
+                return placementTransform(
+                    position: hit.position,
+                    normal: hit.normal,
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
+            }
+        }
+
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
             (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
@@ -539,6 +567,27 @@ final class ARSessionController: NSObject, ObservableObject {
                 alignment: alignment
             ).first {
                 return result.worldTransform
+            }
+        }
+
+        // A completed RoomPlan scan provides a persistent world-space floor level.
+        // Intersect the exact screen ray with that recorded floor instead of guessing
+        // from camera height. This remains stable while making the full floor tappable.
+        if prop != .wall,
+           prop != .lightPanel,
+           roomCoordinateSpaceIsActive,
+           let floorY = lastKnownFloorY,
+           let ray = arView.ray(through: point) {
+            let direction = simd_normalize(ray.direction)
+            guard direction.y < -0.025 else { return nil }
+            let distance = (floorY - ray.origin.y) / direction.y
+            if distance.isFinite, distance >= 0.20, distance <= 8.0 {
+                return placementTransform(
+                    position: ray.origin + direction * distance,
+                    normal: [0, 1, 0],
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
             }
         }
 
@@ -1069,6 +1118,15 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
+    private func belongsToRoomReality(_ entity: Entity) -> Bool {
+        var candidate: Entity? = entity
+        while let current = candidate {
+            if current.name.hasPrefix("cinear.reality.") { return true }
+            candidate = current.parent
+        }
+        return false
+    }
+
     private func defaultTransform(for prop: PropKind) -> Transform {
         let height: Float
         if let descriptor = libraryDescriptor(for: prop) {
@@ -1324,6 +1382,7 @@ final class ARSessionController: NSObject, ObservableObject {
               FileManager.default.fileExists(atPath: roomDataURL.path) else {
             roomRealityRenderer.isVisible = false
             setPhysicalSceneOcclusion(enabled: true)
+            refreshPhysicalRoomOcclusionIfPossible()
             return
         }
         roomRealityRenderer.isVisible = false
@@ -1408,12 +1467,42 @@ final class ARSessionController: NSObject, ObservableObject {
         return true
     }
 
+    @discardableResult
+    private func refreshPhysicalRoomOcclusionIfPossible() -> Bool {
+        guard !isRoomScanActive,
+              activeRealityThemeID == nil,
+              roomCoordinateSpaceIsActive,
+              let arView,
+              FileManager.default.fileExists(atPath: roomDataURL.path) else {
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            return false
+        }
+
+        roomRealityRenderer.install(in: arView)
+        if roomRealityRenderer.hasPreparedPhysicalOcclusion {
+            roomRealityRenderer.isPhysicalOcclusionVisible = true
+            return true
+        }
+        do {
+            let count = try roomRealityRenderer.preparePhysicalOcclusion(
+                roomJSONURL: roomDataURL
+            )
+            roomRealityRenderer.isPhysicalOcclusionVisible = count > 0
+            return count > 0
+        } catch {
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            return false
+        }
+    }
+
     private func setPhysicalSceneOcclusion(enabled: Bool) {
         guard let arView else { return }
         if enabled {
             arView.environment.sceneUnderstanding.options.insert(.occlusion)
+            arView.environment.sceneUnderstanding.options.insert(.collision)
         } else {
             arView.environment.sceneUnderstanding.options.remove(.occlusion)
+            arView.environment.sceneUnderstanding.options.remove(.collision)
         }
     }
 }

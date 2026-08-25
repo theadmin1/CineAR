@@ -38,6 +38,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
+- LiDAR scene-understanding collision ve kayitli RoomPlan zemin seviyesi sayesinde
+  taranmis zeminin tamaminda kararli yerlestirme
+- RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
+  gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
@@ -61,7 +65,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken algilanmis zemine
    dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
-   koymaz; zemini yavasca taramanizi ister. Konum dunya anchor'ina kilitlenir;
+   koymaz; zemini yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
+   kayitli zemin duzlemi tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
    modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
 8. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
@@ -109,6 +114,6 @@ ayni rollere takmak icin hazirdir. Eski opak oda tema renderer'i kaynakta deneys
 olarak korunur; ana arayuzde onun yerine akici `Gercek` / `Beyaz Hatlar` gecisi vardir.
 Kamera goruntusundeki gercek mobilyayi yapay
 zekayla silip arka plani tamamlama (video inpainting) bu surumde yoktur; sanal
-yuzeyler ve derinlik/insan occlusion'i kullanilir.
+yuzeyler, RoomPlan mobilya derinlik vekilleri ve derinlik/insan occlusion'i kullanilir.
 
 Ayrintili kabul kriterleri icin `Docs/DEVICE_TEST.md` dosyasina bakin.

@@ -31,7 +31,9 @@
 7. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
    uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
    acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
-   hazir oldugunda ayni dokunus nesneyi zemine sabitlemeli.
+   hazir oldugunda ayni dokunus nesneyi zemine sabitlemeli. RoomPlan taramasi
+   tamamlandiktan sonra ARKit'in ayri bir plane anchor uretmedigi uzak zemin
+   noktalarinda da kayitli zemin seviyesiyle yerlestirme calismali.
 8. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
    golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula.
 9. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
@@ -43,6 +45,9 @@
    konum farkini olc.
 12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
    modlarinda insan derinlik maskesinin acik kaldigini ve kenar hatalarini kaydet.
+   RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
+   masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
+   bir kutu gibi gorunmemeli.
 13. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
 14. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
