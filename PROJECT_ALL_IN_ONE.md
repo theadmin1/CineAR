@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.7.0`
-- Proje build numarası: `9`
+- Uygulama sürümü: `0.7.1`
+- Proje build numarası: `10`
 - Git dalı: `main`
-- Kaynak commit: `e33ce34e5a2ac2ceb25f68a598defdefb9724b76`
-- Oluşturulma zamanı: `2026-08-25 15:40:44 +03:00`
+- Kaynak commit: `330c124ab41e21a1a849cf8c34e6c9485d8583d6`
+- Oluşturulma zamanı: `2026-08-25 16:04:48 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -173,9 +173,9 @@ Yok.
 | Dosya | Satır | Boyut (byte) |
 | --- | ---: | ---: |
 | `.gitignore` | 25 | 473 |
-| `CineAR.xcodeproj/project.pbxproj` | 272 | 12828 |
+| `CineAR.xcodeproj/project.pbxproj` | 272 | 12830 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 1670 | 67265 |
+| `CineAR/ARSessionController.swift` | 1670 | 67307 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -443,13 +443,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.7.0;
+				MARKETING_VERSION = 0.7.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -466,12 +466,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.7.0;
+				MARKETING_VERSION = 0.7.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1682,15 +1682,15 @@ final class ARSessionController: NSObject, ObservableObject {
             )
         }
         switch prop {
-        case .stage: (1.82, 1.22, -0.086)
-        case .crate: (0.48, 0.48, -0.271)
-        case .plant: (0.31, 0.31, -0.176)
-        case .floorLamp: (0.30, 0.30, -0.021)
-        case .backdrop: (2.10, 0.18, -0.896)
+        case .stage: return (1.82, 1.22, -0.086)
+        case .crate: return (0.48, 0.48, -0.271)
+        case .plant: return (0.31, 0.31, -0.176)
+        case .floorLamp: return (0.30, 0.30, -0.021)
+        case .backdrop: return (2.10, 0.18, -0.896)
         case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
              .bed, .bookcase, .television, .refrigerator, .oven, .stove,
              .sink, .bathtub, .toilet, .washerDryer, .stairs:
-            nil
+            return nil
         }
     }
 

@@ -1139,15 +1139,15 @@ final class ARSessionController: NSObject, ObservableObject {
             )
         }
         switch prop {
-        case .stage: (1.82, 1.22, -0.086)
-        case .crate: (0.48, 0.48, -0.271)
-        case .plant: (0.31, 0.31, -0.176)
-        case .floorLamp: (0.30, 0.30, -0.021)
-        case .backdrop: (2.10, 0.18, -0.896)
+        case .stage: return (1.82, 1.22, -0.086)
+        case .crate: return (0.48, 0.48, -0.271)
+        case .plant: return (0.31, 0.31, -0.176)
+        case .floorLamp: return (0.30, 0.30, -0.021)
+        case .backdrop: return (2.10, 0.18, -0.896)
         case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
              .bed, .bookcase, .television, .refrigerator, .oven, .stove,
              .sink, .bathtub, .toilet, .washerDryer, .stairs:
-            nil
+            return nil
         }
     }
 
