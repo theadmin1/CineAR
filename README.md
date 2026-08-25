@@ -23,13 +23,12 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ve gercek mekan mesh'i ile occlusion
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
-- Taranan duvar, zemin, tavan, kapi, pencere ve taninan mobilyalari tek dokunusla yeniden kurma
-- Modern, Film Studyosu, Bilimkurgu ve Sicak Loft hazir oda temalari
-- RoomPlan obje rollerine otomatik oturan 14 yerlesik, tema renkli CC0 USDZ mobilya/cihaz modeli
-- Eksik veya bozuk USDZ icin uygulamayi durdurmayan prosedurel 3B model fallback'i
-- Tema ile gercek gorunum arasinda aninda gecis; manuel eklenen objeleri bagimsiz koruma
+- Tarama sirasinda RoomPlan'in hafif, beyaz ve seffaf kilavuz cizgileri
+- Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
+- Sandalye, masa, koltuk, yatak ve cihazlar dahil 14 yerlesik CC0 USDZ dekor
+- Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Dekorlari surukleme, dondurme ve olceklendirme
-- Tema acikken taranmis zemin, duvar ve mobilya geometrisine dogrudan dekor yerlestirme
+- Duzlem bulunamasa bile dokunulan ekran isininda serbest yerlestirme fallback'i
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization
@@ -43,10 +42,12 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 2. Bundle Identifier'i size ait benzersiz bir degerle degistirin.
 3. Signing icin Team secin ve uygulamayi gercek iPhone'a yukleyin.
 4. `Oda Tara` ile tum duvarlari, kapi/pencereleri ve odadaki buyuk objeleri tarayin.
-5. Tarama onaylandiginda varsayilan Modern tema otomatik uygulanir; ustteki
-   `Oda Gercekligi` satirindan baska bir tema veya `Gercek` gorunumunu secin.
-6. Hazir bir dekor veya `USDZ Ekle` ile kisisel bir model secin.
-7. Yuzeye dokunarak modeli yerlestirin; parmak hareketleriyle duzenleyin.
+5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
+   opak modelleri kamera uzerine cizilmez.
+6. Hizli dekorlardan birini, `Hazir 3B Nesne Kutuphanesi` icindeki 14 modelden
+   birini veya `USDZ Ekle` ile kisisel bir model secin.
+7. Kontrol paneli otomatik kapandiginda zeminin istediginiz noktasina dokunun;
+   sonra modeli parmak hareketleriyle duzenleyin.
 8. Mekan taramasi yeterince ayrintili oldugunda `Kaydet` tusuna basin.
 9. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
@@ -66,9 +67,10 @@ CineARProjects/MainSet/
 
 `scene.json`, dekor kimliklerini ve yerel transformlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
-haritasini ve anchor'larini saklar. Uygulama canli oda renderer'i icin `room.json`
-kullanir; tarama kapanirken gereksiz bellek yukune yol acan ikinci bir RoomPlan
-`room.usdz` arsivi uretmez.
+haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
+oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama
+kapanirken gereksiz bellek yukune yol acan ikinci bir RoomPlan `room.usdz` arsivi
+uretilmez.
 
 ## Uretim siniri
 
@@ -78,14 +80,15 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde dort hazir tema, Kenney Furniture Kit'ten donusturulmus 14 CC0 USDZ
-model ve RoomPlan'in kalan obje siniflari icin performans odakli prosedurel fallback
-modeller vardir. USDZ'ler gercek mesh ve coklu materyal tasir; secilen temanin PBR
-paletine otomatik boyanir. Kaynak/lisans `CineAR/RoomAssets/LICENSE-KENNEY.txt`,
+Bu surumde Kenney Furniture Kit'ten donusturulmus 14 CC0 USDZ model vardir.
+Modeller kullanici tarafindan kutuphaneden secilir, gercekci metre boyutlarina
+normalize edilir ve zemine oturtulur. Kaynak/lisans `CineAR/RoomAssets/LICENSE-KENNEY.txt`,
 tekrar uretim ve dogrulama araclari `Tools/` altindadir. Bu yerlesik paket mobil
 uyumlu low-poly kutuphanedir; fotogercekci, 2K/4K dokulu profesyonel set paketi
 degildir. `RoomRealityAssetProviding`, sonraki lisansli/fotogercekci USDZ kataloglarini
-ayni rollere takmak icin hazirdir. Kamera goruntusundeki gercek mobilyayi yapay
+ayni rollere takmak icin hazirdir. Eski opak oda tema renderer'i kaynakta deneysel
+olarak korunur ancak akicilik ve insan gorunurlugu icin ana arayuzde otomatik acilmaz.
+Kamera goruntusundeki gercek mobilyayi yapay
 zekayla silip arka plani tamamlama (video inpainting) bu surumde yoktur; sanal
 yuzeyler ve derinlik/insan occlusion'i kullanilir.
 

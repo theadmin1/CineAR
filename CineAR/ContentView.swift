@@ -5,6 +5,7 @@ struct ContentView: View {
     @StateObject private var session = ARSessionController()
     @State private var showingRoomScanner = false
     @State private var showingAssetImporter = false
+    @State private var showingPropLibrary = false
     @State private var roomScanResult: RoomScanResult?
 
     var body: some View {
@@ -26,8 +27,12 @@ struct ContentView: View {
                 VStack(spacing: 12) {
                     statusBar
                     Spacer()
-                    controls
-                        .disabled(session.isRecordingTransitioning)
+                    if session.isPlacingProp {
+                        placementBar
+                    } else {
+                        controls
+                            .disabled(session.isRecordingTransitioning)
+                    }
                 }
                 .padding()
             }
@@ -56,6 +61,10 @@ struct ContentView: View {
                 session.reportAssetImportFailure(error)
             }
         }
+        .sheet(isPresented: $showingPropLibrary) {
+            propLibrary
+                .presentationDetents([.medium, .large])
+        }
     }
 
     private var statusBar: some View {
@@ -74,18 +83,18 @@ struct ContentView: View {
 
     private var controls: some View {
         VStack(spacing: 12) {
-            roomRealitySelector
+            Label("Gerçek kamera • taranan yüzey çizimi kapalı", systemImage: "camera.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
 
-            Divider().opacity(0.35)
-
-            Text("Dekor seçip yüzeye dokun • Seçili dekoru sürükle, döndür veya ölçekle")
+            Text("Nesne seçildiğinde bu panel kapanır; zeminin istediğin yerine dokunabilirsin")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(PropKind.allCases) { prop in
+                    ForEach(PropKind.quickCases) { prop in
                         Button {
                             session.selectProp(prop)
                         } label: {
@@ -103,6 +112,16 @@ struct ContentView: View {
                         }
                     }
                 }
+            }
+
+            Button {
+                showingPropLibrary = true
+            } label: {
+                Label("Hazır 3B Nesne Kütüphanesi (14 model)", systemImage: "square.grid.3x3.fill")
+                    .font(.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.accentColor.opacity(0.85), in: RoundedRectangle(cornerRadius: 12))
             }
 
             if !session.importedAssetURLs.isEmpty {
@@ -170,67 +189,61 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    private var roomRealitySelector: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Label("Oda Gerçekliği", systemImage: "wand.and.stars")
-                    .font(.caption.weight(.bold))
-                Spacer()
-                if !RoomScannerController.isSupported {
-                    Text("LiDAR gerekli")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                } else if !session.hasScannedRoom {
-                    Text("Önce odayı tara")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+    private var placementBar: some View {
+        HStack(spacing: 12) {
+            Text(session.selectedProp.symbol).font(.title2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(session.selectedProp.title) yerleştir")
+                    .font(.subheadline.weight(.bold))
+                Text("Zemine veya görünen yüzeye dokun")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    realityButton(
-                        title: "Gerçek",
-                        symbol: "camera.fill",
-                        isSelected: session.activeRealityThemeID == nil
-                    ) {
-                        session.showOriginalReality()
-                    }
-
-                    ForEach(RealityThemeCatalog.all) { theme in
-                        realityButton(
-                            title: theme.title,
-                            symbol: theme.symbolName,
-                            isSelected: session.activeRealityThemeID == theme.id
-                        ) {
-                            session.selectRealityTheme(theme.id)
-                        }
-                    }
-                }
-            }
+            Spacer()
+            Button("İptal") { session.cancelPlacement() }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
         }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private func realityButton(
-        title: String,
-        symbol: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: symbol)
-                Text(title).lineLimit(1)
+    private var propLibrary: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3),
+                    spacing: 10
+                ) {
+                    ForEach(PropKind.furnitureCases) { prop in
+                        Button {
+                            session.selectProp(prop)
+                            showingPropLibrary = false
+                        } label: {
+                            VStack(spacing: 6) {
+                                Text(prop.symbol).font(.largeTitle)
+                                Text(prop.title)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.75)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 92)
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding()
             }
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 10)
-            .frame(height: 34)
-            .background(
-                isSelected ? Color.accentColor.opacity(0.9) : Color.white.opacity(0.1),
-                in: Capsule()
-            )
+            .navigationTitle("3B Nesne Kütüphanesi")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Kapat") { showingPropLibrary = false }
+                }
+            }
         }
-        .disabled(!session.isARReady)
     }
 
     private func utilityButton(

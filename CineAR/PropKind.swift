@@ -5,6 +5,20 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case stage
     case crate
     case lightPanel
+    case chair
+    case table
+    case sofa
+    case bed
+    case bookcase
+    case television
+    case refrigerator
+    case oven
+    case stove
+    case sink
+    case bathtub
+    case toilet
+    case washerDryer
+    case stairs
     case custom
 
     var id: String { rawValue }
@@ -15,6 +29,20 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .stage: "Platform"
         case .crate: "Kasa"
         case .lightPanel: "Işık"
+        case .chair: "Sandalye"
+        case .table: "Masa"
+        case .sofa: "Koltuk"
+        case .bed: "Yatak"
+        case .bookcase: "Kitaplık"
+        case .television: "Televizyon"
+        case .refrigerator: "Buzdolabı"
+        case .oven: "Fırın"
+        case .stove: "Ocak"
+        case .sink: "Lavabo"
+        case .bathtub: "Küvet"
+        case .toilet: "Tuvalet"
+        case .washerDryer: "Çamaşır Makinesi"
+        case .stairs: "Merdiven"
         case .custom: "USDZ"
         }
     }
@@ -25,7 +53,48 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .stage: "🎬"
         case .crate: "📦"
         case .lightPanel: "💡"
+        case .chair: "🪑"
+        case .table: "🍽️"
+        case .sofa: "🛋️"
+        case .bed: "🛏️"
+        case .bookcase: "📚"
+        case .television: "📺"
+        case .refrigerator: "🧊"
+        case .oven: "♨️"
+        case .stove: "🍳"
+        case .sink: "🚰"
+        case .bathtub: "🛁"
+        case .toilet: "🚽"
+        case .washerDryer: "🧺"
+        case .stairs: "🪜"
         case .custom: "🎭"
+        }
+    }
+
+    static let quickCases: [PropKind] = [.wall, .stage, .crate, .lightPanel, .custom]
+
+    static let furnitureCases: [PropKind] = [
+        .chair, .table, .sofa, .bed, .bookcase, .television, .refrigerator,
+        .oven, .stove, .sink, .bathtub, .toilet, .washerDryer, .stairs
+    ]
+
+    var bundledAssetName: String? {
+        switch self {
+        case .chair: "chairModernCushion"
+        case .table: "table"
+        case .sofa: "loungeDesignSofa"
+        case .bed: "bedDouble"
+        case .bookcase: "bookcaseClosedWide"
+        case .television: "televisionModern"
+        case .refrigerator: "kitchenFridge"
+        case .oven: "kitchenStove"
+        case .stove: "kitchenStoveElectric"
+        case .sink: "bathroomSink"
+        case .bathtub: "bathtub"
+        case .toilet: "toilet"
+        case .washerDryer: "washerDryerStacked"
+        case .stairs: "stairs"
+        case .wall, .stage, .crate, .lightPanel, .custom: nil
         }
     }
 

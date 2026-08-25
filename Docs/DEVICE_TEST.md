@@ -11,35 +11,34 @@
 
 1. Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
-2. Modern temanin tarama onayindan sonra otomatik acildigini; duvar, zemin,
-   tavan, kapi/pencere bosluklari ve taninan buyuk objelerle hizalandigini kontrol et.
-   Sandalye, masa/yatak ve bir cihaz kategorisinde yerlesik USDZ modelin gercek
-   objenin merkezine ve RoomPlan boyutlarina oturdugunu ayri ayri olc.
-3. Dort temayi arka arkaya sec, sonra `Gercek` gorunumune don. Tema degisiminde
-   geometri kaymasi, sahne kopyalanmasi veya uygulama kapanmasi olmamali.
-4. Modern tema acikken taranmis zemin, duvar ve taninan bir mobilyanin gorunen
-   yuzeyine ayri ayri dokunarak kasa/isik yerlestir. Nesne dokunulan sanal yuzeyde
-   gorunmeli; duvar ve isik panelleri dik kalip kameraya bakan yone hizalanmali.
-5. Duvar, platform ve en az iki farkli USDZ model yerlestir. Tema degistirirken
-   bu manuel objelerin konumunun ve parmak hareketlerinin korundugunu dogrula.
-6. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-7. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-8. Relocalization tamamlandiktan sonra tema ve dekorlarin referans isaretlerine gore
+2. Tarama sirasinda yalniz RoomPlan'in beyaz/seffaf kilavuzlarinin gorundugunu;
+   tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
+3. Tarama boyunca kamera hareketinin akici oldugunu, ana gorunume donuste gercek
+   insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
+4. Kasa'yi sec. Alt panel otomatik kapanmali; once zeminin panelin daha once kapattigi
+   alt bolgesine, sonra orta ve uzak bolgesine dokun. Her dokunusta kasa gorunmeli.
+5. Hazir 3B Nesne Kutuphanesi'nden sandalye, masa, koltuk, yatak ve iki cihaz secip
+   yerlestir. Boyutlar gercekci olmali ve modeller zeminin altina gomulmemeli.
+6. Duvar, platform ve en az iki farkli USDZ model yerlestir; manuel objelerin
+   konumunun ve parmak hareketlerinin korundugunu dogrula.
+7. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
+8. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+9. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
-9. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
+10. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
    hatalarini kaydet.
-10. `Tumunu Sil` ile yalniz manuel objelerin silindigini, oda temasinin kaldigini test et.
-11. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli, tema ve manuel
+11. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
+12. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-12. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-13. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+13. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+14. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
 - Elde relocalization hatasi: 5 cm'den az
-- Tema yuzeyi ile gercek duvar/zemin hizasi: referans noktalarda 3 cm'den az
+- Manuel dekor ile dokunulan gercek yuzey hizasi: referans noktalarda 3 cm'den az
 - Kapi ve pencere boslugu kenar hatasi: 5 cm'den az
 - Kayit: hedef cihazda sabit 30 fps, gorunur tekrar eden kare olmamali
 - Ses-goruntu senkron farki: 40 ms'den az

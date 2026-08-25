@@ -3,25 +3,27 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.3.1`
-- Proje build numarası: `4`
+- Uygulama sürümü: `0.4.0`
+- Proje build numarası: `5`
 - Git dalı: `main`
-- Kaynak commit: `8e31ab2c921f07a5ecbf499f11e24723c2221ec7`
-- Oluşturulma zamanı: `2026-08-24 13:29:00 +03:00`
+- Kaynak commit: `87db91a6a4f2ba88bfbe6cb42f05e8b98383e337`
+- Oluşturulma zamanı: `2026-08-25 10:38:33 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
 ## Projenin amacı
 
-CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, taranan duvarları, zeminleri, tavanları, kapı/pencere açıklıklarını ve tanınan büyük nesneleri RealityKit içinde temalı bir sanal sete dönüştüren yerel iOS uygulamasıdır. Kullanıcı ayrıca hazır dekorları veya kendi USDZ modellerini sahneye yerleştirebilir, taşıyabilir, döndürebilir, ölçeklendirebilir ve ARWorldMap tabanlı proje olarak saklayabilir.
+CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden 14 hazır CC0 dekoru veya kullanıcının USDZ modellerini zemine yerleştiren yerel iOS uygulamasıdır. Dekorlar taşınabilir, döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir.
 
 ## Teknoloji ve ana yetenekler
 
 - Swift + SwiftUI kullanıcı arayüzü
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
 - RoomPlan ile semantik oda taraması ve `room.json` üretimi
-- RealityKit ile dört oda teması, prosedürel geometri ve 14 gömülü CC0 USDZ varlığı
-- Manuel dekor yerleştirme; sürükleme, döndürme ve ölçekleme
+- Gerçek kamera görünümü, insan/mesh occlusion ve tarama sırasında hafif RoomPlan kılavuzları
+- Gerçekçi boyutlandırılmış 14 gömülü CC0 USDZ varlığı ve paneli kapatan yerleştirme modu
+- AR düzlemi bulunamadığında ekran ışını üzerinde serbest yerleştirme fallback'i
+- Manuel dekor sürükleme, döndürme ve ölçekleme
 - ARWorldMap + `scene.json` ile kalıcı anchor/transform saklama ve relocalization
 - ReplayKit/AVFoundation tabanlı HEVC video ve AAC ses kaydı
 - Codemagic ile imzalı IPA üretimi ve TestFlight yüklemesi
@@ -41,14 +43,14 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, tarana
 
 | Bileşen | Sorumluluk |
 | --- | --- |
-| `CineARApp` / `ContentView` | Uygulama girişi, kontroller, oda teması ve tarayıcı sunumu |
+| `CineARApp` / `ContentView` | Uygulama girişi, yerleştirme modu, 3B kütüphane ve tarayıcı sunumu |
 | `ARSessionController` | ARSession yaşam döngüsü, raycast, manuel dekorlar, gesture'lar, kayıt ve proje koordinasyonu |
 | `RoomScannerController` | RoomPlan taraması, arka planda güvenli JSON staging ve explicit teardown |
-| `RoomRealityRenderer` | Semantik oda yüzeylerini/nesnelerini bütçeli RealityKit sahnesine dönüştürme |
-| `BundledRoomRealityAssetProvider` | RoomPlan rollerini gömülü USDZ prototiplerine bağlama ve boyutlandırma |
+| `RoomRealityRenderer` | Ana arayüzde kapalı tutulan deneysel semantik oda renderer'ı |
+| `BundledRoomRealityAssetProvider` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |
 | `SceneProjectStore` | `scene.json`, `room.json`, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |
 | `ProfessionalRecorder` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |
-| `RealityTheme` / `PropKind` | Tema materyalleri, oda rolleri ve manuel dekor türleri |
+| `RealityTheme` / `PropKind` | Materyal tarifleri, oda rolleri ve 19 manuel dekor türü |
 | `codemagic.yaml` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |
 
 ## Temel kullanıcı akışı
@@ -56,10 +58,11 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, tarana
 1. ARKit alanı izler ve yatay/dikey yüzeyleri algılar.
 2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.
 3. Sonuç compact `room.json` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.
-4. Tarayıcı kapandıktan ve kamera takibi normale döndükten sonra seçili oda teması oluşturulur.
-5. Kullanıcı hazır dekor veya USDZ seçip kamera yüzeyine dokunur; anchor ve model anında bağlanır.
-6. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.
-7. **Kaydet** ile world map ve dekor transformları, **HEVC Çekim** ile video/ses çıktısı üretilir.
+4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür.
+5. Kullanıcı hızlı dekor, 14 modellik kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır.
+6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını üzerindeki güvenli mesafe kullanılır.
+7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.
+8. **Kaydet** ile world map ve dekor transformları, **HEVC Çekim** ile video/ses çıktısı üretilir.
 
 ## Uygulamanın yerel veri yapısı
 
@@ -72,7 +75,7 @@ CineARProjects/MainSet/
   Recordings/*.mov
 ````
 
-Canlı oda renderer'ı `room.json` kullanır. Kullanıcının gerçek mekân verileri, kayıtları ve içe aktardığı özel USDZ dosyaları uygulama sandbox'ında tutulur; bunlar kaynak deposunun veya bu snapshot'ın parçası değildir.
+`room.json` semantik tarama verisi olarak saklanır ancak normal kamera görünümünde opak oda geometrisine dönüştürülmez. Kullanıcının gerçek mekân verileri, kayıtları ve içe aktardığı özel USDZ dosyaları uygulama sandbox'ında tutulur; bunlar kaynak deposunun veya bu snapshot'ın parçası değildir.
 
 ## Mevcut kapsamın sınırları
 
@@ -168,17 +171,17 @@ Yok.
 | `.gitignore` | 25 | 473 |
 | `CineAR.xcodeproj/project.pbxproj` | 272 | 12828 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 1197 | 47733 |
+| `CineAR/ARSessionController.swift` | 1308 | 52308 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 206 | 7250 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 259 | 9555 |
+| `CineAR/ContentView.swift` | 272 | 10560 |
 | `CineAR/Info.plist` | 49 | 1582 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
-| `CineAR/PropKind.swift` | 53 | 1316 |
+| `CineAR/PropKind.swift` | 122 | 3390 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 15 | 1184 |
@@ -187,11 +190,11 @@ Yok.
 | `CineAR/SceneProjectStore.swift` | 352 | 13489 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 60 | 3040 |
+| `Docs/DEVICE_TEST.md` | 59 | 2923 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 93 | 4591 |
+| `README.md` | 96 | 4672 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
-| `Tools/generate_all_in_one_markdown.ps1` | 338 | 16452 |
+| `Tools/generate_all_in_one_markdown.ps1` | 341 | 16852 |
 | `Tools/render_usdz_thumbnails.py` | 94 | 3522 |
 | `Tools/validate_usdz_assets.py` | 67 | 2269 |
 
@@ -436,13 +439,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.3.1;
+				MARKETING_VERSION = 0.4.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -459,12 +462,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.3.1;
+				MARKETING_VERSION = 0.4.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -555,6 +558,7 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var activeRealityThemeID: RealityThemeID?
     @Published private(set) var hasScannedRoom = false
     @Published private(set) var isARReady = false
+    @Published private(set) var isPlacingProp = false
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -562,6 +566,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private let roomRealityRenderer = RoomRealityRenderer(
         assetProvider: BundledRoomRealityAssetProvider()
     )
+    private let manualAssetProvider = BundledRoomRealityAssetProvider()
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
@@ -601,9 +606,9 @@ final class ARSessionController: NSObject, ObservableObject {
         super.init()
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
-        if let storedTheme = UserDefaults.standard.string(forKey: Self.realityThemeDefaultsKey) {
-            preferredRealityThemeID = RealityThemeID(rawValue: storedTheme)
-        }
+        // Opaque room replacements can cover people and make the camera feel unstable.
+        // Always launch in the real-camera view; the legacy renderer stays internal.
+        UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
         if let error = projectStore.initializationError {
             publishStatus(
                 "Kayıtlı scene.json okunamadı: \(error.localizedDescription)",
@@ -632,7 +637,10 @@ final class ARSessionController: NSObject, ObservableObject {
         return view
     }
 
-    private func configuration(initialWorldMap: ARWorldMap? = nil) -> ARWorldTrackingConfiguration {
+    private func configuration(
+        initialWorldMap: ARWorldMap? = nil,
+        enableAdvancedOcclusion: Bool = true
+    ) -> ARWorldTrackingConfiguration {
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity
         configuration.planeDetection = [.horizontal, .vertical]
@@ -641,12 +649,15 @@ final class ARSessionController: NSObject, ObservableObject {
         configuration.isAutoFocusEnabled = true
         configuration.initialWorldMap = initialWorldMap
 
-        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
+        if enableAdvancedOcclusion,
+           ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
             configuration.sceneReconstruction = .meshWithClassification
         }
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+        if enableAdvancedOcclusion,
+           ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
             configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+        } else if enableAdvancedOcclusion,
+                  ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
         }
         return configuration
@@ -686,6 +697,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func pauseForRoomScan() {
+        cancelPlacement()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
         cancelPendingPostScanTheme()
         isRoomScanActive = true
@@ -695,6 +707,12 @@ final class ARSessionController: NSObject, ObservableObject {
         roomRealityRenderer.isVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         arView?.isHidden = true
+        // RoomPlan already performs its own LiDAR processing. Temporarily omit the
+        // additional mesh/person passes so scanning does not run three heavy pipelines.
+        arView?.session.run(
+            configuration(enableAdvancedOcclusion: false),
+            options: [.resetSceneReconstruction]
+        )
         do {
             try persistAllEntityTransforms()
         } catch {
@@ -722,7 +740,9 @@ final class ARSessionController: NSObject, ObservableObject {
             roomRealityRenderer.clear()
             roomRealityRenderer.isVisible = false
             activeRealityThemeID = nil
-            themeToSchedule = preferredRealityThemeID ?? .modern
+            preferredRealityThemeID = nil
+            themeToSchedule = nil
+            UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
             var invalidationMessage: String?
             do {
                 try projectStore.invalidateWorldMapForRoomScan()
@@ -731,13 +751,13 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             if let invalidationMessage {
                 completionStatus = (
-                    "Tema etkin, ancak proje haritası güncellenemedi: \(invalidationMessage)",
+                    "Tarama kaydedildi, ancak proje haritası güncellenemedi: \(invalidationMessage)",
                     .red
                 )
             } else {
                 completionStatus = (
-                    "Tarama kaydedildi — oda gerçekliği kamera takibiyle hizalanıyor",
-                    .yellow
+                    "Tarama kaydedildi — yüzey çizimi kapalı, gerçek kamera görünümü etkin",
+                    .green
                 )
             }
         case .cancelled:
@@ -843,23 +863,35 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func selectProp(_ prop: PropKind) {
         selectedProp = prop
+        selectedEntityID = nil
         if prop == .custom, selectedAssetURL == nil {
+            isPlacingProp = false
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
-            publishStatus("\(prop.title) seçildi — kameradaki bir yüzeye dokun", color: .blue)
+            isPlacingProp = true
+            publishStatus("\(prop.title) seçildi — panel kapandı, istediğin yüzeye dokun", color: .blue)
         }
+    }
+
+    func cancelPlacement() {
+        guard isPlacingProp else { return }
+        isPlacingProp = false
+        publishStatus("Yerleştirme iptal edildi", color: .yellow)
     }
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
 
-        if let hitEntity = arView.entity(at: point),
+        if !isPlacingProp,
+           let hitEntity = arView.entity(at: point),
            let id = entityID(from: hitEntity) {
             selectedEntityID = id
             publishStatus("Dekor seçildi — sürükle, döndür veya ölçekle", color: .blue)
             return
         }
+
+        guard isPlacingProp else { return }
 
         guard !isRoomScanActive, !isSessionInterrupted, isARReady else {
             publishStatus("Kamera takibi hazır olduğunda tekrar dokun", color: .yellow)
@@ -895,6 +927,7 @@ final class ARSessionController: NSObject, ObservableObject {
             knownPropAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
+            isPlacingProp = false
             render(prop: selectedProp, id: id, for: anchor)
             if selectedProp == .custom {
                 publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
@@ -944,6 +977,19 @@ final class ARSessionController: NSObject, ObservableObject {
             ).first {
                 return result.worldTransform
             }
+        }
+
+        // Last-resort free placement: even before ARKit has classified a plane, keep
+        // the user's tap meaningful by placing the object along that exact screen ray.
+        if let ray = arView.ray(through: point) {
+            let direction = simd_normalize(ray.direction)
+            let position = ray.origin + direction * 1.5
+            return placementTransform(
+                position: position,
+                normal: -direction,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation
+            )
         }
         return nil
     }
@@ -1041,7 +1087,8 @@ final class ARSessionController: NSObject, ObservableObject {
             importedAssetURLs = projectStore.importedModelURLs
             selectedAssetURL = importedURL
             selectedProp = .custom
-            publishStatus("\(importedURL.lastPathComponent) kütüphaneye eklendi", color: .green)
+            isPlacingProp = true
+            publishStatus("\(importedURL.lastPathComponent) seçildi — istediğin yüzeye dokun", color: .green)
         } catch {
             publishStatus("USDZ içe aktarılamadı: \(error.localizedDescription)", color: .red)
         }
@@ -1054,7 +1101,9 @@ final class ARSessionController: NSObject, ObservableObject {
     func selectImportedAsset(_ url: URL) {
         selectedAssetURL = url
         selectedProp = .custom
-        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi", color: .blue)
+        selectedEntityID = nil
+        isPlacingProp = true
+        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — istediğin yüzeye dokun", color: .blue)
     }
 
     func saveWorldMap() {
@@ -1215,12 +1264,27 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
+        if prop.bundledAssetName != nil {
+            guard let entity = makeBundledLibraryEntity(for: prop) else {
+                publishStatus("\(prop.title) modeli hazırlanamadı", color: .red)
+                return
+            }
+            attach(
+                entity: entity,
+                prop: prop,
+                id: id,
+                anchor: anchor,
+                generation: renderGeneration
+            )
+            return
+        }
+
         if prop == .custom {
+            let modelURL: URL
             guard let fileName = placement.assetFileName else {
                 publishStatus("3B dekor yüklenemedi: USDZ kaydı eksik", color: .red)
                 return
             }
-            let modelURL: URL
             do {
                 modelURL = try projectStore.modelURL(fileName: fileName)
             } catch {
@@ -1280,7 +1344,9 @@ final class ARSessionController: NSObject, ObservableObject {
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
-        entity.generateCollisionShapes(recursive: true)
+        if entity.collision == nil {
+            entity.generateCollisionShapes(recursive: true)
+        }
         anchorEntity.addChild(entity)
         arView.scene.addAnchor(anchorEntity)
 
@@ -1341,16 +1407,62 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func defaultTransform(for prop: PropKind) -> Transform {
         let height: Float
-        switch prop {
-        case .stage: height = 0.09
-        case .crate: height = 0.275
-        case .lightPanel, .wall, .custom: height = 0
+        if let descriptor = libraryDescriptor(for: prop) {
+            height = descriptor.dimensions.y * 0.5
+        } else {
+            switch prop {
+            case .stage: height = 0.09
+            case .crate: height = 0.275
+            case .lightPanel, .wall, .chair, .table, .sofa, .bed, .bookcase,
+                 .television, .refrigerator, .oven, .stove, .sink, .bathtub,
+                 .toilet, .washerDryer, .stairs, .custom:
+                height = 0
+            }
         }
         return Transform(
             scale: [1, 1, 1],
             rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
             translation: [0, height, 0]
         )
+    }
+
+    private func makeBundledLibraryEntity(for prop: PropKind) -> ModelEntity? {
+        guard let descriptor = libraryDescriptor(for: prop),
+              let content = manualAssetProvider.makeEntity(
+                for: descriptor.role,
+                theme: RealityThemeCatalog.modern,
+                targetDimensions: descriptor.dimensions
+              ) else { return nil }
+
+        let root = ModelEntity()
+        root.name = "cinear.library.\(prop.rawValue)"
+        root.addChild(content)
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: descriptor.dimensions)]
+        )
+        return root
+    }
+
+    private func libraryDescriptor(
+        for prop: PropKind
+    ) -> (role: RealityObjectRole, dimensions: SIMD3<Float>)? {
+        switch prop {
+        case .chair: (.chair, [0.58, 0.92, 0.58])
+        case .table: (.table, [1.40, 0.76, 0.82])
+        case .sofa: (.sofa, [2.00, 0.90, 0.88])
+        case .bed: (.bed, [1.60, 0.68, 2.05])
+        case .bookcase: (.storage, [1.05, 1.90, 0.38])
+        case .television: (.television, [1.20, 0.76, 0.16])
+        case .refrigerator: (.refrigerator, [0.76, 1.82, 0.72])
+        case .oven: (.oven, [0.66, 0.92, 0.66])
+        case .stove: (.stove, [0.66, 0.92, 0.66])
+        case .sink: (.sink, [0.68, 0.90, 0.58])
+        case .bathtub: (.bathtub, [1.72, 0.62, 0.78])
+        case .toilet: (.toilet, [0.70, 0.82, 0.76])
+        case .washerDryer: (.washerDryer, [0.72, 1.62, 0.72])
+        case .stairs: (.stairs, [1.20, 1.20, 2.00])
+        case .wall, .stage, .crate, .lightPanel, .custom: nil
+        }
     }
 
     private func makeBuiltInEntity(for prop: PropKind) -> ModelEntity {
@@ -1384,8 +1496,10 @@ final class ARSessionController: NSObject, ObservableObject {
             material.color = .init(tint: .white)
             return ModelEntity(mesh: mesh, materials: [material])
 
-        case .custom:
-            preconditionFailure("Custom assets are loaded asynchronously")
+        case .chair, .table, .sofa, .bed, .bookcase, .television,
+             .refrigerator, .oven, .stove, .sink, .bathtub, .toilet,
+             .washerDryer, .stairs, .custom:
+            preconditionFailure("USDZ assets are loaded through the library path")
         }
     }
 
@@ -2044,6 +2158,7 @@ struct ContentView: View {
     @StateObject private var session = ARSessionController()
     @State private var showingRoomScanner = false
     @State private var showingAssetImporter = false
+    @State private var showingPropLibrary = false
     @State private var roomScanResult: RoomScanResult?
 
     var body: some View {
@@ -2065,8 +2180,12 @@ struct ContentView: View {
                 VStack(spacing: 12) {
                     statusBar
                     Spacer()
-                    controls
-                        .disabled(session.isRecordingTransitioning)
+                    if session.isPlacingProp {
+                        placementBar
+                    } else {
+                        controls
+                            .disabled(session.isRecordingTransitioning)
+                    }
                 }
                 .padding()
             }
@@ -2095,6 +2214,10 @@ struct ContentView: View {
                 session.reportAssetImportFailure(error)
             }
         }
+        .sheet(isPresented: $showingPropLibrary) {
+            propLibrary
+                .presentationDetents([.medium, .large])
+        }
     }
 
     private var statusBar: some View {
@@ -2113,18 +2236,18 @@ struct ContentView: View {
 
     private var controls: some View {
         VStack(spacing: 12) {
-            roomRealitySelector
+            Label("Gerçek kamera • taranan yüzey çizimi kapalı", systemImage: "camera.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
 
-            Divider().opacity(0.35)
-
-            Text("Dekor seçip yüzeye dokun • Seçili dekoru sürükle, döndür veya ölçekle")
+            Text("Nesne seçildiğinde bu panel kapanır; zeminin istediğin yerine dokunabilirsin")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(PropKind.allCases) { prop in
+                    ForEach(PropKind.quickCases) { prop in
                         Button {
                             session.selectProp(prop)
                         } label: {
@@ -2142,6 +2265,16 @@ struct ContentView: View {
                         }
                     }
                 }
+            }
+
+            Button {
+                showingPropLibrary = true
+            } label: {
+                Label("Hazır 3B Nesne Kütüphanesi (14 model)", systemImage: "square.grid.3x3.fill")
+                    .font(.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.accentColor.opacity(0.85), in: RoundedRectangle(cornerRadius: 12))
             }
 
             if !session.importedAssetURLs.isEmpty {
@@ -2209,67 +2342,61 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    private var roomRealitySelector: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Label("Oda Gerçekliği", systemImage: "wand.and.stars")
-                    .font(.caption.weight(.bold))
-                Spacer()
-                if !RoomScannerController.isSupported {
-                    Text("LiDAR gerekli")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                } else if !session.hasScannedRoom {
-                    Text("Önce odayı tara")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+    private var placementBar: some View {
+        HStack(spacing: 12) {
+            Text(session.selectedProp.symbol).font(.title2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(session.selectedProp.title) yerleştir")
+                    .font(.subheadline.weight(.bold))
+                Text("Zemine veya görünen yüzeye dokun")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    realityButton(
-                        title: "Gerçek",
-                        symbol: "camera.fill",
-                        isSelected: session.activeRealityThemeID == nil
-                    ) {
-                        session.showOriginalReality()
-                    }
-
-                    ForEach(RealityThemeCatalog.all) { theme in
-                        realityButton(
-                            title: theme.title,
-                            symbol: theme.symbolName,
-                            isSelected: session.activeRealityThemeID == theme.id
-                        ) {
-                            session.selectRealityTheme(theme.id)
-                        }
-                    }
-                }
-            }
+            Spacer()
+            Button("İptal") { session.cancelPlacement() }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
         }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private func realityButton(
-        title: String,
-        symbol: String,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: symbol)
-                Text(title).lineLimit(1)
+    private var propLibrary: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3),
+                    spacing: 10
+                ) {
+                    ForEach(PropKind.furnitureCases) { prop in
+                        Button {
+                            session.selectProp(prop)
+                            showingPropLibrary = false
+                        } label: {
+                            VStack(spacing: 6) {
+                                Text(prop.symbol).font(.largeTitle)
+                                Text(prop.title)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.75)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 92)
+                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding()
             }
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 10)
-            .frame(height: 34)
-            .background(
-                isSelected ? Color.accentColor.opacity(0.9) : Color.white.opacity(0.1),
-                in: Capsule()
-            )
+            .navigationTitle("3B Nesne Kütüphanesi")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Kapat") { showingPropLibrary = false }
+                }
+            }
         }
-        .disabled(!session.isARReady)
     }
 
     private func utilityButton(
@@ -2779,6 +2906,20 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case stage
     case crate
     case lightPanel
+    case chair
+    case table
+    case sofa
+    case bed
+    case bookcase
+    case television
+    case refrigerator
+    case oven
+    case stove
+    case sink
+    case bathtub
+    case toilet
+    case washerDryer
+    case stairs
     case custom
 
     var id: String { rawValue }
@@ -2789,6 +2930,20 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .stage: "Platform"
         case .crate: "Kasa"
         case .lightPanel: "Işık"
+        case .chair: "Sandalye"
+        case .table: "Masa"
+        case .sofa: "Koltuk"
+        case .bed: "Yatak"
+        case .bookcase: "Kitaplık"
+        case .television: "Televizyon"
+        case .refrigerator: "Buzdolabı"
+        case .oven: "Fırın"
+        case .stove: "Ocak"
+        case .sink: "Lavabo"
+        case .bathtub: "Küvet"
+        case .toilet: "Tuvalet"
+        case .washerDryer: "Çamaşır Makinesi"
+        case .stairs: "Merdiven"
         case .custom: "USDZ"
         }
     }
@@ -2799,7 +2954,48 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .stage: "🎬"
         case .crate: "📦"
         case .lightPanel: "💡"
+        case .chair: "🪑"
+        case .table: "🍽️"
+        case .sofa: "🛋️"
+        case .bed: "🛏️"
+        case .bookcase: "📚"
+        case .television: "📺"
+        case .refrigerator: "🧊"
+        case .oven: "♨️"
+        case .stove: "🍳"
+        case .sink: "🚰"
+        case .bathtub: "🛁"
+        case .toilet: "🚽"
+        case .washerDryer: "🧺"
+        case .stairs: "🪜"
         case .custom: "🎭"
+        }
+    }
+
+    static let quickCases: [PropKind] = [.wall, .stage, .crate, .lightPanel, .custom]
+
+    static let furnitureCases: [PropKind] = [
+        .chair, .table, .sofa, .bed, .bookcase, .television, .refrigerator,
+        .oven, .stove, .sink, .bathtub, .toilet, .washerDryer, .stairs
+    ]
+
+    var bundledAssetName: String? {
+        switch self {
+        case .chair: "chairModernCushion"
+        case .table: "table"
+        case .sofa: "loungeDesignSofa"
+        case .bed: "bedDouble"
+        case .bookcase: "bookcaseClosedWide"
+        case .television: "televisionModern"
+        case .refrigerator: "kitchenFridge"
+        case .oven: "kitchenStove"
+        case .stove: "kitchenStoveElectric"
+        case .sink: "bathroomSink"
+        case .bathtub: "bathtub"
+        case .toilet: "toilet"
+        case .washerDryer: "washerDryerStacked"
+        case .stairs: "stairs"
+        case .wall, .stage, .crate, .lightPanel, .custom: nil
         }
     }
 
@@ -5981,35 +6177,34 @@ incelemesine uygulama gondermesi mumkun degildir.
 
 1. Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
-2. Modern temanin tarama onayindan sonra otomatik acildigini; duvar, zemin,
-   tavan, kapi/pencere bosluklari ve taninan buyuk objelerle hizalandigini kontrol et.
-   Sandalye, masa/yatak ve bir cihaz kategorisinde yerlesik USDZ modelin gercek
-   objenin merkezine ve RoomPlan boyutlarina oturdugunu ayri ayri olc.
-3. Dort temayi arka arkaya sec, sonra `Gercek` gorunumune don. Tema degisiminde
-   geometri kaymasi, sahne kopyalanmasi veya uygulama kapanmasi olmamali.
-4. Modern tema acikken taranmis zemin, duvar ve taninan bir mobilyanin gorunen
-   yuzeyine ayri ayri dokunarak kasa/isik yerlestir. Nesne dokunulan sanal yuzeyde
-   gorunmeli; duvar ve isik panelleri dik kalip kameraya bakan yone hizalanmali.
-5. Duvar, platform ve en az iki farkli USDZ model yerlestir. Tema degistirirken
-   bu manuel objelerin konumunun ve parmak hareketlerinin korundugunu dogrula.
-6. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
-7. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
-8. Relocalization tamamlandiktan sonra tema ve dekorlarin referans isaretlerine gore
+2. Tarama sirasinda yalniz RoomPlan'in beyaz/seffaf kilavuzlarinin gorundugunu;
+   tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
+3. Tarama boyunca kamera hareketinin akici oldugunu, ana gorunume donuste gercek
+   insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
+4. Kasa'yi sec. Alt panel otomatik kapanmali; once zeminin panelin daha once kapattigi
+   alt bolgesine, sonra orta ve uzak bolgesine dokun. Her dokunusta kasa gorunmeli.
+5. Hazir 3B Nesne Kutuphanesi'nden sandalye, masa, koltuk, yatak ve iki cihaz secip
+   yerlestir. Boyutlar gercekci olmali ve modeller zeminin altina gomulmemeli.
+6. Duvar, platform ve en az iki farkli USDZ model yerlestir; manuel objelerin
+   konumunun ve parmak hareketlerinin korundugunu dogrula.
+7. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
+8. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+9. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
-9. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
+10. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; kenar ve derinlik
    hatalarini kaydet.
-10. `Tumunu Sil` ile yalniz manuel objelerin silindigini, oda temasinin kaldigini test et.
-11. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli, tema ve manuel
+11. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
+12. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-12. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-13. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+13. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+14. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
 - Elde relocalization hatasi: 5 cm'den az
-- Tema yuzeyi ile gercek duvar/zemin hizasi: referans noktalarda 3 cm'den az
+- Manuel dekor ile dokunulan gercek yuzey hizasi: referans noktalarda 3 cm'den az
 - Kapi ve pencere boslugu kenar hatasi: 5 cm'den az
 - Kayit: hedef cihazda sabit 30 fps, gorunur tekrar eden kare olmamali
 - Ses-goruntu senkron farki: 40 ms'den az
@@ -6086,13 +6281,12 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ve gercek mekan mesh'i ile occlusion
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
-- Taranan duvar, zemin, tavan, kapi, pencere ve taninan mobilyalari tek dokunusla yeniden kurma
-- Modern, Film Studyosu, Bilimkurgu ve Sicak Loft hazir oda temalari
-- RoomPlan obje rollerine otomatik oturan 14 yerlesik, tema renkli CC0 USDZ mobilya/cihaz modeli
-- Eksik veya bozuk USDZ icin uygulamayi durdurmayan prosedurel 3B model fallback'i
-- Tema ile gercek gorunum arasinda aninda gecis; manuel eklenen objeleri bagimsiz koruma
+- Tarama sirasinda RoomPlan'in hafif, beyaz ve seffaf kilavuz cizgileri
+- Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
+- Sandalye, masa, koltuk, yatak ve cihazlar dahil 14 yerlesik CC0 USDZ dekor
+- Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Dekorlari surukleme, dondurme ve olceklendirme
-- Tema acikken taranmis zemin, duvar ve mobilya geometrisine dogrudan dekor yerlestirme
+- Duzlem bulunamasa bile dokunulan ekran isininda serbest yerlestirme fallback'i
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization
@@ -6106,10 +6300,12 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 2. Bundle Identifier'i size ait benzersiz bir degerle degistirin.
 3. Signing icin Team secin ve uygulamayi gercek iPhone'a yukleyin.
 4. `Oda Tara` ile tum duvarlari, kapi/pencereleri ve odadaki buyuk objeleri tarayin.
-5. Tarama onaylandiginda varsayilan Modern tema otomatik uygulanir; ustteki
-   `Oda Gercekligi` satirindan baska bir tema veya `Gercek` gorunumunu secin.
-6. Hazir bir dekor veya `USDZ Ekle` ile kisisel bir model secin.
-7. Yuzeye dokunarak modeli yerlestirin; parmak hareketleriyle duzenleyin.
+5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
+   opak modelleri kamera uzerine cizilmez.
+6. Hizli dekorlardan birini, `Hazir 3B Nesne Kutuphanesi` icindeki 14 modelden
+   birini veya `USDZ Ekle` ile kisisel bir model secin.
+7. Kontrol paneli otomatik kapandiginda zeminin istediginiz noktasina dokunun;
+   sonra modeli parmak hareketleriyle duzenleyin.
 8. Mekan taramasi yeterince ayrintili oldugunda `Kaydet` tusuna basin.
 9. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
@@ -6129,9 +6325,10 @@ CineARProjects/MainSet/
 
 `scene.json`, dekor kimliklerini ve yerel transformlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
-haritasini ve anchor'larini saklar. Uygulama canli oda renderer'i icin `room.json`
-kullanir; tarama kapanirken gereksiz bellek yukune yol acan ikinci bir RoomPlan
-`room.usdz` arsivi uretmez.
+haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
+oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama
+kapanirken gereksiz bellek yukune yol acan ikinci bir RoomPlan `room.usdz` arsivi
+uretilmez.
 
 ## Uretim siniri
 
@@ -6141,14 +6338,15 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde dort hazir tema, Kenney Furniture Kit'ten donusturulmus 14 CC0 USDZ
-model ve RoomPlan'in kalan obje siniflari icin performans odakli prosedurel fallback
-modeller vardir. USDZ'ler gercek mesh ve coklu materyal tasir; secilen temanin PBR
-paletine otomatik boyanir. Kaynak/lisans `CineAR/RoomAssets/LICENSE-KENNEY.txt`,
+Bu surumde Kenney Furniture Kit'ten donusturulmus 14 CC0 USDZ model vardir.
+Modeller kullanici tarafindan kutuphaneden secilir, gercekci metre boyutlarina
+normalize edilir ve zemine oturtulur. Kaynak/lisans `CineAR/RoomAssets/LICENSE-KENNEY.txt`,
 tekrar uretim ve dogrulama araclari `Tools/` altindadir. Bu yerlesik paket mobil
 uyumlu low-poly kutuphanedir; fotogercekci, 2K/4K dokulu profesyonel set paketi
 degildir. `RoomRealityAssetProviding`, sonraki lisansli/fotogercekci USDZ kataloglarini
-ayni rollere takmak icin hazirdir. Kamera goruntusundeki gercek mobilyayi yapay
+ayni rollere takmak icin hazirdir. Eski opak oda tema renderer'i kaynakta deneysel
+olarak korunur ancak akicilik ve insan gorunurlugu icin ana arayuzde otomatik acilmaz.
+Kamera goruntusundeki gercek mobilyayi yapay
 zekayla silip arka plani tamamlama (video inpainting) bu surumde yoktur; sanal
 yuzeyler ve derinlik/insan occlusion'i kullanilir.
 
@@ -6467,15 +6665,17 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Projenin amacı")
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, taranan duvarları, zeminleri, tavanları, kapı/pencere açıklıklarını ve tanınan büyük nesneleri RealityKit içinde temalı bir sanal sete dönüştüren yerel iOS uygulamasıdır. Kullanıcı ayrıca hazır dekorları veya kendi USDZ modellerini sahneye yerleştirebilir, taşıyabilir, döndürebilir, ölçeklendirebilir ve ARWorldMap tabanlı proje olarak saklayabilir.")
+[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden 14 hazır CC0 dekoru veya kullanıcının USDZ modellerini zemine yerleştiren yerel iOS uygulamasıdır. Dekorlar taşınabilir, döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Teknoloji ve ana yetenekler")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("- Swift + SwiftUI kullanıcı arayüzü")
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
 [void]$builder.AppendLine("- RoomPlan ile semantik oda taraması ve ``room.json`` üretimi")
-[void]$builder.AppendLine("- RealityKit ile dört oda teması, prosedürel geometri ve 14 gömülü CC0 USDZ varlığı")
-[void]$builder.AppendLine("- Manuel dekor yerleştirme; sürükleme, döndürme ve ölçekleme")
+[void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion ve tarama sırasında hafif RoomPlan kılavuzları")
+[void]$builder.AppendLine("- Gerçekçi boyutlandırılmış 14 gömülü CC0 USDZ varlığı ve paneli kapatan yerleştirme modu")
+[void]$builder.AppendLine("- AR düzlemi bulunamadığında ekran ışını üzerinde serbest yerleştirme fallback'i")
+[void]$builder.AppendLine("- Manuel dekor sürükleme, döndürme ve ölçekleme")
 [void]$builder.AppendLine("- ARWorldMap + ``scene.json`` ile kalıcı anchor/transform saklama ve relocalization")
 [void]$builder.AppendLine("- ReplayKit/AVFoundation tabanlı HEVC video ve AAC ses kaydı")
 [void]$builder.AppendLine("- Codemagic ile imzalı IPA üretimi ve TestFlight yüklemesi")
@@ -6495,14 +6695,14 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("| Bileşen | Sorumluluk |")
 [void]$builder.AppendLine("| --- | --- |")
-[void]$builder.AppendLine("| ``CineARApp`` / ``ContentView`` | Uygulama girişi, kontroller, oda teması ve tarayıcı sunumu |")
+[void]$builder.AppendLine("| ``CineARApp`` / ``ContentView`` | Uygulama girişi, yerleştirme modu, 3B kütüphane ve tarayıcı sunumu |")
 [void]$builder.AppendLine("| ``ARSessionController`` | ARSession yaşam döngüsü, raycast, manuel dekorlar, gesture'lar, kayıt ve proje koordinasyonu |")
 [void]$builder.AppendLine("| ``RoomScannerController`` | RoomPlan taraması, arka planda güvenli JSON staging ve explicit teardown |")
-[void]$builder.AppendLine("| ``RoomRealityRenderer`` | Semantik oda yüzeylerini/nesnelerini bütçeli RealityKit sahnesine dönüştürme |")
-[void]$builder.AppendLine("| ``BundledRoomRealityAssetProvider`` | RoomPlan rollerini gömülü USDZ prototiplerine bağlama ve boyutlandırma |")
+[void]$builder.AppendLine("| ``RoomRealityRenderer`` | Ana arayüzde kapalı tutulan deneysel semantik oda renderer'ı |")
+[void]$builder.AppendLine("| ``BundledRoomRealityAssetProvider`` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |")
 [void]$builder.AppendLine("| ``SceneProjectStore`` | ``scene.json``, ``room.json``, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |")
 [void]$builder.AppendLine("| ``ProfessionalRecorder`` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |")
-[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Tema materyalleri, oda rolleri ve manuel dekor türleri |")
+[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri ve 19 manuel dekor türü |")
 [void]$builder.AppendLine("| ``codemagic.yaml`` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Temel kullanıcı akışı")
@@ -6510,10 +6710,11 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("1. ARKit alanı izler ve yatay/dikey yüzeyleri algılar.")
 [void]$builder.AppendLine("2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.")
 [void]$builder.AppendLine("3. Sonuç compact ``room.json`` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.")
-[void]$builder.AppendLine("4. Tarayıcı kapandıktan ve kamera takibi normale döndükten sonra seçili oda teması oluşturulur.")
-[void]$builder.AppendLine("5. Kullanıcı hazır dekor veya USDZ seçip kamera yüzeyine dokunur; anchor ve model anında bağlanır.")
-[void]$builder.AppendLine("6. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
-[void]$builder.AppendLine("7. **Kaydet** ile world map ve dekor transformları, **HEVC Çekim** ile video/ses çıktısı üretilir.")
+[void]$builder.AppendLine("4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür.")
+[void]$builder.AppendLine("5. Kullanıcı hızlı dekor, 14 modellik kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır.")
+[void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını üzerindeki güvenli mesafe kullanılır.")
+[void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
+[void]$builder.AppendLine("8. **Kaydet** ile world map ve dekor transformları, **HEVC Çekim** ile video/ses çıktısı üretilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Uygulamanın yerel veri yapısı")
 [void]$builder.AppendLine()
@@ -6526,7 +6727,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("  Recordings/*.mov")
 [void]$builder.AppendLine('````')
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("Canlı oda renderer'ı ``room.json`` kullanır. Kullanıcının gerçek mekân verileri, kayıtları ve içe aktardığı özel USDZ dosyaları uygulama sandbox'ında tutulur; bunlar kaynak deposunun veya bu snapshot'ın parçası değildir.")
+[void]$builder.AppendLine("``room.json`` semantik tarama verisi olarak saklanır ancak normal kamera görünümünde opak oda geometrisine dönüştürülmez. Kullanıcının gerçek mekân verileri, kayıtları ve içe aktardığı özel USDZ dosyaları uygulama sandbox'ında tutulur; bunlar kaynak deposunun veya bu snapshot'ın parçası değildir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Mevcut kapsamın sınırları")
 [void]$builder.AppendLine()

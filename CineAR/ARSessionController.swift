@@ -19,6 +19,7 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var activeRealityThemeID: RealityThemeID?
     @Published private(set) var hasScannedRoom = false
     @Published private(set) var isARReady = false
+    @Published private(set) var isPlacingProp = false
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -26,6 +27,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private let roomRealityRenderer = RoomRealityRenderer(
         assetProvider: BundledRoomRealityAssetProvider()
     )
+    private let manualAssetProvider = BundledRoomRealityAssetProvider()
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
@@ -65,9 +67,9 @@ final class ARSessionController: NSObject, ObservableObject {
         super.init()
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
-        if let storedTheme = UserDefaults.standard.string(forKey: Self.realityThemeDefaultsKey) {
-            preferredRealityThemeID = RealityThemeID(rawValue: storedTheme)
-        }
+        // Opaque room replacements can cover people and make the camera feel unstable.
+        // Always launch in the real-camera view; the legacy renderer stays internal.
+        UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
         if let error = projectStore.initializationError {
             publishStatus(
                 "Kayıtlı scene.json okunamadı: \(error.localizedDescription)",
@@ -96,7 +98,10 @@ final class ARSessionController: NSObject, ObservableObject {
         return view
     }
 
-    private func configuration(initialWorldMap: ARWorldMap? = nil) -> ARWorldTrackingConfiguration {
+    private func configuration(
+        initialWorldMap: ARWorldMap? = nil,
+        enableAdvancedOcclusion: Bool = true
+    ) -> ARWorldTrackingConfiguration {
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity
         configuration.planeDetection = [.horizontal, .vertical]
@@ -105,12 +110,15 @@ final class ARSessionController: NSObject, ObservableObject {
         configuration.isAutoFocusEnabled = true
         configuration.initialWorldMap = initialWorldMap
 
-        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
+        if enableAdvancedOcclusion,
+           ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
             configuration.sceneReconstruction = .meshWithClassification
         }
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+        if enableAdvancedOcclusion,
+           ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
             configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+        } else if enableAdvancedOcclusion,
+                  ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
         }
         return configuration
@@ -150,6 +158,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func pauseForRoomScan() {
+        cancelPlacement()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
         cancelPendingPostScanTheme()
         isRoomScanActive = true
@@ -159,6 +168,12 @@ final class ARSessionController: NSObject, ObservableObject {
         roomRealityRenderer.isVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         arView?.isHidden = true
+        // RoomPlan already performs its own LiDAR processing. Temporarily omit the
+        // additional mesh/person passes so scanning does not run three heavy pipelines.
+        arView?.session.run(
+            configuration(enableAdvancedOcclusion: false),
+            options: [.resetSceneReconstruction]
+        )
         do {
             try persistAllEntityTransforms()
         } catch {
@@ -186,7 +201,9 @@ final class ARSessionController: NSObject, ObservableObject {
             roomRealityRenderer.clear()
             roomRealityRenderer.isVisible = false
             activeRealityThemeID = nil
-            themeToSchedule = preferredRealityThemeID ?? .modern
+            preferredRealityThemeID = nil
+            themeToSchedule = nil
+            UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
             var invalidationMessage: String?
             do {
                 try projectStore.invalidateWorldMapForRoomScan()
@@ -195,13 +212,13 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             if let invalidationMessage {
                 completionStatus = (
-                    "Tema etkin, ancak proje haritası güncellenemedi: \(invalidationMessage)",
+                    "Tarama kaydedildi, ancak proje haritası güncellenemedi: \(invalidationMessage)",
                     .red
                 )
             } else {
                 completionStatus = (
-                    "Tarama kaydedildi — oda gerçekliği kamera takibiyle hizalanıyor",
-                    .yellow
+                    "Tarama kaydedildi — yüzey çizimi kapalı, gerçek kamera görünümü etkin",
+                    .green
                 )
             }
         case .cancelled:
@@ -307,23 +324,35 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func selectProp(_ prop: PropKind) {
         selectedProp = prop
+        selectedEntityID = nil
         if prop == .custom, selectedAssetURL == nil {
+            isPlacingProp = false
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
-            publishStatus("\(prop.title) seçildi — kameradaki bir yüzeye dokun", color: .blue)
+            isPlacingProp = true
+            publishStatus("\(prop.title) seçildi — panel kapandı, istediğin yüzeye dokun", color: .blue)
         }
+    }
+
+    func cancelPlacement() {
+        guard isPlacingProp else { return }
+        isPlacingProp = false
+        publishStatus("Yerleştirme iptal edildi", color: .yellow)
     }
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
 
-        if let hitEntity = arView.entity(at: point),
+        if !isPlacingProp,
+           let hitEntity = arView.entity(at: point),
            let id = entityID(from: hitEntity) {
             selectedEntityID = id
             publishStatus("Dekor seçildi — sürükle, döndür veya ölçekle", color: .blue)
             return
         }
+
+        guard isPlacingProp else { return }
 
         guard !isRoomScanActive, !isSessionInterrupted, isARReady else {
             publishStatus("Kamera takibi hazır olduğunda tekrar dokun", color: .yellow)
@@ -359,6 +388,7 @@ final class ARSessionController: NSObject, ObservableObject {
             knownPropAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
+            isPlacingProp = false
             render(prop: selectedProp, id: id, for: anchor)
             if selectedProp == .custom {
                 publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
@@ -408,6 +438,19 @@ final class ARSessionController: NSObject, ObservableObject {
             ).first {
                 return result.worldTransform
             }
+        }
+
+        // Last-resort free placement: even before ARKit has classified a plane, keep
+        // the user's tap meaningful by placing the object along that exact screen ray.
+        if let ray = arView.ray(through: point) {
+            let direction = simd_normalize(ray.direction)
+            let position = ray.origin + direction * 1.5
+            return placementTransform(
+                position: position,
+                normal: -direction,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation
+            )
         }
         return nil
     }
@@ -505,7 +548,8 @@ final class ARSessionController: NSObject, ObservableObject {
             importedAssetURLs = projectStore.importedModelURLs
             selectedAssetURL = importedURL
             selectedProp = .custom
-            publishStatus("\(importedURL.lastPathComponent) kütüphaneye eklendi", color: .green)
+            isPlacingProp = true
+            publishStatus("\(importedURL.lastPathComponent) seçildi — istediğin yüzeye dokun", color: .green)
         } catch {
             publishStatus("USDZ içe aktarılamadı: \(error.localizedDescription)", color: .red)
         }
@@ -518,7 +562,9 @@ final class ARSessionController: NSObject, ObservableObject {
     func selectImportedAsset(_ url: URL) {
         selectedAssetURL = url
         selectedProp = .custom
-        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi", color: .blue)
+        selectedEntityID = nil
+        isPlacingProp = true
+        publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — istediğin yüzeye dokun", color: .blue)
     }
 
     func saveWorldMap() {
@@ -679,12 +725,27 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
+        if prop.bundledAssetName != nil {
+            guard let entity = makeBundledLibraryEntity(for: prop) else {
+                publishStatus("\(prop.title) modeli hazırlanamadı", color: .red)
+                return
+            }
+            attach(
+                entity: entity,
+                prop: prop,
+                id: id,
+                anchor: anchor,
+                generation: renderGeneration
+            )
+            return
+        }
+
         if prop == .custom {
+            let modelURL: URL
             guard let fileName = placement.assetFileName else {
                 publishStatus("3B dekor yüklenemedi: USDZ kaydı eksik", color: .red)
                 return
             }
-            let modelURL: URL
             do {
                 modelURL = try projectStore.modelURL(fileName: fileName)
             } catch {
@@ -744,7 +805,9 @@ final class ARSessionController: NSObject, ObservableObject {
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
-        entity.generateCollisionShapes(recursive: true)
+        if entity.collision == nil {
+            entity.generateCollisionShapes(recursive: true)
+        }
         anchorEntity.addChild(entity)
         arView.scene.addAnchor(anchorEntity)
 
@@ -805,16 +868,62 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func defaultTransform(for prop: PropKind) -> Transform {
         let height: Float
-        switch prop {
-        case .stage: height = 0.09
-        case .crate: height = 0.275
-        case .lightPanel, .wall, .custom: height = 0
+        if let descriptor = libraryDescriptor(for: prop) {
+            height = descriptor.dimensions.y * 0.5
+        } else {
+            switch prop {
+            case .stage: height = 0.09
+            case .crate: height = 0.275
+            case .lightPanel, .wall, .chair, .table, .sofa, .bed, .bookcase,
+                 .television, .refrigerator, .oven, .stove, .sink, .bathtub,
+                 .toilet, .washerDryer, .stairs, .custom:
+                height = 0
+            }
         }
         return Transform(
             scale: [1, 1, 1],
             rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
             translation: [0, height, 0]
         )
+    }
+
+    private func makeBundledLibraryEntity(for prop: PropKind) -> ModelEntity? {
+        guard let descriptor = libraryDescriptor(for: prop),
+              let content = manualAssetProvider.makeEntity(
+                for: descriptor.role,
+                theme: RealityThemeCatalog.modern,
+                targetDimensions: descriptor.dimensions
+              ) else { return nil }
+
+        let root = ModelEntity()
+        root.name = "cinear.library.\(prop.rawValue)"
+        root.addChild(content)
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: descriptor.dimensions)]
+        )
+        return root
+    }
+
+    private func libraryDescriptor(
+        for prop: PropKind
+    ) -> (role: RealityObjectRole, dimensions: SIMD3<Float>)? {
+        switch prop {
+        case .chair: (.chair, [0.58, 0.92, 0.58])
+        case .table: (.table, [1.40, 0.76, 0.82])
+        case .sofa: (.sofa, [2.00, 0.90, 0.88])
+        case .bed: (.bed, [1.60, 0.68, 2.05])
+        case .bookcase: (.storage, [1.05, 1.90, 0.38])
+        case .television: (.television, [1.20, 0.76, 0.16])
+        case .refrigerator: (.refrigerator, [0.76, 1.82, 0.72])
+        case .oven: (.oven, [0.66, 0.92, 0.66])
+        case .stove: (.stove, [0.66, 0.92, 0.66])
+        case .sink: (.sink, [0.68, 0.90, 0.58])
+        case .bathtub: (.bathtub, [1.72, 0.62, 0.78])
+        case .toilet: (.toilet, [0.70, 0.82, 0.76])
+        case .washerDryer: (.washerDryer, [0.72, 1.62, 0.72])
+        case .stairs: (.stairs, [1.20, 1.20, 2.00])
+        case .wall, .stage, .crate, .lightPanel, .custom: nil
+        }
     }
 
     private func makeBuiltInEntity(for prop: PropKind) -> ModelEntity {
@@ -848,8 +957,10 @@ final class ARSessionController: NSObject, ObservableObject {
             material.color = .init(tint: .white)
             return ModelEntity(mesh: mesh, materials: [material])
 
-        case .custom:
-            preconditionFailure("Custom assets are loaded asynchronously")
+        case .chair, .table, .sofa, .bed, .bookcase, .television,
+             .refrigerator, .oven, .stove, .sink, .bathtub, .toilet,
+             .washerDryer, .stairs, .custom:
+            preconditionFailure("USDZ assets are loaded through the library path")
         }
     }
 
