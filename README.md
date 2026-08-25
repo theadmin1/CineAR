@@ -30,6 +30,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
 - 14 yerlesik CC0 USDZ model ile bitki, ayakli lamba, hali ve fon dahil 18 hazir dekor
+- Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
+  gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
+- Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Dekorlari surukleme, dondurme ve olceklendirme
 - Duzlem bulunamasa bile dokunulan ekran isiniyla tahmini zemini kesistiren yerlestirme fallback'i
@@ -49,10 +52,12 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
-6. Hizli dekorlardan birini, `Hazir 3B Nesne Kutuphanesi` icindeki 18 parcadan
+6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
+   `Hazir 3B Nesne Kutuphanesi` icindeki 18 parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda zeminin istediginiz noktasina dokunun;
-   sonra modeli parmak hareketleriyle duzenleyin.
+   sonra modeli parmak hareketleriyle duzenleyin. Yerlesimden sonra yalniz kompakt
+   dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
 8. Tarama sonrasinda ilk dunya haritasi otomatik kaydedilir. Dekor ekleyip tasidiktan
    sonra son konumlari saklamak icin `Kaydet` tusuna basin; takip hazir degilse istek
    siraya alinir ve otomatik tamamlanir.

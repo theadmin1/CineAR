@@ -25,6 +25,9 @@
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
 6. Hazir 3B Nesne Kutuphanesi'nden sandalye, masa, koltuk, yatak ve iki cihaz secip
    yerlestir. Boyutlar gercekci olmali ve modeller zeminin altina gomulmemeli.
+   Ozellikle `Kitaplik` seciminde hata mesaji cikmamali. USDZ bundle yuklemesi yapay
+   olarak basarisiz kilindiginda kategoriye uygun prosedurel yedek yine gorunmeli.
+   Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
 7. Henuz tam siniflandirilmamis ama kamerada gorunen bir zemin noktasina dokun;
    fallback yerlestirme nesneyi kamera yuksekliginden tahmin edilen zemine oturtmali.
 8. Duvar, platform ve en az iki farkli USDZ model yerlestir; manuel objelerin

@@ -386,12 +386,12 @@ final class RoomRealityRenderer {
 
         let whiteLine = RealityMaterialRecipe(
             1, 1, 1,
-            alpha: 0.42,
+            alpha: 0.72,
             roughness: 0.18
         ).makeMaterial()
         let objectLine = RealityMaterialRecipe(
             0.82, 0.94, 1,
-            alpha: 0.36,
+            alpha: 0.58,
             roughness: 0.18
         ).makeMaterial()
 
@@ -526,8 +526,8 @@ private extension RoomRealityRenderer {
         let root = Entity()
         root.name = "cinear.reality.outline.surface.\(surface.identifier.uuidString)"
         root.transform = Transform(matrix: surface.transform)
-        let lineWidth: Float = 0.012
-        let lineDepth: Float = 0.008
+        let lineWidth: Float = 0.018
+        let lineDepth: Float = 0.035
         let center = bounds.center
         let countBefore = generatedBoxCount
 
@@ -563,7 +563,7 @@ private extension RoomRealityRenderer {
         let collider = Entity()
         collider.name = "cinear.reality.outline.surface.collider"
         collider.position = [center.x, center.y, 0]
-        collider.scale = [bounds.width, bounds.height, 0.025]
+        collider.scale = [bounds.width, bounds.height, 0.04]
         collider.components.set(
             CollisionComponent(shapes: [Self.unitBoxCollisionShape])
         )
@@ -1242,7 +1242,7 @@ private extension RoomRealityRenderer {
         root.name = "cinear.reality.outline.object.\(object.identifier.uuidString)"
         root.transform = Transform(matrix: object.transform)
         let half = size * 0.5
-        let lineWidth: Float = 0.012
+        let lineWidth: Float = 0.018
         let countBefore = generatedBoxCount
 
         for y in [-half.y, half.y] {

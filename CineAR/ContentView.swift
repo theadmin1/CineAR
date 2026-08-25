@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var showingAssetImporter = false
     @State private var showingPropLibrary = false
     @State private var roomScanResult: RoomScanResult?
+    @State private var controlsExpanded = false
 
     var body: some View {
         ZStack {
@@ -29,15 +30,21 @@ struct ContentView: View {
                     Spacer()
                     if session.isPlacingProp {
                         placementBar
-                    } else {
+                    } else if controlsExpanded {
                         controls
-                            .disabled(session.isRecordingTransitioning)
+                    } else {
+                        compactControls
                     }
                 }
                 .padding()
             }
         }
         .statusBarHidden(session.isRecording || session.isRecordingTransitioning)
+        .onChange(of: session.isPlacingProp) { oldValue, newValue in
+            if oldValue, !newValue {
+                controlsExpanded = false
+            }
+        }
         .fullScreenCover(isPresented: $showingRoomScanner, onDismiss: {
             session.resumeAfterRoomScan(result: roomScanResult)
             roomScanResult = nil
@@ -100,6 +107,7 @@ struct ContentView: View {
                                 Text(prop.symbol).font(.title2)
                                 Text(prop.title).font(.caption2.weight(.semibold))
                             }
+                            .foregroundStyle(session.selectedProp == prop ? Color.white : Color.primary)
                             .frame(width: 70, height: 54)
                             .background(
                                 session.selectedProp == prop
@@ -119,6 +127,7 @@ struct ContentView: View {
                     "Hazır 3B Nesne Kütüphanesi (\(PropKind.furnitureCases.count) parça)",
                     systemImage: "square.grid.3x3.fill"
                 )
+                .foregroundStyle(.white)
                     .font(.caption.weight(.bold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -199,6 +208,13 @@ struct ContentView: View {
                 Text(session.hasScannedRoom ? "Tarama hazır" : "Tarama gerekli")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(session.hasScannedRoom ? .green : .secondary)
+                Button {
+                    controlsExpanded = false
+                } label: {
+                    Image(systemName: "chevron.down.circle.fill")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Kontrolleri küçült")
             }
 
             HStack(spacing: 8) {
@@ -235,12 +251,61 @@ struct ContentView: View {
         Button(action: action) {
             Label(title, systemImage: icon)
                 .font(.caption.weight(.semibold))
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
                 .background(
                     isSelected ? Color.accentColor.opacity(0.88) : Color.white.opacity(0.10),
                     in: Capsule()
                 )
+        }
+    }
+
+    private var compactControls: some View {
+        HStack(spacing: 8) {
+            compactButton("Kontroller", "slider.horizontal.3") {
+                controlsExpanded = true
+            }
+            compactButton("Nesneler", "shippingbox.fill") {
+                showingPropLibrary = true
+            }
+            compactButton(
+                session.isRoomOutlineVisible ? "Gerçek" : "Hatlar",
+                session.isRoomOutlineVisible ? "camera.fill" : "square.dashed.inset.filled"
+            ) {
+                if session.isRoomOutlineVisible {
+                    session.showOriginalReality()
+                } else {
+                    session.showRoomOutline()
+                }
+            }
+            .disabled(!session.hasScannedRoom)
+            compactButton("Oda Tara", "viewfinder") {
+                session.pauseForRoomScan()
+                showingRoomScanner = true
+            }
+            .disabled(!RoomScannerController.isSupported || !session.isARReady)
+        }
+        .disabled(session.isRecordingTransitioning)
+        .padding(8)
+        .background(.ultraThinMaterial, in: Capsule())
+    }
+
+    private func compactButton(
+        _ title: String,
+        _ icon: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: icon).font(.body)
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 7)
         }
     }
 

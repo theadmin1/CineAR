@@ -53,6 +53,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
     private var shouldSaveWorldMapWhenReady = false
+    private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
@@ -175,6 +176,7 @@ final class ARSessionController: NSObject, ObservableObject {
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
         cancelPendingPostScanTheme()
         readinessRecoveryGeneration &+= 1
+        shouldShowRoomOutlineWhenReady = false
         isRoomScanActive = true
         isARReady = false
         realityThemeToRestoreAfterScan = themeAwaitingSafeRestore
@@ -218,6 +220,7 @@ final class ARSessionController: NSObject, ObservableObject {
             activeRealityThemeID = nil
             preferredRealityThemeID = nil
             isRoomOutlineVisible = false
+            shouldShowRoomOutlineWhenReady = false
             themeToSchedule = nil
             UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
             var invalidationMessage: String?
@@ -340,6 +343,7 @@ final class ARSessionController: NSObject, ObservableObject {
         activeRealityThemeID = nil
         preferredRealityThemeID = nil
         isRoomOutlineVisible = false
+        shouldShowRoomOutlineWhenReady = false
         UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
         setPhysicalSceneOcclusion(enabled: true)
         publishStatus("Gerçek oda görünümü etkin; eklediğin objeler korunuyor", color: .green)
@@ -358,20 +362,25 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         guard FileManager.default.fileExists(atPath: roomDataURL.path) else {
             hasScannedRoom = false
+            shouldShowRoomOutlineWhenReady = false
             publishStatus("Beyaz oda hatları için önce Oda Tara'yı tamamla", color: .yellow)
             return
         }
         guard roomCoordinateSpaceIsActive else {
-            publishStatus("Kayıtlı oda hatlarını hizalamak için sahne haritasını Yükle", color: .yellow)
+            shouldShowRoomOutlineWhenReady = true
+            loadWorldMap()
             return
         }
         guard let trackingState = arView.session.currentFrame?.camera.trackingState,
               case .normal = trackingState else {
-            publishStatus("Kamera takibi hazır olduğunda tekrar dene", color: .yellow)
+            shouldShowRoomOutlineWhenReady = true
+            scheduleReadinessRecovery()
+            publishStatus("Beyaz Hatlar takip hazır olduğunda otomatik açılacak", color: .yellow)
             return
         }
 
         do {
+            shouldShowRoomOutlineWhenReady = false
             roomRealityRenderer.install(in: arView)
             let report: RoomRealityRenderReport
             if roomRealityRenderer.hasPreparedOutline,
@@ -394,6 +403,7 @@ final class ARSessionController: NSObject, ObservableObject {
         } catch {
             roomRealityRenderer.isVisible = false
             isRoomOutlineVisible = false
+            shouldShowRoomOutlineWhenReady = false
             setPhysicalSceneOcclusion(enabled: true)
             publishStatus("Oda hatları gösterilemedi: \(error.localizedDescription)", color: .red)
         }
@@ -746,7 +756,7 @@ final class ARSessionController: NSObject, ObservableObject {
                         color: .red
                     )
                 }
-                if self.shouldSaveWorldMapWhenReady {
+                if self.shouldSaveWorldMapWhenReady || self.shouldShowRoomOutlineWhenReady {
                     self.scheduleReadinessRecovery()
                 }
             }
@@ -787,6 +797,11 @@ final class ARSessionController: NSObject, ObservableObject {
                 if self.savePendingWorldMapIfPossible(trackingState: trackingState) {
                     return
                 }
+                if self.shouldShowRoomOutlineWhenReady {
+                    self.shouldShowRoomOutlineWhenReady = false
+                    self.showRoomOutline()
+                    return
+                }
             case .limited(let reason)?:
                 switch reason {
                 case .initializing, .relocalizing:
@@ -800,7 +815,9 @@ final class ARSessionController: NSObject, ObservableObject {
                 self.isARReady = false
             }
 
-            let needsAnotherCheck = !self.isARReady || self.shouldSaveWorldMapWhenReady
+            let needsAnotherCheck = !self.isARReady
+                || self.shouldSaveWorldMapWhenReady
+                || self.shouldShowRoomOutlineWhenReady
             if needsAnotherCheck, attempt < 40 {
                 self.pollReadiness(generation: generation, attempt: attempt + 1)
             }
@@ -825,6 +842,7 @@ final class ARSessionController: NSObject, ObservableObject {
             runSession(initialWorldMap: worldMap)
             publishStatus("Aynı alanı göster; kamera yeniden konumlanıyor", color: .yellow)
         } catch {
+            shouldShowRoomOutlineWhenReady = false
             publishStatus("Kayıtlı sahne yüklenemedi: \(error.localizedDescription)", color: .red)
         }
     }
@@ -1392,6 +1410,11 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             isARReady = true
             didAttemptSessionFailureRecovery = false
             if savePendingWorldMapIfPossible(trackingState: camera.trackingState) {
+                return
+            }
+            if shouldShowRoomOutlineWhenReady {
+                shouldShowRoomOutlineWhenReady = false
+                showRoomOutline()
                 return
             }
             if schedulePendingPostScanThemeIfReady(trackingState: camera.trackingState) {
