@@ -15,6 +15,8 @@
    tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
 3. Tarama boyunca kamera hareketinin akici oldugunu, ana gorunume donuste gercek
    insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
+   Ana gorunume dondukten sonra AR durumu en gec 10 saniye icinde hazir olmali;
+   yeni bir tracking callback'i gelmese de kutuphane ve yerlestirme kullanilabilmeli.
 4. `Beyaz Hatlar`i ac; duvar, zemin, kapi/pencere ve taninan buyuk objelerin yalniz
    ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
    butun hatlarin kayboldugunu dogrula.
@@ -29,6 +31,8 @@
    konumunun ve parmak hareketlerinin korundugunu dogrula.
 9. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
 10. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+    Ayrica yeni bir tarama yapip manuel `Kaydet`e basmadan uygulamayi yeniden ac;
+    tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilabilmeli.
 11. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`

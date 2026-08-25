@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.5.0`
-- Proje build numarası: `6`
+- Uygulama sürümü: `0.5.1`
+- Proje build numarası: `7`
 - Git dalı: `main`
-- Kaynak commit: `ecec14f836a0f6f824710ae2c19a7079baf1833f`
-- Oluşturulma zamanı: `2026-08-25 12:24:32 +03:00`
+- Kaynak commit: `2764139fc1711f6227e03e9d2ee27591b4c6ca19`
+- Oluşturulma zamanı: `2026-08-25 13:42:56 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -20,6 +20,8 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - Swift + SwiftUI kullanıcı arayüzü
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
 - RoomPlan ile semantik oda taraması ve `room.json` üretimi
+- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
+- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
 - Gerçekçi boyutlandırılmış 14 gömülü CC0 USDZ varlığı, 4 hafif prosedürel dekor ve paneli kapatan yerleştirme modu
 - AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i
@@ -62,7 +64,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 5. Kullanıcı hızlı dekor, 18 parçalık kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır.
 6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.
 7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.
-8. **Kaydet** ile world map ve dekor transformları, **HEVC Çekim** ile video/ses çıktısı üretilir.
+8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.
 
 ## Uygulamanın yerel veri yapısı
 
@@ -171,14 +173,14 @@ Yok.
 | `.gitignore` | 25 | 473 |
 | `CineAR.xcodeproj/project.pbxproj` | 272 | 12828 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 1497 | 60126 |
+| `CineAR/ARSessionController.swift` | 1594 | 63941 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 206 | 7250 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 327 | 12422 |
+| `CineAR/ContentView.swift` | 327 | 12400 |
 | `CineAR/Info.plist` | 49 | 1582 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 136 | 3813 |
@@ -190,11 +192,11 @@ Yok.
 | `CineAR/SceneProjectStore.swift` | 352 | 13489 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 65 | 3436 |
+| `Docs/DEVICE_TEST.md` | 69 | 3765 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 100 | 5073 |
+| `README.md` | 104 | 5416 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
-| `Tools/generate_all_in_one_markdown.ps1` | 341 | 17134 |
+| `Tools/generate_all_in_one_markdown.ps1` | 343 | 17440 |
 | `Tools/render_usdz_thumbnails.py` | 94 | 3522 |
 | `Tools/validate_usdz_assets.py` | 67 | 2269 |
 
@@ -439,13 +441,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.5.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -462,12 +464,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.5.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -591,6 +593,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var postScanThemeGeneration: UInt64 = 0
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
+    private var shouldSaveWorldMapWhenReady = false
+    private var readinessRecoveryGeneration: UInt64 = 0
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
 
@@ -674,6 +678,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         renderGeneration &+= 1
+        readinessRecoveryGeneration &+= 1
         cancelPendingPostScanTheme()
         isARReady = false
         isSessionInterrupted = false
@@ -703,12 +708,14 @@ final class ARSessionController: NSObject, ObservableObject {
         )
         roomRealityRenderer.install(in: arView)
         restoreRoomRealityIfPossible()
+        scheduleReadinessRecovery()
     }
 
     func pauseForRoomScan() {
         cancelPlacement()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
         cancelPendingPostScanTheme()
+        readinessRecoveryGeneration &+= 1
         isRoomScanActive = true
         isARReady = false
         realityThemeToRestoreAfterScan = themeAwaitingSafeRestore
@@ -761,14 +768,16 @@ final class ARSessionController: NSObject, ObservableObject {
                 invalidationMessage = error.localizedDescription
             }
             if let invalidationMessage {
+                shouldSaveWorldMapWhenReady = false
                 completionStatus = (
                     "Tarama kaydedildi, ancak proje haritası güncellenemedi: \(invalidationMessage)",
                     .red
                 )
             } else {
                 updateKnownFloorFromRoomData()
+                shouldSaveWorldMapWhenReady = hasScannedRoom
                 completionStatus = (
-                    "Tarama kaydedildi — Gerçek veya Beyaz Hatlar görünümünü seçebilirsin",
+                    "Tarama kaydedildi — sahne haritası takip hazır olunca otomatik kaydedilecek",
                     .green
                 )
             }
@@ -785,6 +794,7 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
         arView?.session.run(configuration(), options: [])
+        scheduleReadinessRecovery()
 
         if let completionStatus {
             publishStatus(completionStatus.message, color: completionStatus.color)
@@ -1224,6 +1234,26 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         guard !isSavingWorldMap else {
+            shouldSaveWorldMapWhenReady = true
+            publishStatus("Mevcut kayıttan sonra bir kez daha kaydedilecek", color: .yellow)
+            return
+        }
+        guard let trackingState = arView.session.currentFrame?.camera.trackingState,
+              case .normal = trackingState else {
+            shouldSaveWorldMapWhenReady = true
+            scheduleReadinessRecovery()
+            publishStatus(
+                "Kaydetme sıraya alındı — kamera takibi hazır olunca tamamlanacak",
+                color: .yellow
+            )
+            return
+        }
+        shouldSaveWorldMapWhenReady = false
+        performWorldMapSave(in: arView)
+    }
+
+    private func performWorldMapSave(in arView: ARView) {
+        guard !isSavingWorldMap else {
             publishStatus("Sahne haritası zaten kaydediliyor", color: .yellow)
             return
         }
@@ -1257,6 +1287,63 @@ final class ARSessionController: NSObject, ObservableObject {
                         color: .red
                     )
                 }
+                if self.shouldSaveWorldMapWhenReady {
+                    self.scheduleReadinessRecovery()
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    private func savePendingWorldMapIfPossible(
+        trackingState: ARCamera.TrackingState?
+    ) -> Bool {
+        guard shouldSaveWorldMapWhenReady, !isSavingWorldMap,
+              let trackingState, case .normal = trackingState,
+              let arView else { return false }
+        shouldSaveWorldMapWhenReady = false
+        performWorldMapSave(in: arView)
+        return true
+    }
+
+    private func scheduleReadinessRecovery() {
+        readinessRecoveryGeneration &+= 1
+        let generation = readinessRecoveryGeneration
+        pollReadiness(generation: generation, attempt: 0)
+    }
+
+    private func pollReadiness(generation: UInt64, attempt: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + (attempt == 0 ? 0.12 : 0.25)) {
+            [weak self] in
+            guard let self,
+                  self.readinessRecoveryGeneration == generation,
+                  !self.isRoomScanActive,
+                  !self.isSessionInterrupted else { return }
+
+            let trackingState = self.arView?.session.currentFrame?.camera.trackingState
+            switch trackingState {
+            case .normal?:
+                self.isARReady = true
+                self.didAttemptSessionFailureRecovery = false
+                if self.savePendingWorldMapIfPossible(trackingState: trackingState) {
+                    return
+                }
+            case .limited(let reason)?:
+                switch reason {
+                case .initializing, .relocalizing:
+                    self.isARReady = false
+                case .excessiveMotion, .insufficientFeatures:
+                    self.isARReady = true
+                @unknown default:
+                    self.isARReady = false
+                }
+            case .notAvailable?, nil:
+                self.isARReady = false
+            }
+
+            let needsAnotherCheck = !self.isARReady || self.shouldSaveWorldMapWhenReady
+            if needsAnotherCheck, attempt < 40 {
+                self.pollReadiness(generation: generation, attempt: attempt + 1)
             }
         }
     }
@@ -1845,6 +1932,9 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         case .normal:
             isARReady = true
             didAttemptSessionFailureRecovery = false
+            if savePendingWorldMapIfPossible(trackingState: camera.trackingState) {
+                return
+            }
             if schedulePendingPostScanThemeIfReady(trackingState: camera.trackingState) {
                 return
             }
@@ -1856,7 +1946,14 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             isARReady = false
             publishStatus("Kamera takibi kullanılamıyor", color: .red)
         case .limited(let reason):
-            isARReady = true
+            switch reason {
+            case .initializing, .relocalizing:
+                isARReady = false
+            case .excessiveMotion, .insufficientFeatures:
+                isARReady = true
+            @unknown default:
+                isARReady = false
+            }
             let message: String
             switch reason {
             case .initializing: message = "AR oturumu hazırlanıyor"
@@ -1919,6 +2016,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     func sessionWasInterrupted(_ session: ARSession) {
         guard !isSessionInterrupted else { return }
 
+        readinessRecoveryGeneration &+= 1
         isARReady = false
         isSessionInterrupted = true
         configurationBeforeInterruption = session.configuration
@@ -1972,6 +2070,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             ?? configuration()
         configurationBeforeInterruption = nil
         session.run(resumeConfiguration, options: [])
+        scheduleReadinessRecovery()
 
         if pendingRealityThemeAfterScan != nil {
             _ = schedulePendingPostScanThemeIfReady(
@@ -2559,7 +2658,7 @@ struct ContentView: View {
                 ) {
                     session.showRoomOutline()
                 }
-                .disabled(!session.hasScannedRoom || !session.isARReady)
+                .disabled(!session.hasScannedRoom)
             }
 
             Text("Tarama sırasında ve Beyaz Hatlar modunda kamera kapanmaz; katı duvar çizilmez")
@@ -6680,6 +6779,8 @@ incelemesine uygulama gondermesi mumkun degildir.
    tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
 3. Tarama boyunca kamera hareketinin akici oldugunu, ana gorunume donuste gercek
    insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
+   Ana gorunume dondukten sonra AR durumu en gec 10 saniye icinde hazir olmali;
+   yeni bir tracking callback'i gelmese de kutuphane ve yerlestirme kullanilabilmeli.
 4. `Beyaz Hatlar`i ac; duvar, zemin, kapi/pencere ve taninan buyuk objelerin yalniz
    ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
    butun hatlarin kayboldugunu dogrula.
@@ -6694,6 +6795,8 @@ incelemesine uygulama gondermesi mumkun degildir.
    konumunun ve parmak hareketlerinin korundugunu dogrula.
 9. Modelleri tasi, dondur ve olceklendir; projeyi kaydet.
 10. Uygulamayi tamamen kapat, ayni alanda ac ve projeyi yukle.
+    Ayrica yeni bir tarama yapip manuel `Kaydet`e basmadan uygulamayi yeniden ac;
+    tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilabilmeli.
 11. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
@@ -6786,6 +6889,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ve gercek mekan mesh'i ile occlusion
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
+- RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
+- Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
 - Tarama sirasinda RoomPlan'in hafif, beyaz ve seffaf kilavuz cizgileri
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
@@ -6814,7 +6919,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda zeminin istediginiz noktasina dokunun;
    sonra modeli parmak hareketleriyle duzenleyin.
-8. Mekan taramasi yeterince ayrintili oldugunda `Kaydet` tusuna basin.
+8. Tarama sonrasinda ilk dunya haritasi otomatik kaydedilir. Dekor ekleyip tasidiktan
+   sonra son konumlari saklamak icin `Kaydet` tusuna basin; takip hazir degilse istek
+   siraya alinir ve otomatik tamamlanir.
 9. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
 
@@ -7181,6 +7288,8 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- Swift + SwiftUI kullanıcı arayüzü")
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
 [void]$builder.AppendLine("- RoomPlan ile semantik oda taraması ve ``room.json`` üretimi")
+[void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
+[void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
 [void]$builder.AppendLine("- Gerçekçi boyutlandırılmış 14 gömülü CC0 USDZ varlığı, 4 hafif prosedürel dekor ve paneli kapatan yerleştirme modu")
 [void]$builder.AppendLine("- AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i")
@@ -7223,7 +7332,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("5. Kullanıcı hızlı dekor, 18 parçalık kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır.")
 [void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.")
 [void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
-[void]$builder.AppendLine("8. **Kaydet** ile world map ve dekor transformları, **HEVC Çekim** ile video/ses çıktısı üretilir.")
+[void]$builder.AppendLine("8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Uygulamanın yerel veri yapısı")
 [void]$builder.AppendLine()

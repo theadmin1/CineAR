@@ -217,7 +217,7 @@ struct ContentView: View {
                 ) {
                     session.showRoomOutline()
                 }
-                .disabled(!session.hasScannedRoom || !session.isARReady)
+                .disabled(!session.hasScannedRoom)
             }
 
             Text("Tarama sırasında ve Beyaz Hatlar modunda kamera kapanmaz; katı duvar çizilmez")

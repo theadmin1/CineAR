@@ -23,6 +23,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ve gercek mekan mesh'i ile occlusion
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
+- RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
+- Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
 - Tarama sirasinda RoomPlan'in hafif, beyaz ve seffaf kilavuz cizgileri
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
@@ -51,7 +53,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda zeminin istediginiz noktasina dokunun;
    sonra modeli parmak hareketleriyle duzenleyin.
-8. Mekan taramasi yeterince ayrintili oldugunda `Kaydet` tusuna basin.
+8. Tarama sonrasinda ilk dunya haritasi otomatik kaydedilir. Dekor ekleyip tasidiktan
+   sonra son konumlari saklamak icin `Kaydet` tusuna basin; takip hazir degilse istek
+   siraya alinir ve otomatik tamamlanir.
 9. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
 

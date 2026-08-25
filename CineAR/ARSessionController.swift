@@ -52,6 +52,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var postScanThemeGeneration: UInt64 = 0
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
+    private var shouldSaveWorldMapWhenReady = false
+    private var readinessRecoveryGeneration: UInt64 = 0
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
 
@@ -135,6 +137,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         renderGeneration &+= 1
+        readinessRecoveryGeneration &+= 1
         cancelPendingPostScanTheme()
         isARReady = false
         isSessionInterrupted = false
@@ -164,12 +167,14 @@ final class ARSessionController: NSObject, ObservableObject {
         )
         roomRealityRenderer.install(in: arView)
         restoreRoomRealityIfPossible()
+        scheduleReadinessRecovery()
     }
 
     func pauseForRoomScan() {
         cancelPlacement()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
         cancelPendingPostScanTheme()
+        readinessRecoveryGeneration &+= 1
         isRoomScanActive = true
         isARReady = false
         realityThemeToRestoreAfterScan = themeAwaitingSafeRestore
@@ -222,14 +227,16 @@ final class ARSessionController: NSObject, ObservableObject {
                 invalidationMessage = error.localizedDescription
             }
             if let invalidationMessage {
+                shouldSaveWorldMapWhenReady = false
                 completionStatus = (
                     "Tarama kaydedildi, ancak proje haritası güncellenemedi: \(invalidationMessage)",
                     .red
                 )
             } else {
                 updateKnownFloorFromRoomData()
+                shouldSaveWorldMapWhenReady = hasScannedRoom
                 completionStatus = (
-                    "Tarama kaydedildi — Gerçek veya Beyaz Hatlar görünümünü seçebilirsin",
+                    "Tarama kaydedildi — sahne haritası takip hazır olunca otomatik kaydedilecek",
                     .green
                 )
             }
@@ -246,6 +253,7 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
         arView?.session.run(configuration(), options: [])
+        scheduleReadinessRecovery()
 
         if let completionStatus {
             publishStatus(completionStatus.message, color: completionStatus.color)
@@ -685,6 +693,26 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         guard !isSavingWorldMap else {
+            shouldSaveWorldMapWhenReady = true
+            publishStatus("Mevcut kayıttan sonra bir kez daha kaydedilecek", color: .yellow)
+            return
+        }
+        guard let trackingState = arView.session.currentFrame?.camera.trackingState,
+              case .normal = trackingState else {
+            shouldSaveWorldMapWhenReady = true
+            scheduleReadinessRecovery()
+            publishStatus(
+                "Kaydetme sıraya alındı — kamera takibi hazır olunca tamamlanacak",
+                color: .yellow
+            )
+            return
+        }
+        shouldSaveWorldMapWhenReady = false
+        performWorldMapSave(in: arView)
+    }
+
+    private func performWorldMapSave(in arView: ARView) {
+        guard !isSavingWorldMap else {
             publishStatus("Sahne haritası zaten kaydediliyor", color: .yellow)
             return
         }
@@ -718,6 +746,63 @@ final class ARSessionController: NSObject, ObservableObject {
                         color: .red
                     )
                 }
+                if self.shouldSaveWorldMapWhenReady {
+                    self.scheduleReadinessRecovery()
+                }
+            }
+        }
+    }
+
+    @discardableResult
+    private func savePendingWorldMapIfPossible(
+        trackingState: ARCamera.TrackingState?
+    ) -> Bool {
+        guard shouldSaveWorldMapWhenReady, !isSavingWorldMap,
+              let trackingState, case .normal = trackingState,
+              let arView else { return false }
+        shouldSaveWorldMapWhenReady = false
+        performWorldMapSave(in: arView)
+        return true
+    }
+
+    private func scheduleReadinessRecovery() {
+        readinessRecoveryGeneration &+= 1
+        let generation = readinessRecoveryGeneration
+        pollReadiness(generation: generation, attempt: 0)
+    }
+
+    private func pollReadiness(generation: UInt64, attempt: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + (attempt == 0 ? 0.12 : 0.25)) {
+            [weak self] in
+            guard let self,
+                  self.readinessRecoveryGeneration == generation,
+                  !self.isRoomScanActive,
+                  !self.isSessionInterrupted else { return }
+
+            let trackingState = self.arView?.session.currentFrame?.camera.trackingState
+            switch trackingState {
+            case .normal?:
+                self.isARReady = true
+                self.didAttemptSessionFailureRecovery = false
+                if self.savePendingWorldMapIfPossible(trackingState: trackingState) {
+                    return
+                }
+            case .limited(let reason)?:
+                switch reason {
+                case .initializing, .relocalizing:
+                    self.isARReady = false
+                case .excessiveMotion, .insufficientFeatures:
+                    self.isARReady = true
+                @unknown default:
+                    self.isARReady = false
+                }
+            case .notAvailable?, nil:
+                self.isARReady = false
+            }
+
+            let needsAnotherCheck = !self.isARReady || self.shouldSaveWorldMapWhenReady
+            if needsAnotherCheck, attempt < 40 {
+                self.pollReadiness(generation: generation, attempt: attempt + 1)
             }
         }
     }
@@ -1306,6 +1391,9 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         case .normal:
             isARReady = true
             didAttemptSessionFailureRecovery = false
+            if savePendingWorldMapIfPossible(trackingState: camera.trackingState) {
+                return
+            }
             if schedulePendingPostScanThemeIfReady(trackingState: camera.trackingState) {
                 return
             }
@@ -1317,7 +1405,14 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             isARReady = false
             publishStatus("Kamera takibi kullanılamıyor", color: .red)
         case .limited(let reason):
-            isARReady = true
+            switch reason {
+            case .initializing, .relocalizing:
+                isARReady = false
+            case .excessiveMotion, .insufficientFeatures:
+                isARReady = true
+            @unknown default:
+                isARReady = false
+            }
             let message: String
             switch reason {
             case .initializing: message = "AR oturumu hazırlanıyor"
@@ -1380,6 +1475,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     func sessionWasInterrupted(_ session: ARSession) {
         guard !isSessionInterrupted else { return }
 
+        readinessRecoveryGeneration &+= 1
         isARReady = false
         isSessionInterrupted = true
         configurationBeforeInterruption = session.configuration
@@ -1433,6 +1529,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             ?? configuration()
         configurationBeforeInterruption = nil
         session.run(resumeConfiguration, options: [])
+        scheduleReadinessRecovery()
 
         if pendingRealityThemeAfterScan != nil {
             _ = schedulePendingPostScanThemeIfReady(
