@@ -981,6 +981,31 @@ final class ARSessionController: NSObject, ObservableObject {
         publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .blue)
     }
 
+    func showSceneLightControls() {
+        persistSelectedLightSettings()
+        if let placement = projectStore.project.placements.last(where: {
+            $0.kind.emitsVirtualLight
+        }) {
+            selectedEntityID = placement.id
+            selectedLightSettings = placement.lightSettings ?? .defaultFixture
+            isPlacingProp = false
+            publishStatus(
+                "Sahne ışığı seçildi — güç, sıcaklık, yön, eğim ve hüzmeyi ayarla",
+                color: .blue
+            )
+            return
+        }
+
+        selectedProp = .cagedCeilingLight
+        selectedEntityID = nil
+        selectedLightSettings = nil
+        isPlacingProp = true
+        publishStatus(
+            "Sahne ışığı eklemek için taranmış tavana dokun",
+            color: .blue
+        )
+    }
+
     func saveWorldMap() {
         guard let arView else {
             publishStatus("AR görünümü henüz hazır değil", color: .red)
@@ -1021,21 +1046,51 @@ final class ARSessionController: NSObject, ObservableObject {
         isSavingWorldMap = true
         publishStatus("Sahne haritası hazırlanıyor...", color: .yellow)
 
+        captureAndSaveWorldMap(in: arView, attempt: 0)
+    }
+
+    private func captureAndSaveWorldMap(in arView: ARView, attempt: Int) {
         arView.session.getCurrentWorldMap { [weak self] worldMap, error in
             guard let self else { return }
             DispatchQueue.main.async {
-                self.isSavingWorldMap = false
                 do {
                     if let error { throw error }
                     guard let worldMap else { throw CineARError.worldMapUnavailable }
+                    // scene.json is written before ARKit acknowledges the newly added
+                    // anchor. A world-map snapshot taken during that short window can
+                    // otherwise contain the old anchor set. Replace only CineAR's
+                    // managed anchors with the freshest ARFrame snapshot; Apple
+                    // explicitly permits editing ARWorldMap.anchors before archiving.
+                    self.reconcileManagedAnchors(
+                        in: worldMap,
+                        currentFrame: arView.session.currentFrame
+                    )
                     try self.validate(worldMap: worldMap)
                     let data = try NSKeyedArchiver.archivedData(
                         withRootObject: worldMap,
                         requiringSecureCoding: true
                     )
                     try self.projectStore.saveWorldMapData(data)
+                    self.isSavingWorldMap = false
                     self.publishStatus("Set projesi ve dünya haritası kaydedildi", color: .green)
                 } catch {
+                    if let cinearError = error as? CineARError,
+                       case .sceneSnapshotMismatch = cinearError,
+                       attempt < 12,
+                       self.arView === arView,
+                       !self.isRoomScanActive,
+                       !self.isSessionInterrupted {
+                        self.publishStatus(
+                            "Yeni dekor dünya haritasına işleniyor...",
+                            color: .yellow
+                        )
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                            guard let self, self.isSavingWorldMap else { return }
+                            self.captureAndSaveWorldMap(in: arView, attempt: attempt + 1)
+                        }
+                        return
+                    }
+                    self.isSavingWorldMap = false
                     self.publishStatus(
                         "Kaydetme başarısız: \(error.localizedDescription)",
                         color: .red
@@ -1046,6 +1101,40 @@ final class ARSessionController: NSObject, ObservableObject {
                 }
             }
         }
+    }
+
+    private func reconcileManagedAnchors(
+        in worldMap: ARWorldMap,
+        currentFrame: ARFrame?
+    ) {
+        let expectedKinds = Dictionary(uniqueKeysWithValues: projectStore.project.placements.map {
+            ($0.id, $0.kind)
+        })
+        var freshestAnchors: [UUID: ARAnchor] = [:]
+
+        func collect(_ anchors: [ARAnchor]) {
+            for anchor in anchors {
+                guard let descriptor = PropKind.descriptor(from: anchor.name),
+                      expectedKinds[descriptor.id] == descriptor.kind else { continue }
+                freshestAnchors[descriptor.id] = anchor
+            }
+        }
+
+        // A RoomPlan transition can briefly omit app anchors from both its result and
+        // the first live frame. Because scanning shares the ARSession coordinate space,
+        // the last committed anchor transforms are still safe candidates.
+        collect(projectStore.storedManagedAnchors())
+        // The new map overrides stored copies; the current ARFrame wins last.
+        collect(worldMap.anchors)
+        if let currentFrame { collect(currentFrame.anchors) }
+
+        let unmanagedAnchors = worldMap.anchors.filter {
+            $0.name?.hasPrefix("cinear.prop.") != true
+        }
+        let managedAnchors = projectStore.project.placements.compactMap {
+            freshestAnchors[$0.id]
+        }
+        worldMap.anchors = unmanagedAnchors + managedAnchors
     }
 
     @discardableResult
@@ -1109,7 +1198,28 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         do {
-            let snapshot = try projectStore.worldMapSnapshotForLoading()
+            let snapshot: StoredWorldMapSnapshot
+            let recoveryNotice: String?
+            do {
+                snapshot = try projectStore.worldMapSnapshotForLoading()
+                recoveryNotice = nil
+            } catch let storeError as SceneProjectStoreError {
+                switch storeError {
+                case .worldMapOutOfDate, .worldMapChecksumMismatch:
+                    let recovery = try projectStore.recoverWorldMapSnapshot()
+                    snapshot = recovery.snapshot
+                    if recovery.discardedPlacementCount == 0,
+                       recovery.discardedAnchorCount == 0 {
+                        recoveryNotice = "Kayıt doğrulaması onarıldı"
+                    } else {
+                        recoveryNotice = "Sahne kurtarıldı — "
+                            + "\(recovery.discardedPlacementCount) haritasız nesne, "
+                            + "\(recovery.discardedAnchorCount) sahipsiz anchor temizlendi"
+                    }
+                default:
+                    throw storeError
+                }
+            }
             guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(
                 ofClass: ARWorldMap.self,
                 from: snapshot.data
@@ -1119,7 +1229,8 @@ final class ARSessionController: NSObject, ObservableObject {
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
             runSession(initialWorldMap: worldMap)
-            publishStatus("Aynı alanı göster; kamera yeniden konumlanıyor", color: .yellow)
+            let prefix = recoveryNotice.map { $0 + " — " } ?? ""
+            publishStatus(prefix + "aynı alanı göster; kamera yeniden konumlanıyor", color: .yellow)
         } catch {
             shouldShowRoomOutlineWhenReady = false
             publishStatus("Kayıtlı sahne yüklenemedi: \(error.localizedDescription)", color: .red)

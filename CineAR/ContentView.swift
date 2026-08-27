@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
@@ -200,6 +201,9 @@ struct ContentView: View {
                 utilityButton("AI Derinlik", "cpu.fill") {
                     showingAISettings = true
                 }
+                utilityButton("Sahne Işığı", "lightbulb.max.fill") {
+                    session.showSceneLightControls()
+                }
 
                 if let url = session.lastRecordingURL {
                     ShareLink(item: url) {
@@ -288,6 +292,11 @@ struct ContentView: View {
                         session.testAIServerConnection()
                     }
                     .disabled(AIEnhancementClient.serverURL(from: session.aiServerAddress) == nil)
+
+                    Button("iPhone Yerel Ağ ayarını aç") {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        UIApplication.shared.open(url)
+                    }
                 }
 
                 Section("Çalışma şekli") {
@@ -302,6 +311,15 @@ struct ContentView: View {
                     Text("PC servisi kapalıysa ARKit'in yerel LiDAR occlusion sistemi çalışmaya devam eder.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Text(
+                        "PC terminalinde gösterilen http://...:8765 adresini eksiksiz gir. "
+                            + "iPhone Safari'de aynı adresin sonuna /health ekleyerek aç. "
+                            + "Safari'de açılmıyorsa iki cihaz aynı Wi-Fi'da değildir; "
+                            + "Safari'de açılıp uygulamada açılmıyorsa CineAR için Yerel Ağ iznini etkinleştir."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("AI Derinlik")

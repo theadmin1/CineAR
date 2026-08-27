@@ -1,3 +1,4 @@
+import ARKit
 import CryptoKit
 import Foundation
 import RealityKit
@@ -58,6 +59,12 @@ struct VirtualLightSettings: Codable, Equatable {
 struct StoredWorldMapSnapshot {
     let data: Data
     let project: SceneProject
+}
+
+struct RecoveredWorldMapSnapshot {
+    let snapshot: StoredWorldMapSnapshot
+    let discardedPlacementCount: Int
+    let discardedAnchorCount: Int
 }
 
 struct StoredTransform: Codable {
@@ -166,6 +173,25 @@ final class SceneProjectStore {
     }
     var assetsDirectory: URL {
         projectDirectory.appendingPathComponent("Assets", isDirectory: true)
+    }
+
+    /// The shared ARSession keeps the same coordinate space while RoomPlan scans.
+    /// If RoomPlan's transition temporarily omits manual anchors from the live frame,
+    /// their last committed world transforms remain valid reconciliation candidates.
+    func storedManagedAnchors() -> [ARAnchor] {
+        do {
+            let data = try Data(contentsOf: worldMapURL)
+            guard !data.isEmpty,
+                  let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+                      ofClass: ARWorldMap.self,
+                      from: data
+                  ) else { return [] }
+            return worldMap.anchors.filter {
+                $0.name?.hasPrefix("cinear.prop.") == true
+            }
+        } catch {
+            return []
+        }
     }
 
     var importedModelURLs: [URL] {
@@ -303,6 +329,73 @@ final class SceneProjectStore {
             }
         }
         return StoredWorldMapSnapshot(data: data, project: candidate)
+    }
+
+    /// Repairs a scene/map pair left between the JSON and world-map writes.
+    /// A placement without a matching world anchor cannot be positioned safely,
+    /// so only that orphan is discarded; every matching placement is preserved.
+    func recoverWorldMapSnapshot() throws -> RecoveredWorldMapSnapshot {
+        var candidate = try Self.decodeProject(from: projectURL)
+        let storedData = try Data(contentsOf: worldMapURL)
+        guard !storedData.isEmpty,
+              let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+                  ofClass: ARWorldMap.self,
+                  from: storedData
+              ) else {
+            throw SceneProjectStoreError.emptyWorldMap
+        }
+
+        let placementKinds = Dictionary(uniqueKeysWithValues: candidate.placements.map {
+            ($0.id, $0.kind)
+        })
+        var matchingAnchors: [UUID: ARAnchor] = [:]
+        var managedAnchorCount = 0
+        for anchor in worldMap.anchors {
+            guard anchor.name?.hasPrefix("cinear.prop.") == true else { continue }
+            managedAnchorCount += 1
+            guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
+            guard placementKinds[descriptor.id] == descriptor.kind,
+                  matchingAnchors[descriptor.id] == nil else { continue }
+            matchingAnchors[descriptor.id] = anchor
+        }
+
+        let originalPlacementCount = candidate.placements.count
+        candidate.placements.removeAll { matchingAnchors[$0.id] == nil }
+        let survivingIDs = Set(candidate.placements.map(\.id))
+        let unmanagedAnchors = worldMap.anchors.filter {
+            $0.name?.hasPrefix("cinear.prop.") != true
+        }
+        let managedAnchors = candidate.placements.compactMap { matchingAnchors[$0.id] }
+        worldMap.anchors = unmanagedAnchors + managedAnchors
+
+        // Defensive check: all managed anchors left in the repaired map must belong
+        // to the placements that survived the intersection above.
+        guard managedAnchors.allSatisfy({ anchor in
+            guard let descriptor = PropKind.descriptor(from: anchor.name) else { return false }
+            return survivingIDs.contains(descriptor.id)
+        }) else {
+            throw SceneProjectStoreError.worldMapChecksumMismatch
+        }
+
+        let repairedData = try NSKeyedArchiver.archivedData(
+            withRootObject: worldMap,
+            requiringSecureCoding: true
+        )
+        candidate.version = SceneProject.currentVersion
+        candidate.updatedAt = Date()
+        candidate.worldMapChecksum = Self.checksum(for: repairedData)
+        try Self.validate(candidate)
+        let projectData = try Self.encode(candidate)
+        try repairedData.write(to: worldMapURL, options: .atomic)
+        try projectData.write(to: projectURL, options: .atomic)
+        project = candidate
+        initializationError = nil
+
+        return RecoveredWorldMapSnapshot(
+            snapshot: StoredWorldMapSnapshot(data: repairedData, project: candidate),
+            discardedPlacementCount: originalPlacementCount - candidate.placements.count,
+            discardedAnchorCount: max(0, managedAnchorCount - managedAnchors.count)
+        )
     }
 
     func activate(_ snapshot: StoredWorldMapSnapshot) {

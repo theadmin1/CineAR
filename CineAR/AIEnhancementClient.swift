@@ -157,7 +157,7 @@ final class AIEnhancementClient {
                 self.activeTask = nil
                 if let error {
                     if (error as? URLError)?.code != .cancelled {
-                        completion(.failure(error))
+                        completion(.failure(Self.connectionError(error, serverURL: serverURL)))
                     }
                     return
                 }
@@ -216,7 +216,7 @@ final class AIEnhancementClient {
         URLSession.shared.dataTask(with: request) { data, response, error in
             Task { @MainActor in
                 if let error {
-                    completion(.failure(error))
+                    completion(.failure(Self.connectionError(error, serverURL: serverURL)))
                     return
                 }
                 guard let http = response as? HTTPURLResponse,
@@ -231,6 +231,31 @@ final class AIEnhancementClient {
                 completion(.success(device))
             }
         }.resume()
+    }
+
+    private static func connectionError(_ error: Error, serverURL: URL) -> Error {
+        guard let urlError = error as? URLError else { return error }
+        let address = serverURL.absoluteString
+        switch urlError.code {
+        case .timedOut:
+            return AIEnhancementError.server(
+                "PC yanıt vermedi: \(address). Aynı Wi-Fi ve güvenlik duvarını kontrol et"
+            )
+        case .cannotConnectToHost:
+            return AIEnhancementError.server(
+                "\(address) adresinde servis yok; PC'de run_server.ps1 açık kalmalı"
+            )
+        case .cannotFindHost:
+            return AIEnhancementError.server("PC adresi bulunamadı: \(address)")
+        case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+            return AIEnhancementError.server(
+                "iPhone ağ bağlantısı veya CineAR Yerel Ağ izni kapalı"
+            )
+        case .appTransportSecurityRequiresSecureConnection:
+            return AIEnhancementError.server("iOS yerel HTTP bağlantısını engelledi")
+        default:
+            return AIEnhancementError.server(urlError.localizedDescription)
+        }
     }
 
     private func jpegData(from pixelBuffer: CVPixelBuffer) -> Data? {

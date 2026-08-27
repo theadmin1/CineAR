@@ -19,6 +19,11 @@ Guvenlik Duvari sorarsa Python icin yalnizca `Ozel aglar` erisimini acin. Konsol
 yazilan `http://192.168...:8765` adresini CineAR icindeki `AI Derinlik` ayarina girin.
 iPhone ve PC ayni yerel agda olmalidir.
 
+PC'de saglik adresi calisip iPhone baglanamiyorsa iPhone Safari'de konsolda yazan
+adresin sonuna `/health` ekleyerek acin. Safari de acamiyorsa Wi-Fi istemci yalitimi
+ve Windows Guvenlik Duvari kontrol edilmelidir. Safari aciyor fakat CineAR acamiyorsa
+iPhone Ayarlarinda CineAR icin `Yerel Ag` izni etkinlestirilmelidir.
+
 Bu bilgisayardaki RTX 3050 Laptop GPU 4 GB icin varsayilan modeller bilerek
 `Depth-Anything-V2-Small` ve `sam2.1-hiera-tiny` secilmistir. Daha buyuk modeller
 gecikmeyi ve bellek tasmasi riskini ciddi bicimde artirir.

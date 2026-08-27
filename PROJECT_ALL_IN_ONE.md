@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.10.0`
-- Proje build numarası: `13`
+- Uygulama sürümü: `0.10.1`
+- Proje build numarası: `14`
 - Git dalı: `main`
-- Kaynak commit: `14ab3593c037ef9c33c3f1461f96e8b43dad877b`
-- Oluşturulma zamanı: `2026-08-27 15:00:53 +03:00`
+- Kaynak commit: `4c84348e0ca7c665cdbe8d1d3f4e9cee12627b09`
+- Oluşturulma zamanı: `2026-08-27 15:44:25 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -248,7 +248,7 @@ Yok.
 | --- | ---: | ---: |
 | `.gitignore` | 30 | 559 |
 | `AIService/fusion.py` | 100 | 3952 |
-| `AIService/README.md` | 46 | 1832 |
+| `AIService/README.md` | 51 | 2155 |
 | `AIService/requirements.txt` | 10 | 186 |
 | `AIService/run_server.ps1` | 34 | 1146 |
 | `AIService/server.py` | 197 | 7404 |
@@ -257,15 +257,15 @@ Yok.
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/AIEnhancementClient.swift` | 406 | 16201 |
-| `CineAR/ARSessionController.swift` | 2325 | 94532 |
+| `CineAR/AIEnhancementClient.swift` | 431 | 17472 |
+| `CineAR/ARSessionController.swift` | 2436 | 99526 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15397 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 603 | 23618 |
+| `CineAR/ContentView.swift` | 621 | 24559 |
 | `CineAR/Info.plist` | 56 | 1855 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 345 | 13775 |
@@ -275,12 +275,12 @@ Yok.
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2063 | 78541 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
-| `CineAR/SceneProjectStore.swift` | 406 | 15738 |
+| `CineAR/SceneProjectStore.swift` | 499 | 19894 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 93 | 5689 |
+| `Docs/DEVICE_TEST.md` | 97 | 5989 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 144 | 8384 |
+| `README.md` | 150 | 8869 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -451,6 +451,11 @@ Ilk kurulum ve ilk servis acilisi PyTorch ile model agirliklarini indirir. Windo
 Guvenlik Duvari sorarsa Python icin yalnizca `Ozel aglar` erisimini acin. Konsolda
 yazilan `http://192.168...:8765` adresini CineAR icindeki `AI Derinlik` ayarina girin.
 iPhone ve PC ayni yerel agda olmalidir.
+
+PC'de saglik adresi calisip iPhone baglanamiyorsa iPhone Safari'de konsolda yazan
+adresin sonuna `/health` ekleyerek acin. Safari de acamiyorsa Wi-Fi istemci yalitimi
+ve Windows Guvenlik Duvari kontrol edilmelidir. Safari aciyor fakat CineAR acamiyorsa
+iPhone Ayarlarinda CineAR icin `Yerel Ag` izni etkinlestirilmelidir.
 
 Bu bilgisayardaki RTX 3050 Laptop GPU 4 GB icin varsayilan modeller bilerek
 `Depth-Anything-V2-Small` ve `sam2.1-hiera-tiny` secilmistir. Daha buyuk modeller
@@ -1047,13 +1052,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.0;
+				MARKETING_VERSION = 0.10.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1070,12 +1075,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.0;
+				MARKETING_VERSION = 0.10.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1304,7 +1309,7 @@ final class AIEnhancementClient {
                 self.activeTask = nil
                 if let error {
                     if (error as? URLError)?.code != .cancelled {
-                        completion(.failure(error))
+                        completion(.failure(Self.connectionError(error, serverURL: serverURL)))
                     }
                     return
                 }
@@ -1363,7 +1368,7 @@ final class AIEnhancementClient {
         URLSession.shared.dataTask(with: request) { data, response, error in
             Task { @MainActor in
                 if let error {
-                    completion(.failure(error))
+                    completion(.failure(Self.connectionError(error, serverURL: serverURL)))
                     return
                 }
                 guard let http = response as? HTTPURLResponse,
@@ -1378,6 +1383,31 @@ final class AIEnhancementClient {
                 completion(.success(device))
             }
         }.resume()
+    }
+
+    private static func connectionError(_ error: Error, serverURL: URL) -> Error {
+        guard let urlError = error as? URLError else { return error }
+        let address = serverURL.absoluteString
+        switch urlError.code {
+        case .timedOut:
+            return AIEnhancementError.server(
+                "PC yanıt vermedi: \(address). Aynı Wi-Fi ve güvenlik duvarını kontrol et"
+            )
+        case .cannotConnectToHost:
+            return AIEnhancementError.server(
+                "\(address) adresinde servis yok; PC'de run_server.ps1 açık kalmalı"
+            )
+        case .cannotFindHost:
+            return AIEnhancementError.server("PC adresi bulunamadı: \(address)")
+        case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+            return AIEnhancementError.server(
+                "iPhone ağ bağlantısı veya CineAR Yerel Ağ izni kapalı"
+            )
+        case .appTransportSecurityRequiresSecureConnection:
+            return AIEnhancementError.server("iOS yerel HTTP bağlantısını engelledi")
+        default:
+            return AIEnhancementError.server(urlError.localizedDescription)
+        }
     }
 
     private func jpegData(from pixelBuffer: CVPixelBuffer) -> Data? {
@@ -2538,6 +2568,31 @@ final class ARSessionController: NSObject, ObservableObject {
         publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .blue)
     }
 
+    func showSceneLightControls() {
+        persistSelectedLightSettings()
+        if let placement = projectStore.project.placements.last(where: {
+            $0.kind.emitsVirtualLight
+        }) {
+            selectedEntityID = placement.id
+            selectedLightSettings = placement.lightSettings ?? .defaultFixture
+            isPlacingProp = false
+            publishStatus(
+                "Sahne ışığı seçildi — güç, sıcaklık, yön, eğim ve hüzmeyi ayarla",
+                color: .blue
+            )
+            return
+        }
+
+        selectedProp = .cagedCeilingLight
+        selectedEntityID = nil
+        selectedLightSettings = nil
+        isPlacingProp = true
+        publishStatus(
+            "Sahne ışığı eklemek için taranmış tavana dokun",
+            color: .blue
+        )
+    }
+
     func saveWorldMap() {
         guard let arView else {
             publishStatus("AR görünümü henüz hazır değil", color: .red)
@@ -2578,21 +2633,51 @@ final class ARSessionController: NSObject, ObservableObject {
         isSavingWorldMap = true
         publishStatus("Sahne haritası hazırlanıyor...", color: .yellow)
 
+        captureAndSaveWorldMap(in: arView, attempt: 0)
+    }
+
+    private func captureAndSaveWorldMap(in arView: ARView, attempt: Int) {
         arView.session.getCurrentWorldMap { [weak self] worldMap, error in
             guard let self else { return }
             DispatchQueue.main.async {
-                self.isSavingWorldMap = false
                 do {
                     if let error { throw error }
                     guard let worldMap else { throw CineARError.worldMapUnavailable }
+                    // scene.json is written before ARKit acknowledges the newly added
+                    // anchor. A world-map snapshot taken during that short window can
+                    // otherwise contain the old anchor set. Replace only CineAR's
+                    // managed anchors with the freshest ARFrame snapshot; Apple
+                    // explicitly permits editing ARWorldMap.anchors before archiving.
+                    self.reconcileManagedAnchors(
+                        in: worldMap,
+                        currentFrame: arView.session.currentFrame
+                    )
                     try self.validate(worldMap: worldMap)
                     let data = try NSKeyedArchiver.archivedData(
                         withRootObject: worldMap,
                         requiringSecureCoding: true
                     )
                     try self.projectStore.saveWorldMapData(data)
+                    self.isSavingWorldMap = false
                     self.publishStatus("Set projesi ve dünya haritası kaydedildi", color: .green)
                 } catch {
+                    if let cinearError = error as? CineARError,
+                       case .sceneSnapshotMismatch = cinearError,
+                       attempt < 12,
+                       self.arView === arView,
+                       !self.isRoomScanActive,
+                       !self.isSessionInterrupted {
+                        self.publishStatus(
+                            "Yeni dekor dünya haritasına işleniyor...",
+                            color: .yellow
+                        )
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                            guard let self, self.isSavingWorldMap else { return }
+                            self.captureAndSaveWorldMap(in: arView, attempt: attempt + 1)
+                        }
+                        return
+                    }
+                    self.isSavingWorldMap = false
                     self.publishStatus(
                         "Kaydetme başarısız: \(error.localizedDescription)",
                         color: .red
@@ -2603,6 +2688,40 @@ final class ARSessionController: NSObject, ObservableObject {
                 }
             }
         }
+    }
+
+    private func reconcileManagedAnchors(
+        in worldMap: ARWorldMap,
+        currentFrame: ARFrame?
+    ) {
+        let expectedKinds = Dictionary(uniqueKeysWithValues: projectStore.project.placements.map {
+            ($0.id, $0.kind)
+        })
+        var freshestAnchors: [UUID: ARAnchor] = [:]
+
+        func collect(_ anchors: [ARAnchor]) {
+            for anchor in anchors {
+                guard let descriptor = PropKind.descriptor(from: anchor.name),
+                      expectedKinds[descriptor.id] == descriptor.kind else { continue }
+                freshestAnchors[descriptor.id] = anchor
+            }
+        }
+
+        // A RoomPlan transition can briefly omit app anchors from both its result and
+        // the first live frame. Because scanning shares the ARSession coordinate space,
+        // the last committed anchor transforms are still safe candidates.
+        collect(projectStore.storedManagedAnchors())
+        // The new map overrides stored copies; the current ARFrame wins last.
+        collect(worldMap.anchors)
+        if let currentFrame { collect(currentFrame.anchors) }
+
+        let unmanagedAnchors = worldMap.anchors.filter {
+            $0.name?.hasPrefix("cinear.prop.") != true
+        }
+        let managedAnchors = projectStore.project.placements.compactMap {
+            freshestAnchors[$0.id]
+        }
+        worldMap.anchors = unmanagedAnchors + managedAnchors
     }
 
     @discardableResult
@@ -2666,7 +2785,28 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         do {
-            let snapshot = try projectStore.worldMapSnapshotForLoading()
+            let snapshot: StoredWorldMapSnapshot
+            let recoveryNotice: String?
+            do {
+                snapshot = try projectStore.worldMapSnapshotForLoading()
+                recoveryNotice = nil
+            } catch let storeError as SceneProjectStoreError {
+                switch storeError {
+                case .worldMapOutOfDate, .worldMapChecksumMismatch:
+                    let recovery = try projectStore.recoverWorldMapSnapshot()
+                    snapshot = recovery.snapshot
+                    if recovery.discardedPlacementCount == 0,
+                       recovery.discardedAnchorCount == 0 {
+                        recoveryNotice = "Kayıt doğrulaması onarıldı"
+                    } else {
+                        recoveryNotice = "Sahne kurtarıldı — "
+                            + "\(recovery.discardedPlacementCount) haritasız nesne, "
+                            + "\(recovery.discardedAnchorCount) sahipsiz anchor temizlendi"
+                    }
+                default:
+                    throw storeError
+                }
+            }
             guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(
                 ofClass: ARWorldMap.self,
                 from: snapshot.data
@@ -2676,7 +2816,8 @@ final class ARSessionController: NSObject, ObservableObject {
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
             runSession(initialWorldMap: worldMap)
-            publishStatus("Aynı alanı göster; kamera yeniden konumlanıyor", color: .yellow)
+            let prefix = recoveryNotice.map { $0 + " — " } ?? ""
+            publishStatus(prefix + "aynı alanı göster; kamera yeniden konumlanıyor", color: .yellow)
         } catch {
             shouldShowRoomOutlineWhenReady = false
             publishStatus("Kayıtlı sahne yüklenemedi: \(error.localizedDescription)", color: .red)
@@ -4341,6 +4482,7 @@ struct CineARApp: App {
 
 ````swift
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
@@ -4542,6 +4684,9 @@ struct ContentView: View {
                 utilityButton("AI Derinlik", "cpu.fill") {
                     showingAISettings = true
                 }
+                utilityButton("Sahne Işığı", "lightbulb.max.fill") {
+                    session.showSceneLightControls()
+                }
 
                 if let url = session.lastRecordingURL {
                     ShareLink(item: url) {
@@ -4630,6 +4775,11 @@ struct ContentView: View {
                         session.testAIServerConnection()
                     }
                     .disabled(AIEnhancementClient.serverURL(from: session.aiServerAddress) == nil)
+
+                    Button("iPhone Yerel Ağ ayarını aç") {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        UIApplication.shared.open(url)
+                    }
                 }
 
                 Section("Çalışma şekli") {
@@ -4644,6 +4794,15 @@ struct ContentView: View {
                     Text("PC servisi kapalıysa ARKit'in yerel LiDAR occlusion sistemi çalışmaya devam eder.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Text(
+                        "PC terminalinde gösterilen http://...:8765 adresini eksiksiz gir. "
+                            + "iPhone Safari'de aynı adresin sonuna /health ekleyerek aç. "
+                            + "Safari'de açılmıyorsa iki cihaz aynı Wi-Fi'da değildir; "
+                            + "Safari'de açılıp uygulamada açılmıyorsa CineAR için Yerel Ağ iznini etkinleştir."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("AI Derinlik")
@@ -8806,6 +8965,7 @@ struct CineARPrimaryButtonStyle: ButtonStyle {
 ## `CineAR/SceneProjectStore.swift`
 
 ````swift
+import ARKit
 import CryptoKit
 import Foundation
 import RealityKit
@@ -8866,6 +9026,12 @@ struct VirtualLightSettings: Codable, Equatable {
 struct StoredWorldMapSnapshot {
     let data: Data
     let project: SceneProject
+}
+
+struct RecoveredWorldMapSnapshot {
+    let snapshot: StoredWorldMapSnapshot
+    let discardedPlacementCount: Int
+    let discardedAnchorCount: Int
 }
 
 struct StoredTransform: Codable {
@@ -8974,6 +9140,25 @@ final class SceneProjectStore {
     }
     var assetsDirectory: URL {
         projectDirectory.appendingPathComponent("Assets", isDirectory: true)
+    }
+
+    /// The shared ARSession keeps the same coordinate space while RoomPlan scans.
+    /// If RoomPlan's transition temporarily omits manual anchors from the live frame,
+    /// their last committed world transforms remain valid reconciliation candidates.
+    func storedManagedAnchors() -> [ARAnchor] {
+        do {
+            let data = try Data(contentsOf: worldMapURL)
+            guard !data.isEmpty,
+                  let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+                      ofClass: ARWorldMap.self,
+                      from: data
+                  ) else { return [] }
+            return worldMap.anchors.filter {
+                $0.name?.hasPrefix("cinear.prop.") == true
+            }
+        } catch {
+            return []
+        }
     }
 
     var importedModelURLs: [URL] {
@@ -9111,6 +9296,73 @@ final class SceneProjectStore {
             }
         }
         return StoredWorldMapSnapshot(data: data, project: candidate)
+    }
+
+    /// Repairs a scene/map pair left between the JSON and world-map writes.
+    /// A placement without a matching world anchor cannot be positioned safely,
+    /// so only that orphan is discarded; every matching placement is preserved.
+    func recoverWorldMapSnapshot() throws -> RecoveredWorldMapSnapshot {
+        var candidate = try Self.decodeProject(from: projectURL)
+        let storedData = try Data(contentsOf: worldMapURL)
+        guard !storedData.isEmpty,
+              let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+                  ofClass: ARWorldMap.self,
+                  from: storedData
+              ) else {
+            throw SceneProjectStoreError.emptyWorldMap
+        }
+
+        let placementKinds = Dictionary(uniqueKeysWithValues: candidate.placements.map {
+            ($0.id, $0.kind)
+        })
+        var matchingAnchors: [UUID: ARAnchor] = [:]
+        var managedAnchorCount = 0
+        for anchor in worldMap.anchors {
+            guard anchor.name?.hasPrefix("cinear.prop.") == true else { continue }
+            managedAnchorCount += 1
+            guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
+            guard placementKinds[descriptor.id] == descriptor.kind,
+                  matchingAnchors[descriptor.id] == nil else { continue }
+            matchingAnchors[descriptor.id] = anchor
+        }
+
+        let originalPlacementCount = candidate.placements.count
+        candidate.placements.removeAll { matchingAnchors[$0.id] == nil }
+        let survivingIDs = Set(candidate.placements.map(\.id))
+        let unmanagedAnchors = worldMap.anchors.filter {
+            $0.name?.hasPrefix("cinear.prop.") != true
+        }
+        let managedAnchors = candidate.placements.compactMap { matchingAnchors[$0.id] }
+        worldMap.anchors = unmanagedAnchors + managedAnchors
+
+        // Defensive check: all managed anchors left in the repaired map must belong
+        // to the placements that survived the intersection above.
+        guard managedAnchors.allSatisfy({ anchor in
+            guard let descriptor = PropKind.descriptor(from: anchor.name) else { return false }
+            return survivingIDs.contains(descriptor.id)
+        }) else {
+            throw SceneProjectStoreError.worldMapChecksumMismatch
+        }
+
+        let repairedData = try NSKeyedArchiver.archivedData(
+            withRootObject: worldMap,
+            requiringSecureCoding: true
+        )
+        candidate.version = SceneProject.currentVersion
+        candidate.updatedAt = Date()
+        candidate.worldMapChecksum = Self.checksum(for: repairedData)
+        try Self.validate(candidate)
+        let projectData = try Self.encode(candidate)
+        try repairedData.write(to: worldMapURL, options: .atomic)
+        try projectData.write(to: projectURL, options: .atomic)
+        project = candidate
+        initializationError = nil
+
+        return RecoveredWorldMapSnapshot(
+            snapshot: StoredWorldMapSnapshot(data: repairedData, project: candidate),
+            discardedPlacementCount: originalPlacementCount - candidate.placements.count,
+            discardedAnchorCount: max(0, managedAnchorCount - managedAnchors.count)
+        )
     }
 
     func activate(_ snapshot: StoredWorldMapSnapshot) {
@@ -9492,6 +9744,10 @@ incelemesine uygulama gondermesi mumkun degildir.
 12. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
     kapat, ayni alanda ac ve projeyi yukle; dekor anchor'i otomatik kayitla gelmeli.
     Ayrica yeni tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilmali.
+    Arka arkaya uc farkli kutuphane nesnesi yerlestir; otomatik kayit sirasinda
+    `worldmap/scene.json eslesmiyor` hatasi gorulmemeli.
+    Bu nesneler sahnedeyken yeniden `Oda Tara` yapip taramayi kullan; eski dekorlar
+    korunmali ve yeni oda haritasi ayni hatayi vermeden otomatik kaydedilmeli.
 13. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 14. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
@@ -9615,6 +9871,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim ve
   15-120 derece huzme genisligi; sanal isik yalnizca sanal dekorlari etkiler
+- `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
+  tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
@@ -9624,6 +9882,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
+- Yeni anchor ile ARKit harita snapshot'i arasindaki zamanlama farkini uzlastirip
+  `worldmap/scene.json` uyusmazligini otomatik yeniden deneme ve eski kaydi kurtarma
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization
@@ -9666,7 +9926,9 @@ RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
 `Kontroller > AI Derinlik` alanina girilir; `PC baglantisini test et` sonucu hazir
 oldugunda anahtar acilir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
-bulut servisi kullanilmaz.
+bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
+`/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
+CineAR izni kontrol edilir.
 
 ## Proje dosyalari
 

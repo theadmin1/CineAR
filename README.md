@@ -46,6 +46,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim ve
   15-120 derece huzme genisligi; sanal isik yalnizca sanal dekorlari etkiler
+- `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
+  tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
@@ -55,6 +57,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
+- Yeni anchor ile ARKit harita snapshot'i arasindaki zamanlama farkini uzlastirip
+  `worldmap/scene.json` uyusmazligini otomatik yeniden deneme ve eski kaydi kurtarma
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization
@@ -97,7 +101,9 @@ RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
 `Kontroller > AI Derinlik` alanina girilir; `PC baglantisini test et` sonucu hazir
 oldugunda anahtar acilir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
-bulut servisi kullanilmaz.
+bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
+`/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
+CineAR izni kontrol edilir.
 
 ## Proje dosyalari
 

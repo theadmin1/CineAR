@@ -49,6 +49,10 @@
 12. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
     kapat, ayni alanda ac ve projeyi yukle; dekor anchor'i otomatik kayitla gelmeli.
     Ayrica yeni tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilmali.
+    Arka arkaya uc farkli kutuphane nesnesi yerlestir; otomatik kayit sirasinda
+    `worldmap/scene.json eslesmiyor` hatasi gorulmemeli.
+    Bu nesneler sahnedeyken yeniden `Oda Tara` yapip taramayi kullan; eski dekorlar
+    korunmali ve yeni oda haritasi ayni hatayi vermeden otomatik kaydedilmeli.
 13. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 14. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
