@@ -56,12 +56,17 @@
    RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
-15. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
-16. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
+15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
+    girip baglantiyi test et ve sistemi ac. Durumun `Aktif`, gecikmenin ve SAM maske
+    sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini
+    tekrar et; AI kapaliyken ve acikken video kaydi alip kenar hatasini karsilastir.
+    Servisi kapatinca eski AI mesh'i kaybolmali ve ARKit occlusion devam etmeli.
+16. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
+17. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-17. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-18. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+18. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+19. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 

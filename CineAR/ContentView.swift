@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var showingRoomScanner = false
     @State private var showingAssetImporter = false
     @State private var showingPropLibrary = false
+    @State private var showingAISettings = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
 
@@ -75,6 +76,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingPropLibrary) {
             propLibrary
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingAISettings) {
+            aiSettings
                 .presentationDetents([.medium, .large])
         }
     }
@@ -192,6 +197,9 @@ struct ContentView: View {
                 utilityButton("HEVC Çekim", "record.circle") {
                     session.startRecording()
                 }
+                utilityButton("AI Derinlik", "cpu.fill") {
+                    showingAISettings = true
+                }
 
                 if let url = session.lastRecordingURL {
                     ShareLink(item: url) {
@@ -244,6 +252,74 @@ struct ContentView: View {
             Text("Tarama sırasında ve Beyaz Hatlar modunda kamera kapanmaz; katı duvar çizilmez")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private var aiSettings: some View {
+        NavigationStack {
+            Form {
+                Section("SAM 2 + Depth Anything") {
+                    Toggle(
+                        "PC destekli AI occlusion",
+                        isOn: Binding(
+                            get: { session.aiEnhancementEnabled },
+                            set: { session.setAIEnhancementEnabled($0) }
+                        )
+                    )
+
+                    TextField(
+                        "http://192.168.1.20:8765",
+                        text: Binding(
+                            get: { session.aiServerAddress },
+                            set: { session.setAIServerAddress($0) }
+                        )
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+
+                    LabeledContent("Durum") {
+                        Text(session.aiEnhancementStatus.title)
+                            .foregroundStyle(aiStatusColor)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    Button("PC bağlantısını test et") {
+                        session.testAIServerConnection()
+                    }
+                    .disabled(AIEnhancementClient.serverURL(from: session.aiServerAddress) == nil)
+                }
+
+                Section("Çalışma şekli") {
+                    Text(
+                        "iPhone kamera ve LiDAR derinliğini aynı Wi-Fi'daki PC'ye yollar. "
+                            + "Depth Anything boşlukları tamamlar; SAM 2 nesne sınırlarını ayırır. "
+                            + "Sonuç yalnız sanal nesnelerin gerçek insan ve mobilyaların arkasında "
+                            + "doğru kesilmesi için görünmez derinlik ağı olarak kullanılır."
+                    )
+                    .font(.footnote)
+
+                    Text("PC servisi kapalıysa ARKit'in yerel LiDAR occlusion sistemi çalışmaya devam eder.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("AI Derinlik")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingAISettings = false }
+                }
+            }
+        }
+    }
+
+    private var aiStatusColor: Color {
+        switch session.aiEnhancementStatus {
+        case .active: .green
+        case .failed: .red
+        case .waiting: .orange
+        case .disabled: .secondary
         }
     }
 

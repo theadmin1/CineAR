@@ -284,9 +284,12 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     var placementSurface: PropPlacementSurface {
         if let surface = photorealDescriptor?.surface { return surface }
         switch self {
-        case .wall, .lightPanel, .backdrop: .wall
-        case .custom: .horizontal
-        default: .floor
+        case .wall, .lightPanel, .backdrop:
+            return PropPlacementSurface.wall
+        case .custom:
+            return PropPlacementSurface.horizontal
+        default:
+            return PropPlacementSurface.floor
         }
     }
 

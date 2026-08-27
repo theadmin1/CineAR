@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.9.0`
-- Proje build numarası: `12`
+- Uygulama sürümü: `0.10.0`
+- Proje build numarası: `13`
 - Git dalı: `main`
-- Kaynak commit: `738e81e21ec269852721c9627f8ad3fc413272bd`
-- Oluşturulma zamanı: `2026-08-27 13:59:14 +03:00`
+- Kaynak commit: `14ab3593c037ef9c33c3f1461f96e8b43dad877b`
+- Oluşturulma zamanı: `2026-08-27 15:00:53 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -19,6 +19,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 
 - Swift + SwiftUI kullanıcı arayüzü
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
+- Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i
 - RoomPlan ile semantik oda taraması ve `room.json` üretimi
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
@@ -100,8 +101,17 @@ Belgenin kendisi sonsuz iç içe geçmeyi önlemek için kaynak listesine alınm
 
 ````text
 .gitignore
+AIService/fusion.py
+AIService/README.md
+AIService/requirements.txt
+AIService/run_server.ps1
+AIService/server.py
+AIService/setup_windows.ps1
+AIService/test_fusion.py
+AIService/THIRD_PARTY_NOTICES.md
 CineAR.xcodeproj/project.pbxproj
 CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme
+CineAR/AIEnhancementClient.swift
 CineAR/ARSessionController.swift
 CineAR/ARViewContainer.swift
 CineAR/Assets.xcassets/AccentColor.colorset/Contents.json
@@ -236,20 +246,29 @@ Yok.
 
 | Dosya | Satır | Boyut (byte) |
 | --- | ---: | ---: |
-| `.gitignore` | 27 | 501 |
-| `CineAR.xcodeproj/project.pbxproj` | 272 | 12830 |
+| `.gitignore` | 30 | 559 |
+| `AIService/fusion.py` | 100 | 3952 |
+| `AIService/README.md` | 46 | 1832 |
+| `AIService/requirements.txt` | 10 | 186 |
+| `AIService/run_server.ps1` | 34 | 1146 |
+| `AIService/server.py` | 197 | 7404 |
+| `AIService/setup_windows.ps1` | 42 | 1945 |
+| `AIService/test_fusion.py` | 27 | 835 |
+| `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
+| `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 2217 | 89718 |
+| `CineAR/AIEnhancementClient.swift` | 406 | 16201 |
+| `CineAR/ARSessionController.swift` | 2325 | 94532 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15397 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 527 | 20603 |
-| `CineAR/Info.plist` | 49 | 1582 |
+| `CineAR/ContentView.swift` | 603 | 23618 |
+| `CineAR/Info.plist` | 56 | 1855 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
-| `CineAR/PropKind.swift` | 342 | 13658 |
+| `CineAR/PropKind.swift` | 345 | 13775 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
@@ -259,13 +278,13 @@ Yok.
 | `CineAR/SceneProjectStore.swift` | 406 | 15738 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 88 | 5270 |
+| `Docs/DEVICE_TEST.md` | 93 | 5689 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 129 | 7530 |
+| `README.md` | 144 | 8384 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
-| `Tools/generate_all_in_one_markdown.ps1` | 346 | 18043 |
+| `Tools/generate_all_in_one_markdown.ps1` | 347 | 18202 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/validate_usdz_assets.py` | 67 | 2269 |
 
@@ -297,9 +316,521 @@ ios_distribution_private_key*
 Kenney-Furniture-Kit.zip
 .asset-cache/
 .tools-cache/
+AIService/.venv/
+AIService/__pycache__/
+AIService/.cache/
 
 # Generated handoff archives are release artifacts, not source files
 CineAR-Codemagic-Handoff-*.zip
+````
+
+## `AIService/fusion.py`
+
+````python
+"""LiDAR-calibrated monocular depth fusion with SAM 2 boundary priors."""
+
+from __future__ import annotations
+
+import numpy as np
+
+
+MIN_DEPTH_METERS = 0.15
+MAX_DEPTH_METERS = 12.0
+
+
+def _fit_affine(candidate: np.ndarray, lidar: np.ndarray, valid: np.ndarray) -> tuple[np.ndarray, float]:
+    x = candidate[valid].astype(np.float64, copy=False)
+    y = lidar[valid].astype(np.float64, copy=False)
+    if x.size > 20_000:
+        indices = np.linspace(0, x.size - 1, 20_000, dtype=np.int64)
+        x = x[indices]
+        y = y[indices]
+
+    design = np.column_stack((x, np.ones_like(x)))
+    scale, offset = np.linalg.lstsq(design, y, rcond=None)[0]
+    prediction = candidate * np.float32(scale) + np.float32(offset)
+    residual = np.abs(prediction[valid] - lidar[valid])
+    cutoff = np.quantile(residual, 0.85)
+    refined = np.zeros_like(valid)
+    refined[valid] = residual <= cutoff
+    if np.count_nonzero(refined) >= 128:
+        x = candidate[refined].astype(np.float64, copy=False)
+        y = lidar[refined].astype(np.float64, copy=False)
+        design = np.column_stack((x, np.ones_like(x)))
+        scale, offset = np.linalg.lstsq(design, y, rcond=None)[0]
+        prediction = candidate * np.float32(scale) + np.float32(offset)
+
+    score = float(np.median(np.abs(prediction[valid] - lidar[valid])))
+    return prediction.astype(np.float32, copy=False), score
+
+
+def align_relative_depth(relative: np.ndarray, lidar: np.ndarray) -> np.ndarray:
+    """Resolve relative-depth direction and affine scale from real LiDAR metres."""
+    valid = (
+        np.isfinite(lidar)
+        & (lidar >= MIN_DEPTH_METERS)
+        & (lidar <= MAX_DEPTH_METERS)
+        & np.isfinite(relative)
+    )
+    if np.count_nonzero(valid) < 128:
+        fallback = lidar.astype(np.float32, copy=True)
+        fallback[~np.isfinite(fallback)] = 0
+        return fallback
+
+    normalized = relative.astype(np.float32, copy=False)
+    inverse = 1.0 / np.maximum(normalized, np.float32(1e-4))
+    direct_result, direct_score = _fit_affine(normalized, lidar, valid)
+    inverse_result, inverse_score = _fit_affine(inverse, lidar, valid)
+    return direct_result if direct_score <= inverse_score else inverse_result
+
+
+def _mask_edge(mask: np.ndarray) -> np.ndarray:
+    padded = np.pad(mask, 1, mode="edge")
+    eroded = np.ones_like(mask, dtype=bool)
+    for y_offset in range(3):
+        for x_offset in range(3):
+            eroded &= padded[
+                y_offset : y_offset + mask.shape[0],
+                x_offset : x_offset + mask.shape[1],
+            ]
+    return mask & ~eroded
+
+
+def fuse_depth(relative: np.ndarray, lidar: np.ndarray, masks: list[np.ndarray]) -> np.ndarray:
+    """Keep reliable LiDAR, fill holes with AI, and sharpen SAM 2 boundaries."""
+    aligned = align_relative_depth(relative, lidar)
+    lidar_valid = (
+        np.isfinite(lidar)
+        & (lidar >= MIN_DEPTH_METERS)
+        & (lidar <= MAX_DEPTH_METERS)
+    )
+
+    # Calibrate each sufficiently observed SAM object independently. This prevents
+    # a table and the wall behind it from sharing one monocular-depth offset.
+    boundary = np.zeros(lidar.shape, dtype=bool)
+    for mask in masks:
+        if mask.shape != lidar.shape:
+            continue
+        region = mask & lidar_valid & np.isfinite(aligned)
+        if np.count_nonzero(region) >= 32:
+            offset = np.median(lidar[region] - aligned[region])
+            aligned[mask] += np.float32(offset)
+        boundary |= _mask_edge(mask)
+
+    fused = aligned.astype(np.float32, copy=True)
+    regular = lidar_valid & ~boundary
+    fused[regular] = lidar[regular] * 0.90 + aligned[regular] * 0.10
+    edge_valid = lidar_valid & boundary
+    fused[edge_valid] = lidar[edge_valid] * 0.35 + aligned[edge_valid] * 0.65
+    fused[~np.isfinite(fused)] = 0
+    invalid_range = (fused < MIN_DEPTH_METERS) | (fused > MAX_DEPTH_METERS)
+    fused[invalid_range] = 0
+    return np.ascontiguousarray(fused, dtype=np.float32)
+````
+
+## `AIService/README.md`
+
+````markdown
+# CineAR PC AI Derinlik Servisi
+
+Bu servis iPhone'un kamera karesini ve ARKit LiDAR derinligini ayni Wi-Fi uzerinden
+alir. Depth Anything V2 Small ile yogun derinlik uretir, SAM 2.1 Tiny maskelerini
+nesne siniri olarak kullanir ve sonucu LiDAR metreleriyle kalibre ederek telefona
+geri yollar. RealityKit dunya takibi ve anchor'lar telefonda kalir.
+
+## Windows kurulumu
+
+PowerShell'de depo kokunden:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\AIService\setup_windows.ps1
+powershell -ExecutionPolicy Bypass -File .\AIService\run_server.ps1
+```
+
+Ilk kurulum ve ilk servis acilisi PyTorch ile model agirliklarini indirir. Windows
+Guvenlik Duvari sorarsa Python icin yalnizca `Ozel aglar` erisimini acin. Konsolda
+yazilan `http://192.168...:8765` adresini CineAR icindeki `AI Derinlik` ayarina girin.
+iPhone ve PC ayni yerel agda olmalidir.
+
+Bu bilgisayardaki RTX 3050 Laptop GPU 4 GB icin varsayilan modeller bilerek
+`Depth-Anything-V2-Small` ve `sam2.1-hiera-tiny` secilmistir. Daha buyuk modeller
+gecikmeyi ve bellek tasmasi riskini ciddi bicimde artirir.
+
+27 Agustos 2026 yerel dogrulamasinda RTX 3050 ilk isitma istegini 1847 ms,
+ikinci istegi 682 ms'de tamamladi; SAM 2 dokuz maske uretti ve yapay LiDAR
+boslugunun %100'u metreye kalibre edilmis Depth Anything sonucu ile doldu.
+iPhone istemcisi 1500 ms'yi asan sonucu eski hareketli insan geometrisi
+uretmemek icin reddeder ve ARKit occlusion'a geri doner.
+
+Saglik kontrolu:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8765/health
+```
+
+## Lisans
+
+- Meta SAM 2 kodu ve agirliklari: Apache-2.0
+- Depth Anything V2 Small: Apache-2.0
+- Depth Anything V2 Base/Large/Giant: CC-BY-NC-4.0; ticari CineAR paketinde kullanilmaz
+
+Model agirliklari Git deposuna veya iOS uygulamasina eklenmez; kurulum sirasinda
+resmi Hugging Face depolarindan PC onbellegine indirilir.
+````
+
+## `AIService/requirements.txt`
+
+````text
+fastapi>=0.115,<1
+huggingface-hub>=0.26,<2
+numpy>=1.26,<2
+pillow>=10,<13
+pydantic>=2.9,<3
+python-multipart>=0.0.9,<1
+safetensors>=0.4,<1
+transformers>=4.45,<6
+uvicorn[standard]>=0.30,<1
+````
+
+## `AIService/run_server.ps1`
+
+````powershell
+$ErrorActionPreference = "Stop"
+
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$python = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
+if (-not (Test-Path -LiteralPath $python)) {
+    throw "AI ortami kurulu degil. Once AIService\setup_windows.ps1 calistirin."
+}
+
+$modelCache = Join-Path $PSScriptRoot ".cache"
+[void](New-Item -ItemType Directory -Path $modelCache -Force)
+$env:HF_HOME = Join-Path $modelCache "huggingface"
+$env:TORCH_HOME = Join-Path $modelCache "torch"
+
+$address = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.IPAddress -notlike "127.*" -and
+        $_.IPAddress -notlike "169.254.*" -and
+        $_.InterfaceAlias -notmatch "Loopback|vEthernet"
+    } |
+    Sort-Object InterfaceMetric |
+    Select-Object -First 1 -ExpandProperty IPAddress
+
+if ($address) {
+    Write-Host "iPhone sunucu adresi: http://${address}:8765"
+}
+Write-Host "Ilk acilis model dosyalarini indirecegi icin birkac dakika surebilir."
+
+Push-Location $repoRoot
+try {
+    & $python -m uvicorn AIService.server:app --host 0.0.0.0 --port 8765
+} finally {
+    Pop-Location
+}
+````
+
+## `AIService/server.py`
+
+````python
+"""CineAR LAN inference service: Depth Anything V2 + SAM 2.1 + LiDAR fusion."""
+
+from __future__ import annotations
+
+import asyncio
+from contextlib import asynccontextmanager, nullcontext
+from io import BytesIO
+import os
+from threading import Lock
+import time
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import Response
+import numpy as np
+from PIL import Image
+import torch
+import torch.nn.functional as torch_functional
+from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+
+from AIService.fusion import fuse_depth
+
+
+DEPTH_MODEL_ID = os.environ.get(
+    "CINEAR_DEPTH_MODEL",
+    "depth-anything/Depth-Anything-V2-Small-hf",
+)
+SAM_MODEL_ID = os.environ.get("CINEAR_SAM_MODEL", "facebook/sam2.1-hiera-tiny")
+SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "8"))
+SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "512"))
+MAX_PIXELS = 640 * 480
+
+
+class InferenceModels:
+    def __init__(self) -> None:
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.depth_processor = None
+        self.depth_model = None
+        self.mask_generator = None
+        self.ready = False
+        self.load_error: str | None = None
+        self.lock = Lock()
+
+    def load(self) -> None:
+        try:
+            self.depth_processor = AutoImageProcessor.from_pretrained(DEPTH_MODEL_ID)
+            self.depth_model = AutoModelForDepthEstimation.from_pretrained(DEPTH_MODEL_ID)
+            self.depth_model = self.depth_model.to(self.device).eval()
+
+            from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
+            from sam2.build_sam import build_sam2_hf
+
+            sam_model = build_sam2_hf(
+                SAM_MODEL_ID,
+                device=str(self.device),
+                apply_postprocessing=False,
+            )
+            self.mask_generator = SAM2AutomaticMaskGenerator(
+                model=sam_model,
+                points_per_side=SAM_POINTS_PER_SIDE,
+                points_per_batch=16,
+                pred_iou_thresh=0.88,
+                stability_score_thresh=0.92,
+                crop_n_layers=0,
+                min_mask_region_area=0,
+                output_mode="binary_mask",
+            )
+            self.ready = True
+        except Exception as error:  # surfaced by /health and startup log
+            self.load_error = f"{type(error).__name__}: {error}"
+            raise
+
+    def _autocast(self):
+        if self.device.type == "cuda":
+            return torch.autocast(device_type="cuda", dtype=torch.float16)
+        return nullcontext()
+
+    def _relative_depth(self, image: Image.Image, height: int, width: int) -> np.ndarray:
+        inputs = self.depth_processor(images=image, return_tensors="pt")
+        pixel_values = inputs["pixel_values"].to(self.device)
+        with torch.inference_mode(), self._autocast():
+            prediction = self.depth_model(pixel_values=pixel_values).predicted_depth
+            prediction = torch_functional.interpolate(
+                prediction.unsqueeze(1),
+                size=(height, width),
+                mode="bicubic",
+                align_corners=False,
+            ).squeeze(0).squeeze(0)
+        return prediction.float().cpu().numpy().astype(np.float32, copy=False)
+
+    def _sam_masks(self, image: Image.Image, height: int, width: int) -> list[np.ndarray]:
+        scale = min(1.0, SAM_MAX_SIDE / max(image.size))
+        sam_size = (
+            max(32, round(image.width * scale)),
+            max(32, round(image.height * scale)),
+        )
+        sam_image = np.asarray(
+            image.resize(sam_size, Image.Resampling.BILINEAR),
+            dtype=np.uint8,
+        ).copy()
+        with torch.inference_mode(), self._autocast():
+            records = self.mask_generator.generate(sam_image)
+        records.sort(key=lambda item: item["area"], reverse=True)
+        masks: list[np.ndarray] = []
+        for record in records[:48]:
+            binary = Image.fromarray(record["segmentation"].astype(np.uint8) * 255)
+            resized = binary.resize((width, height), Image.Resampling.NEAREST)
+            mask = np.asarray(resized) > 0
+            coverage = float(np.count_nonzero(mask)) / mask.size
+            if 0.002 <= coverage <= 0.92:
+                masks.append(mask)
+        return masks
+
+    def infer(self, image: Image.Image, lidar: np.ndarray) -> tuple[np.ndarray, int, float]:
+        if not self.ready:
+            raise RuntimeError(self.load_error or "Models are not ready")
+        started = time.perf_counter()
+        with self.lock:
+            relative = self._relative_depth(image, lidar.shape[0], lidar.shape[1])
+            masks = self._sam_masks(image, lidar.shape[0], lidar.shape[1])
+            fused = fuse_depth(relative, lidar, masks)
+        elapsed_ms = (time.perf_counter() - started) * 1_000
+        return fused, len(masks), elapsed_ms
+
+
+models = InferenceModels()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await asyncio.to_thread(models.load)
+    yield
+
+
+app = FastAPI(title="CineAR AI Depth", version="1.0", lifespan=lifespan)
+
+
+@app.get("/health")
+def health() -> dict[str, object]:
+    return {
+        "ready": models.ready,
+        "device": str(models.device),
+        "depth_model": DEPTH_MODEL_ID,
+        "sam_model": SAM_MODEL_ID,
+        "error": models.load_error,
+    }
+
+
+@app.post("/v1/depth")
+async def depth(
+    image: UploadFile = File(...),
+    lidar: UploadFile = File(...),
+    frame_id: str = Form(...),
+    depth_width: int = Form(...),
+    depth_height: int = Form(...),
+) -> Response:
+    if not models.ready:
+        raise HTTPException(status_code=503, detail=models.load_error or "Models are loading")
+    if depth_width <= 0 or depth_height <= 0 or depth_width * depth_height > MAX_PIXELS:
+        raise HTTPException(status_code=400, detail="Invalid depth dimensions")
+
+    image_bytes, lidar_bytes = await asyncio.gather(image.read(), lidar.read())
+    expected_bytes = depth_width * depth_height * np.dtype("<f4").itemsize
+    if len(lidar_bytes) != expected_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail=f"LiDAR payload is {len(lidar_bytes)} bytes; expected {expected_bytes}",
+        )
+    try:
+        camera_image = Image.open(BytesIO(image_bytes)).convert("RGB")
+        camera_image.load()
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"Invalid camera image: {error}") from error
+
+    lidar_depth = np.frombuffer(lidar_bytes, dtype="<f4").reshape(depth_height, depth_width)
+    try:
+        fused, mask_count, elapsed_ms = await asyncio.to_thread(
+            models.infer,
+            camera_image,
+            lidar_depth,
+        )
+    except RuntimeError as error:
+        if "out of memory" in str(error).lower() and torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+    return Response(
+        content=fused.astype("<f4", copy=False).tobytes(),
+        media_type="application/octet-stream",
+        headers={
+            "X-CineAR-Frame-ID": frame_id,
+            "X-CineAR-Depth-Width": str(depth_width),
+            "X-CineAR-Depth-Height": str(depth_height),
+            "X-CineAR-SAM-Masks": str(mask_count),
+            "X-CineAR-Inference-MS": f"{elapsed_ms:.1f}",
+        },
+    )
+````
+
+## `AIService/setup_windows.ps1`
+
+````powershell
+$ErrorActionPreference = "Stop"
+
+$serviceRoot = $PSScriptRoot
+$environmentRoot = Join-Path $serviceRoot ".venv"
+$python = Join-Path $environmentRoot "Scripts\python.exe"
+
+if (-not (Test-Path -LiteralPath $python)) {
+    # Reuse a compatible system CUDA PyTorch when present. This avoids another
+    # multi-gigabyte download on development PCs that already have it installed.
+    py -3.10 -m venv --system-site-packages $environmentRoot
+    if ($LASTEXITCODE -ne 0) { throw "Python sanal ortami olusturulamadi." }
+}
+
+& $python -m pip install --upgrade pip setuptools wheel
+if ($LASTEXITCODE -ne 0) { throw "pip/setuptools guncellenemedi." }
+$torchReady = $false
+try {
+    & $python -c "import torch, torchvision; assert torch.cuda.is_available(); assert tuple(map(int, torch.__version__.split('+')[0].split('.')[:2])) >= (2, 5)"
+    $torchReady = $LASTEXITCODE -eq 0
+} catch {
+    $torchReady = $false
+}
+if (-not $torchReady) {
+    & $python -m pip install `
+        torch==2.5.1 torchvision==0.20.1 `
+        --index-url https://download.pytorch.org/whl/cu121
+    if ($LASTEXITCODE -ne 0) { throw "CUDA PyTorch kurulamadi." }
+}
+& $python -m pip install --upgrade --ignore-installed `
+    -r (Join-Path $serviceRoot "requirements.txt")
+if ($LASTEXITCODE -ne 0) { throw "AI servis bagimliliklari kurulamadi." }
+
+# The optional SAM 2 CUDA post-processing extension is fragile on native Windows.
+# Meta documents that disabling it only skips small-hole cleanup and leaves inference usable.
+$env:SAM2_BUILD_CUDA = "0"
+& $python -m pip install "git+https://github.com/facebookresearch/sam2.git"
+if ($LASTEXITCODE -ne 0) { throw "SAM 2 kurulamadi." }
+
+& $python -c "import torch; print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
+if ($LASTEXITCODE -ne 0) { throw "AI ortami dogrulanamadi." }
+Write-Host "Kurulum tamamlandi. AIService\run_server.ps1 ile servisi baslatin."
+````
+
+## `AIService/test_fusion.py`
+
+````python
+import unittest
+
+import numpy as np
+
+from AIService.fusion import fuse_depth
+
+
+class FusionTests(unittest.TestCase):
+    def test_relative_depth_is_calibrated_to_lidar_metres(self):
+        y, x = np.mgrid[0:24, 0:32]
+        lidar = (0.8 + x * 0.03 + y * 0.01).astype(np.float32)
+        relative_inverse = 1.0 / ((lidar - 0.2) / 1.7)
+        result = fuse_depth(relative_inverse, lidar, [])
+        self.assertLess(float(np.median(np.abs(result - lidar))), 0.01)
+
+    def test_ai_fills_invalid_lidar_hole(self):
+        lidar = np.full((24, 32), 2.0, dtype=np.float32)
+        relative = np.full_like(lidar, 5.0)
+        relative[:, 16:] = 3.0
+        lidar[8:16, 10:22] = 0
+        result = fuse_depth(relative, lidar, [])
+        self.assertTrue(np.all(result[8:16, 10:22] > 0.15))
+
+
+if __name__ == "__main__":
+    unittest.main()
+````
+
+## `AIService/THIRD_PARTY_NOTICES.md`
+
+````markdown
+# AI third-party notices
+
+CineAR's optional PC inference service downloads and executes these models at
+installation/runtime. Model weights are not committed to this repository.
+
+## Segment Anything Model 2 (SAM 2.1 Tiny)
+
+- Source: https://github.com/facebookresearch/sam2
+- Model: `facebook/sam2.1-hiera-tiny`
+- Copyright: Meta Platforms, Inc. and affiliates
+- License: Apache License 2.0
+
+## Depth Anything V2 Small
+
+- Source: https://github.com/DepthAnything/Depth-Anything-V2
+- Model: `depth-anything/Depth-Anything-V2-Small-hf`
+- License for the Small model: Apache License 2.0
+
+Depth Anything V2 Base, Large, and Giant are intentionally not used because
+their published license is CC-BY-NC-4.0 and CineAR may be commercially distributed.
 ````
 
 ## `CineAR.xcodeproj/project.pbxproj`
@@ -326,6 +857,7 @@ CineAR-Codemagic-Handoff-*.zip
 		A1000000000000000000000B /* RoomRealityRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* RoomRealityRenderer.swift */; };
 		A1000000000000000000000C /* BundledRoomRealityAssetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* BundledRoomRealityAssetProvider.swift */; };
 		A1000000000000000000000D /* RoomAssets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* RoomAssets */; };
+		A1000000000000000000000E /* AIEnhancementClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* AIEnhancementClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -344,6 +876,7 @@ CineAR-Codemagic-Handoff-*.zip
 		B1000000000000000000000D /* RoomRealityRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomRealityRenderer.swift; sourceTree = "<group>"; };
 		B1000000000000000000000E /* BundledRoomRealityAssetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledRoomRealityAssetProvider.swift; sourceTree = "<group>"; };
 		B1000000000000000000000F /* RoomAssets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = RoomAssets; sourceTree = "<group>"; };
+		B10000000000000000000010 /* AIEnhancementClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEnhancementClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -378,6 +911,7 @@ CineAR-Codemagic-Handoff-*.zip
 				B1000000000000000000000C /* RealityTheme.swift */,
 				B1000000000000000000000D /* RoomRealityRenderer.swift */,
 				B1000000000000000000000E /* BundledRoomRealityAssetProvider.swift */,
+				B10000000000000000000010 /* AIEnhancementClient.swift */,
 				B1000000000000000000000F /* RoomAssets */,
 				B10000000000000000000006 /* Assets.xcassets */,
 				B10000000000000000000007 /* Info.plist */,
@@ -465,6 +999,7 @@ CineAR-Codemagic-Handoff-*.zip
 				A1000000000000000000000A /* RealityTheme.swift in Sources */,
 				A1000000000000000000000B /* RoomRealityRenderer.swift in Sources */,
 				A1000000000000000000000C /* BundledRoomRealityAssetProvider.swift in Sources */,
+				A1000000000000000000000E /* AIEnhancementClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -512,13 +1047,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.9.0;
+				MARKETING_VERSION = 0.10.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -535,12 +1070,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.9.0;
+				MARKETING_VERSION = 0.10.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -607,6 +1142,416 @@ CineAR-Codemagic-Handoff-*.zip
 
 ````
 
+## `CineAR/AIEnhancementClient.swift`
+
+````swift
+import ARKit
+import CoreImage
+import Foundation
+import RealityKit
+import UIKit
+import simd
+
+enum AIEnhancementStatus: Equatable {
+    case disabled
+    case waiting
+    case active(latencyMilliseconds: Int, samMaskCount: Int)
+    case failed(String)
+
+    var title: String {
+        switch self {
+        case .disabled: "Kapalı"
+        case .waiting: "PC bekleniyor"
+        case .active(let latency, let masks): "Aktif · \(latency) ms · \(masks) maske"
+        case .failed(let message): "Hata · \(message)"
+        }
+    }
+}
+
+struct AIDepthResult {
+    let frameID: UUID
+    let cameraTransform: simd_float4x4
+    let intrinsics: simd_float3x3
+    let imageWidth: Int
+    let imageHeight: Int
+    let depthWidth: Int
+    let depthHeight: Int
+    let depthMeters: [Float]
+    let totalLatencyMilliseconds: Int
+    let inferenceMilliseconds: Int
+    let samMaskCount: Int
+}
+
+enum AIEnhancementError: LocalizedError {
+    case invalidServerAddress
+    case missingSceneDepth
+    case imageEncodingFailed
+    case invalidResponse
+    case server(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidServerAddress: "Geçerli bir PC adresi gir (ör. http://192.168.1.20:8765)"
+        case .missingSceneDepth: "Bu karede LiDAR derinliği yok"
+        case .imageEncodingFailed: "Kamera karesi AI servisi için hazırlanamadı"
+        case .invalidResponse: "AI servisinden geçersiz derinlik verisi geldi"
+        case .server(let message): message
+        }
+    }
+}
+
+@MainActor
+final class AIEnhancementClient {
+    private struct CapturedMetadata {
+        let frameID: UUID
+        let cameraTransform: simd_float4x4
+        let intrinsics: simd_float3x3
+        let imageWidth: Int
+        let imageHeight: Int
+        let depthWidth: Int
+        let depthHeight: Int
+        let startedAt: ContinuousClock.Instant
+    }
+
+    private let context = CIContext(options: [.cacheIntermediates: false])
+    private let clock = ContinuousClock()
+    private var activeTask: URLSessionDataTask?
+    private var lastSubmission: ContinuousClock.Instant?
+    private let minimumFrameInterval: Duration = .milliseconds(700)
+
+    var isBusy: Bool { activeTask != nil }
+
+    static func serverURL(from text: String) -> URL? {
+        var value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+        if !value.contains("://") { value = "http://" + value }
+        guard var components = URLComponents(string: value),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              components.host != nil,
+              components.user == nil,
+              components.password == nil else { return nil }
+        components.path = ""
+        components.query = nil
+        components.fragment = nil
+        return components.url
+    }
+
+    func cancel() {
+        activeTask?.cancel()
+        activeTask = nil
+    }
+
+    func submit(
+        frame: ARFrame,
+        serverURL: URL,
+        completion: @escaping (Result<AIDepthResult, Error>) -> Void
+    ) {
+        guard activeTask == nil else { return }
+        let now = clock.now
+        if let lastSubmission, now - lastSubmission < minimumFrameInterval { return }
+        lastSubmission = now
+
+        guard let sceneDepth = frame.smoothedSceneDepth ?? frame.sceneDepth else {
+            completion(.failure(AIEnhancementError.missingSceneDepth))
+            return
+        }
+        let depthMap = sceneDepth.depthMap
+        let depthWidth = CVPixelBufferGetWidth(depthMap)
+        let depthHeight = CVPixelBufferGetHeight(depthMap)
+        guard let lidarData = Self.copyFloat32Depth(from: depthMap) else {
+            completion(.failure(AIEnhancementError.missingSceneDepth))
+            return
+        }
+
+        let capturedImage = frame.capturedImage
+        let imageWidth = CVPixelBufferGetWidth(capturedImage)
+        let imageHeight = CVPixelBufferGetHeight(capturedImage)
+        guard let jpegData = jpegData(from: capturedImage) else {
+            completion(.failure(AIEnhancementError.imageEncodingFailed))
+            return
+        }
+
+        let metadata = CapturedMetadata(
+            frameID: UUID(),
+            cameraTransform: frame.camera.transform,
+            intrinsics: frame.camera.intrinsics,
+            imageWidth: imageWidth,
+            imageHeight: imageHeight,
+            depthWidth: depthWidth,
+            depthHeight: depthHeight,
+            startedAt: now
+        )
+        var endpoint = serverURL
+        endpoint.append(path: "v1/depth")
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 20
+        let boundary = "CineAR-\(metadata.frameID.uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Self.multipartBody(
+            boundary: boundary,
+            frameID: metadata.frameID,
+            depthWidth: depthWidth,
+            depthHeight: depthHeight,
+            jpegData: jpegData,
+            lidarData: lidarData
+        )
+
+        activeTask = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.activeTask = nil
+                if let error {
+                    if (error as? URLError)?.code != .cancelled {
+                        completion(.failure(error))
+                    }
+                    return
+                }
+                guard let http = response as? HTTPURLResponse, let data else {
+                    completion(.failure(AIEnhancementError.invalidResponse))
+                    return
+                }
+                guard (200..<300).contains(http.statusCode) else {
+                    let detail = String(data: data, encoding: .utf8) ?? "HTTP \(http.statusCode)"
+                    completion(.failure(AIEnhancementError.server(detail)))
+                    return
+                }
+                let expectedCount = metadata.depthWidth * metadata.depthHeight
+                guard data.count == expectedCount * MemoryLayout<Float>.size else {
+                    completion(.failure(AIEnhancementError.invalidResponse))
+                    return
+                }
+                var depths = [Float](repeating: 0, count: expectedCount)
+                _ = depths.withUnsafeMutableBytes { destination in
+                    data.copyBytes(to: destination)
+                }
+                let elapsed = metadata.startedAt.duration(to: self.clock.now)
+                let components = elapsed.components
+                let totalMilliseconds = Int(components.seconds * 1_000)
+                    + Int(components.attoseconds / 1_000_000_000_000_000)
+                let inference = Int(
+                    Double(http.value(forHTTPHeaderField: "X-CineAR-Inference-MS") ?? "0") ?? 0
+                )
+                let masks = Int(http.value(forHTTPHeaderField: "X-CineAR-SAM-Masks") ?? "0") ?? 0
+                completion(.success(AIDepthResult(
+                    frameID: metadata.frameID,
+                    cameraTransform: metadata.cameraTransform,
+                    intrinsics: metadata.intrinsics,
+                    imageWidth: metadata.imageWidth,
+                    imageHeight: metadata.imageHeight,
+                    depthWidth: metadata.depthWidth,
+                    depthHeight: metadata.depthHeight,
+                    depthMeters: depths,
+                    totalLatencyMilliseconds: totalMilliseconds,
+                    inferenceMilliseconds: inference,
+                    samMaskCount: masks
+                )))
+            }
+        }
+        activeTask?.resume()
+    }
+
+    func testHealth(
+        serverURL: URL,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        var endpoint = serverURL
+        endpoint.append(path: "health")
+        var request = URLRequest(url: endpoint)
+        request.timeoutInterval = 12
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            Task { @MainActor in
+                if let error {
+                    completion(.failure(error))
+                    return
+                }
+                guard let http = response as? HTTPURLResponse,
+                      (200..<300).contains(http.statusCode),
+                      let data,
+                      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      object["ready"] as? Bool == true else {
+                    completion(.failure(AIEnhancementError.invalidResponse))
+                    return
+                }
+                let device = object["device"] as? String ?? "bilinmeyen cihaz"
+                completion(.success(device))
+            }
+        }.resume()
+    }
+
+    private func jpegData(from pixelBuffer: CVPixelBuffer) -> Data? {
+        let image = CIImage(cvPixelBuffer: pixelBuffer)
+        let maximumSide: CGFloat = 640
+        let scale = min(1, maximumSide / max(image.extent.width, image.extent.height))
+        let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.72)
+    }
+
+    private static func copyFloat32Depth(from pixelBuffer: CVPixelBuffer) -> Data? {
+        guard CVPixelBufferGetPixelFormatType(pixelBuffer) == kCVPixelFormatType_DepthFloat32 else {
+            return nil
+        }
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else { return nil }
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        var result = Data(capacity: width * height * MemoryLayout<Float>.size)
+        for row in 0..<height {
+            let bytes = base
+                .advanced(by: row * bytesPerRow)
+                .assumingMemoryBound(to: UInt8.self)
+            result.append(bytes, count: width * MemoryLayout<Float>.size)
+        }
+        return result
+    }
+
+    private static func multipartBody(
+        boundary: String,
+        frameID: UUID,
+        depthWidth: Int,
+        depthHeight: Int,
+        jpegData: Data,
+        lidarData: Data
+    ) -> Data {
+        var body = Data()
+        func append(_ value: String) {
+            body.append(value.data(using: .utf8)!)
+        }
+        func field(_ name: String, _ value: String) {
+            append("--\(boundary)\r\n")
+            append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n")
+            append("\(value)\r\n")
+        }
+        field("frame_id", frameID.uuidString)
+        field("depth_width", String(depthWidth))
+        field("depth_height", String(depthHeight))
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"image\"; filename=\"frame.jpg\"\r\n")
+        append("Content-Type: image/jpeg\r\n\r\n")
+        body.append(jpegData)
+        append("\r\n")
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"lidar\"; filename=\"depth.f32\"\r\n")
+        append("Content-Type: application/octet-stream\r\n\r\n")
+        body.append(lidarData)
+        append("\r\n--\(boundary)--\r\n")
+        return body
+    }
+}
+
+@MainActor
+final class AIDepthOcclusionRenderer {
+    private weak var arView: ARView?
+    private var anchor: AnchorEntity?
+    private var model: ModelEntity?
+
+    func install(in arView: ARView) {
+        self.arView = arView
+        if let anchor, anchor.parent != nil { return }
+        let newAnchor = AnchorEntity(world: SIMD3<Float>(repeating: 0))
+        newAnchor.name = "cinear.ai-depth.anchor"
+        arView.scene.addAnchor(newAnchor)
+        anchor = newAnchor
+    }
+
+    func clear() {
+        model?.removeFromParent()
+        model = nil
+    }
+
+    func remove() {
+        clear()
+        anchor?.removeFromParent()
+        anchor = nil
+        arView = nil
+    }
+
+    func render(_ result: AIDepthResult) throws {
+        guard let arView else { return }
+        install(in: arView)
+        let mesh = try Self.makeMesh(from: result)
+        let replacement = ModelEntity(mesh: mesh, materials: [OcclusionMaterial()])
+        replacement.name = "cinear.ai-depth.occlusion.\(result.frameID.uuidString)"
+        model?.removeFromParent()
+        anchor?.addChild(replacement)
+        model = replacement
+    }
+
+    private static func makeMesh(from result: AIDepthResult) throws -> MeshResource {
+        let width = result.depthWidth
+        let height = result.depthHeight
+        let step = max(1, max(width / 80, height / 60))
+        var xValues = Array(stride(from: 0, to: width, by: step))
+        var yValues = Array(stride(from: 0, to: height, by: step))
+        if xValues.last != width - 1 { xValues.append(width - 1) }
+        if yValues.last != height - 1 { yValues.append(height - 1) }
+
+        let fx = result.intrinsics.columns.0.x * Float(width) / Float(result.imageWidth)
+        let fy = result.intrinsics.columns.1.y * Float(height) / Float(result.imageHeight)
+        let cx = result.intrinsics.columns.2.x * Float(width) / Float(result.imageWidth)
+        let cy = result.intrinsics.columns.2.y * Float(height) / Float(result.imageHeight)
+        guard fx.isFinite, fy.isFinite, fx > 0, fy > 0 else {
+            throw AIEnhancementError.invalidResponse
+        }
+
+        let columns = xValues.count
+        var positions = [SIMD3<Float>]()
+        var sampledDepths = [Float]()
+        var valid = [Bool]()
+        positions.reserveCapacity(columns * yValues.count)
+        sampledDepths.reserveCapacity(columns * yValues.count)
+        valid.reserveCapacity(columns * yValues.count)
+        for y in yValues {
+            for x in xValues {
+                let depth = result.depthMeters[y * width + x]
+                let isValid = depth.isFinite && (0.15...12).contains(depth)
+                sampledDepths.append(depth)
+                valid.append(isValid)
+                guard isValid else {
+                    positions.append(.zero)
+                    continue
+                }
+                let cameraX = (Float(x) - cx) / fx * depth
+                let cameraY = -(Float(y) - cy) / fy * depth
+                let cameraPoint = SIMD4<Float>(cameraX, cameraY, -depth, 1)
+                let worldPoint = result.cameraTransform * cameraPoint
+                positions.append([worldPoint.x, worldPoint.y, worldPoint.z])
+            }
+        }
+
+        var indices = [UInt32]()
+        for row in 0..<(yValues.count - 1) {
+            for column in 0..<(columns - 1) {
+                let topLeft = row * columns + column
+                let topRight = topLeft + 1
+                let bottomLeft = topLeft + columns
+                let bottomRight = bottomLeft + 1
+                let corners = [topLeft, topRight, bottomLeft, bottomRight]
+                guard corners.allSatisfy({ valid[$0] }) else { continue }
+                let depths = corners.map { sampledDepths[$0] }
+                let minimum = depths.min() ?? 0
+                let maximum = depths.max() ?? .greatestFiniteMagnitude
+                let allowedJump = max(0.12, minimum * 0.08)
+                guard maximum - minimum <= allowedJump else { continue }
+                indices.append(contentsOf: [
+                    UInt32(topLeft), UInt32(bottomLeft), UInt32(topRight),
+                    UInt32(topRight), UInt32(bottomLeft), UInt32(bottomRight),
+                ])
+            }
+        }
+        guard indices.count >= 3 else { throw AIEnhancementError.invalidResponse }
+        var descriptor = MeshDescriptor(name: "cinear.ai-depth.mesh")
+        descriptor.positions = MeshBuffers.Positions(positions)
+        descriptor.primitives = .triangles(indices)
+        return try MeshResource.generate(from: [descriptor])
+    }
+}
+````
+
 ## `CineAR/ARSessionController.swift`
 
 ````swift
@@ -635,6 +1580,9 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isPlacingProp = false
     @Published private(set) var isRoomOutlineVisible = false
     @Published private(set) var selectedLightSettings: VirtualLightSettings?
+    @Published private(set) var aiEnhancementEnabled = false
+    @Published private(set) var aiServerAddress = ""
+    @Published private(set) var aiEnhancementStatus: AIEnhancementStatus = .disabled
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -643,6 +1591,8 @@ final class ARSessionController: NSObject, ObservableObject {
         assetProvider: BundledRoomRealityAssetProvider()
     )
     private let manualAssetProvider = BundledRoomRealityAssetProvider()
+    private let aiEnhancementClient = AIEnhancementClient()
+    private let aiDepthRenderer = AIDepthOcclusionRenderer()
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
@@ -674,6 +1624,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var pendingAutoSaveAnchorIDs = Set<UUID>()
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
+    private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
+    private static let aiServerDefaultsKey = "cinear.aiDepth.server"
 
     private enum RecordingPhase {
         case idle
@@ -688,6 +1640,9 @@ final class ARSessionController: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        aiEnhancementEnabled = UserDefaults.standard.bool(forKey: Self.aiEnabledDefaultsKey)
+        aiServerAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey) ?? ""
+        aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
         // Opaque room replacements can cover people and make the camera feel unstable.
@@ -719,6 +1674,9 @@ final class ARSessionController: NSObject, ObservableObject {
         addCoachingOverlay(to: view)
 
         arView = view
+        if aiEnhancementEnabled {
+            aiDepthRenderer.install(in: view)
+        }
         runSession()
         return view
     }
@@ -779,6 +1737,8 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedLightSettings = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
+        aiEnhancementClient.cancel()
+        aiDepthRenderer.remove()
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
@@ -793,6 +1753,10 @@ final class ARSessionController: NSObject, ObservableObject {
             options: [.resetTracking, .removeExistingAnchors]
         )
         roomRealityRenderer.install(in: arView)
+        if aiEnhancementEnabled {
+            aiDepthRenderer.install(in: arView)
+            aiEnhancementStatus = .waiting
+        }
         refreshPhysicalRoomOcclusionIfPossible()
         restoreRoomRealityIfPossible()
         scheduleReadinessRecovery()
@@ -800,6 +1764,8 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func pauseForRoomScan() {
         cancelPlacement()
+        aiEnhancementClient.cancel()
+        aiDepthRenderer.clear()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
         cancelPendingPostScanTheme()
         readinessRecoveryGeneration &+= 1
@@ -825,6 +1791,89 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Dekor konumları kaydedilemedi: \(error.localizedDescription)", color: .red)
         }
         publishStatus("Oda taraması açılıyor; aynı dünya koordinatları korunuyor", color: .yellow)
+    }
+
+    func setAIEnhancementEnabled(_ enabled: Bool) {
+        aiEnhancementEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.aiEnabledDefaultsKey)
+        guard enabled else {
+            aiEnhancementClient.cancel()
+            aiDepthRenderer.clear()
+            aiEnhancementStatus = .disabled
+            return
+        }
+        aiEnhancementStatus = AIEnhancementClient.serverURL(from: aiServerAddress) == nil
+            ? .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
+            : .waiting
+        if let arView { aiDepthRenderer.install(in: arView) }
+    }
+
+    func setAIServerAddress(_ address: String) {
+        aiServerAddress = address
+        UserDefaults.standard.set(address, forKey: Self.aiServerDefaultsKey)
+        if aiEnhancementEnabled {
+            aiEnhancementClient.cancel()
+            aiDepthRenderer.clear()
+            aiEnhancementStatus = AIEnhancementClient.serverURL(from: address) == nil
+                ? .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
+                : .waiting
+        }
+    }
+
+    func testAIServerConnection() {
+        guard let url = AIEnhancementClient.serverURL(from: aiServerAddress) else {
+            aiEnhancementStatus = .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
+            return
+        }
+        aiEnhancementStatus = .waiting
+        aiEnhancementClient.testHealth(serverURL: url) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let device):
+                self.aiEnhancementStatus = .active(latencyMilliseconds: 0, samMaskCount: 0)
+                self.publishStatus("AI servisi hazır: \(device)", color: .green)
+            case .failure(let error):
+                self.aiEnhancementStatus = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    private func submitFrameToAIIfNeeded(_ frame: ARFrame) {
+        guard aiEnhancementEnabled,
+              !isRoomScanActive,
+              !isSessionInterrupted,
+              case .normal = frame.camera.trackingState,
+              let serverURL = AIEnhancementClient.serverURL(from: aiServerAddress) else { return }
+        aiEnhancementClient.submit(frame: frame, serverURL: serverURL) { [weak self] result in
+            guard let self, self.aiEnhancementEnabled else { return }
+            switch result {
+            case .success(let depth):
+                guard depth.totalLatencyMilliseconds <= 1_500 else {
+                    self.aiDepthRenderer.clear()
+                    self.aiEnhancementStatus = .failed(
+                        "Gecikme \(depth.totalLatencyMilliseconds) ms; PC veya Wi-Fi yavaş"
+                    )
+                    return
+                }
+                do {
+                    try self.aiDepthRenderer.render(depth)
+                    self.aiEnhancementStatus = .active(
+                        latencyMilliseconds: depth.totalLatencyMilliseconds,
+                        samMaskCount: depth.samMaskCount
+                    )
+                } catch {
+                    self.aiEnhancementStatus = .failed(error.localizedDescription)
+                }
+            case .failure(let error):
+                if let aiError = error as? AIEnhancementError,
+                   case .missingSceneDepth = aiError {
+                    self.aiEnhancementStatus = .waiting
+                } else {
+                    self.aiDepthRenderer.clear()
+                    self.aiEnhancementStatus = .failed(error.localizedDescription)
+                }
+            }
+        }
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
@@ -2575,6 +3624,10 @@ final class ARSessionController: NSObject, ObservableObject {
 }
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        submitFrameToAIIfNeeded(frame)
+    }
+
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         updateKnownFloor(from: anchors)
         var shouldScheduleAutomaticSave = false
@@ -2790,7 +3843,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 }
 
-extension ARSessionController: @preconcurrency UIGestureRecognizerDelegate {
+extension ARSessionController: UIGestureRecognizerDelegate {
     func gestureRecognizer(
         _ gestureRecognizer: UIGestureRecognizer,
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
@@ -3295,6 +4348,7 @@ struct ContentView: View {
     @State private var showingRoomScanner = false
     @State private var showingAssetImporter = false
     @State private var showingPropLibrary = false
+    @State private var showingAISettings = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
 
@@ -3364,6 +4418,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingPropLibrary) {
             propLibrary
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingAISettings) {
+            aiSettings
                 .presentationDetents([.medium, .large])
         }
     }
@@ -3481,6 +4539,9 @@ struct ContentView: View {
                 utilityButton("HEVC Çekim", "record.circle") {
                     session.startRecording()
                 }
+                utilityButton("AI Derinlik", "cpu.fill") {
+                    showingAISettings = true
+                }
 
                 if let url = session.lastRecordingURL {
                     ShareLink(item: url) {
@@ -3533,6 +4594,74 @@ struct ContentView: View {
             Text("Tarama sırasında ve Beyaz Hatlar modunda kamera kapanmaz; katı duvar çizilmez")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private var aiSettings: some View {
+        NavigationStack {
+            Form {
+                Section("SAM 2 + Depth Anything") {
+                    Toggle(
+                        "PC destekli AI occlusion",
+                        isOn: Binding(
+                            get: { session.aiEnhancementEnabled },
+                            set: { session.setAIEnhancementEnabled($0) }
+                        )
+                    )
+
+                    TextField(
+                        "http://192.168.1.20:8765",
+                        text: Binding(
+                            get: { session.aiServerAddress },
+                            set: { session.setAIServerAddress($0) }
+                        )
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+
+                    LabeledContent("Durum") {
+                        Text(session.aiEnhancementStatus.title)
+                            .foregroundStyle(aiStatusColor)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    Button("PC bağlantısını test et") {
+                        session.testAIServerConnection()
+                    }
+                    .disabled(AIEnhancementClient.serverURL(from: session.aiServerAddress) == nil)
+                }
+
+                Section("Çalışma şekli") {
+                    Text(
+                        "iPhone kamera ve LiDAR derinliğini aynı Wi-Fi'daki PC'ye yollar. "
+                            + "Depth Anything boşlukları tamamlar; SAM 2 nesne sınırlarını ayırır. "
+                            + "Sonuç yalnız sanal nesnelerin gerçek insan ve mobilyaların arkasında "
+                            + "doğru kesilmesi için görünmez derinlik ağı olarak kullanılır."
+                    )
+                    .font(.footnote)
+
+                    Text("PC servisi kapalıysa ARKit'in yerel LiDAR occlusion sistemi çalışmaya devam eder.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("AI Derinlik")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingAISettings = false }
+                }
+            }
+        }
+    }
+
+    private var aiStatusColor: Color {
+        switch session.aiEnhancementStatus {
+        case .active: .green
+        case .failed: .red
+        case .waiting: .orange
+        case .disabled: .secondary
         }
     }
 
@@ -3848,6 +4977,13 @@ struct ContentView: View {
 	<string>Gercek mekani taramak ve sanal seti goruntulemek icin kamera kullanilir.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AR cekimi sirasinda ses kaydetmek icin mikrofon kullanilir.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>SAM 2 ve Depth Anything derinlik servisine ayni Wi-Fi agindaki bilgisayardan baglanmak icin yerel ag kullanilir.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>
@@ -4576,9 +5712,12 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     var placementSurface: PropPlacementSurface {
         if let surface = photorealDescriptor?.surface { return surface }
         switch self {
-        case .wall, .lightPanel, .backdrop: .wall
-        case .custom: .horizontal
-        default: .floor
+        case .wall, .lightPanel, .backdrop:
+            return PropPlacementSurface.wall
+        case .custom:
+            return PropPlacementSurface.horizontal
+        default:
+            return PropPlacementSurface.floor
         }
     }
 
@@ -8360,12 +9499,17 @@ incelemesine uygulama gondermesi mumkun degildir.
    RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
-15. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
-16. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
+15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
+    girip baglantiyi test et ve sistemi ac. Durumun `Aktif`, gecikmenin ve SAM maske
+    sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini
+    tekrar et; AI kapaliyken ve acikken video kaydi alip kenar hatasini karsilastir.
+    Servisi kapatinca eski AI mesh'i kaybolmali ve ARKit occlusion devam etmeli.
+16. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
+17. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-17. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-18. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+18. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+19. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
@@ -8448,6 +9592,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
   mekan mesh'iyle occlusion
+- Istege bagli PC destekli SAM 2.1 Tiny + Depth Anything V2 Small derinlik fuz yonu;
+  iPhone kamera ve LiDAR karesini ayni Wi-Fi'daki RTX bilgisayara yollar, LiDAR ile
+  metreye kalibre edilen sonuc RealityKit'te gorunmez occlusion mesh'i olur
+- AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
+  cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
 - Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
@@ -8500,6 +9649,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
    modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
+
 8. Bir lamba yerlestirildiginde veya tekrar secildiginde `Sanal Isik` panelinden
    guc, renk sicakligi, koni acisi ve acik/kapali durumu degistirilebilir. Bu isik
    kamera pikselini degil, yalnizca RealityKit dekorlarini ve onlarin golgelerini etkiler.
@@ -8508,6 +9658,15 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    degilse istek siraya alinir ve otomatik tamamlanir.
 10. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
+
+## PC AI derinlik denemesi
+
+RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
+`AIService/run_server.ps1` calistirilir. Konsolda yazan yerel IP, uygulamadaki
+`Kontroller > AI Derinlik` alanina girilir; `PC baglantisini test et` sonucu hazir
+oldugunda anahtar acilir. Ayrintili komutlar ve model secimi `AIService/README.md`
+dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
+bulut servisi kullanilmaz.
 
 ## Proje dosyalari
 
@@ -9112,6 +10271,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("- Swift + SwiftUI kullanıcı arayüzü")
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
+[void]$builder.AppendLine("- Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i")
 [void]$builder.AppendLine("- RoomPlan ile semantik oda taraması ve ``room.json`` üretimi")
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")

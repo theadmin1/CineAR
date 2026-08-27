@@ -23,6 +23,9 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isPlacingProp = false
     @Published private(set) var isRoomOutlineVisible = false
     @Published private(set) var selectedLightSettings: VirtualLightSettings?
+    @Published private(set) var aiEnhancementEnabled = false
+    @Published private(set) var aiServerAddress = ""
+    @Published private(set) var aiEnhancementStatus: AIEnhancementStatus = .disabled
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -31,6 +34,8 @@ final class ARSessionController: NSObject, ObservableObject {
         assetProvider: BundledRoomRealityAssetProvider()
     )
     private let manualAssetProvider = BundledRoomRealityAssetProvider()
+    private let aiEnhancementClient = AIEnhancementClient()
+    private let aiDepthRenderer = AIDepthOcclusionRenderer()
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
@@ -62,6 +67,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var pendingAutoSaveAnchorIDs = Set<UUID>()
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
+    private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
+    private static let aiServerDefaultsKey = "cinear.aiDepth.server"
 
     private enum RecordingPhase {
         case idle
@@ -76,6 +83,9 @@ final class ARSessionController: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        aiEnhancementEnabled = UserDefaults.standard.bool(forKey: Self.aiEnabledDefaultsKey)
+        aiServerAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey) ?? ""
+        aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
         // Opaque room replacements can cover people and make the camera feel unstable.
@@ -107,6 +117,9 @@ final class ARSessionController: NSObject, ObservableObject {
         addCoachingOverlay(to: view)
 
         arView = view
+        if aiEnhancementEnabled {
+            aiDepthRenderer.install(in: view)
+        }
         runSession()
         return view
     }
@@ -167,6 +180,8 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedLightSettings = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
+        aiEnhancementClient.cancel()
+        aiDepthRenderer.remove()
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
@@ -181,6 +196,10 @@ final class ARSessionController: NSObject, ObservableObject {
             options: [.resetTracking, .removeExistingAnchors]
         )
         roomRealityRenderer.install(in: arView)
+        if aiEnhancementEnabled {
+            aiDepthRenderer.install(in: arView)
+            aiEnhancementStatus = .waiting
+        }
         refreshPhysicalRoomOcclusionIfPossible()
         restoreRoomRealityIfPossible()
         scheduleReadinessRecovery()
@@ -188,6 +207,8 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func pauseForRoomScan() {
         cancelPlacement()
+        aiEnhancementClient.cancel()
+        aiDepthRenderer.clear()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
         cancelPendingPostScanTheme()
         readinessRecoveryGeneration &+= 1
@@ -213,6 +234,89 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Dekor konumları kaydedilemedi: \(error.localizedDescription)", color: .red)
         }
         publishStatus("Oda taraması açılıyor; aynı dünya koordinatları korunuyor", color: .yellow)
+    }
+
+    func setAIEnhancementEnabled(_ enabled: Bool) {
+        aiEnhancementEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.aiEnabledDefaultsKey)
+        guard enabled else {
+            aiEnhancementClient.cancel()
+            aiDepthRenderer.clear()
+            aiEnhancementStatus = .disabled
+            return
+        }
+        aiEnhancementStatus = AIEnhancementClient.serverURL(from: aiServerAddress) == nil
+            ? .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
+            : .waiting
+        if let arView { aiDepthRenderer.install(in: arView) }
+    }
+
+    func setAIServerAddress(_ address: String) {
+        aiServerAddress = address
+        UserDefaults.standard.set(address, forKey: Self.aiServerDefaultsKey)
+        if aiEnhancementEnabled {
+            aiEnhancementClient.cancel()
+            aiDepthRenderer.clear()
+            aiEnhancementStatus = AIEnhancementClient.serverURL(from: address) == nil
+                ? .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
+                : .waiting
+        }
+    }
+
+    func testAIServerConnection() {
+        guard let url = AIEnhancementClient.serverURL(from: aiServerAddress) else {
+            aiEnhancementStatus = .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
+            return
+        }
+        aiEnhancementStatus = .waiting
+        aiEnhancementClient.testHealth(serverURL: url) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let device):
+                self.aiEnhancementStatus = .active(latencyMilliseconds: 0, samMaskCount: 0)
+                self.publishStatus("AI servisi hazır: \(device)", color: .green)
+            case .failure(let error):
+                self.aiEnhancementStatus = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    private func submitFrameToAIIfNeeded(_ frame: ARFrame) {
+        guard aiEnhancementEnabled,
+              !isRoomScanActive,
+              !isSessionInterrupted,
+              case .normal = frame.camera.trackingState,
+              let serverURL = AIEnhancementClient.serverURL(from: aiServerAddress) else { return }
+        aiEnhancementClient.submit(frame: frame, serverURL: serverURL) { [weak self] result in
+            guard let self, self.aiEnhancementEnabled else { return }
+            switch result {
+            case .success(let depth):
+                guard depth.totalLatencyMilliseconds <= 1_500 else {
+                    self.aiDepthRenderer.clear()
+                    self.aiEnhancementStatus = .failed(
+                        "Gecikme \(depth.totalLatencyMilliseconds) ms; PC veya Wi-Fi yavaş"
+                    )
+                    return
+                }
+                do {
+                    try self.aiDepthRenderer.render(depth)
+                    self.aiEnhancementStatus = .active(
+                        latencyMilliseconds: depth.totalLatencyMilliseconds,
+                        samMaskCount: depth.samMaskCount
+                    )
+                } catch {
+                    self.aiEnhancementStatus = .failed(error.localizedDescription)
+                }
+            case .failure(let error):
+                if let aiError = error as? AIEnhancementError,
+                   case .missingSceneDepth = aiError {
+                    self.aiEnhancementStatus = .waiting
+                } else {
+                    self.aiDepthRenderer.clear()
+                    self.aiEnhancementStatus = .failed(error.localizedDescription)
+                }
+            }
+        }
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
@@ -1963,6 +2067,10 @@ final class ARSessionController: NSObject, ObservableObject {
 }
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        submitFrameToAIIfNeeded(frame)
+    }
+
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         updateKnownFloor(from: anchors)
         var shouldScheduleAutomaticSave = false
@@ -2178,7 +2286,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 }
 
-extension ARSessionController: @preconcurrency UIGestureRecognizerDelegate {
+extension ARSessionController: UIGestureRecognizerDelegate {
     func gestureRecognizer(
         _ gestureRecognizer: UIGestureRecognizer,
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer

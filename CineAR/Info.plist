@@ -28,6 +28,13 @@
 	<string>Gercek mekani taramak ve sanal seti goruntulemek icin kamera kullanilir.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>AR cekimi sirasinda ses kaydetmek icin mikrofon kullanilir.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>SAM 2 ve Depth Anything derinlik servisine ayni Wi-Fi agindaki bilgisayardan baglanmak icin yerel ag kullanilir.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>

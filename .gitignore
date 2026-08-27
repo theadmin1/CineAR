@@ -21,6 +21,9 @@ ios_distribution_private_key*
 Kenney-Furniture-Kit.zip
 .asset-cache/
 .tools-cache/
+AIService/.venv/
+AIService/__pycache__/
+AIService/.cache/
 
 # Generated handoff archives are release artifacts, not source files
 CineAR-Codemagic-Handoff-*.zip

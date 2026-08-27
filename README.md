@@ -23,6 +23,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
   mekan mesh'iyle occlusion
+- Istege bagli PC destekli SAM 2.1 Tiny + Depth Anything V2 Small derinlik fuz yonu;
+  iPhone kamera ve LiDAR karesini ayni Wi-Fi'daki RTX bilgisayara yollar, LiDAR ile
+  metreye kalibre edilen sonuc RealityKit'te gorunmez occlusion mesh'i olur
+- AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
+  cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
 - Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
@@ -75,6 +80,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
    modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
+
 8. Bir lamba yerlestirildiginde veya tekrar secildiginde `Sanal Isik` panelinden
    guc, renk sicakligi, koni acisi ve acik/kapali durumu degistirilebilir. Bu isik
    kamera pikselini degil, yalnizca RealityKit dekorlarini ve onlarin golgelerini etkiler.
@@ -83,6 +89,15 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    degilse istek siraya alinir ve otomatik tamamlanir.
 10. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
+
+## PC AI derinlik denemesi
+
+RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
+`AIService/run_server.ps1` calistirilir. Konsolda yazan yerel IP, uygulamadaki
+`Kontroller > AI Derinlik` alanina girilir; `PC baglantisini test et` sonucu hazir
+oldugunda anahtar acilir. Ayrintili komutlar ve model secimi `AIService/README.md`
+dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
+bulut servisi kullanilmaz.
 
 ## Proje dosyalari
 
