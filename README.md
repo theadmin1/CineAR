@@ -42,12 +42,15 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
 - Fotogercekci veya kullanici USDZ'si acilirken katalog olcusunde gorunur anlik yedek;
   dosya hazir olunca ayni dunya anchor'i ve kullanici donusumu korunarak gercek modelle degisim
+- Anchor edilmeden yapilan USDZ olcumunde inactive cocuklari da hesaba katma; RealityKit'in
+  sifir boyut dondurup 30 modelin tamamini mavi yedek kutuya dusurmesini engelleme
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim ve
   15-120 derece huzme genisligi; sanal isik yalnizca sanal dekorlari etkiler
+- Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
@@ -105,14 +108,19 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 
 RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
 `AIService/run_server.ps1` calistirilir. Konsolda yazan yerel IP, uygulamadaki
-`Kontroller > AI Derinlik` alanina girilir; `PC baglantisini test et` sonucu hazir
-oldugunda AI anahtari otomatik acilir. `PC bagli - LiDAR karesi bekleniyor` mesaji
+`Kontroller > AI Derinlik` alaninda dogrulanir; ekran acilinca baglanti otomatik
+test edilir ve basariliysa AI anahtari acilir. `PC bagli - LiDAR karesi bekleniyor` mesaji
 sunucu baglantisinin basarili oldugunu, telefonun henuz scene-depth karesi uretmedigini
 belirtir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
 bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
 CineAR izni kontrol edilir.
+
+Bu kurulumda dogrulanan PC adresi `http://192.168.1.9:8765` uygulamaya gercek
+baslangic degeri olarak yazilir ve AI ekrani acilinca otomatik test edilir. Adres
+DHCP nedeniyle degisirse terminaldeki yeni adres ayni alana yazilabilir; Safari'de
+kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayiklar.
 
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;

@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.10.3`
-- Proje build numarası: `16`
+- Uygulama sürümü: `0.10.4`
+- Proje build numarası: `17`
 - Git dalı: `main`
-- Kaynak commit: `d2874217027bb97e9d2b8f9d13b168b4e6b9e370`
-- Oluşturulma zamanı: `2026-08-27 17:51:56 +03:00`
+- Kaynak commit: `590cbfaa7e5232fbc1fe98669e3bb280daf173d6`
+- Oluşturulma zamanı: `2026-08-27 18:52:59 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -258,14 +258,14 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 435 | 17725 |
-| `CineAR/ARSessionController.swift` | 2788 | 115635 |
+| `CineAR/ARSessionController.swift` | 2814 | 117068 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
-| `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15397 |
+| `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 631 | 24978 |
+| `CineAR/ContentView.swift` | 637 | 25253 |
 | `CineAR/Info.plist` | 56 | 1855 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 345 | 13775 |
@@ -275,12 +275,12 @@ Yok.
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2073 | 79050 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
-| `CineAR/SceneProjectStore.swift` | 596 | 23962 |
+| `CineAR/SceneProjectStore.swift` | 598 | 24122 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 109 | 6907 |
+| `Docs/DEVICE_TEST.md` | 115 | 7323 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 166 | 10019 |
+| `README.md` | 174 | 10626 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -1052,13 +1052,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.3;
+				MARKETING_VERSION = 0.10.4;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1075,12 +1075,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.3;
+				MARKETING_VERSION = 0.10.4;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1663,6 +1663,10 @@ final class ARSessionController: NSObject, ObservableObject {
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
     private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
     private static let aiServerDefaultsKey = "cinear.aiDepth.server"
+    // The user's verified RTX server on the current LAN. This is a real initial
+    // value, not a TextField placeholder; it remains editable if DHCP changes it.
+    private static let defaultAIServerAddress = "http://192.168.1.9:8765"
+    private static let obsoleteAIServerExample = "http://192.168.1.20:8765"
 
     private enum RecordingPhase {
         case idle
@@ -1678,7 +1682,16 @@ final class ARSessionController: NSObject, ObservableObject {
     override init() {
         super.init()
         aiEnhancementEnabled = UserDefaults.standard.bool(forKey: Self.aiEnabledDefaultsKey)
-        aiServerAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey) ?? ""
+        let storedAIAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let storedAIAddress,
+           storedAIAddress != Self.obsoleteAIServerExample,
+           AIEnhancementClient.serverURL(from: storedAIAddress) != nil {
+            aiServerAddress = storedAIAddress
+        } else {
+            aiServerAddress = Self.defaultAIServerAddress
+        }
+        UserDefaults.standard.set(aiServerAddress, forKey: Self.aiServerDefaultsKey)
         aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
@@ -3168,13 +3181,18 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         return
                     }
-                    self.replaceRenderedEntity(
+                    if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
                         id: id,
                         anchor: anchor,
                         generation: generation
-                    )
+                    ) {
+                        self.publishStatus(
+                            "\(prop.title) gerçek USDZ modeli hazır",
+                            color: .green
+                        )
+                    }
                 }
             return
         }
@@ -3241,13 +3259,16 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                     }
                 } receiveValue: { [weak self] entity in
-                    self?.replaceRenderedEntity(
+                    guard let self else { return }
+                    if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
                         id: id,
                         anchor: anchor,
                         generation: generation
-                    )
+                    ) {
+                        self.publishStatus("3B dekor hazır", color: .green)
+                    }
                 }
             return
         }
@@ -3301,13 +3322,14 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities[id] = entity
     }
 
+    @discardableResult
     private func replaceRenderedEntity(
         entity: ModelEntity,
         prop: PropKind,
         id: UUID,
         anchor: ARAnchor,
         generation: UInt64
-    ) {
+    ) -> Bool {
         guard let arView,
               generation == renderGeneration,
               knownPropAnchorIDs.contains(anchor.identifier),
@@ -3315,7 +3337,7 @@ final class ARSessionController: NSObject, ObservableObject {
               let current = renderedEntities[id],
               let parent = current.parent,
               let placement = projectStore.placement(id: id),
-              placement.kind == prop else { return }
+              placement.kind == prop else { return false }
 
         let preservedTransform = current.transform
         renderedLights[id]?.removeFromParent()
@@ -3341,6 +3363,7 @@ final class ARSessionController: NSObject, ObservableObject {
         parent.addChild(entity)
         arView.installGestures([.rotation, .scale], for: entity)
         renderedEntities[id] = entity
+        return true
     }
 
     func setSelectedLightEnabled(_ isEnabled: Bool) {
@@ -3671,7 +3694,10 @@ final class ARSessionController: NSObject, ObservableObject {
         let bounds = measurementRoot.visualBounds(
             recursive: true,
             relativeTo: measurementRoot,
-            excludeInactive: true
+            // The USDZ is intentionally measured before it is anchored. RealityKit
+            // reports unanchored entities as inactive, so excluding inactive children
+            // produces a zero-size box and forces every valid model to its proxy.
+            excludeInactive: false
         )
         content.removeFromParent()
         let extents = bounds.extents
@@ -3696,7 +3722,7 @@ final class ARSessionController: NSObject, ObservableObject {
         let fittedBounds = root.visualBounds(
             recursive: true,
             relativeTo: root,
-            excludeInactive: true
+            excludeInactive: false
         )
         guard [fittedBounds.extents.x, fittedBounds.extents.y, fittedBounds.extents.z]
             .allSatisfy({ $0.isFinite && $0 > 0.0001 && $0 < 12 }) else { return nil }
@@ -4521,7 +4547,7 @@ final class BundledRoomRealityAssetProvider: RoomRealityAssetProviding {
         let fittedBounds = result.visualBounds(
             recursive: true,
             relativeTo: result,
-            excludeInactive: true
+            excludeInactive: false
         )
         guard Self.isValidBounds(fittedBounds) else {
             return makeFallbackEntity(for: role, theme: theme, size: targetDimensions)
@@ -4565,7 +4591,7 @@ final class BundledRoomRealityAssetProvider: RoomRealityAssetProviding {
         let bounds = result.visualBounds(
             recursive: true,
             relativeTo: result,
-            excludeInactive: true
+            excludeInactive: false
         )
         return Self.isValidBounds(bounds) ? result : nil
     }
@@ -4594,7 +4620,7 @@ private extension BundledRoomRealityAssetProvider {
             let bounds = measurementRoot.visualBounds(
                 recursive: true,
                 relativeTo: measurementRoot,
-                excludeInactive: true
+                excludeInactive: false
             )
             entity.removeFromParent()
 
@@ -5039,6 +5065,7 @@ struct ContentView: View {
                 }
                 utilityButton("AI Derinlik", "cpu.fill") {
                     showingAISettings = true
+                    session.testAIServerConnection()
                 }
                 utilityButton("Sahne Işığı", "lightbulb.max.fill") {
                     session.showSceneLightControls()
@@ -5111,7 +5138,7 @@ struct ContentView: View {
                     )
 
                     TextField(
-                        "http://192.168.1.20:8765",
+                        "PC adresini buraya yaz",
                         text: Binding(
                             get: { session.aiServerAddress },
                             set: { session.setAIServerAddress($0) }
@@ -5120,6 +5147,11 @@ struct ContentView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
+
+                    Text("Etkin adres: \(session.aiServerAddress)")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
 
                     LabeledContent("Durum") {
                         Text(session.aiEnhancementStatus.title)
@@ -5260,7 +5292,7 @@ struct ContentView: View {
                     title: "Güç",
                     valueText: "\(Int(settings.intensityLumens)) lm",
                     value: Binding(
-                        get: { Double(session.selectedLightSettings?.intensityLumens ?? 1_600) },
+                        get: { Double(session.selectedLightSettings?.intensityLumens ?? 6_000) },
                         set: { session.setSelectedLightIntensity(Float($0)) }
                     ),
                     range: 0...12_000,
@@ -9369,7 +9401,9 @@ struct PlacementRecord: Codable, Identifiable {
 struct VirtualLightSettings: Codable, Equatable {
     static let defaultFixture = VirtualLightSettings(
         isEnabled: true,
-        intensityLumens: 1_600,
+        // Strong enough to remain visibly distinct from RealityKit's automatic
+        // environment lighting while still leaving headroom for art direction.
+        intensityLumens: 6_000,
         temperatureKelvin: 4_200,
         coneAngleDegrees: 72,
         yawDegrees: 0,
@@ -10197,6 +10231,8 @@ incelemesine uygulama gondermesi mumkun degildir.
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
    ayni konumda gercek modelle degismeli. Tek bir bozuk USDZ sahneyi tamamen gorunmez
    birakmamali; yedek model ve acik hata mesaji kalmali.
+   Gecerli modellerde `olcusu okunamadi` mesaji ve katalog boyutunda mavi kutu
+   kalmamali; sahneye henuz anchor edilmemis USDZ hiyerarsisi da olculebilmeli.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
@@ -10207,6 +10243,8 @@ incelemesine uygulama gondermesi mumkun degildir.
    uca degistir. Isik hedefinin hem saga-sola hem yukari-asagi dondugunu dogrula.
    Gercek kamera pikselleri degismemeli; sanal dekorlardaki aydinlanma ve golge
    degismeli. Kaydet, uygulamayi kapat, yukle ve ayni degerlerin geri geldigini dogrula.
+   Yeni isik 6000 lumenle baslamali; fotogercekci sanal nesne uzerindeki aydinlanma
+   ac/kapat ve guc degisiminde ilk bakista ayirt edilebilmeli.
 9. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
    uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
    acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
@@ -10234,7 +10272,9 @@ incelemesine uygulama gondermesi mumkun degildir.
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
 15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
-    girip baglantiyi test et; basarili test AI anahtarini otomatik acmali. Durumun
+    kontrol et; alan ilk kurulumda gercek deger olarak `http://192.168.1.9:8765` icermeli
+    ve ekran baglantiyi otomatik test etmeli. Basarili test AI anahtarini otomatik
+    acmali. Durumun
     once `Aktif` veya `PC bagli - LiDAR karesi bekleniyor`, scene depth geldiginde
     `Aktif` oldugunu; gecikmenin ve SAM maske
     sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini
@@ -10352,12 +10392,15 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
 - Fotogercekci veya kullanici USDZ'si acilirken katalog olcusunde gorunur anlik yedek;
   dosya hazir olunca ayni dunya anchor'i ve kullanici donusumu korunarak gercek modelle degisim
+- Anchor edilmeden yapilan USDZ olcumunde inactive cocuklari da hesaba katma; RealityKit'in
+  sifir boyut dondurup 30 modelin tamamini mavi yedek kutuya dusurmesini engelleme
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim ve
   15-120 derece huzme genisligi; sanal isik yalnizca sanal dekorlari etkiler
+- Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
@@ -10415,14 +10458,19 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 
 RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
 `AIService/run_server.ps1` calistirilir. Konsolda yazan yerel IP, uygulamadaki
-`Kontroller > AI Derinlik` alanina girilir; `PC baglantisini test et` sonucu hazir
-oldugunda AI anahtari otomatik acilir. `PC bagli - LiDAR karesi bekleniyor` mesaji
+`Kontroller > AI Derinlik` alaninda dogrulanir; ekran acilinca baglanti otomatik
+test edilir ve basariliysa AI anahtari acilir. `PC bagli - LiDAR karesi bekleniyor` mesaji
 sunucu baglantisinin basarili oldugunu, telefonun henuz scene-depth karesi uretmedigini
 belirtir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
 bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
 CineAR izni kontrol edilir.
+
+Bu kurulumda dogrulanan PC adresi `http://192.168.1.9:8765` uygulamaya gercek
+baslangic degeri olarak yazilir ve AI ekrani acilinca otomatik test edilir. Adres
+DHCP nedeniyle degisirse terminaldeki yeni adres ayni alana yazilabilir; Safari'de
+kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayiklar.
 
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;

@@ -29,6 +29,8 @@
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
    ayni konumda gercek modelle degismeli. Tek bir bozuk USDZ sahneyi tamamen gorunmez
    birakmamali; yedek model ve acik hata mesaji kalmali.
+   Gecerli modellerde `olcusu okunamadi` mesaji ve katalog boyutunda mavi kutu
+   kalmamali; sahneye henuz anchor edilmemis USDZ hiyerarsisi da olculebilmeli.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
@@ -39,6 +41,8 @@
    uca degistir. Isik hedefinin hem saga-sola hem yukari-asagi dondugunu dogrula.
    Gercek kamera pikselleri degismemeli; sanal dekorlardaki aydinlanma ve golge
    degismeli. Kaydet, uygulamayi kapat, yukle ve ayni degerlerin geri geldigini dogrula.
+   Yeni isik 6000 lumenle baslamali; fotogercekci sanal nesne uzerindeki aydinlanma
+   ac/kapat ve guc degisiminde ilk bakista ayirt edilebilmeli.
 9. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
    uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
    acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
@@ -66,7 +70,9 @@
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
 15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
-    girip baglantiyi test et; basarili test AI anahtarini otomatik acmali. Durumun
+    kontrol et; alan ilk kurulumda gercek deger olarak `http://192.168.1.9:8765` icermeli
+    ve ekran baglantiyi otomatik test etmeli. Basarili test AI anahtarini otomatik
+    acmali. Durumun
     once `Aktif` veya `PC bagli - LiDAR karesi bekleniyor`, scene depth geldiginde
     `Aktif` oldugunu; gecikmenin ve SAM maske
     sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini

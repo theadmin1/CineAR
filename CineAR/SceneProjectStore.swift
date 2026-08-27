@@ -26,7 +26,9 @@ struct PlacementRecord: Codable, Identifiable {
 struct VirtualLightSettings: Codable, Equatable {
     static let defaultFixture = VirtualLightSettings(
         isEnabled: true,
-        intensityLumens: 1_600,
+        // Strong enough to remain visibly distinct from RealityKit's automatic
+        // environment lighting while still leaving headroom for art direction.
+        intensityLumens: 6_000,
         temperatureKelvin: 4_200,
         coneAngleDegrees: 72,
         yawDegrees: 0,

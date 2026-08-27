@@ -63,7 +63,7 @@ final class BundledRoomRealityAssetProvider: RoomRealityAssetProviding {
         let fittedBounds = result.visualBounds(
             recursive: true,
             relativeTo: result,
-            excludeInactive: true
+            excludeInactive: false
         )
         guard Self.isValidBounds(fittedBounds) else {
             return makeFallbackEntity(for: role, theme: theme, size: targetDimensions)
@@ -107,7 +107,7 @@ final class BundledRoomRealityAssetProvider: RoomRealityAssetProviding {
         let bounds = result.visualBounds(
             recursive: true,
             relativeTo: result,
-            excludeInactive: true
+            excludeInactive: false
         )
         return Self.isValidBounds(bounds) ? result : nil
     }
@@ -136,7 +136,7 @@ private extension BundledRoomRealityAssetProvider {
             let bounds = measurementRoot.visualBounds(
                 recursive: true,
                 relativeTo: measurementRoot,
-                excludeInactive: true
+                excludeInactive: false
             )
             entity.removeFromParent()
 

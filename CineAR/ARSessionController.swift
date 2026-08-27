@@ -72,6 +72,10 @@ final class ARSessionController: NSObject, ObservableObject {
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
     private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
     private static let aiServerDefaultsKey = "cinear.aiDepth.server"
+    // The user's verified RTX server on the current LAN. This is a real initial
+    // value, not a TextField placeholder; it remains editable if DHCP changes it.
+    private static let defaultAIServerAddress = "http://192.168.1.9:8765"
+    private static let obsoleteAIServerExample = "http://192.168.1.20:8765"
 
     private enum RecordingPhase {
         case idle
@@ -87,7 +91,16 @@ final class ARSessionController: NSObject, ObservableObject {
     override init() {
         super.init()
         aiEnhancementEnabled = UserDefaults.standard.bool(forKey: Self.aiEnabledDefaultsKey)
-        aiServerAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey) ?? ""
+        let storedAIAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let storedAIAddress,
+           storedAIAddress != Self.obsoleteAIServerExample,
+           AIEnhancementClient.serverURL(from: storedAIAddress) != nil {
+            aiServerAddress = storedAIAddress
+        } else {
+            aiServerAddress = Self.defaultAIServerAddress
+        }
+        UserDefaults.standard.set(aiServerAddress, forKey: Self.aiServerDefaultsKey)
         aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
@@ -1577,13 +1590,18 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         return
                     }
-                    self.replaceRenderedEntity(
+                    if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
                         id: id,
                         anchor: anchor,
                         generation: generation
-                    )
+                    ) {
+                        self.publishStatus(
+                            "\(prop.title) gerçek USDZ modeli hazır",
+                            color: .green
+                        )
+                    }
                 }
             return
         }
@@ -1650,13 +1668,16 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                     }
                 } receiveValue: { [weak self] entity in
-                    self?.replaceRenderedEntity(
+                    guard let self else { return }
+                    if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
                         id: id,
                         anchor: anchor,
                         generation: generation
-                    )
+                    ) {
+                        self.publishStatus("3B dekor hazır", color: .green)
+                    }
                 }
             return
         }
@@ -1710,13 +1731,14 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities[id] = entity
     }
 
+    @discardableResult
     private func replaceRenderedEntity(
         entity: ModelEntity,
         prop: PropKind,
         id: UUID,
         anchor: ARAnchor,
         generation: UInt64
-    ) {
+    ) -> Bool {
         guard let arView,
               generation == renderGeneration,
               knownPropAnchorIDs.contains(anchor.identifier),
@@ -1724,7 +1746,7 @@ final class ARSessionController: NSObject, ObservableObject {
               let current = renderedEntities[id],
               let parent = current.parent,
               let placement = projectStore.placement(id: id),
-              placement.kind == prop else { return }
+              placement.kind == prop else { return false }
 
         let preservedTransform = current.transform
         renderedLights[id]?.removeFromParent()
@@ -1750,6 +1772,7 @@ final class ARSessionController: NSObject, ObservableObject {
         parent.addChild(entity)
         arView.installGestures([.rotation, .scale], for: entity)
         renderedEntities[id] = entity
+        return true
     }
 
     func setSelectedLightEnabled(_ isEnabled: Bool) {
@@ -2080,7 +2103,10 @@ final class ARSessionController: NSObject, ObservableObject {
         let bounds = measurementRoot.visualBounds(
             recursive: true,
             relativeTo: measurementRoot,
-            excludeInactive: true
+            // The USDZ is intentionally measured before it is anchored. RealityKit
+            // reports unanchored entities as inactive, so excluding inactive children
+            // produces a zero-size box and forces every valid model to its proxy.
+            excludeInactive: false
         )
         content.removeFromParent()
         let extents = bounds.extents
@@ -2105,7 +2131,7 @@ final class ARSessionController: NSObject, ObservableObject {
         let fittedBounds = root.visualBounds(
             recursive: true,
             relativeTo: root,
-            excludeInactive: true
+            excludeInactive: false
         )
         guard [fittedBounds.extents.x, fittedBounds.extents.y, fittedBounds.extents.z]
             .allSatisfy({ $0.isFinite && $0 > 0.0001 && $0 < 12 }) else { return nil }

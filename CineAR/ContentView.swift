@@ -200,6 +200,7 @@ struct ContentView: View {
                 }
                 utilityButton("AI Derinlik", "cpu.fill") {
                     showingAISettings = true
+                    session.testAIServerConnection()
                 }
                 utilityButton("Sahne Işığı", "lightbulb.max.fill") {
                     session.showSceneLightControls()
@@ -272,7 +273,7 @@ struct ContentView: View {
                     )
 
                     TextField(
-                        "http://192.168.1.20:8765",
+                        "PC adresini buraya yaz",
                         text: Binding(
                             get: { session.aiServerAddress },
                             set: { session.setAIServerAddress($0) }
@@ -281,6 +282,11 @@ struct ContentView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
+
+                    Text("Etkin adres: \(session.aiServerAddress)")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
 
                     LabeledContent("Durum") {
                         Text(session.aiEnhancementStatus.title)
@@ -421,7 +427,7 @@ struct ContentView: View {
                     title: "Güç",
                     valueText: "\(Int(settings.intensityLumens)) lm",
                     value: Binding(
-                        get: { Double(session.selectedLightSettings?.intensityLumens ?? 1_600) },
+                        get: { Double(session.selectedLightSettings?.intensityLumens ?? 6_000) },
                         set: { session.setSelectedLightIntensity(Float($0)) }
                     ),
                     range: 0...12_000,
