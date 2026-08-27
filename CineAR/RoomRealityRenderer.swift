@@ -1370,12 +1370,22 @@ private extension RoomRealityRenderer {
         size: SIMD3<Float>,
         position: SIMD3<Float>
     ) {
+        // RoomPlan dimensions are semantic envelopes, not millimeter-accurate meshes.
+        // A small inward bias prevents the envelope from cutting a virtual prop that
+        // is resting exactly on a table/seat edge. Live ARKit or AI depth still owns
+        // the precise foreground boundary.
+        let inset: Float = 0.05
+        let biasedSize = SIMD3<Float>(
+            max(size.x - inset, 0.015),
+            max(size.y - inset, 0.015),
+            max(size.z - inset, 0.015)
+        )
         let box = ModelEntity(
             mesh: Self.unitBoxMesh,
             materials: [OcclusionMaterial()]
         )
         box.name = "cinear.reality.physical-occlusion.box"
-        box.scale = size
+        box.scale = biasedSize
         box.position = position
         root.addChild(box)
     }

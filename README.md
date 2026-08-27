@@ -40,6 +40,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
+- Fotogercekci veya kullanici USDZ'si acilirken katalog olcusunde gorunur anlik yedek;
+  dosya hazir olunca ayni dunya anchor'i ve kullanici donusumu korunarak gercek modelle degisim
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
@@ -57,6 +59,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
+- RoomPlan gecisi veya relocalization bir uygulama anchor'ini gecici kaldirirsa gorseli
+  silmeden canli anchor'a yeniden baglama; geri gelmeyen anchor'i son guvenilir dunya
+  donusumunde otomatik yeniden olusturma
 - Yeni anchor ile ARKit harita snapshot'i arasindaki zamanlama farkini uzlastirip
   `worldmap/scene.json` uyusmazligini otomatik yeniden deneme ve eski kaydi kurtarma
 - Decode edilemeyen `scene.json` dosyasini silmeden `scene-corrupt-*.json` olarak
@@ -101,11 +106,20 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
 `AIService/run_server.ps1` calistirilir. Konsolda yazan yerel IP, uygulamadaki
 `Kontroller > AI Derinlik` alanina girilir; `PC baglantisini test et` sonucu hazir
-oldugunda anahtar acilir. Ayrintili komutlar ve model secimi `AIService/README.md`
+oldugunda AI anahtari otomatik acilir. `PC bagli - LiDAR karesi bekleniyor` mesaji
+sunucu baglantisinin basarili oldugunu, telefonun henuz scene-depth karesi uretmedigini
+belirtir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
 bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
 CineAR izni kontrol edilir.
+
+AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
+occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;
+AI kapatilirsa hafif ice alinmis RoomPlan yedegi tekrar etkinlesir.
+RTX 3050 sinifi bir PC'de SAM 2 + Depth Anything kareleri tipik olarak 2-3 saniye
+surer; istemci 6 saniyeye kadar gecerli dunya-koordinatli sonucu kabul eder ve
+olculen toplam gecikmeyi durum alaninda gosterir.
 
 ## Proje dosyalari
 

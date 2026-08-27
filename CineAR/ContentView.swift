@@ -338,7 +338,7 @@ struct ContentView: View {
         switch session.aiEnhancementStatus {
         case .active: .green
         case .failed: .red
-        case .waiting: .orange
+        case .waiting, .waitingForDepth: .orange
         case .disabled: .secondary
         }
     }

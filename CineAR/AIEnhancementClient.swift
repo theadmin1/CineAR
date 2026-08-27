@@ -8,13 +8,15 @@ import simd
 enum AIEnhancementStatus: Equatable {
     case disabled
     case waiting
+    case waitingForDepth
     case active(latencyMilliseconds: Int, samMaskCount: Int)
     case failed(String)
 
     var title: String {
         switch self {
         case .disabled: "Kapalı"
-        case .waiting: "PC bekleniyor"
+        case .waiting: "PC bağlantısı bekleniyor"
+        case .waitingForDepth: "PC bağlı · LiDAR karesi bekleniyor"
         case .active(let latency, let masks): "Aktif · \(latency) ms · \(masks) maske"
         case .failed(let message): "Hata · \(message)"
         }
@@ -213,6 +215,8 @@ final class AIEnhancementClient {
         endpoint.append(path: "health")
         var request = URLRequest(url: endpoint)
         request.timeoutInterval = 12
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
         URLSession.shared.dataTask(with: request) { data, response, error in
             Task { @MainActor in
                 if let error {

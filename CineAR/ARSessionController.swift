@@ -37,7 +37,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private let aiEnhancementClient = AIEnhancementClient()
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
     private var renderedAnchorIDs = Set<UUID>()
+    private var renderedAnchorIDByPlacementID: [UUID: UUID] = [:]
     private var knownPropAnchorIDs = Set<UUID>()
+    private var supersededPropAnchorIDs = Set<UUID>()
     private var managedPropAnchorsByPlacementID: [UUID: ARAnchor] = [:]
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var renderedLights: [UUID: SpotLight] = [:]
@@ -173,7 +175,10 @@ final class ARSessionController: NSObject, ObservableObject {
         didAttemptSessionFailureRecovery = false
         assetLoadSubscriptions.values.forEach { $0.cancel() }
         renderedAnchorIDs.removeAll()
+        renderedAnchorIDByPlacementID.removeAll()
         knownPropAnchorIDs.removeAll()
+        supersededPropAnchorIDs.removeAll()
+        pendingAutoSaveAnchorIDs.removeAll()
         managedPropAnchorsByPlacementID.removeAll()
         if let initialWorldMap {
             for anchor in initialWorldMap.anchors {
@@ -253,8 +258,13 @@ final class ARSessionController: NSObject, ObservableObject {
             aiEnhancementClient.cancel()
             aiDepthRenderer.clear()
             aiEnhancementStatus = .disabled
+            refreshPhysicalRoomOcclusionIfPossible()
             return
         }
+        // The live LiDAR/AI mesh is more precise than RoomPlan's coarse furniture
+        // boxes. Never run both depth writers together; overlapping occluders are the
+        // main reason a newly placed prop can appear half cut or fully hidden.
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
         aiEnhancementStatus = AIEnhancementClient.serverURL(from: aiServerAddress) == nil
             ? .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
             : .waiting
@@ -283,8 +293,15 @@ final class ARSessionController: NSObject, ObservableObject {
             guard let self else { return }
             switch result {
             case .success(let device):
+                // A successful test means the user intends to use the service. The old
+                // flow painted the test green but left frame submission disabled when
+                // the toggle was off, which looked exactly like a broken connection.
+                self.setAIEnhancementEnabled(true)
                 self.aiEnhancementStatus = .active(latencyMilliseconds: 0, samMaskCount: 0)
-                self.publishStatus("AI servisi hazır: \(device)", color: .green)
+                self.publishStatus(
+                    "AI servisi hazır: \(device) — canlı derinlik otomatik açıldı",
+                    color: .green
+                )
             case .failure(let error):
                 self.aiEnhancementStatus = .failed(error.localizedDescription)
             }
@@ -301,28 +318,49 @@ final class ARSessionController: NSObject, ObservableObject {
             guard let self, self.aiEnhancementEnabled else { return }
             switch result {
             case .success(let depth):
-                guard depth.totalLatencyMilliseconds <= 1_500 else {
+                // RTX 3050-class PCs commonly need 2-3 seconds for Depth Anything
+                // plus SAM 2. The mesh is already expressed in the captured frame's
+                // world transform, so a valid static-scene result remains usable. The
+                // previous 1.5 s cutoff incorrectly reported successful HTTP 200
+                // responses as a broken connection.
+                guard depth.totalLatencyMilliseconds <= 6_000 else {
                     self.aiDepthRenderer.clear()
+                    self.refreshPhysicalRoomOcclusionIfPossible(
+                        allowWhileAIEnabled: true
+                    )
                     self.aiEnhancementStatus = .failed(
                         "Gecikme \(depth.totalLatencyMilliseconds) ms; PC veya Wi-Fi yavaş"
                     )
                     return
                 }
                 do {
+                    self.roomRealityRenderer.isPhysicalOcclusionVisible = false
                     try self.aiDepthRenderer.render(depth)
                     self.aiEnhancementStatus = .active(
                         latencyMilliseconds: depth.totalLatencyMilliseconds,
                         samMaskCount: depth.samMaskCount
                     )
                 } catch {
+                    self.refreshPhysicalRoomOcclusionIfPossible(
+                        allowWhileAIEnabled: true
+                    )
                     self.aiEnhancementStatus = .failed(error.localizedDescription)
                 }
             case .failure(let error):
                 if let aiError = error as? AIEnhancementError,
                    case .missingSceneDepth = aiError {
-                    self.aiEnhancementStatus = .waiting
+                    if self.aiEnhancementStatus != .waitingForDepth {
+                        self.aiDepthRenderer.clear()
+                        self.refreshPhysicalRoomOcclusionIfPossible(
+                            allowWhileAIEnabled: true
+                        )
+                    }
+                    self.aiEnhancementStatus = .waitingForDepth
                 } else {
                     self.aiDepthRenderer.clear()
+                    self.refreshPhysicalRoomOcclusionIfPossible(
+                        allowWhileAIEnabled: true
+                    )
                     self.aiEnhancementStatus = .failed(error.localizedDescription)
                 }
             }
@@ -918,15 +956,7 @@ final class ARSessionController: NSObject, ObservableObject {
             knownPropAnchorIDs.remove(anchor.identifier)
         }
         managedPropAnchorsByPlacementID[id] = nil
-        renderedEntities[id]?.parent?.removeFromParent()
-        renderedEntities[id] = nil
-        renderedLights[id] = nil
-        renderedLightEmitters[id] = nil
-        assetLoadSubscriptions[id]?.cancel()
-        assetLoadSubscriptions[id] = nil
-        loadingEntityIDs.remove(id)
-        selectedEntityID = nil
-        selectedLightSettings = nil
+        detachRenderedPlacement(id: id, clearSelection: true)
         publishStatus("Seçili dekor silindi", color: .green)
     }
 
@@ -951,7 +981,10 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         renderedEntities.values.forEach { $0.parent?.removeFromParent() }
         renderedAnchorIDs.removeAll()
+        renderedAnchorIDByPlacementID.removeAll()
         knownPropAnchorIDs.removeAll()
+        supersededPropAnchorIDs.removeAll()
+        pendingAutoSaveAnchorIDs.removeAll()
         managedPropAnchorsByPlacementID.removeAll()
         renderedEntities.removeAll()
         renderedLights.removeAll()
@@ -1002,6 +1035,15 @@ final class ARSessionController: NSObject, ObservableObject {
             selectedEntityID = placement.id
             selectedLightSettings = placement.lightSettings ?? .defaultFixture
             isPlacingProp = false
+            if isARReady {
+                let recovery = restorePlacementAnchorsIfNeeded(
+                    allowCreatingMissingAnchors: true
+                )
+                if recovery.insertedAnchor {
+                    shouldSaveWorldMapWhenReady = true
+                    scheduleReadinessRecovery()
+                }
+            }
             publishStatus(
                 "Sahne ışığı seçildi — güç, sıcaklık, yön, eğim ve hüzmeyi ayarla",
                 color: .blue
@@ -1181,19 +1223,108 @@ final class ARSessionController: NSObject, ObservableObject {
     private func discardOrphanedRenderedContent(survivingIDs: Set<UUID>) {
         let discardedIDs = Set(renderedEntities.keys).subtracting(survivingIDs)
         for id in discardedIDs {
-            renderedEntities[id]?.parent?.removeFromParent()
-            renderedEntities[id] = nil
-            renderedLights[id] = nil
-            renderedLightEmitters[id] = nil
-            assetLoadSubscriptions[id]?.cancel()
-            assetLoadSubscriptions[id] = nil
-            loadingEntityIDs.remove(id)
+            detachRenderedPlacement(id: id)
             managedPropAnchorsByPlacementID[id] = nil
         }
         if let selectedEntityID, !survivingIDs.contains(selectedEntityID) {
             self.selectedEntityID = nil
             selectedLightSettings = nil
         }
+    }
+
+    private func detachRenderedPlacement(id: UUID, clearSelection: Bool = false) {
+        if let anchorID = renderedAnchorIDByPlacementID.removeValue(forKey: id) {
+            renderedAnchorIDs.remove(anchorID)
+        }
+        renderedEntities[id]?.parent?.removeFromParent()
+        renderedEntities[id] = nil
+        renderedLights[id]?.removeFromParent()
+        renderedLights[id] = nil
+        renderedLightEmitters[id] = nil
+        assetLoadSubscriptions[id]?.cancel()
+        assetLoadSubscriptions[id] = nil
+        loadingEntityIDs.remove(id)
+        if clearSelection, selectedEntityID == id {
+            selectedEntityID = nil
+            selectedLightSettings = nil
+        }
+    }
+
+    /// RoomPlan reconfiguration and AR relocalization may briefly remove app-owned
+    /// anchors even though their scene records and last world transforms are valid.
+    /// Rebind visuals to a live matching anchor, or recreate the missing anchor after
+    /// a short grace period so an object never disappears permanently.
+    private func restorePlacementAnchorsIfNeeded(
+        allowCreatingMissingAnchors: Bool
+    ) -> (insertedAnchor: Bool, waitingForAnchor: Bool) {
+        guard let arView, !isRoomScanActive, !isSessionInterrupted else {
+            return (false, false)
+        }
+
+        let placements = projectStore.project.placements
+        let expectedKinds = Dictionary(uniqueKeysWithValues: placements.map {
+            ($0.id, $0.kind)
+        })
+        var liveAnchors: [UUID: ARAnchor] = [:]
+        for anchor in arView.session.currentFrame?.anchors ?? [] {
+            guard let descriptor = PropKind.descriptor(from: anchor.name),
+                  expectedKinds[descriptor.id] == descriptor.kind,
+                  liveAnchors[descriptor.id] == nil else { continue }
+            liveAnchors[descriptor.id] = anchor
+        }
+        var storedAnchors: [UUID: ARAnchor] = [:]
+        let needsStoredFallback = placements.contains {
+            liveAnchors[$0.id] == nil && managedPropAnchorsByPlacementID[$0.id] == nil
+        }
+        if needsStoredFallback {
+            for anchor in projectStore.storedManagedAnchors() {
+                guard let descriptor = PropKind.descriptor(from: anchor.name),
+                      expectedKinds[descriptor.id] == descriptor.kind,
+                      storedAnchors[descriptor.id] == nil else { continue }
+                storedAnchors[descriptor.id] = anchor
+            }
+        }
+
+        var insertedAnchor = false
+        var waitingForAnchor = false
+        for placement in placements {
+            if let liveAnchor = liveAnchors[placement.id] {
+                knownPropAnchorIDs.insert(liveAnchor.identifier)
+                managedPropAnchorsByPlacementID[placement.id] = liveAnchor
+                if renderedAnchorIDByPlacementID[placement.id] != liveAnchor.identifier {
+                    detachRenderedPlacement(id: placement.id)
+                    render(prop: placement.kind, id: placement.id, for: liveAnchor)
+                }
+                continue
+            }
+
+            guard let cachedAnchor = managedPropAnchorsByPlacementID[placement.id]
+                ?? storedAnchors[placement.id] else { continue }
+
+            if pendingAutoSaveAnchorIDs.contains(cachedAnchor.identifier) {
+                waitingForAnchor = true
+                continue
+            }
+            guard allowCreatingMissingAnchors else {
+                waitingForAnchor = true
+                continue
+            }
+
+            let replacement = ARAnchor(
+                name: placement.kind.anchorName(id: placement.id),
+                transform: cachedAnchor.transform
+            )
+            supersededPropAnchorIDs.insert(cachedAnchor.identifier)
+            managedPropAnchorsByPlacementID[placement.id] = replacement
+            knownPropAnchorIDs.insert(replacement.identifier)
+            pendingAutoSaveAnchorIDs.insert(replacement.identifier)
+            detachRenderedPlacement(id: placement.id)
+            arView.session.add(anchor: replacement)
+            render(prop: placement.kind, id: placement.id, for: replacement)
+            insertedAnchor = true
+            waitingForAnchor = true
+        }
+        return (insertedAnchor, waitingForAnchor)
     }
 
     @discardableResult
@@ -1223,11 +1354,18 @@ final class ARSessionController: NSObject, ObservableObject {
                   !self.isSessionInterrupted else { return }
 
             let trackingState = self.arView?.session.currentFrame?.camera.trackingState
+            var anchorRecoveryWaiting = false
             switch trackingState {
             case .normal?:
                 self.isARReady = true
                 self.didAttemptSessionFailureRecovery = false
-                if self.savePendingWorldMapIfPossible(trackingState: trackingState) {
+                let anchorRecovery = self.restorePlacementAnchorsIfNeeded(
+                    allowCreatingMissingAnchors: attempt >= 4
+                )
+                anchorRecoveryWaiting = anchorRecovery.waitingForAnchor
+                if anchorRecovery.insertedAnchor {
+                    self.shouldSaveWorldMapWhenReady = true
+                } else if self.savePendingWorldMapIfPossible(trackingState: trackingState) {
                     return
                 }
                 if self.shouldShowRoomOutlineWhenReady {
@@ -1245,6 +1383,7 @@ final class ARSessionController: NSObject, ObservableObject {
             let needsAnotherCheck = !self.isARReady
                 || self.shouldSaveWorldMapWhenReady
                 || self.shouldShowRoomOutlineWhenReady
+                || anchorRecoveryWaiting
             if needsAnotherCheck, attempt < 40 {
                 self.pollReadiness(generation: generation, attempt: attempt + 1)
             }
@@ -1391,12 +1530,26 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         if let descriptor = prop.photorealDescriptor {
+            let generation = renderGeneration
+            let loadingProxy = makeLoadingProxy(
+                for: prop,
+                dimensions: descriptor.dimensions
+            )
+            attach(
+                entity: loadingProxy,
+                prop: prop,
+                id: id,
+                anchor: anchor,
+                generation: generation
+            )
             guard let modelURL = bundledAssetURL(named: descriptor.assetName) else {
-                publishStatus("\(prop.title) modeli uygulama paketinde bulunamadı", color: .red)
+                publishStatus(
+                    "\(prop.title) USDZ pakette bulunamadı; görünür yedek model kullanılıyor",
+                    color: .yellow
+                )
                 return
             }
             loadingEntityIDs.insert(id)
-            let generation = renderGeneration
             let request = Entity.loadAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
@@ -1406,8 +1559,9 @@ final class ARSessionController: NSObject, ObservableObject {
                     self.assetLoadSubscriptions[id] = nil
                     if case .failure(let error) = completion {
                         self.publishStatus(
-                            "\(prop.title) yüklenemedi: \(error.localizedDescription)",
-                            color: .red
+                            "\(prop.title) USDZ açılamadı; yedek model gösteriliyor: "
+                                + error.localizedDescription,
+                            color: .yellow
                         )
                     }
                 } receiveValue: { [weak self] content in
@@ -1417,10 +1571,13 @@ final class ARSessionController: NSObject, ObservableObject {
                             prop: prop,
                             descriptor: descriptor
                           ) else {
-                        self?.publishStatus("\(prop.title) ölçüsü hazırlanamadı", color: .red)
+                        self?.publishStatus(
+                            "\(prop.title) ölçüsü okunamadı; yedek model gösteriliyor",
+                            color: .yellow
+                        )
                         return
                     }
-                    self.attach(
+                    self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
                         id: id,
@@ -1432,9 +1589,17 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         if prop.bundledAssetName != nil {
-            guard let entity = makeBundledLibraryEntity(for: prop) else {
-                publishStatus("\(prop.title) modeli hazırlanamadı", color: .red)
-                return
+            let entity: ModelEntity
+            if let bundledEntity = makeBundledLibraryEntity(for: prop) {
+                entity = bundledEntity
+            } else {
+                let dimensions = libraryDescriptor(for: prop)?.dimensions
+                    ?? SIMD3<Float>(repeating: 0.5)
+                entity = makeLoadingProxy(for: prop, dimensions: dimensions)
+                publishStatus(
+                    "\(prop.title) USDZ açılamadı; görünür yedek model kullanılıyor",
+                    color: .yellow
+                )
             }
             attach(
                 entity: entity,
@@ -1458,8 +1623,18 @@ final class ARSessionController: NSObject, ObservableObject {
                 publishStatus("3B dekor yüklenemedi: \(error.localizedDescription)", color: .red)
                 return
             }
-            loadingEntityIDs.insert(id)
             let generation = renderGeneration
+            attach(
+                entity: makeLoadingProxy(
+                    for: prop,
+                    dimensions: SIMD3<Float>(repeating: 0.35)
+                ),
+                prop: prop,
+                id: id,
+                anchor: anchor,
+                generation: generation
+            )
+            loadingEntityIDs.insert(id)
             let request = ModelEntity.loadModelAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
@@ -1469,12 +1644,13 @@ final class ARSessionController: NSObject, ObservableObject {
                     self.assetLoadSubscriptions[id] = nil
                     if case .failure(let error) = completion {
                         self.publishStatus(
-                            "3B dekor yüklenemedi: \(error.localizedDescription)",
-                            color: .red
+                            "3B dekor açılamadı; yedek model gösteriliyor: "
+                                + error.localizedDescription,
+                            color: .yellow
                         )
                     }
                 } receiveValue: { [weak self] entity in
-                    self?.attach(
+                    self?.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
                         id: id,
@@ -1530,6 +1706,49 @@ final class ARSessionController: NSObject, ObservableObject {
         arView.installGestures([.rotation, .scale], for: entity)
 
         renderedAnchorIDs.insert(anchor.identifier)
+        renderedAnchorIDByPlacementID[id] = anchor.identifier
+        renderedEntities[id] = entity
+    }
+
+    private func replaceRenderedEntity(
+        entity: ModelEntity,
+        prop: PropKind,
+        id: UUID,
+        anchor: ARAnchor,
+        generation: UInt64
+    ) {
+        guard let arView,
+              generation == renderGeneration,
+              knownPropAnchorIDs.contains(anchor.identifier),
+              renderedAnchorIDs.contains(anchor.identifier),
+              let current = renderedEntities[id],
+              let parent = current.parent,
+              let placement = projectStore.placement(id: id),
+              placement.kind == prop else { return }
+
+        let preservedTransform = current.transform
+        renderedLights[id]?.removeFromParent()
+        renderedLights[id] = nil
+        renderedLightEmitters[id] = nil
+        current.removeFromParent()
+
+        entity.name = id.uuidString
+        entity.transform = preservedTransform
+        if entity.collision == nil {
+            entity.generateCollisionShapes(recursive: true)
+        }
+        addContactShadow(to: entity, for: prop)
+        if prop.emitsVirtualLight {
+            let settings = (selectedEntityID == id ? selectedLightSettings : nil)
+                ?? placement.lightSettings
+                ?? .defaultFixture
+            installVirtualLight(on: entity, prop: prop, id: id, settings: settings)
+            if selectedEntityID == id {
+                selectedLightSettings = settings
+            }
+        }
+        parent.addChild(entity)
+        arView.installGestures([.rotation, .scale], for: entity)
         renderedEntities[id] = entity
     }
 
@@ -1794,6 +2013,45 @@ final class ARSessionController: NSObject, ObservableObject {
             rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
             translation: translation
         )
+    }
+
+    /// Gives immediate visual confirmation while RealityKit opens a bundled or
+    /// imported USDZ. It deliberately uses the catalog envelope, so it occupies the
+    /// same contact plane as the final asset and remains a usable fallback if that
+    /// individual file cannot be decoded on the device.
+    private func makeLoadingProxy(
+        for prop: PropKind,
+        dimensions: SIMD3<Float>
+    ) -> ModelEntity {
+        let safeDimensions = SIMD3<Float>(
+            max(dimensions.x, 0.04),
+            max(dimensions.y, 0.04),
+            max(dimensions.z, 0.04)
+        )
+        let mesh = MeshResource.generateBox(
+            size: safeDimensions,
+            cornerRadius: min(safeDimensions.x, safeDimensions.y, safeDimensions.z) * 0.06
+        )
+        let entity: ModelEntity
+        if prop.emitsVirtualLight {
+            var material = UnlitMaterial()
+            material.color = .init(
+                tint: UIColor(red: 1.0, green: 0.82, blue: 0.48, alpha: 1)
+            )
+            entity = ModelEntity(mesh: mesh, materials: [material])
+        } else {
+            let material = SimpleMaterial(
+                color: UIColor(red: 0.28, green: 0.52, blue: 0.66, alpha: 1),
+                roughness: 0.82,
+                isMetallic: false
+            )
+            entity = ModelEntity(mesh: mesh, materials: [material])
+        }
+        entity.name = "cinear.loading-proxy.\(prop.rawValue)"
+        entity.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: safeDimensions)]
+        )
+        return entity
     }
 
     private func bundledAssetURL(named assetName: String) -> URL? {
@@ -2197,8 +2455,11 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     @discardableResult
-    private func refreshPhysicalRoomOcclusionIfPossible() -> Bool {
+    private func refreshPhysicalRoomOcclusionIfPossible(
+        allowWhileAIEnabled: Bool = false
+    ) -> Bool {
         guard !isRoomScanActive,
+              (!aiEnhancementEnabled || allowWhileAIEnabled),
               activeRealityThemeID == nil,
               roomCoordinateSpaceIsActive,
               let arView,
@@ -2246,6 +2507,17 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         var shouldScheduleAutomaticSave = false
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
+            if supersededPropAnchorIDs.contains(anchor.identifier) {
+                session.remove(anchor: anchor)
+                continue
+            }
+            guard let placement = projectStore.placement(id: descriptor.id),
+                  placement.kind == descriptor.kind else {
+                // Never let a late relocalization callback resurrect a prop the user
+                // has already deleted, or leave an orphan that poisons the next save.
+                session.remove(anchor: anchor)
+                continue
+            }
             knownPropAnchorIDs.insert(anchor.identifier)
             managedPropAnchorsByPlacementID[descriptor.id] = anchor
             if pendingAutoSaveAnchorIDs.remove(anchor.identifier) != nil {
@@ -2272,21 +2544,23 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.remove(anchor.identifier)
-            if projectStore.placement(id: descriptor.id) == nil {
-                managedPropAnchorsByPlacementID[descriptor.id] = nil
+            pendingAutoSaveAnchorIDs.remove(anchor.identifier)
+            if supersededPropAnchorIDs.remove(anchor.identifier) != nil {
+                continue
             }
-            renderedAnchorIDs.remove(anchor.identifier)
-            loadingEntityIDs.remove(descriptor.id)
-            assetLoadSubscriptions[descriptor.id]?.cancel()
-            assetLoadSubscriptions[descriptor.id] = nil
-            renderedEntities[descriptor.id]?.parent?.removeFromParent()
-            renderedEntities[descriptor.id] = nil
-            renderedLights[descriptor.id] = nil
-            renderedLightEmitters[descriptor.id] = nil
-            if selectedEntityID == descriptor.id {
-                selectedEntityID = nil
-                selectedLightSettings = nil
+            if let placement = projectStore.placement(id: descriptor.id),
+               placement.kind == descriptor.kind {
+                // Keep the last known transform and the current visual alive. RoomPlan
+                // and relocalization can remove an ARAnchor transiently; deleting the
+                // entity here made valid props and lights vanish permanently.
+                managedPropAnchorsByPlacementID[descriptor.id] = anchor
+                if !isRoomScanActive, !isSessionInterrupted {
+                    scheduleReadinessRecovery()
+                }
+                continue
             }
+            managedPropAnchorsByPlacementID[descriptor.id] = nil
+            detachRenderedPlacement(id: descriptor.id, clearSelection: true)
         }
     }
 
@@ -2296,6 +2570,17 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         case .normal:
             isARReady = true
             didAttemptSessionFailureRecovery = false
+            let anchorRecovery = restorePlacementAnchorsIfNeeded(
+                allowCreatingMissingAnchors: false
+            )
+            if anchorRecovery.waitingForAnchor {
+                scheduleReadinessRecovery()
+                publishStatus(
+                    "Sahne anchor'ları yeniden bağlanıyor; nesneler korunuyor",
+                    color: .yellow
+                )
+                return
+            }
             if savePendingWorldMapIfPossible(trackingState: camera.trackingState) {
                 return
             }
@@ -2353,6 +2638,8 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
                 && activeRealityThemeID != nil
                 && roomRealityRenderer.isVisible
             )
+        shouldShowRoomOutlineWhenReady = shouldShowRoomOutlineWhenReady
+            || isRoomOutlineVisible
         roomRealityRenderer.isVisible = false
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: true)
@@ -2396,6 +2683,8 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             roomCoordinateSpaceIsActive
             && activeRealityThemeID != nil
             && roomRealityRenderer.isVisible
+        shouldShowRoomOutlineWhenReady = shouldShowRoomOutlineWhenReady
+            || isRoomOutlineVisible
         roomRealityRenderer.isVisible = false
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: true)

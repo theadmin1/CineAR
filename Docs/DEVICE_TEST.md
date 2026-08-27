@@ -26,6 +26,9 @@
 6. 30 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
    gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
+   Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
+   ayni konumda gercek modelle degismeli. Tek bir bozuk USDZ sahneyi tamamen gorunmez
+   birakmamali; yedek model ve acik hata mesaji kalmali.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
@@ -63,14 +66,21 @@
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
 15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
-    girip baglantiyi test et ve sistemi ac. Durumun `Aktif`, gecikmenin ve SAM maske
+    girip baglantiyi test et; basarili test AI anahtarini otomatik acmali. Durumun
+    once `Aktif` veya `PC bagli - LiDAR karesi bekleniyor`, scene depth geldiginde
+    `Aktif` oldugunu; gecikmenin ve SAM maske
     sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini
     tekrar et; AI kapaliyken ve acikken video kaydi alip kenar hatasini karsilastir.
+    RTX 3050'de 1500 ms'yi asan fakat 6000 ms'nin altinda kalan basarili HTTP sonucu
+    baglanti hatasi sayilmamali; dunya-koordinatli AI mesh'i yine uygulanmali.
     Servisi kapatinca eski AI mesh'i kaybolmali ve ARKit occlusion devam etmeli.
 16. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
 17. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
+    Anchor gecici kaldirilirsa nesne/armatur silinmemeli; canli anchor geri gelmezse
+    son dunya donusumunde otomatik yeniden baglanmali. Kesintiden once `Beyaz Hatlar`
+    aciksa takip duzelince hatlar tekrar gorunmeli.
 18. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
 19. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
