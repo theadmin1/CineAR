@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.10.1`
-- Proje build numarası: `14`
+- Uygulama sürümü: `0.10.2`
+- Proje build numarası: `15`
 - Git dalı: `main`
-- Kaynak commit: `4c84348e0ca7c665cdbe8d1d3f4e9cee12627b09`
-- Oluşturulma zamanı: `2026-08-27 15:44:25 +03:00`
+- Kaynak commit: `0479214d2d8f26492c408e17e1b0ec805c583426`
+- Oluşturulma zamanı: `2026-08-27 16:21:54 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -258,14 +258,14 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 431 | 17472 |
-| `CineAR/ARSessionController.swift` | 2436 | 99526 |
+| `CineAR/ARSessionController.swift` | 2499 | 102736 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15397 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 621 | 24559 |
+| `CineAR/ContentView.swift` | 631 | 24960 |
 | `CineAR/Info.plist` | 56 | 1855 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 345 | 13775 |
@@ -275,12 +275,12 @@ Yok.
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2063 | 78541 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
-| `CineAR/SceneProjectStore.swift` | 499 | 19894 |
+| `CineAR/SceneProjectStore.swift` | 596 | 23962 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 97 | 5989 |
+| `Docs/DEVICE_TEST.md` | 99 | 6166 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 150 | 8869 |
+| `README.md` | 152 | 9027 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -1052,13 +1052,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.1;
+				MARKETING_VERSION = 0.10.2;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1075,12 +1075,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.1;
+				MARKETING_VERSION = 0.10.2;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1625,6 +1625,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
+    private var managedPropAnchorsByPlacementID: [UUID: ARAnchor] = [:]
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var renderedLights: [UUID: SpotLight] = [:]
     private var renderedLightEmitters: [UUID: ModelEntity] = [:]
@@ -1683,6 +1684,8 @@ final class ARSessionController: NSObject, ObservableObject {
                 "Kayıtlı scene.json okunamadı: \(error.localizedDescription)",
                 color: .red
             )
+        } else if let notice = projectStore.initializationNotice {
+            publishStatus(notice, color: .yellow)
         }
     }
 
@@ -1758,6 +1761,13 @@ final class ARSessionController: NSObject, ObservableObject {
         assetLoadSubscriptions.values.forEach { $0.cancel() }
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
+        managedPropAnchorsByPlacementID.removeAll()
+        if let initialWorldMap {
+            for anchor in initialWorldMap.anchors {
+                guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
+                managedPropAnchorsByPlacementID[descriptor.id] = anchor
+            }
+        }
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
@@ -2231,6 +2241,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 transform: placementTransform
             )
             knownPropAnchorIDs.insert(anchor.identifier)
+            managedPropAnchorsByPlacementID[id] = anchor
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
@@ -2493,6 +2504,7 @@ final class ARSessionController: NSObject, ObservableObject {
             renderedAnchorIDs.remove(anchor.identifier)
             knownPropAnchorIDs.remove(anchor.identifier)
         }
+        managedPropAnchorsByPlacementID[id] = nil
         renderedEntities[id]?.parent?.removeFromParent()
         renderedEntities[id] = nil
         renderedLights[id] = nil
@@ -2527,6 +2539,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.values.forEach { $0.parent?.removeFromParent() }
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
+        managedPropAnchorsByPlacementID.removeAll()
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
@@ -2652,7 +2665,34 @@ final class ARSessionController: NSObject, ObservableObject {
                         in: worldMap,
                         currentFrame: arView.session.currentFrame
                     )
-                    try self.validate(worldMap: worldMap)
+                    do {
+                        try self.validate(worldMap: worldMap)
+                    } catch let cinearError as CineARError {
+                        guard case .sceneSnapshotMismatch = cinearError,
+                              attempt >= 12 else { throw cinearError }
+
+                        // An anchor absent from every source after the retry window has
+                        // no recoverable world transform. Keep the valid intersection
+                        // instead of leaving the whole project permanently unsavable.
+                        let survivingIDs = Set(worldMap.anchors.compactMap {
+                            PropKind.descriptor(from: $0.name)?.id
+                        })
+                        let repairedData = try NSKeyedArchiver.archivedData(
+                            withRootObject: worldMap,
+                            requiringSecureCoding: true
+                        )
+                        let discardedCount = try self.projectStore.saveWorldMapData(
+                            repairedData,
+                            retainingPlacementIDs: survivingIDs
+                        )
+                        self.discardOrphanedRenderedContent(survivingIDs: survivingIDs)
+                        self.isSavingWorldMap = false
+                        self.publishStatus(
+                            "Sahne kaydı onarıldı — \(discardedCount) anchorsız kayıt temizlendi",
+                            color: .yellow
+                        )
+                        return
+                    }
                     let data = try NSKeyedArchiver.archivedData(
                         withRootObject: worldMap,
                         requiringSecureCoding: true
@@ -2713,6 +2753,7 @@ final class ARSessionController: NSObject, ObservableObject {
         collect(projectStore.storedManagedAnchors())
         // The new map overrides stored copies; the current ARFrame wins last.
         collect(worldMap.anchors)
+        collect(Array(managedPropAnchorsByPlacementID.values))
         if let currentFrame { collect(currentFrame.anchors) }
 
         let unmanagedAnchors = worldMap.anchors.filter {
@@ -2722,6 +2763,24 @@ final class ARSessionController: NSObject, ObservableObject {
             freshestAnchors[$0.id]
         }
         worldMap.anchors = unmanagedAnchors + managedAnchors
+    }
+
+    private func discardOrphanedRenderedContent(survivingIDs: Set<UUID>) {
+        let discardedIDs = Set(renderedEntities.keys).subtracting(survivingIDs)
+        for id in discardedIDs {
+            renderedEntities[id]?.parent?.removeFromParent()
+            renderedEntities[id] = nil
+            renderedLights[id] = nil
+            renderedLightEmitters[id] = nil
+            assetLoadSubscriptions[id]?.cancel()
+            assetLoadSubscriptions[id] = nil
+            loadingEntityIDs.remove(id)
+            managedPropAnchorsByPlacementID[id] = nil
+        }
+        if let selectedEntityID, !survivingIDs.contains(selectedEntityID) {
+            self.selectedEntityID = nil
+            selectedLightSettings = nil
+        }
     }
 
     @discardableResult
@@ -3775,6 +3834,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.insert(anchor.identifier)
+            managedPropAnchorsByPlacementID[descriptor.id] = anchor
             if pendingAutoSaveAnchorIDs.remove(anchor.identifier) != nil {
                 shouldScheduleAutomaticSave = true
             }
@@ -3799,6 +3859,9 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.remove(anchor.identifier)
+            if projectStore.placement(id: descriptor.id) == nil {
+                managedPropAnchorsByPlacementID[descriptor.id] = nil
+            }
             renderedAnchorIDs.remove(anchor.identifier)
             loadingEntityIDs.remove(descriptor.id)
             assetLoadSubscriptions[descriptor.id]?.cancel()
@@ -4783,6 +4846,8 @@ struct ContentView: View {
                 }
 
                 Section("Çalışma şekli") {
+                    LabeledContent("Uygulama sürümü", value: appVersionText)
+
                     Text(
                         "iPhone kamera ve LiDAR derinliğini aynı Wi-Fi'daki PC'ye yollar. "
                             + "Depth Anything boşlukları tamamlar; SAM 2 nesne sınırlarını ayırır. "
@@ -4822,6 +4887,14 @@ struct ContentView: View {
         case .waiting: .orange
         case .disabled: .secondary
         }
+    }
+
+    private var appVersionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
+            as? String ?? "?"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion")
+            as? String ?? "?"
+        return "\(version) (\(build))"
     }
 
     private func roomModeButton(
@@ -9108,7 +9181,8 @@ final class SceneProjectStore {
     private let fileManager = FileManager.default
 
     private(set) var project: SceneProject
-    private(set) var initializationError: Error?
+    private(set) var initializationError: Error? = nil
+    private(set) var initializationNotice: String? = nil
 
     init() {
         project = SceneProject()
@@ -9121,7 +9195,14 @@ final class SceneProjectStore {
                 project = try Self.decodeProject(from: projectURL)
             }
         } catch {
-            initializationError = error
+            let decodingError = error
+            do {
+                let recoveredCount = try rebuildCorruptProjectFromWorldMap()
+                initializationNotice = "Bozuk scene.json yedeklendi; "
+                    + "dünya haritasından \(recoveredCount) nesne kurtarıldı"
+            } catch {
+                initializationError = decodingError
+            }
         }
     }
 
@@ -9159,6 +9240,85 @@ final class SceneProjectStore {
         } catch {
             return []
         }
+    }
+
+    private func rebuildCorruptProjectFromWorldMap() throws -> Int {
+        let identifier = UUID().uuidString
+        let backupURL = projectDirectory.appendingPathComponent(
+            "scene-corrupt-\(identifier).json"
+        )
+        if fileManager.fileExists(atPath: projectURL.path) {
+            try fileManager.copyItem(at: projectURL, to: backupURL)
+        }
+
+        var recoveredPlacements: [PlacementRecord] = []
+        var seenIDs = Set<UUID>()
+        if let data = try? Data(contentsOf: worldMapURL),
+           !data.isEmpty,
+           let worldMap = try? NSKeyedUnarchiver.unarchivedObject(
+               ofClass: ARWorldMap.self,
+               from: data
+           ) {
+            for anchor in worldMap.anchors {
+                guard let descriptor = PropKind.descriptor(from: anchor.name),
+                      descriptor.kind != .custom,
+                      seenIDs.insert(descriptor.id).inserted else { continue }
+                recoveredPlacements.append(
+                    PlacementRecord(
+                        id: descriptor.id,
+                        kind: descriptor.kind,
+                        assetFileName: nil,
+                        transform: Self.recoveredDefaultTransform(for: descriptor.kind),
+                        lightSettings: descriptor.kind.emitsVirtualLight
+                            ? VirtualLightSettings.defaultFixture
+                            : nil
+                    )
+                )
+            }
+        }
+
+        var recoveredProject = SceneProject()
+        recoveredProject.placements = recoveredPlacements
+        // Force one synchronized world-map save. The old map is still available as
+        // an anchor source, but its previous JSON checksum can no longer be trusted.
+        recoveredProject.worldMapChecksum = nil
+        try Self.validate(recoveredProject)
+        let data = try Self.encode(recoveredProject)
+        try data.write(to: projectURL, options: .atomic)
+        project = recoveredProject
+        initializationError = nil
+        return recoveredPlacements.count
+    }
+
+    private static func recoveredDefaultTransform(for kind: PropKind) -> StoredTransform {
+        let translation: SIMD3<Float>
+        if let descriptor = kind.photorealDescriptor {
+            switch descriptor.surface {
+            case .floor, .horizontal:
+                translation = [0, descriptor.dimensions.y * 0.5, 0]
+            case .wall:
+                translation = [0, 0, descriptor.dimensions.z * 0.5 + 0.008]
+            case .ceiling:
+                translation = [0, -descriptor.dimensions.y * 0.5, 0]
+            }
+        } else {
+            switch kind {
+            case .stage: translation = [0, 0.09, 0]
+            case .crate: translation = [0, 0.275, 0]
+            case .plant: translation = [0, 0.18, 0]
+            case .floorLamp: translation = [0, 0.025, 0]
+            case .rug: translation = [0, 0.006, 0]
+            case .backdrop: translation = [0, 0.90, 0]
+            default: translation = .zero
+            }
+        }
+        return StoredTransform(
+            Transform(
+                scale: [1, 1, 1],
+                rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
+                translation: translation
+            )
+        )
     }
 
     var importedModelURLs: [URL] {
@@ -9263,12 +9423,20 @@ final class SceneProjectStore {
         try commit(invalidateWorldMap: true) { _ in }
     }
 
-    func saveWorldMapData(_ data: Data) throws {
+    @discardableResult
+    func saveWorldMapData(
+        _ data: Data,
+        retainingPlacementIDs: Set<UUID>? = nil
+    ) throws -> Int {
         if let initializationError { throw initializationError }
         guard !data.isEmpty else { throw SceneProjectStoreError.emptyWorldMap }
         try fileManager.createDirectory(at: projectDirectory, withIntermediateDirectories: true)
 
         var candidate = project
+        let originalPlacementCount = candidate.placements.count
+        if let retainingPlacementIDs {
+            candidate.placements.removeAll { !retainingPlacementIDs.contains($0.id) }
+        }
         candidate.version = SceneProject.currentVersion
         candidate.updatedAt = Date()
         candidate.worldMapChecksum = Self.checksum(for: data)
@@ -9280,6 +9448,8 @@ final class SceneProjectStore {
         try data.write(to: worldMapURL, options: .atomic)
         try projectData.write(to: projectURL, options: .atomic)
         project = candidate
+        initializationError = nil
+        return originalPlacementCount - candidate.placements.count
     }
 
     func worldMapSnapshotForLoading() throws -> StoredWorldMapSnapshot {
@@ -9748,6 +9918,8 @@ incelemesine uygulama gondermesi mumkun degildir.
     `worldmap/scene.json eslesmiyor` hatasi gorulmemeli.
     Bu nesneler sahnedeyken yeniden `Oda Tara` yapip taramayi kullan; eski dekorlar
     korunmali ve yeni oda haritasi ayni hatayi vermeden otomatik kaydedilmeli.
+    Gecersiz bir test `scene.json` ile uygulamayi ac; dosya `scene-corrupt-*.json`
+    olarak yedeklenmeli, taninan dunya anchor'lari kurtarilmali ve yeni kayit kilitlenmemeli.
 13. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 14. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
@@ -9884,6 +10056,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - Yeni anchor ile ARKit harita snapshot'i arasindaki zamanlama farkini uzlastirip
   `worldmap/scene.json` uyusmazligini otomatik yeniden deneme ve eski kaydi kurtarma
+- Decode edilemeyen `scene.json` dosyasini silmeden `scene-corrupt-*.json` olarak
+  yedekleyip dunya haritasi anchor'larindan taninan dekorlari yeniden kurma
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization

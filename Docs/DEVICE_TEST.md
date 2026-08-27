@@ -53,6 +53,8 @@
     `worldmap/scene.json eslesmiyor` hatasi gorulmemeli.
     Bu nesneler sahnedeyken yeniden `Oda Tara` yapip taramayi kullan; eski dekorlar
     korunmali ve yeni oda haritasi ayni hatayi vermeden otomatik kaydedilmeli.
+    Gecersiz bir test `scene.json` ile uygulamayi ac; dosya `scene-corrupt-*.json`
+    olarak yedeklenmeli, taninan dunya anchor'lari kurtarilmali ve yeni kayit kilitlenmemeli.
 13. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
 14. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`

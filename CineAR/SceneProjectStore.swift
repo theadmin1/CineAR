@@ -141,7 +141,8 @@ final class SceneProjectStore {
     private let fileManager = FileManager.default
 
     private(set) var project: SceneProject
-    private(set) var initializationError: Error?
+    private(set) var initializationError: Error? = nil
+    private(set) var initializationNotice: String? = nil
 
     init() {
         project = SceneProject()
@@ -154,7 +155,14 @@ final class SceneProjectStore {
                 project = try Self.decodeProject(from: projectURL)
             }
         } catch {
-            initializationError = error
+            let decodingError = error
+            do {
+                let recoveredCount = try rebuildCorruptProjectFromWorldMap()
+                initializationNotice = "Bozuk scene.json yedeklendi; "
+                    + "dünya haritasından \(recoveredCount) nesne kurtarıldı"
+            } catch {
+                initializationError = decodingError
+            }
         }
     }
 
@@ -192,6 +200,85 @@ final class SceneProjectStore {
         } catch {
             return []
         }
+    }
+
+    private func rebuildCorruptProjectFromWorldMap() throws -> Int {
+        let identifier = UUID().uuidString
+        let backupURL = projectDirectory.appendingPathComponent(
+            "scene-corrupt-\(identifier).json"
+        )
+        if fileManager.fileExists(atPath: projectURL.path) {
+            try fileManager.copyItem(at: projectURL, to: backupURL)
+        }
+
+        var recoveredPlacements: [PlacementRecord] = []
+        var seenIDs = Set<UUID>()
+        if let data = try? Data(contentsOf: worldMapURL),
+           !data.isEmpty,
+           let worldMap = try? NSKeyedUnarchiver.unarchivedObject(
+               ofClass: ARWorldMap.self,
+               from: data
+           ) {
+            for anchor in worldMap.anchors {
+                guard let descriptor = PropKind.descriptor(from: anchor.name),
+                      descriptor.kind != .custom,
+                      seenIDs.insert(descriptor.id).inserted else { continue }
+                recoveredPlacements.append(
+                    PlacementRecord(
+                        id: descriptor.id,
+                        kind: descriptor.kind,
+                        assetFileName: nil,
+                        transform: Self.recoveredDefaultTransform(for: descriptor.kind),
+                        lightSettings: descriptor.kind.emitsVirtualLight
+                            ? VirtualLightSettings.defaultFixture
+                            : nil
+                    )
+                )
+            }
+        }
+
+        var recoveredProject = SceneProject()
+        recoveredProject.placements = recoveredPlacements
+        // Force one synchronized world-map save. The old map is still available as
+        // an anchor source, but its previous JSON checksum can no longer be trusted.
+        recoveredProject.worldMapChecksum = nil
+        try Self.validate(recoveredProject)
+        let data = try Self.encode(recoveredProject)
+        try data.write(to: projectURL, options: .atomic)
+        project = recoveredProject
+        initializationError = nil
+        return recoveredPlacements.count
+    }
+
+    private static func recoveredDefaultTransform(for kind: PropKind) -> StoredTransform {
+        let translation: SIMD3<Float>
+        if let descriptor = kind.photorealDescriptor {
+            switch descriptor.surface {
+            case .floor, .horizontal:
+                translation = [0, descriptor.dimensions.y * 0.5, 0]
+            case .wall:
+                translation = [0, 0, descriptor.dimensions.z * 0.5 + 0.008]
+            case .ceiling:
+                translation = [0, -descriptor.dimensions.y * 0.5, 0]
+            }
+        } else {
+            switch kind {
+            case .stage: translation = [0, 0.09, 0]
+            case .crate: translation = [0, 0.275, 0]
+            case .plant: translation = [0, 0.18, 0]
+            case .floorLamp: translation = [0, 0.025, 0]
+            case .rug: translation = [0, 0.006, 0]
+            case .backdrop: translation = [0, 0.90, 0]
+            default: translation = .zero
+            }
+        }
+        return StoredTransform(
+            Transform(
+                scale: [1, 1, 1],
+                rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
+                translation: translation
+            )
+        )
     }
 
     var importedModelURLs: [URL] {
@@ -296,12 +383,20 @@ final class SceneProjectStore {
         try commit(invalidateWorldMap: true) { _ in }
     }
 
-    func saveWorldMapData(_ data: Data) throws {
+    @discardableResult
+    func saveWorldMapData(
+        _ data: Data,
+        retainingPlacementIDs: Set<UUID>? = nil
+    ) throws -> Int {
         if let initializationError { throw initializationError }
         guard !data.isEmpty else { throw SceneProjectStoreError.emptyWorldMap }
         try fileManager.createDirectory(at: projectDirectory, withIntermediateDirectories: true)
 
         var candidate = project
+        let originalPlacementCount = candidate.placements.count
+        if let retainingPlacementIDs {
+            candidate.placements.removeAll { !retainingPlacementIDs.contains($0.id) }
+        }
         candidate.version = SceneProject.currentVersion
         candidate.updatedAt = Date()
         candidate.worldMapChecksum = Self.checksum(for: data)
@@ -313,6 +408,8 @@ final class SceneProjectStore {
         try data.write(to: worldMapURL, options: .atomic)
         try projectData.write(to: projectURL, options: .atomic)
         project = candidate
+        initializationError = nil
+        return originalPlacementCount - candidate.placements.count
     }
 
     func worldMapSnapshotForLoading() throws -> StoredWorldMapSnapshot {

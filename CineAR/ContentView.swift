@@ -300,6 +300,8 @@ struct ContentView: View {
                 }
 
                 Section("Çalışma şekli") {
+                    LabeledContent("Uygulama sürümü", value: appVersionText)
+
                     Text(
                         "iPhone kamera ve LiDAR derinliğini aynı Wi-Fi'daki PC'ye yollar. "
                             + "Depth Anything boşlukları tamamlar; SAM 2 nesne sınırlarını ayırır. "
@@ -339,6 +341,14 @@ struct ContentView: View {
         case .waiting: .orange
         case .disabled: .secondary
         }
+    }
+
+    private var appVersionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString")
+            as? String ?? "?"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion")
+            as? String ?? "?"
+        return "\(version) (\(build))"
     }
 
     private func roomModeButton(

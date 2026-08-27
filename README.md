@@ -59,6 +59,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - Yeni anchor ile ARKit harita snapshot'i arasindaki zamanlama farkini uzlastirip
   `worldmap/scene.json` uyusmazligini otomatik yeniden deneme ve eski kaydi kurtarma
+- Decode edilemeyen `scene.json` dosyasini silmeden `scene-corrupt-*.json` olarak
+  yedekleyip dunya haritasi anchor'larindan taninan dekorlari yeniden kurma
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
 - Kayitli mekanda relocalization

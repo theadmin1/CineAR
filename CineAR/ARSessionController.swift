@@ -38,6 +38,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
+    private var managedPropAnchorsByPlacementID: [UUID: ARAnchor] = [:]
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var renderedLights: [UUID: SpotLight] = [:]
     private var renderedLightEmitters: [UUID: ModelEntity] = [:]
@@ -96,6 +97,8 @@ final class ARSessionController: NSObject, ObservableObject {
                 "Kayıtlı scene.json okunamadı: \(error.localizedDescription)",
                 color: .red
             )
+        } else if let notice = projectStore.initializationNotice {
+            publishStatus(notice, color: .yellow)
         }
     }
 
@@ -171,6 +174,13 @@ final class ARSessionController: NSObject, ObservableObject {
         assetLoadSubscriptions.values.forEach { $0.cancel() }
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
+        managedPropAnchorsByPlacementID.removeAll()
+        if let initialWorldMap {
+            for anchor in initialWorldMap.anchors {
+                guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
+                managedPropAnchorsByPlacementID[descriptor.id] = anchor
+            }
+        }
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
@@ -644,6 +654,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 transform: placementTransform
             )
             knownPropAnchorIDs.insert(anchor.identifier)
+            managedPropAnchorsByPlacementID[id] = anchor
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
@@ -906,6 +917,7 @@ final class ARSessionController: NSObject, ObservableObject {
             renderedAnchorIDs.remove(anchor.identifier)
             knownPropAnchorIDs.remove(anchor.identifier)
         }
+        managedPropAnchorsByPlacementID[id] = nil
         renderedEntities[id]?.parent?.removeFromParent()
         renderedEntities[id] = nil
         renderedLights[id] = nil
@@ -940,6 +952,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.values.forEach { $0.parent?.removeFromParent() }
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
+        managedPropAnchorsByPlacementID.removeAll()
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
@@ -1065,7 +1078,34 @@ final class ARSessionController: NSObject, ObservableObject {
                         in: worldMap,
                         currentFrame: arView.session.currentFrame
                     )
-                    try self.validate(worldMap: worldMap)
+                    do {
+                        try self.validate(worldMap: worldMap)
+                    } catch let cinearError as CineARError {
+                        guard case .sceneSnapshotMismatch = cinearError,
+                              attempt >= 12 else { throw cinearError }
+
+                        // An anchor absent from every source after the retry window has
+                        // no recoverable world transform. Keep the valid intersection
+                        // instead of leaving the whole project permanently unsavable.
+                        let survivingIDs = Set(worldMap.anchors.compactMap {
+                            PropKind.descriptor(from: $0.name)?.id
+                        })
+                        let repairedData = try NSKeyedArchiver.archivedData(
+                            withRootObject: worldMap,
+                            requiringSecureCoding: true
+                        )
+                        let discardedCount = try self.projectStore.saveWorldMapData(
+                            repairedData,
+                            retainingPlacementIDs: survivingIDs
+                        )
+                        self.discardOrphanedRenderedContent(survivingIDs: survivingIDs)
+                        self.isSavingWorldMap = false
+                        self.publishStatus(
+                            "Sahne kaydı onarıldı — \(discardedCount) anchorsız kayıt temizlendi",
+                            color: .yellow
+                        )
+                        return
+                    }
                     let data = try NSKeyedArchiver.archivedData(
                         withRootObject: worldMap,
                         requiringSecureCoding: true
@@ -1126,6 +1166,7 @@ final class ARSessionController: NSObject, ObservableObject {
         collect(projectStore.storedManagedAnchors())
         // The new map overrides stored copies; the current ARFrame wins last.
         collect(worldMap.anchors)
+        collect(Array(managedPropAnchorsByPlacementID.values))
         if let currentFrame { collect(currentFrame.anchors) }
 
         let unmanagedAnchors = worldMap.anchors.filter {
@@ -1135,6 +1176,24 @@ final class ARSessionController: NSObject, ObservableObject {
             freshestAnchors[$0.id]
         }
         worldMap.anchors = unmanagedAnchors + managedAnchors
+    }
+
+    private func discardOrphanedRenderedContent(survivingIDs: Set<UUID>) {
+        let discardedIDs = Set(renderedEntities.keys).subtracting(survivingIDs)
+        for id in discardedIDs {
+            renderedEntities[id]?.parent?.removeFromParent()
+            renderedEntities[id] = nil
+            renderedLights[id] = nil
+            renderedLightEmitters[id] = nil
+            assetLoadSubscriptions[id]?.cancel()
+            assetLoadSubscriptions[id] = nil
+            loadingEntityIDs.remove(id)
+            managedPropAnchorsByPlacementID[id] = nil
+        }
+        if let selectedEntityID, !survivingIDs.contains(selectedEntityID) {
+            self.selectedEntityID = nil
+            selectedLightSettings = nil
+        }
     }
 
     @discardableResult
@@ -2188,6 +2247,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.insert(anchor.identifier)
+            managedPropAnchorsByPlacementID[descriptor.id] = anchor
             if pendingAutoSaveAnchorIDs.remove(anchor.identifier) != nil {
                 shouldScheduleAutomaticSave = true
             }
@@ -2212,6 +2272,9 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.remove(anchor.identifier)
+            if projectStore.placement(id: descriptor.id) == nil {
+                managedPropAnchorsByPlacementID[descriptor.id] = nil
+            }
             renderedAnchorIDs.remove(anchor.identifier)
             loadingEntityIDs.remove(descriptor.id)
             assetLoadSubscriptions[descriptor.id]?.cancel()
