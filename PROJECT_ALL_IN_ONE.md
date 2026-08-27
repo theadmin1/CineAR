@@ -3,17 +3,17 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.8.0`
-- Proje build numarası: `11`
+- Uygulama sürümü: `0.9.0`
+- Proje build numarası: `12`
 - Git dalı: `main`
-- Kaynak commit: `0f5a03f1e8530a5f4b231d464e7bf85b5eb01c5d`
-- Oluşturulma zamanı: `2026-08-25 17:01:12 +03:00`
+- Kaynak commit: `738e81e21ec269852721c9627f8ad3fc413272bd`
+- Oluşturulma zamanı: `2026-08-27 13:59:14 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
 ## Projenin amacı
 
-CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 18 hazır dekoru veya kullanıcının USDZ modellerini zemine yerleştiren yerel iOS uygulamasıdır. Dekorlar taşınabilir, döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir.
+CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 30 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.
 
 ## Teknoloji ve ana yetenekler
 
@@ -23,7 +23,8 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
-- Gerçekçi boyutlandırılmış 14 gömülü CC0 USDZ varlığı, 4 hafif prosedürel dekor ve paneli kapatan yerleştirme modu
+- Poly Haven kaynaklı 1K PBR dokulu 30 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
+- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı
 - USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok
 - Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli
 - AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i
@@ -63,7 +64,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.
 3. Sonuç compact `room.json` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.
 4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.
-5. Kullanıcı kompakt dock'tan hızlı dekor, 18 parçalık kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
+5. Kullanıcı kompakt dock'tan hızlı dekor, 30 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
 6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.
 7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.
 8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.
@@ -114,22 +115,53 @@ CineAR/Info.plist
 CineAR/ProfessionalRecorder.swift
 CineAR/PropKind.swift
 CineAR/RealityTheme.swift
+CineAR/RoomAssets/Barrel_02.usdz
 CineAR/RoomAssets/bathroomSink.usdz
 CineAR/RoomAssets/bathtub.usdz
 CineAR/RoomAssets/bedDouble.usdz
 CineAR/RoomAssets/bookcaseClosedWide.usdz
+CineAR/RoomAssets/boombox.usdz
+CineAR/RoomAssets/caged_hanging_light.usdz
+CineAR/RoomAssets/cardboard_box_01.usdz
+CineAR/RoomAssets/ceiling_fan.usdz
 CineAR/RoomAssets/chairModernCushion.usdz
+CineAR/RoomAssets/classic_laptop.usdz
+CineAR/RoomAssets/desk_lamp_arm_01.usdz
+CineAR/RoomAssets/drawer_cabinet.usdz
+CineAR/RoomAssets/hand_truck.usdz
+CineAR/RoomAssets/hanging_industrial_lamp.usdz
+CineAR/RoomAssets/industrial_wall_lamp.usdz
+CineAR/RoomAssets/industrial_wall_sconce.usdz
 CineAR/RoomAssets/kitchenFridge.usdz
 CineAR/RoomAssets/kitchenStove.usdz
 CineAR/RoomAssets/kitchenStoveElectric.usdz
+CineAR/RoomAssets/korean_fire_extinguisher_01.usdz
+CineAR/RoomAssets/korean_public_payphone_01.usdz
 CineAR/RoomAssets/LICENSE-KENNEY.txt
+CineAR/RoomAssets/LICENSE-POLYHAVEN.txt
 CineAR/RoomAssets/loungeDesignSofa.usdz
 CineAR/RoomAssets/MANIFEST.sha256
+CineAR/RoomAssets/metal_office_desk.usdz
+CineAR/RoomAssets/metal_tool_chest.usdz
+CineAR/RoomAssets/metal_trash_can.usdz
+CineAR/RoomAssets/plastic_crate_02.usdz
+CineAR/RoomAssets/plastic_monobloc_chair_01.usdz
+CineAR/RoomAssets/power_box_01.usdz
+CineAR/RoomAssets/SchoolChair_01.usdz
+CineAR/RoomAssets/SchoolDesk_01.usdz
+CineAR/RoomAssets/security_camera_01.usdz
 CineAR/RoomAssets/stairs.usdz
+CineAR/RoomAssets/steel_frame_shelves_01.usdz
 CineAR/RoomAssets/table.usdz
+CineAR/RoomAssets/television_02.usdz
 CineAR/RoomAssets/televisionModern.usdz
 CineAR/RoomAssets/toilet.usdz
+CineAR/RoomAssets/vintage_wooden_drawer_01.usdz
+CineAR/RoomAssets/wall_clock.usdz
 CineAR/RoomAssets/washerDryerStacked.usdz
+CineAR/RoomAssets/WetFloorSign_01.usdz
+CineAR/RoomAssets/wooden_crate_02.usdz
+CineAR/RoomAssets/wooden_stool_01.usdz
 CineAR/RoomRealityRenderer.swift
 CineAR/RoomScanner.swift
 CineAR/SceneProjectStore.swift
@@ -139,6 +171,8 @@ Docs/DEVICE_TEST.md
 Docs/ICON_PROMPT.md
 README.md
 Tools/convert_kenney_to_usdz.py
+Tools/convert_polyhaven_to_usdz.py
+Tools/fetch_polyhaven_props.ps1
 Tools/generate_all_in_one_markdown.ps1
 Tools/render_usdz_thumbnails.py
 Tools/validate_usdz_assets.py
@@ -149,20 +183,50 @@ Tools/validate_usdz_assets.py
 | Dosya | Boyut (byte) | SHA-256 |
 | --- | ---: | --- |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/CineAR-AppIcon-1024.png` | 1280549 | `61704d12fadea91d1e96ae279d31a21ecf0c0e4f66f213b09cca658d5d3643ff` |
+| `CineAR/RoomAssets/Barrel_02.usdz` | 537940 | `db44c3823a4313fcb39cc3363de427390b1126dbfccbaede42dfc4c62cc832fe` |
 | `CineAR/RoomAssets/bathroomSink.usdz` | 28447 | `2de87dbd39ec292d8575aaf526160310ac090659d6cba1fb0b9d7b231f0cc643` |
 | `CineAR/RoomAssets/bathtub.usdz` | 50915 | `3a24cebb0eac7b5dbf190958aeda8e3599b38a9d51c826cf349f703a2c44ce53` |
 | `CineAR/RoomAssets/bedDouble.usdz` | 21700 | `c658a28c0afb73daa53330d9747f0651056f172f990df8acecf29003511d0297` |
 | `CineAR/RoomAssets/bookcaseClosedWide.usdz` | 31610 | `39d09d860911c9e51a807d33607cec97eb314929c717e848956175ab0f0e2e7f` |
+| `CineAR/RoomAssets/boombox.usdz` | 3479128 | `23d131aee04991d1b89989b6d74e2e769b70aca2d1cdd17a990e768019310e0b` |
+| `CineAR/RoomAssets/caged_hanging_light.usdz` | 3952770 | `b4834b13750c18ee2ba3da62fe4392257f66d06330b47966b42c316d0e227025` |
+| `CineAR/RoomAssets/cardboard_box_01.usdz` | 2992902 | `f0968ac22285b3d7a9af0bfbe4576dc2f9074378dcfbbd2ec093064f9a5e48b0` |
+| `CineAR/RoomAssets/ceiling_fan.usdz` | 2535342 | `f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d` |
 | `CineAR/RoomAssets/chairModernCushion.usdz` | 10190 | `11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e` |
+| `CineAR/RoomAssets/classic_laptop.usdz` | 2745811 | `f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145` |
+| `CineAR/RoomAssets/desk_lamp_arm_01.usdz` | 3902780 | `6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a` |
+| `CineAR/RoomAssets/drawer_cabinet.usdz` | 2219127 | `351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68` |
+| `CineAR/RoomAssets/hand_truck.usdz` | 3639690 | `fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486` |
+| `CineAR/RoomAssets/hanging_industrial_lamp.usdz` | 3604302 | `abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937` |
+| `CineAR/RoomAssets/industrial_wall_lamp.usdz` | 3955877 | `41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9` |
+| `CineAR/RoomAssets/industrial_wall_sconce.usdz` | 2264430 | `c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee` |
 | `CineAR/RoomAssets/kitchenFridge.usdz` | 24080 | `a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7` |
 | `CineAR/RoomAssets/kitchenStove.usdz` | 69862 | `b8162bd10dd56e6936cd0f4035a7cfe158f9ea46bd11c14c0b8e1f5e5121da68` |
 | `CineAR/RoomAssets/kitchenStoveElectric.usdz` | 29702 | `b6607fcdfb518b204779961d1fb87a138436236a64438a81c6fcdcdc5606b4ba` |
+| `CineAR/RoomAssets/korean_fire_extinguisher_01.usdz` | 2038320 | `0f329ca78bfbb62c158761c8b28bbc78a03481f0987ddeff60820f427810af4a` |
+| `CineAR/RoomAssets/korean_public_payphone_01.usdz` | 5265471 | `e25b910f745ebfa2e27bc4ac3a88fd87c9b8707be76290121916377e3b076a72` |
 | `CineAR/RoomAssets/loungeDesignSofa.usdz` | 12081 | `e1ff365a2245f802cd0c31f6972927d8b3a82a4356a46a1f525e79d58558d3ad` |
+| `CineAR/RoomAssets/metal_office_desk.usdz` | 1847151 | `8e54007f0ddd27d5173e7f4931cdd5792322f6fe39143cfa3bfa5e98ab944511` |
+| `CineAR/RoomAssets/metal_tool_chest.usdz` | 2896433 | `ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba` |
+| `CineAR/RoomAssets/metal_trash_can.usdz` | 5583572 | `d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871` |
+| `CineAR/RoomAssets/plastic_crate_02.usdz` | 2088182 | `c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9` |
+| `CineAR/RoomAssets/plastic_monobloc_chair_01.usdz` | 2086673 | `6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a` |
+| `CineAR/RoomAssets/power_box_01.usdz` | 3489291 | `247cb86f3662b3cdc532229875c3e2ac56d986d5044b967cc51e9499d6fb60a0` |
+| `CineAR/RoomAssets/SchoolChair_01.usdz` | 711033 | `738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6` |
+| `CineAR/RoomAssets/SchoolDesk_01.usdz` | 589809 | `b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596` |
+| `CineAR/RoomAssets/security_camera_01.usdz` | 2355175 | `ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a` |
 | `CineAR/RoomAssets/stairs.usdz` | 27638 | `683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b` |
+| `CineAR/RoomAssets/steel_frame_shelves_01.usdz` | 1767903 | `a809a38664d4e8a65bb067d89a9f74985c1bc24c297b855fa14af4eed807700b` |
 | `CineAR/RoomAssets/table.usdz` | 11768 | `2e84220a7d8db7ca03254c303be3f017ed5c07a080e86f9d94b15a18688af6d0` |
+| `CineAR/RoomAssets/television_02.usdz` | 1332571 | `dc44f800926690dc281aed2f7fccb9340d70e253395c26ee59a80af3e097eaea` |
 | `CineAR/RoomAssets/televisionModern.usdz` | 8484 | `a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819` |
 | `CineAR/RoomAssets/toilet.usdz` | 22209 | `b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9` |
+| `CineAR/RoomAssets/vintage_wooden_drawer_01.usdz` | 952403 | `e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe` |
+| `CineAR/RoomAssets/wall_clock.usdz` | 1702023 | `9b83332d0db22eab9b514ee5a727acad1d846545785f763c558786e5bc165767` |
 | `CineAR/RoomAssets/washerDryerStacked.usdz` | 83204 | `76d9e6d877d7003c51a503a1c6f890a7b85e9430363daa01f65a2cbb8fd72a16` |
+| `CineAR/RoomAssets/WetFloorSign_01.usdz` | 275541 | `080f512792bcbfdaf913200c3b1e3f1a162c46b16d1ab655ae1b965617c74601` |
+| `CineAR/RoomAssets/wooden_crate_02.usdz` | 2456256 | `842aedb3aa03d4fa34d5e78eb6e7cdf67a2e0da8a26d389b05181bfc494bee8b` |
+| `CineAR/RoomAssets/wooden_stool_01.usdz` | 1433252 | `56fe820ab98f0bad3ba2fdaef340dd9a015b8020802b4859172d343445dba69f` |
 
 ## Güvenlik nedeniyle içeriği gömülmeyen dosyalar
 
@@ -172,34 +236,37 @@ Yok.
 
 | Dosya | Satır | Boyut (byte) |
 | --- | ---: | ---: |
-| `.gitignore` | 25 | 473 |
+| `.gitignore` | 27 | 501 |
 | `CineAR.xcodeproj/project.pbxproj` | 272 | 12830 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/ARSessionController.swift` | 1759 | 71187 |
+| `CineAR/ARSessionController.swift` | 2217 | 89718 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
-| `CineAR/BundledRoomRealityAssetProvider.swift` | 320 | 13780 |
+| `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15397 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 392 | 14820 |
+| `CineAR/ContentView.swift` | 527 | 20603 |
 | `CineAR/Info.plist` | 49 | 1582 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
-| `CineAR/PropKind.swift` | 136 | 3813 |
+| `CineAR/PropKind.swift` | 342 | 13658 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
-| `CineAR/RoomAssets/MANIFEST.sha256` | 15 | 1184 |
-| `CineAR/RoomRealityRenderer.swift` | 2058 | 78335 |
+| `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
+| `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
+| `CineAR/RoomRealityRenderer.swift` | 2063 | 78541 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
-| `CineAR/SceneProjectStore.swift` | 352 | 13489 |
+| `CineAR/SceneProjectStore.swift` | 406 | 15738 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 80 | 4642 |
+| `Docs/DEVICE_TEST.md` | 88 | 5270 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 120 | 6731 |
+| `README.md` | 129 | 7530 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
-| `Tools/generate_all_in_one_markdown.ps1` | 345 | 17794 |
-| `Tools/render_usdz_thumbnails.py` | 94 | 3522 |
+| `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
+| `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
+| `Tools/generate_all_in_one_markdown.ps1` | 346 | 18043 |
+| `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/validate_usdz_assets.py` | 67 | 2269 |
 
 # Metin tabanlı proje dosyalarının tam içeriği
@@ -228,6 +295,8 @@ ios_distribution_private_key*
 
 # Downloaded source archives; converted CC0 USDZ files are committed instead
 Kenney-Furniture-Kit.zip
+.asset-cache/
+.tools-cache/
 
 # Generated handoff archives are release artifacts, not source files
 CineAR-Codemagic-Handoff-*.zip
@@ -443,13 +512,13 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.8.0;
+				MARKETING_VERSION = 0.9.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -466,12 +535,12 @@ CineAR-Codemagic-Handoff-*.zip
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.8.0;
+				MARKETING_VERSION = 0.9.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -565,6 +634,7 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isARReady = false
     @Published private(set) var isPlacingProp = false
     @Published private(set) var isRoomOutlineVisible = false
+    @Published private(set) var selectedLightSettings: VirtualLightSettings?
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -576,6 +646,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
+    private var renderedLights: [UUID: SpotLight] = [:]
+    private var renderedLightEmitters: [UUID: ModelEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
     private var renderGeneration: UInt64 = 0
@@ -595,6 +667,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var postScanThemeGeneration: UInt64 = 0
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
+    private var lastKnownCeilingY: Float?
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
@@ -698,14 +771,18 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
         renderedEntities.removeAll()
+        renderedLights.removeAll()
+        renderedLightEmitters.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
         selectedEntityID = nil
+        selectedLightSettings = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
+        lastKnownCeilingY = nil
         if roomCoordinateSpaceIsActive {
             updateKnownFloorFromRoomData()
         }
@@ -966,14 +1043,19 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func selectProp(_ prop: PropKind) {
+        persistSelectedLightSettings()
         selectedProp = prop
         selectedEntityID = nil
+        selectedLightSettings = nil
         if prop == .custom, selectedAssetURL == nil {
             isPlacingProp = false
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
             isPlacingProp = true
-            publishStatus("\(prop.title) seçildi — kararlı yüzey görünce dokun", color: .blue)
+            publishStatus(
+                "\(prop.title) seçildi — \(placementInstruction(for: prop))",
+                color: .blue
+            )
         }
     }
 
@@ -983,6 +1065,40 @@ final class ARSessionController: NSObject, ObservableObject {
         publishStatus("Yerleştirme iptal edildi", color: .yellow)
     }
 
+    private func placementInstruction(for prop: PropKind) -> String {
+        switch prop.placementSurface {
+        case .floor: "taranmış zemine dokun"
+        case .horizontal: "zemine veya masa gibi yatay yüzeye dokun"
+        case .wall: "taranmış duvara dokun"
+        case .ceiling: "telefonu tavana çevirip taranmış tavana dokun"
+        }
+    }
+
+    private func placementFailureMessage(for prop: PropKind) -> String {
+        switch prop.placementSurface {
+        case .floor:
+            "Kararlı zemin bulunamadı — zemini yavaşça tara, sonra tekrar dokun"
+        case .horizontal:
+            "Kararlı yatay yüzey bulunamadı — yüzeyi yavaşça tara, sonra tekrar dokun"
+        case .wall:
+            "Kararlı duvar bulunamadı — duvarı yavaşça tara, sonra tekrar dokun"
+        case .ceiling:
+            "Kararlı tavan bulunamadı — telefonu yukarı çevirip tavanı yavaşça tara"
+        }
+    }
+
+    private func selectRenderedEntity(id: UUID) {
+        persistSelectedLightSettings()
+        selectedEntityID = id
+        if let placement = projectStore.placement(id: id), placement.kind.emitsVirtualLight {
+            selectedLightSettings = placement.lightSettings ?? .defaultFixture
+            publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
+        } else {
+            selectedLightSettings = nil
+            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
+        }
+    }
+
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
@@ -990,8 +1106,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if !isPlacingProp,
            let hitEntity = arView.entity(at: point),
            let id = entityID(from: hitEntity) {
-            selectedEntityID = id
-            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
+            selectRenderedEntity(id: id)
             return
         }
 
@@ -1012,7 +1127,7 @@ final class ARSessionController: NSObject, ObservableObject {
             for: selectedProp
         ) else {
             publishStatus(
-                "Kararlı yüzey bulunamadı — zemini yavaşça tara, sonra tekrar dokun",
+                placementFailureMessage(for: selectedProp),
                 color: .yellow
             )
             return
@@ -1027,7 +1142,8 @@ final class ARSessionController: NSObject, ObservableObject {
             id: id,
             kind: selectedProp,
             assetFileName: selectedProp == .custom ? selectedAssetURL?.lastPathComponent : nil,
-            transform: StoredTransform(defaultTransform(for: selectedProp))
+            transform: StoredTransform(defaultTransform(for: selectedProp)),
+            lightSettings: selectedProp.emitsVirtualLight ? .defaultFixture : nil
         )
         do {
             try projectStore.upsert(placement)
@@ -1039,6 +1155,7 @@ final class ARSessionController: NSObject, ObservableObject {
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
+            selectedLightSettings = placement.lightSettings
             isPlacingProp = false
             render(prop: selectedProp, id: id, for: anchor)
             if selectedProp == .custom {
@@ -1062,11 +1179,12 @@ final class ARSessionController: NSObject, ObservableObject {
         // RoomPlan replacement scene is virtual RealityKit content, so ARKit's plane
         // raycast below cannot intersect it on its own.
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point) {
-            let verticalComponent = abs(simd_normalize(hit.normal).y)
-            let acceptsSurface = (prop == .wall || prop == .lightPanel)
-                ? verticalComponent < 0.45
-                : verticalComponent > 0.72
-            if acceptsSurface {
+            if surfaceAccepts(
+                prop: prop,
+                normal: hit.normal,
+                position: hit.position,
+                cameraY: arView.cameraTransform.translation.y
+            ) {
                 return placementTransform(
                     position: hit.position,
                     normal: hit.normal,
@@ -1080,44 +1198,77 @@ final class ARSessionController: NSObject, ObservableObject {
         // It catches stable horizontal surfaces such as tables even when ARKit has
         // not promoted that patch to a plane anchor yet.
         if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
-            entityID(from: $0.entity) == nil && !belongsToRoomReality($0.entity)
-        }) {
-            let verticalComponent = abs(simd_normalize(hit.normal).y)
-            let acceptsSurface = (prop == .wall || prop == .lightPanel)
-                ? verticalComponent < 0.45
-                : verticalComponent > 0.72
-            if acceptsSurface {
-                return placementTransform(
-                    position: hit.position,
-                    normal: hit.normal,
+            entityID(from: $0.entity) == nil
+                && !belongsToRoomReality($0.entity)
+                && surfaceAccepts(
                     prop: prop,
-                    cameraPosition: arView.cameraTransform.translation
+                    normal: $0.normal,
+                    position: $0.position,
+                    cameraY: arView.cameraTransform.translation.y
                 )
-            }
+        }) {
+            return placementTransform(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation
+            )
         }
 
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
-            (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
+            prop.placementSurface == .wall ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
             (.existingPlaneGeometry, preferredAlignment),
             (.existingPlaneInfinite, preferredAlignment)
         ]
 
         for (target, alignment) in queries {
-            if let result = arView.raycast(
+            let results = arView.raycast(
                 from: point,
                 allowing: target,
                 alignment: alignment
-            ).first {
-                return result.worldTransform
+            )
+            if let result = results.first(where: {
+                raycastResult($0, matches: prop, cameraY: arView.cameraTransform.translation.y)
+            }) {
+                let position = result.worldTransform.columns.3
+                return placementTransform(
+                    position: [position.x, position.y, position.z],
+                    normal: [
+                        result.worldTransform.columns.1.x,
+                        result.worldTransform.columns.1.y,
+                        result.worldTransform.columns.1.z
+                    ],
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
+            }
+        }
+
+        // RoomPlan also gives us a persistent ceiling height. Intersecting the screen
+        // ray with it keeps ceiling fixtures stable even when ARKit's live ceiling
+        // plane is temporarily outside the current camera frame.
+        if prop.placementSurface == .ceiling,
+           roomCoordinateSpaceIsActive,
+           let ceilingY = lastKnownCeilingY,
+           let ray = arView.ray(through: point) {
+            let direction = simd_normalize(ray.direction)
+            guard direction.y > 0.025 else { return nil }
+            let distance = (ceilingY - ray.origin.y) / direction.y
+            if distance.isFinite, distance >= 0.20, distance <= 8.0 {
+                return placementTransform(
+                    position: ray.origin + direction * distance,
+                    normal: [0, -1, 0],
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
             }
         }
 
         // A completed RoomPlan scan provides a persistent world-space floor level.
         // Intersect the exact screen ray with that recorded floor instead of guessing
         // from camera height. This remains stable while making the full floor tappable.
-        if prop != .wall,
-           prop != .lightPanel,
+        if prop.placementSurface == .floor || prop.placementSurface == .horizontal,
            roomCoordinateSpaceIsActive,
            let floorY = lastKnownFloorY,
            let ray = arView.ray(through: point) {
@@ -1140,6 +1291,45 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
+    private func surfaceAccepts(
+        prop: PropKind,
+        normal: SIMD3<Float>,
+        position: SIMD3<Float>,
+        cameraY: Float
+    ) -> Bool {
+        guard simd_length_squared(normal) > 0.000_001 else { return false }
+        let verticalComponent = abs(simd_normalize(normal).y)
+        switch prop.placementSurface {
+        case .wall:
+            return verticalComponent < 0.45
+        case .ceiling:
+            return verticalComponent > 0.72 && position.y > cameraY + 0.25
+        case .floor:
+            return verticalComponent > 0.72 && position.y < cameraY - 0.25
+        case .horizontal:
+            return verticalComponent > 0.72 && position.y < cameraY + 0.20
+        }
+    }
+
+    private func raycastResult(
+        _ result: ARRaycastResult,
+        matches prop: PropKind,
+        cameraY: Float
+    ) -> Bool {
+        let y = result.worldTransform.columns.3.y
+        let classification = (result.anchor as? ARPlaneAnchor)?.classification
+        switch prop.placementSurface {
+        case .wall:
+            return true
+        case .ceiling:
+            return classification == .ceiling || y > cameraY + 0.25
+        case .floor:
+            return classification == .floor || y < cameraY - 0.25
+        case .horizontal:
+            return classification != .ceiling && y < cameraY + 0.20
+        }
+    }
+
     private func updateKnownFloorFromRoomData() {
         guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
         let levels = room.floors.compactMap { floor -> Float? in
@@ -1148,6 +1338,15 @@ final class ARSessionController: NSObject, ObservableObject {
         }.sorted()
         if !levels.isEmpty {
             lastKnownFloorY = levels[levels.count / 2]
+        }
+        do {
+            if let ceilingY = try roomRealityRenderer.inferredCeilingLevel(
+                roomJSONURL: roomDataURL
+            ), ceilingY.isFinite {
+                lastKnownCeilingY = ceilingY
+            }
+        } catch {
+            lastKnownCeilingY = nil
         }
     }
 
@@ -1177,7 +1376,7 @@ final class ARSessionController: NSObject, ObservableObject {
         var transform = matrix_identity_float4x4
         transform.columns.3 = SIMD4(position.x, position.y, position.z, 1)
 
-        guard prop == .wall || prop == .lightPanel else { return transform }
+        guard prop.placementSurface == .wall else { return transform }
 
         // Wall props remain upright and face the camera side of the scanned wall.
         var forward = SIMD3<Float>(normal.x, 0, normal.z)
@@ -1217,10 +1416,13 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         renderedEntities[id]?.parent?.removeFromParent()
         renderedEntities[id] = nil
+        renderedLights[id] = nil
+        renderedLightEmitters[id] = nil
         assetLoadSubscriptions[id]?.cancel()
         assetLoadSubscriptions[id] = nil
         loadingEntityIDs.remove(id)
         selectedEntityID = nil
+        selectedLightSettings = nil
         publishStatus("Seçili dekor silindi", color: .green)
     }
 
@@ -1247,11 +1449,15 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
         renderedEntities.removeAll()
+        renderedLights.removeAll()
+        renderedLightEmitters.removeAll()
         selectedEntityID = nil
+        selectedLightSettings = nil
         publishStatus("Sanal dekorlar temizlendi", color: .green)
     }
 
     func importUSDZ(from sourceURL: URL) {
+        persistSelectedLightSettings()
         let hasAccess = sourceURL.startAccessingSecurityScopedResource()
         defer {
             if hasAccess { sourceURL.stopAccessingSecurityScopedResource() }
@@ -1261,6 +1467,7 @@ final class ARSessionController: NSObject, ObservableObject {
             importedAssetURLs = projectStore.importedModelURLs
             selectedAssetURL = importedURL
             selectedProp = .custom
+            selectedLightSettings = nil
             isPlacingProp = true
             publishStatus("\(importedURL.lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .green)
         } catch {
@@ -1273,9 +1480,11 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func selectImportedAsset(_ url: URL) {
+        persistSelectedLightSettings()
         selectedAssetURL = url
         selectedProp = .custom
         selectedEntityID = nil
+        selectedLightSettings = nil
         isPlacingProp = true
         publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .blue)
     }
@@ -1309,6 +1518,7 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Sahne haritası zaten kaydediliyor", color: .yellow)
             return
         }
+        persistSelectedLightSettings()
         do {
             try persistAllEntityTransforms()
         } catch {
@@ -1434,6 +1644,7 @@ final class ARSessionController: NSObject, ObservableObject {
         coachingOverlay?.isHidden = true
         publishStatus("HEVC kayıt hazırlanıyor...", color: .yellow)
 
+        persistSelectedLightSettings()
         do {
             try persistAllEntityTransforms()
             let url = try projectStore.nextRecordingURL()
@@ -1514,6 +1725,47 @@ final class ARSessionController: NSObject, ObservableObject {
                 "Sahne tutarsız: \(id.uuidString) kimlikli anchor için dekor kaydı yok",
                 color: .red
             )
+            return
+        }
+
+        if let descriptor = prop.photorealDescriptor {
+            guard let modelURL = bundledAssetURL(named: descriptor.assetName) else {
+                publishStatus("\(prop.title) modeli uygulama paketinde bulunamadı", color: .red)
+                return
+            }
+            loadingEntityIDs.insert(id)
+            let generation = renderGeneration
+            let request = Entity.loadAsync(contentsOf: modelURL)
+            assetLoadSubscriptions[id] = request
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] completion in
+                    guard let self, self.renderGeneration == generation else { return }
+                    self.loadingEntityIDs.remove(id)
+                    self.assetLoadSubscriptions[id] = nil
+                    if case .failure(let error) = completion {
+                        self.publishStatus(
+                            "\(prop.title) yüklenemedi: \(error.localizedDescription)",
+                            color: .red
+                        )
+                    }
+                } receiveValue: { [weak self] content in
+                    guard let self,
+                          let entity = self.makePhotorealLibraryEntity(
+                            content: content,
+                            prop: prop,
+                            descriptor: descriptor
+                          ) else {
+                        self?.publishStatus("\(prop.title) ölçüsü hazırlanamadı", color: .red)
+                        return
+                    }
+                    self.attach(
+                        entity: entity,
+                        prop: prop,
+                        id: id,
+                        anchor: anchor,
+                        generation: generation
+                    )
+                }
             return
         }
 
@@ -1601,6 +1853,13 @@ final class ARSessionController: NSObject, ObservableObject {
             entity.generateCollisionShapes(recursive: true)
         }
         addContactShadow(to: entity, for: prop)
+        if prop.emitsVirtualLight {
+            let settings = placement.lightSettings ?? .defaultFixture
+            installVirtualLight(on: entity, prop: prop, id: id, settings: settings)
+            if selectedEntityID == id {
+                selectedLightSettings = settings
+            }
+        }
         anchorEntity.addChild(entity)
         arView.scene.addAnchor(anchorEntity)
 
@@ -1610,6 +1869,173 @@ final class ARSessionController: NSObject, ObservableObject {
 
         renderedAnchorIDs.insert(anchor.identifier)
         renderedEntities[id] = entity
+    }
+
+    func setSelectedLightEnabled(_ isEnabled: Bool) {
+        guard var settings = selectedLightSettings else { return }
+        settings.isEnabled = isEnabled
+        previewSelectedLight(settings)
+        persistSelectedLightSettings()
+    }
+
+    func setSelectedLightIntensity(_ lumens: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.intensityLumens = min(max(lumens, 0), 12_000)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightTemperature(_ kelvin: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.temperatureKelvin = min(max(kelvin, 2_000), 6_500)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightConeAngle(_ degrees: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.coneAngleDegrees = min(max(degrees, 15), 120)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightYaw(_ degrees: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.yawDegrees = min(max(degrees, -180), 180)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightTilt(_ degrees: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.tiltDegrees = min(max(degrees, -75), 75)
+        previewSelectedLight(settings)
+    }
+
+    func persistSelectedLightSettings() {
+        guard let id = selectedEntityID,
+              let settings = selectedLightSettings,
+              settings.isValid,
+              let placement = projectStore.placement(id: id),
+              placement.kind.emitsVirtualLight,
+              placement.lightSettings != settings else { return }
+        do {
+            try projectStore.updateLightSettings(id: id, settings: settings)
+        } catch {
+            publishStatus("Işık ayarları kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    private func previewSelectedLight(_ settings: VirtualLightSettings) {
+        selectedLightSettings = settings
+        guard let id = selectedEntityID,
+              let light = renderedLights[id],
+              let prop = projectStore.placement(id: id)?.kind else { return }
+        apply(settings: settings, to: light, prop: prop)
+    }
+
+    private func installVirtualLight(
+        on entity: ModelEntity,
+        prop: PropKind,
+        id: UUID,
+        settings: VirtualLightSettings
+    ) {
+        renderedLights[id]?.removeFromParent()
+        let light = SpotLight()
+        light.name = "cinear.virtual-light.\(id.uuidString)"
+        light.shadow = SpotLightComponent.Shadow()
+
+        let dimensions = prop.photorealDescriptor?.dimensions ?? SIMD3<Float>(0.5, 0.5, 0.5)
+        switch prop.placementSurface {
+        case .ceiling:
+            light.position = [0, -dimensions.y * 0.48, 0]
+        case .wall:
+            light.position = [0, 0, dimensions.z * 0.52]
+        case .floor, .horizontal:
+            light.position = [0, dimensions.y * 0.34, dimensions.z * 0.16]
+        }
+        entity.addChild(light)
+        renderedLights[id] = light
+        var emitterMaterial = UnlitMaterial()
+        emitterMaterial.color = .init(tint: .white)
+        let emitter: ModelEntity
+        if prop == .cagedCeilingLight || prop == .lightPanel {
+            emitter = ModelEntity(
+                mesh: .generateBox(size: [0.58, 0.018, 0.07], cornerRadius: 0.009),
+                materials: [emitterMaterial]
+            )
+        } else {
+            emitter = ModelEntity(
+                mesh: .generateSphere(radius: 0.035),
+                materials: [emitterMaterial]
+            )
+        }
+        emitter.name = "cinear.virtual-light.emitter"
+        light.addChild(emitter)
+        renderedLightEmitters[id] = emitter
+        apply(settings: settings, to: light, prop: prop)
+    }
+
+    private func apply(settings: VirtualLightSettings, to light: SpotLight, prop: PropKind) {
+        light.isEnabled = settings.isEnabled
+        light.light.intensity = settings.intensityLumens
+        light.light.color = Self.colorTemperature(kelvin: settings.temperatureKelvin)
+        light.light.innerAngleInDegrees = settings.coneAngleDegrees * 0.62
+        light.light.outerAngleInDegrees = settings.coneAngleDegrees
+        light.light.attenuationRadius = min(
+            max(sqrt(max(settings.intensityLumens, 1) / 1_000) * 4, 2),
+            12
+        )
+        let baseDirection: SIMD3<Float>
+        switch prop.placementSurface {
+        case .ceiling:
+            baseDirection = [0, -1, 0]
+        case .wall:
+            baseDirection = simd_normalize(SIMD3<Float>(0, -0.35, 1))
+        case .floor, .horizontal:
+            baseDirection = simd_normalize(SIMD3<Float>(0, -0.88, 0.32))
+        }
+        let yaw = simd_quatf(
+            angle: settings.effectiveYawDegrees * .pi / 180,
+            axis: SIMD3<Float>(0, 1, 0)
+        )
+        let tilt = simd_quatf(
+            angle: settings.effectiveTiltDegrees * .pi / 180,
+            axis: SIMD3<Float>(1, 0, 0)
+        )
+        let direction = simd_normalize(yaw.act(tilt.act(baseDirection)))
+        light.orientation = simd_quatf(
+            from: SIMD3<Float>(0, 0, -1),
+            to: direction
+        )
+        if let idText = light.name.split(separator: ".").last,
+           let id = UUID(uuidString: String(idText)),
+           let emitter = renderedLightEmitters[id] {
+            var material = UnlitMaterial()
+            material.color = .init(tint: Self.colorTemperature(kelvin: settings.temperatureKelvin))
+            if var model = emitter.components[ModelComponent.self] {
+                model.materials = [material]
+                emitter.components.set(model)
+            }
+        }
+    }
+
+    private static func colorTemperature(kelvin: Float) -> UIColor {
+        let temperature = Double(min(max(kelvin, 2_000), 6_500)) / 100
+        let red: Double
+        let green: Double
+        let blue: Double
+        if temperature <= 66 {
+            red = 255
+            green = 99.4708025861 * log(temperature) - 161.1195681661
+            blue = temperature <= 19
+                ? 0
+                : 138.5177312231 * log(temperature - 10) - 305.0447927307
+        } else {
+            red = 329.698727446 * pow(temperature - 60, -0.1332047592)
+            green = 288.1221695283 * pow(temperature - 60, -0.0755148492)
+            blue = 255
+        }
+        func channel(_ value: Double) -> CGFloat {
+            CGFloat(min(max(value, 0), 255) / 255)
+        }
+        return UIColor(red: channel(red), green: channel(green), blue: channel(blue), alpha: 1)
     }
 
     private func persistAllEntityTransforms() throws {
@@ -1671,10 +2097,20 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func defaultTransform(for prop: PropKind) -> Transform {
-        let height: Float
-        if let descriptor = libraryDescriptor(for: prop) {
-            height = descriptor.dimensions.y * 0.5
+        let translation: SIMD3<Float>
+        if let descriptor = prop.photorealDescriptor {
+            switch descriptor.surface {
+            case .floor, .horizontal:
+                translation = [0, descriptor.dimensions.y * 0.5, 0]
+            case .wall:
+                translation = [0, 0, descriptor.dimensions.z * 0.5 + 0.008]
+            case .ceiling:
+                translation = [0, -descriptor.dimensions.y * 0.5, 0]
+            }
+        } else if let descriptor = libraryDescriptor(for: prop) {
+            translation = [0, descriptor.dimensions.y * 0.5, 0]
         } else {
+            let height: Float
             switch prop {
             case .stage: height = 0.09
             case .crate: height = 0.275
@@ -1686,13 +2122,88 @@ final class ARSessionController: NSObject, ObservableObject {
                  .television, .refrigerator, .oven, .stove, .sink, .bathtub,
                  .toilet, .washerDryer, .stairs, .custom:
                 height = 0
+            default:
+                height = 0
             }
+            translation = [0, height, 0]
         }
         return Transform(
             scale: [1, 1, 1],
             rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
-            translation: [0, height, 0]
+            translation: translation
         )
+    }
+
+    private func bundledAssetURL(named assetName: String) -> URL? {
+        if let url = Bundle.main.url(
+            forResource: assetName,
+            withExtension: "usdz",
+            subdirectory: "RoomAssets"
+        ) ?? Bundle.main.url(forResource: assetName, withExtension: "usdz") {
+            return url
+        }
+        guard let resourceURL = Bundle.main.resourceURL else { return nil }
+        let explicitURL = resourceURL
+            .appendingPathComponent("RoomAssets", isDirectory: true)
+            .appendingPathComponent(assetName)
+            .appendingPathExtension("usdz")
+        return FileManager.default.fileExists(atPath: explicitURL.path) ? explicitURL : nil
+    }
+
+    private func makePhotorealLibraryEntity(
+        content: Entity,
+        prop: PropKind,
+        descriptor: PhotorealPropDescriptor
+    ) -> ModelEntity? {
+        let measurementRoot = Entity()
+        measurementRoot.addChild(content)
+        let bounds = measurementRoot.visualBounds(
+            recursive: true,
+            relativeTo: measurementRoot,
+            excludeInactive: true
+        )
+        content.removeFromParent()
+        let extents = bounds.extents
+        guard [extents.x, extents.y, extents.z].allSatisfy({ $0.isFinite && $0 > 0.0001 }) else {
+            return nil
+        }
+        let ratios = descriptor.dimensions / extents
+        let scale = min(ratios.x, ratios.y, ratios.z)
+        guard scale.isFinite, (0.001...1_000).contains(scale) else { return nil }
+
+        let centered = Entity()
+        centered.addChild(content)
+        centered.position = -bounds.center
+
+        let fitted = Entity()
+        fitted.addChild(centered)
+        fitted.scale = SIMD3(repeating: scale)
+
+        let root = ModelEntity()
+        root.name = "cinear.photoreal.\(prop.rawValue)"
+        root.addChild(fitted)
+        let fittedBounds = root.visualBounds(
+            recursive: true,
+            relativeTo: root,
+            excludeInactive: true
+        )
+        guard [fittedBounds.extents.x, fittedBounds.extents.y, fittedBounds.extents.z]
+            .allSatisfy({ $0.isFinite && $0 > 0.0001 && $0 < 12 }) else { return nil }
+
+        // The descriptor defines the placement envelope. Align the rendered mesh
+        // with the envelope's contact face so uniformly fitted assets never float.
+        switch descriptor.surface {
+        case .floor, .horizontal:
+            fitted.position.y = (-descriptor.dimensions.y + fittedBounds.extents.y) * 0.5
+        case .ceiling:
+            fitted.position.y = (descriptor.dimensions.y - fittedBounds.extents.y) * 0.5
+        case .wall:
+            fitted.position.z = (-descriptor.dimensions.z + fittedBounds.extents.z) * 0.5
+        }
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: descriptor.dimensions)]
+        )
+        return root
     }
 
     private func makeBundledLibraryEntity(for prop: PropKind) -> ModelEntity? {
@@ -1732,6 +2243,14 @@ final class ARSessionController: NSObject, ObservableObject {
     private func groundContactDescriptor(
         for prop: PropKind
     ) -> (width: Float, depth: Float, localY: Float)? {
+        if let descriptor = prop.photorealDescriptor,
+           descriptor.surface == .floor || descriptor.surface == .horizontal {
+            return (
+                descriptor.dimensions.x * 0.82,
+                descriptor.dimensions.z * 0.82,
+                -descriptor.dimensions.y * 0.5 + 0.004
+            )
+        }
         if let descriptor = libraryDescriptor(for: prop) {
             return (
                 descriptor.dimensions.x * 0.82,
@@ -1748,6 +2267,8 @@ final class ARSessionController: NSObject, ObservableObject {
         case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
              .bed, .bookcase, .television, .refrigerator, .oven, .stove,
              .sink, .bathtub, .toilet, .washerDryer, .stairs:
+            return nil
+        default:
             return nil
         }
     }
@@ -1772,6 +2293,7 @@ final class ARSessionController: NSObject, ObservableObject {
         case .stairs: (.stairs, [1.20, 1.20, 2.00])
         case .wall, .stage, .crate, .lightPanel, .plant, .floorLamp,
              .rug, .backdrop, .custom: nil
+        default: nil
         }
     }
 
@@ -1893,6 +2415,8 @@ final class ARSessionController: NSObject, ObservableObject {
              .refrigerator, .oven, .stove, .sink, .bathtub, .toilet,
              .washerDryer, .stairs, .custom:
             preconditionFailure("USDZ assets are loaded through the library path")
+        default:
+            preconditionFailure("Photoreal USDZ assets are loaded asynchronously")
         }
     }
 
@@ -2087,8 +2611,11 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             assetLoadSubscriptions[descriptor.id] = nil
             renderedEntities[descriptor.id]?.parent?.removeFromParent()
             renderedEntities[descriptor.id] = nil
+            renderedLights[descriptor.id] = nil
+            renderedLightEmitters[descriptor.id] = nil
             if selectedEntityID == descriptor.id {
                 selectedEntityID = nil
+                selectedLightSettings = nil
             }
         }
     }
@@ -2452,6 +2979,46 @@ final class BundledRoomRealityAssetProvider: RoomRealityAssetProviding {
 
         return result
     }
+
+    /// Loads a catalog model without replacing its authored PBR materials.
+    /// A uniform fit preserves the real object's proportions while keeping its
+    /// largest dimension inside the verified metre-sized mobile AR envelope.
+    func makePhotorealEntity(
+        assetName: String,
+        maximumDimensions: SIMD3<Float>
+    ) -> Entity? {
+        guard Self.isValidTargetDimensions(maximumDimensions),
+              let prototype = prototype(named: assetName) else { return nil }
+
+        let ratios = maximumDimensions / prototype.extents
+        let uniformScale = min(ratios.x, ratios.y, ratios.z)
+        guard uniformScale.isFinite,
+              uniformScale >= Self.minimumFitScale,
+              uniformScale <= Self.maximumFitScale else { return nil }
+
+        let clone = prototype.entity.clone(recursive: true)
+        clone.name = "cinear.photoreal.model.\(assetName)"
+
+        let centeredRoot = Entity()
+        centeredRoot.name = "cinear.photoreal.centered.\(assetName)"
+        centeredRoot.addChild(clone)
+        centeredRoot.position = -prototype.center
+
+        let fittedRoot = Entity()
+        fittedRoot.name = "cinear.photoreal.fitted.\(assetName)"
+        fittedRoot.addChild(centeredRoot)
+        fittedRoot.scale = SIMD3(repeating: uniformScale)
+
+        let result = Entity()
+        result.name = "cinear.photoreal.\(assetName)"
+        result.addChild(fittedRoot)
+        let bounds = result.visualBounds(
+            recursive: true,
+            relativeTo: result,
+            excludeInactive: true
+        )
+        return Self.isValidBounds(bounds) ? result : nil
+    }
 }
 
 private extension BundledRoomRealityAssetProvider {
@@ -2752,10 +3319,15 @@ struct ContentView: View {
                     Spacer()
                     if session.isPlacingProp {
                         placementBar
-                    } else if controlsExpanded {
-                        controls
                     } else {
-                        compactControls
+                        if session.selectedLightSettings != nil {
+                            lightControls
+                        }
+                        if controlsExpanded {
+                            controls
+                        } else {
+                            compactControls
+                        }
                     }
                 }
                 .padding()
@@ -3013,6 +3585,108 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: Capsule())
     }
 
+    private var lightControls: some View {
+        VStack(spacing: 9) {
+            HStack {
+                Label("Sanal Işık", systemImage: "lightbulb.max.fill")
+                    .font(.subheadline.weight(.bold))
+                Spacer()
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { session.selectedLightSettings?.isEnabled ?? false },
+                        set: { session.setSelectedLightEnabled($0) }
+                    )
+                )
+                .labelsHidden()
+            }
+
+            if let settings = session.selectedLightSettings {
+                lightSliderRow(
+                    title: "Güç",
+                    valueText: "\(Int(settings.intensityLumens)) lm",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.intensityLumens ?? 1_600) },
+                        set: { session.setSelectedLightIntensity(Float($0)) }
+                    ),
+                    range: 0...12_000,
+                    step: 100
+                )
+                lightSliderRow(
+                    title: "Sıcaklık",
+                    valueText: "\(Int(settings.temperatureKelvin)) K",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.temperatureKelvin ?? 4_200) },
+                        set: { session.setSelectedLightTemperature(Float($0)) }
+                    ),
+                    range: 2_000...6_500,
+                    step: 100
+                )
+                lightSliderRow(
+                    title: "Yatay yön",
+                    valueText: "\(Int(settings.effectiveYawDegrees))°",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.effectiveYawDegrees ?? 0) },
+                        set: { session.setSelectedLightYaw(Float($0)) }
+                    ),
+                    range: -180...180,
+                    step: 1
+                )
+                lightSliderRow(
+                    title: "Dikey eğim",
+                    valueText: "\(Int(settings.effectiveTiltDegrees))°",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.effectiveTiltDegrees ?? 0) },
+                        set: { session.setSelectedLightTilt(Float($0)) }
+                    ),
+                    range: -75...75,
+                    step: 1
+                )
+                lightSliderRow(
+                    title: "Hüzme genişliği",
+                    valueText: "\(Int(settings.coneAngleDegrees))°",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.coneAngleDegrees ?? 72) },
+                        set: { session.setSelectedLightConeAngle(Float($0)) }
+                    ),
+                    range: 15...120,
+                    step: 1
+                )
+            }
+
+            Text("Bu ışık yalnızca sanal dekorları etkiler; gerçek kamera görüntüsü değiştirilmez.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func lightSliderRow(
+        title: String,
+        valueText: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double
+    ) -> some View {
+        VStack(spacing: 2) {
+            HStack {
+                Text(title).font(.caption.weight(.semibold))
+                Spacer()
+                Text(valueText).font(.caption.monospacedDigit())
+            }
+            Slider(
+                value: value,
+                in: range,
+                step: step,
+                onEditingChanged: { isEditing in
+                    if !isEditing { session.persistSelectedLightSettings() }
+                }
+            )
+        }
+    }
+
     private func compactButton(
         _ title: String,
         _ icon: String,
@@ -3037,7 +3711,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(session.selectedProp.title) yerleştir")
                     .font(.subheadline.weight(.bold))
-                Text("Yeşil takipte algılanmış zemine veya duvara dokun")
+                Text(placementPrompt)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -3050,35 +3724,63 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
+    private var placementPrompt: String {
+        switch session.selectedProp.placementSurface {
+        case .floor: "Yeşil takipte taranmış zemine dokun"
+        case .horizontal: "Yeşil takipte zemine veya yatay yüzeye dokun"
+        case .wall: "Yeşil takipte taranmış duvara dokun"
+        case .ceiling: "Telefonu yukarı çevirip taranmış tavana dokun"
+        }
+    }
+
     private var propLibrary: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3),
-                    spacing: 10
-                ) {
-                    ForEach(PropKind.furnitureCases) { prop in
-                        Button {
-                            session.selectProp(prop)
-                            showingPropLibrary = false
-                        } label: {
-                            VStack(spacing: 6) {
-                                Text(prop.symbol).font(.largeTitle)
-                                Text(prop.title)
-                                    .font(.caption.weight(.semibold))
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.75)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 92)
-                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                VStack(alignment: .leading, spacing: 18) {
+                    ForEach(PropLibraryCategory.allCases) { category in
+                        let props = PropKind.photorealCases.filter {
+                            $0.photorealDescriptor?.category == category
                         }
-                        .buttonStyle(.plain)
+                        if !props.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(category.title)
+                                    .font(.headline)
+                                LazyVGrid(
+                                    columns: Array(
+                                        repeating: GridItem(.flexible(), spacing: 10),
+                                        count: 3
+                                    ),
+                                    spacing: 10
+                                ) {
+                                    ForEach(props) { prop in
+                                        Button {
+                                            session.selectProp(prop)
+                                            showingPropLibrary = false
+                                        } label: {
+                                            VStack(spacing: 6) {
+                                                Text(prop.symbol).font(.largeTitle)
+                                                Text(prop.title)
+                                                    .font(.caption.weight(.semibold))
+                                                    .lineLimit(2)
+                                                    .minimumScaleFactor(0.75)
+                                                    .multilineTextAlignment(.center)
+                                            }
+                                            .frame(maxWidth: .infinity, minHeight: 92)
+                                            .background(
+                                                .thinMaterial,
+                                                in: RoundedRectangle(cornerRadius: 14)
+                                            )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 .padding()
             }
-            .navigationTitle("3B Nesne Kütüphanesi")
+            .navigationTitle("30 Gerçekçi 3B Nesne")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -3589,8 +4291,47 @@ final class ProfessionalRecorder {
 
 ````swift
 import Foundation
+import simd
+
+enum PropPlacementSurface: String, Codable {
+    case floor
+    case horizontal
+    case wall
+    case ceiling
+}
+
+enum PropLibraryCategory: String, CaseIterable, Identifiable {
+    case furniture
+    case storage
+    case equipment
+    case wall
+    case lighting
+    case electronics
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .furniture: "Mobilya"
+        case .storage: "Depolama"
+        case .equipment: "Ekipman"
+        case .wall: "Duvar"
+        case .lighting: "Işık"
+        case .electronics: "Elektronik"
+        }
+    }
+}
+
+struct PhotorealPropDescriptor {
+    let assetName: String
+    let dimensions: SIMD3<Float>
+    let surface: PropPlacementSurface
+    let category: PropLibraryCategory
+    let emitsLight: Bool
+}
 
 enum PropKind: String, CaseIterable, Identifiable, Codable {
+    // Lightweight legacy props remain decodable so existing saved scenes still load.
     case wall
     case stage
     case crate
@@ -3615,6 +4356,38 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case backdrop
     case custom
 
+    // Curated Poly Haven CC0 photoreal catalog (30 objects).
+    case metalOfficeDesk
+    case schoolChair
+    case schoolDesk
+    case metalTrashCan
+    case cardboardBox
+    case plasticCrate
+    case woodenCrate
+    case blueBarrel
+    case handTruck
+    case drawerCabinet
+    case filingCabinet
+    case steelShelves
+    case toolChest
+    case plasticChair
+    case woodenStool
+    case wetFloorSign
+    case fireExtinguisher
+    case securityCamera
+    case powerBox
+    case payphone
+    case wallClock
+    case cagedCeilingLight
+    case industrialPendant
+    case ceilingFan
+    case industrialWallLamp
+    case cagedWallLight
+    case deskLamp
+    case classicLaptop
+    case crtTelevision
+    case boombox
+
     var id: String { rawValue }
 
     var title: String {
@@ -3622,7 +4395,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .wall: "Duvar"
         case .stage: "Platform"
         case .crate: "Kasa"
-        case .lightPanel: "Işık"
+        case .lightPanel: "Işık Paneli"
         case .chair: "Sandalye"
         case .table: "Masa"
         case .sofa: "Koltuk"
@@ -3642,6 +4415,36 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .rug: "Halı"
         case .backdrop: "Fon Perdesi"
         case .custom: "USDZ"
+        case .metalOfficeDesk: "Metal Ofis Masası"
+        case .schoolChair: "Okul Sandalyesi"
+        case .schoolDesk: "Okul Sırası"
+        case .metalTrashCan: "Metal Çöp Kutuları"
+        case .cardboardBox: "Yıpranmış Koli"
+        case .plasticCrate: "Plastik Kasa"
+        case .woodenCrate: "Ahşap Kasa"
+        case .blueBarrel: "Depo Varili"
+        case .handTruck: "Yük Arabası"
+        case .drawerCabinet: "Raflı Çekmeceli Dolap"
+        case .filingCabinet: "Vintage Çekmeceli Dolap"
+        case .steelShelves: "Çelik Raf"
+        case .toolChest: "Takım Sandığı"
+        case .plasticChair: "Plastik Sandalye"
+        case .woodenStool: "Ahşap Tabure"
+        case .wetFloorSign: "Islak Zemin Tabelası"
+        case .fireExtinguisher: "Yangın Tüpü"
+        case .securityCamera: "Güvenlik Kamerası"
+        case .powerBox: "Elektrik Panosu"
+        case .payphone: "Eski Ankesörlü Telefon"
+        case .wallClock: "Duvar Saati"
+        case .cagedCeilingLight: "Kafesli Tavan Işığı"
+        case .industrialPendant: "Endüstriyel Sarkıt"
+        case .ceilingFan: "Tavan Vantilatörü"
+        case .industrialWallLamp: "Endüstriyel Duvar Işığı"
+        case .cagedWallLight: "Kafesli Duvar Işığı"
+        case .deskLamp: "Masa Lambası"
+        case .classicLaptop: "Klasik Dizüstü"
+        case .crtTelevision: "Tüplü Televizyon"
+        case .boombox: "Kasetçalar"
         }
     }
 
@@ -3649,14 +4452,15 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .wall: "🧱"
         case .stage: "🎬"
-        case .crate: "📦"
-        case .lightPanel: "💡"
-        case .chair: "🪑"
-        case .table: "🍽️"
+        case .crate, .cardboardBox, .plasticCrate, .woodenCrate: "📦"
+        case .lightPanel, .cagedCeilingLight, .industrialPendant,
+             .industrialWallLamp, .cagedWallLight, .deskLamp: "💡"
+        case .chair, .schoolChair, .plasticChair: "🪑"
+        case .table, .metalOfficeDesk, .schoolDesk: "🗄️"
         case .sofa: "🛋️"
         case .bed: "🛏️"
-        case .bookcase: "📚"
-        case .television: "📺"
+        case .bookcase, .steelShelves: "📚"
+        case .television, .crtTelevision: "📺"
         case .refrigerator: "🧊"
         case .oven: "♨️"
         case .stove: "🍳"
@@ -3670,16 +4474,117 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .rug: "🟫"
         case .backdrop: "🎞️"
         case .custom: "🎭"
+        case .metalTrashCan: "🗑️"
+        case .blueBarrel: "🛢️"
+        case .handTruck: "🛒"
+        case .drawerCabinet, .filingCabinet: "🗃️"
+        case .toolChest: "🧰"
+        case .woodenStool: "🪵"
+        case .wetFloorSign: "⚠️"
+        case .fireExtinguisher: "🧯"
+        case .securityCamera: "📹"
+        case .powerBox: "⚡"
+        case .payphone: "☎️"
+        case .wallClock: "🕒"
+        case .ceilingFan: "🌀"
+        case .classicLaptop: "💻"
+        case .boombox: "📻"
         }
     }
 
     static let quickCases: [PropKind] = [.wall, .stage, .crate, .lightPanel, .custom]
+    static let furnitureCases: [PropKind] = photorealCases
 
-    static let furnitureCases: [PropKind] = [
-        .chair, .table, .sofa, .bed, .bookcase, .television, .refrigerator,
-        .oven, .stove, .sink, .bathtub, .toilet, .washerDryer, .stairs,
-        .plant, .floorLamp, .rug, .backdrop
+    static let photorealCases: [PropKind] = [
+        .metalOfficeDesk, .schoolChair, .schoolDesk, .metalTrashCan,
+        .cardboardBox, .plasticCrate, .woodenCrate, .blueBarrel,
+        .handTruck, .drawerCabinet, .filingCabinet, .steelShelves,
+        .toolChest, .plasticChair, .woodenStool, .wetFloorSign,
+        .fireExtinguisher, .securityCamera, .powerBox, .payphone,
+        .wallClock, .cagedCeilingLight, .industrialPendant, .ceilingFan,
+        .industrialWallLamp, .cagedWallLight, .deskLamp, .classicLaptop,
+        .crtTelevision, .boombox
     ]
+
+    var photorealDescriptor: PhotorealPropDescriptor? {
+        switch self {
+        case .metalOfficeDesk:
+            .init(assetName: "metal_office_desk", dimensions: [1.50, 0.76, 0.75], surface: .floor, category: .furniture, emitsLight: false)
+        case .schoolChair:
+            .init(assetName: "SchoolChair_01", dimensions: [0.48, 0.84, 0.52], surface: .floor, category: .furniture, emitsLight: false)
+        case .schoolDesk:
+            .init(assetName: "SchoolDesk_01", dimensions: [0.66, 0.78, 0.55], surface: .floor, category: .furniture, emitsLight: false)
+        case .metalTrashCan:
+            .init(assetName: "metal_trash_can", dimensions: [1.35, 0.65, 0.45], surface: .floor, category: .storage, emitsLight: false)
+        case .cardboardBox:
+            .init(assetName: "cardboard_box_01", dimensions: [0.45, 0.40, 0.58], surface: .horizontal, category: .storage, emitsLight: false)
+        case .plasticCrate:
+            .init(assetName: "plastic_crate_02", dimensions: [0.60, 0.34, 0.40], surface: .horizontal, category: .storage, emitsLight: false)
+        case .woodenCrate:
+            .init(assetName: "wooden_crate_02", dimensions: [0.55, 0.48, 1.15], surface: .horizontal, category: .storage, emitsLight: false)
+        case .blueBarrel:
+            .init(assetName: "Barrel_02", dimensions: [0.58, 0.90, 0.58], surface: .floor, category: .storage, emitsLight: false)
+        case .handTruck:
+            .init(assetName: "hand_truck", dimensions: [0.55, 1.30, 0.65], surface: .floor, category: .equipment, emitsLight: false)
+        case .drawerCabinet:
+            .init(assetName: "drawer_cabinet", dimensions: [0.90, 1.50, 0.50], surface: .floor, category: .storage, emitsLight: false)
+        case .filingCabinet:
+            .init(assetName: "vintage_wooden_drawer_01", dimensions: [0.86, 0.55, 0.46], surface: .floor, category: .storage, emitsLight: false)
+        case .steelShelves:
+            .init(assetName: "steel_frame_shelves_01", dimensions: [1.20, 1.84, 0.46], surface: .floor, category: .storage, emitsLight: false)
+        case .toolChest:
+            .init(assetName: "metal_tool_chest", dimensions: [0.76, 0.52, 0.46], surface: .horizontal, category: .equipment, emitsLight: false)
+        case .plasticChair:
+            .init(assetName: "plastic_monobloc_chair_01", dimensions: [0.56, 0.84, 0.58], surface: .floor, category: .furniture, emitsLight: false)
+        case .woodenStool:
+            .init(assetName: "wooden_stool_01", dimensions: [0.39, 0.46, 0.39], surface: .floor, category: .furniture, emitsLight: false)
+        case .wetFloorSign:
+            .init(assetName: "WetFloorSign_01", dimensions: [0.38, 0.62, 0.32], surface: .floor, category: .equipment, emitsLight: false)
+        case .fireExtinguisher:
+            .init(assetName: "korean_fire_extinguisher_01", dimensions: [0.25, 0.58, 0.30], surface: .floor, category: .equipment, emitsLight: false)
+        case .securityCamera:
+            .init(assetName: "security_camera_01", dimensions: [0.27, 0.20, 0.36], surface: .wall, category: .wall, emitsLight: false)
+        case .powerBox:
+            .init(assetName: "power_box_01", dimensions: [0.46, 0.66, 0.21], surface: .wall, category: .wall, emitsLight: false)
+        case .payphone:
+            .init(assetName: "korean_public_payphone_01", dimensions: [0.31, 0.55, 0.29], surface: .wall, category: .wall, emitsLight: false)
+        case .wallClock:
+            .init(assetName: "wall_clock", dimensions: [0.39, 0.39, 0.07], surface: .wall, category: .wall, emitsLight: false)
+        case .cagedCeilingLight:
+            .init(assetName: "caged_hanging_light", dimensions: [1.10, 0.72, 0.35], surface: .ceiling, category: .lighting, emitsLight: true)
+        case .industrialPendant:
+            .init(assetName: "hanging_industrial_lamp", dimensions: [0.55, 1.35, 0.55], surface: .ceiling, category: .lighting, emitsLight: true)
+        case .ceilingFan:
+            .init(assetName: "ceiling_fan", dimensions: [1.30, 0.46, 1.30], surface: .ceiling, category: .equipment, emitsLight: false)
+        case .industrialWallLamp:
+            .init(assetName: "industrial_wall_lamp", dimensions: [0.30, 0.44, 0.34], surface: .wall, category: .lighting, emitsLight: true)
+        case .cagedWallLight:
+            .init(assetName: "industrial_wall_sconce", dimensions: [0.28, 0.42, 0.32], surface: .wall, category: .lighting, emitsLight: true)
+        case .deskLamp:
+            .init(assetName: "desk_lamp_arm_01", dimensions: [0.34, 0.72, 0.46], surface: .horizontal, category: .lighting, emitsLight: true)
+        case .classicLaptop:
+            .init(assetName: "classic_laptop", dimensions: [0.38, 0.32, 0.30], surface: .horizontal, category: .electronics, emitsLight: false)
+        case .crtTelevision:
+            .init(assetName: "television_02", dimensions: [0.58, 0.48, 0.48], surface: .horizontal, category: .electronics, emitsLight: false)
+        case .boombox:
+            .init(assetName: "boombox", dimensions: [0.52, 0.31, 0.23], surface: .horizontal, category: .electronics, emitsLight: false)
+        default:
+            nil
+        }
+    }
+
+    var placementSurface: PropPlacementSurface {
+        if let surface = photorealDescriptor?.surface { return surface }
+        switch self {
+        case .wall, .lightPanel, .backdrop: .wall
+        case .custom: .horizontal
+        default: .floor
+        }
+    }
+
+    var emitsVirtualLight: Bool {
+        photorealDescriptor?.emitsLight == true || self == .lightPanel || self == .floorLamp
+    }
 
     var bundledAssetName: String? {
         switch self {
@@ -3697,8 +4602,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .toilet: "toilet"
         case .washerDryer: "washerDryerStacked"
         case .stairs: "stairs"
-        case .wall, .stage, .crate, .lightPanel, .plant, .floorLamp,
-             .rug, .backdrop, .custom: nil
+        default: nil
         }
     }
 
@@ -3710,7 +4614,11 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
 
     static func from(anchorName: String?) -> PropKind? {
         guard let anchorName else { return nil }
-        return allCases.first { anchorName.hasPrefix($0.anchorName) }
+        let parts = anchorName.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 4,
+              parts[0] == "cinear",
+              parts[1] == "prop" else { return nil }
+        return PropKind(rawValue: String(parts[2]))
     }
 
     static func descriptor(from anchorName: String?) -> (kind: PropKind, id: UUID)? {
@@ -3982,23 +4890,106 @@ files with Blender 4.5.0. Geometry and materials remain derived from the CC0
 source models.
 ````
 
+## `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt`
+
+````text
+Poly Haven Photoreal Prop Collection for CineAR
+
+Source catalog: https://polyhaven.com/models
+License: Creative Commons Zero (CC0 1.0 Universal)
+License page: https://polyhaven.com/license
+
+Poly Haven publishes these assets as public domain material. They may be used,
+modified, redistributed, and included in commercial applications without
+attribution. CineAR keeps this notice for provenance and reproducibility.
+
+The bundled USDZ files were generated from the official 1K glTF downloads with
+Blender 4.5 LTS. Textures are capped at 1024 px for predictable iPhone memory use.
+
+Included Poly Haven asset IDs (30):
+
+metal_office_desk
+SchoolChair_01
+SchoolDesk_01
+metal_trash_can
+cardboard_box_01
+plastic_crate_02
+wooden_crate_02
+Barrel_02
+hand_truck
+drawer_cabinet
+vintage_wooden_drawer_01
+steel_frame_shelves_01
+metal_tool_chest
+plastic_monobloc_chair_01
+wooden_stool_01
+WetFloorSign_01
+korean_fire_extinguisher_01
+security_camera_01
+power_box_01
+korean_public_payphone_01
+wall_clock
+caged_hanging_light
+hanging_industrial_lamp
+ceiling_fan
+industrial_wall_lamp
+industrial_wall_sconce
+desk_lamp_arm_01
+classic_laptop
+television_02
+boombox
+
+Individual source pages follow the form:
+https://polyhaven.com/a/<asset-id>
+````
+
 ## `CineAR/RoomAssets/MANIFEST.sha256`
 
 ````text
+db44c3823a4313fcb39cc3363de427390b1126dbfccbaede42dfc4c62cc832fe  Barrel_02.usdz
 2de87dbd39ec292d8575aaf526160310ac090659d6cba1fb0b9d7b231f0cc643  bathroomSink.usdz
 3a24cebb0eac7b5dbf190958aeda8e3599b38a9d51c826cf349f703a2c44ce53  bathtub.usdz
 c658a28c0afb73daa53330d9747f0651056f172f990df8acecf29003511d0297  bedDouble.usdz
 39d09d860911c9e51a807d33607cec97eb314929c717e848956175ab0f0e2e7f  bookcaseClosedWide.usdz
+23d131aee04991d1b89989b6d74e2e769b70aca2d1cdd17a990e768019310e0b  boombox.usdz
+b4834b13750c18ee2ba3da62fe4392257f66d06330b47966b42c316d0e227025  caged_hanging_light.usdz
+f0968ac22285b3d7a9af0bfbe4576dc2f9074378dcfbbd2ec093064f9a5e48b0  cardboard_box_01.usdz
+f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d  ceiling_fan.usdz
 11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e  chairModernCushion.usdz
+f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145  classic_laptop.usdz
+6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a  desk_lamp_arm_01.usdz
+351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68  drawer_cabinet.usdz
+fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486  hand_truck.usdz
+abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937  hanging_industrial_lamp.usdz
+41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9  industrial_wall_lamp.usdz
+c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee  industrial_wall_sconce.usdz
 a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7  kitchenFridge.usdz
 b8162bd10dd56e6936cd0f4035a7cfe158f9ea46bd11c14c0b8e1f5e5121da68  kitchenStove.usdz
 b6607fcdfb518b204779961d1fb87a138436236a64438a81c6fcdcdc5606b4ba  kitchenStoveElectric.usdz
+0f329ca78bfbb62c158761c8b28bbc78a03481f0987ddeff60820f427810af4a  korean_fire_extinguisher_01.usdz
+e25b910f745ebfa2e27bc4ac3a88fd87c9b8707be76290121916377e3b076a72  korean_public_payphone_01.usdz
 e1ff365a2245f802cd0c31f6972927d8b3a82a4356a46a1f525e79d58558d3ad  loungeDesignSofa.usdz
+8e54007f0ddd27d5173e7f4931cdd5792322f6fe39143cfa3bfa5e98ab944511  metal_office_desk.usdz
+ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba  metal_tool_chest.usdz
+d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871  metal_trash_can.usdz
+c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9  plastic_crate_02.usdz
+6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a  plastic_monobloc_chair_01.usdz
+247cb86f3662b3cdc532229875c3e2ac56d986d5044b967cc51e9499d6fb60a0  power_box_01.usdz
+738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6  SchoolChair_01.usdz
+b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596  SchoolDesk_01.usdz
+ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a  security_camera_01.usdz
 683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b  stairs.usdz
+a809a38664d4e8a65bb067d89a9f74985c1bc24c297b855fa14af4eed807700b  steel_frame_shelves_01.usdz
 2e84220a7d8db7ca03254c303be3f017ed5c07a080e86f9d94b15a18688af6d0  table.usdz
+dc44f800926690dc281aed2f7fccb9340d70e253395c26ee59a80af3e097eaea  television_02.usdz
 a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819  televisionModern.usdz
 b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9  toilet.usdz
+e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe  vintage_wooden_drawer_01.usdz
+9b83332d0db22eab9b514ee5a727acad1d846545785f763c558786e5bc165767  wall_clock.usdz
 76d9e6d877d7003c51a503a1c6f890a7b85e9430363daa01f65a2cbb8fd72a16  washerDryerStacked.usdz
+080f512792bcbfdaf913200c3b1e3f1a162c46b16d1ab655ae1b965617c74601  WetFloorSign_01.usdz
+842aedb3aa03d4fa34d5e78eb6e7cdf67a2e0da8a26d389b05181bfc494bee8b  wooden_crate_02.usdz
+56fe820ab98f0bad3ba2fdaef340dd9a015b8020802b4859172d343445dba69f  wooden_stool_01.usdz
 ````
 
 ## `CineAR/RoomRealityRenderer.swift`
@@ -4547,6 +5538,11 @@ final class RoomRealityRenderer {
         guard url.isFileURL else { throw RoomRealityRendererError.roomFileIsNotLocal }
         let data = try Data(contentsOf: url, options: [.mappedIfSafe])
         return try JSONDecoder().decode(CapturedRoom.self, from: data)
+    }
+
+    func inferredCeilingLevel(roomJSONURL: URL) throws -> Float? {
+        let room = try Self.loadRoomJSON(from: roomJSONURL)
+        return inferredCeilingY(walls: room.walls, floors: room.floors)
     }
 
     static func saveRoomJSON(_ room: CapturedRoom, to url: URL) throws {
@@ -6677,7 +7673,7 @@ import RealityKit
 import simd
 
 struct SceneProject: Codable {
-    static let currentVersion = 2
+    static let currentVersion = 3
 
     var version = currentVersion
     var name = "Ana Set"
@@ -6692,6 +7688,40 @@ struct PlacementRecord: Codable, Identifiable {
     let kind: PropKind
     var assetFileName: String?
     var transform: StoredTransform
+    var lightSettings: VirtualLightSettings? = nil
+}
+
+struct VirtualLightSettings: Codable, Equatable {
+    static let defaultFixture = VirtualLightSettings(
+        isEnabled: true,
+        intensityLumens: 1_600,
+        temperatureKelvin: 4_200,
+        coneAngleDegrees: 72,
+        yawDegrees: 0,
+        tiltDegrees: 0
+    )
+
+    var isEnabled: Bool
+    var intensityLumens: Float
+    var temperatureKelvin: Float
+    var coneAngleDegrees: Float
+    // Optional for forward compatibility with version-3 scenes created before
+    // steerable fixtures were introduced.
+    var yawDegrees: Float?
+    var tiltDegrees: Float?
+
+    var effectiveYawDegrees: Float { yawDegrees ?? 0 }
+    var effectiveTiltDegrees: Float { tiltDegrees ?? 0 }
+
+    var isValid: Bool {
+        let yawIsValid = yawDegrees.map { $0.isFinite && (-180...180).contains($0) } ?? true
+        let tiltIsValid = tiltDegrees.map { $0.isFinite && (-75...75).contains($0) } ?? true
+        return intensityLumens.isFinite && (0...12_000).contains(intensityLumens)
+            && temperatureKelvin.isFinite && (2_000...6_500).contains(temperatureKelvin)
+            && coneAngleDegrees.isFinite && (15...120).contains(coneAngleDegrees)
+            && yawIsValid
+            && tiltIsValid
+    }
 }
 
 struct StoredWorldMapSnapshot {
@@ -6738,6 +7768,7 @@ enum SceneProjectStoreError: LocalizedError {
     case missingPlacement(UUID)
     case invalidAssetFileName(String)
     case unsupportedAssetType
+    case invalidLightSettings(UUID)
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
@@ -6756,6 +7787,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Geçersiz 3B model dosya adı: \(name)"
         case .unsupportedAssetType:
             "Yalnızca USDZ dosyaları içe aktarılabilir"
+        case .invalidLightSettings(let id):
+            "\(id.uuidString) kimlikli ışık ayarları geçersiz"
         case .worldMapOutOfDate:
             "Sahne son harita kaydından sonra değişmiş; önce yeniden Kaydet'e dokunun"
         case .worldMapChecksumMismatch:
@@ -6870,6 +7903,18 @@ final class SceneProjectStore {
                 }
                 candidate.placements[index].transform = StoredTransform(transform)
             }
+        }
+    }
+
+    func updateLightSettings(id: UUID, settings: VirtualLightSettings) throws {
+        try commit(invalidateWorldMap: false) { candidate in
+            guard let index = candidate.placements.firstIndex(where: { $0.id == id }) else {
+                throw SceneProjectStoreError.missingPlacement(id)
+            }
+            guard candidate.placements[index].kind.emitsVirtualLight, settings.isValid else {
+                throw SceneProjectStoreError.invalidLightSettings(id)
+            }
+            candidate.placements[index].lightSettings = settings
         }
     }
 
@@ -6998,6 +8043,11 @@ final class SceneProjectStore {
                     throw SceneProjectStoreError.invalidAssetFileName(
                         placement.assetFileName ?? "(eksik)"
                     )
+                }
+            }
+            if let lightSettings = placement.lightSettings {
+                guard placement.kind.emitsVirtualLight, lightSettings.isValid else {
+                    throw SceneProjectStoreError.invalidLightSettings(placement.id)
                 }
             }
         }
@@ -7277,37 +8327,45 @@ incelemesine uygulama gondermesi mumkun degildir.
 5. Kasa'yi sec. Alt panel otomatik kapanmali; once zeminin panelin daha once kapattigi
    alt bolgesine, sonra orta ve uzak bolgesine dokun. Her dokunusta kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
-6. Hazir 3B Nesne Kutuphanesi'nden sandalye, masa, koltuk, yatak ve iki cihaz secip
-   yerlestir. Boyutlar gercekci olmali ve modeller zeminin altina gomulmemeli.
-   Ozellikle `Kitaplik` seciminde hata mesaji cikmamali. USDZ bundle yuklemesi yapay
-   olarak basarisiz kilindiginda kategoriye uygun prosedurel yedek yine gorunmeli.
+6. 30 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Duvar, Isik ve
+   Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
+   gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
-7. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
+7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
+   kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
+   dogru yuzeyi buldugunu; RoomPlan kaydindan sonra uzak zemin ve tavan noktalarinda
+   kayitli duzlem yedeginin calistigini dogrula.
+8. Tavan veya duvar isigini sec. `Sanal Isik` panelinde ac/kapat, 0-12000 lumen,
+   2000-6500 K, yatay yon, dikey egim ve 15-120 derece huzme kontrollerini uctan
+   uca degistir. Isik hedefinin hem saga-sola hem yukari-asagi dondugunu dogrula.
+   Gercek kamera pikselleri degismemeli; sanal dekorlardaki aydinlanma ve golge
+   degismeli. Kaydet, uygulamayi kapat, yukle ve ayni degerlerin geri geldigini dogrula.
+9. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
    uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
    acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
    hazir oldugunda ayni dokunus nesneyi zemine sabitlemeli. RoomPlan taramasi
    tamamlandiktan sonra ARKit'in ayri bir plane anchor uretmedigi uzak zemin
    noktalarinda da kayitli zemin seviyesiyle yerlestirme calismali.
-8. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
+10. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
    golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula.
-9. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
+11. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
    olceklendirme calismali. Donus/olcek sonrasinda projeyi kaydet.
-10. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
+12. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
     kapat, ayni alanda ac ve projeyi yukle; dekor anchor'i otomatik kayitla gelmeli.
     Ayrica yeni tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilmali.
-11. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
+13. Relocalization tamamlandiktan sonra dekorlarin referans isaretlerine gore
    konum farkini olc.
-12. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
+14. Bir oyuncuyu sanal dekorun onunden ve arkasindan gecir; `Gercek` ve `Beyaz Hatlar`
    modlarinda insan derinlik maskesinin acik kaldigini ve kenar hatalarini kaydet.
    RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
-13. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
-14. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
+15. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
+16. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
-15. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-16. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+17. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+18. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
@@ -7397,16 +8455,22 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
-- 14 yerlesik CC0 USDZ model ile bitki, ayakli lamba, hali ve fon dahil 18 hazir dekor
+- Poly Haven kaynakli 1K PBR dokulu 30 fotogercekci CC0 USDZ dekor; mobilya,
+  depolama, ekipman, duvar/tavan elemanlari, aydinlatma ve elektronik kategorileri
+- Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
+- Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
+- Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
+  sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim ve
+  15-120 derece huzme genisligi; sanal isik yalnizca sanal dekorlari etkiler
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
-- LiDAR scene-understanding collision ve kayitli RoomPlan zemin seviyesi sayesinde
-  taranmis zeminin tamaminda kararli yerlestirme
+- LiDAR scene-understanding collision ile kayitli RoomPlan zemin/tavan seviyeleri
+  sayesinde taranmis alanin tamaminda kararli yerlestirme
 - RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
@@ -7428,18 +8492,21 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
-   `Hazir 3B Nesne Kutuphanesi` icindeki 18 parcadan
+   `Hazir 3B Nesne Kutuphanesi` icindeki 30 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
-7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken algilanmis zemine
-   dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
-   koymaz; zemini yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
-   kayitli zemin duzlemi tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
+7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken nesnenin istedigi
+   zemine, yatay yuzeye, duvara veya tavana dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
+   koymaz; hedef yuzeyi yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
+   kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
    modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
-8. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
+8. Bir lamba yerlestirildiginde veya tekrar secildiginde `Sanal Isik` panelinden
+   guc, renk sicakligi, koni acisi ve acik/kapali durumu degistirilebilir. Bu isik
+   kamera pikselini degil, yalnizca RealityKit dekorlarini ve onlarin golgelerini etkiler.
+9. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
    degilse istek siraya alinir ve otomatik tamamlanir.
-9. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
+10. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
 
 ## Proje dosyalari
@@ -7455,7 +8522,7 @@ CineARProjects/MainSet/
   Recordings/*.mov
 ```
 
-`scene.json`, dekor kimliklerini ve yerel transformlarini; `room.json`, RoomPlan'in
+`scene.json`, dekor kimliklerini, yerel transformlarini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
 haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama
@@ -7470,14 +8537,14 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde Kenney Furniture Kit'ten donusturulmus 14 CC0 USDZ model ve cihazda
-uretilen 4 hafif dekor (bitki, ayakli lamba, hali, fon perdesi) vardir.
-Modeller kullanici tarafindan kutuphaneden secilir, gercekci metre boyutlarina
-normalize edilir ve zemine oturtulur. Kaynak/lisans `CineAR/RoomAssets/LICENSE-KENNEY.txt`,
-tekrar uretim ve dogrulama araclari `Tools/` altindadir. Bu yerlesik paket mobil
-uyumlu low-poly kutuphanedir; fotogercekci, 2K/4K dokulu profesyonel set paketi
-degildir. `RoomRealityAssetProviding`, sonraki lisansli/fotogercekci USDZ kataloglarini
-ayni rollere takmak icin hazirdir. Eski opak oda tema renderer'i kaynakta deneysel
+Bu surumde Poly Haven'dan donusturulmus 30 CC0, 1K PBR USDZ model vardir.
+Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
+boyutlarina normalize edilir ve kendi yuzey turune oturtulur. Eski projeler icin
+Kenney Furniture Kit'ten 14 CC0 USDZ ve 4 hafif dekor kaynakta korunur.
+Kaynak/lisans `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` ve
+`CineAR/RoomAssets/LICENSE-KENNEY.txt`, tekrar uretim/dogrulama araclari `Tools/`
+altindadir. 1K doku siniri mobil bellek ve yukleme gecikmesini kontrol altinda tutar;
+2K/4K masaustu VFX paketi hedeflenmemistir. Eski opak oda tema renderer'i kaynakta deneysel
 olarak korunur; ana arayuzde onun yerine akici `Gercek` / `Beyaz Hatlar` gecisi vardir.
 Kamera goruntusundeki gercek mobilyayi yapay
 zekayla silip arka plani tamamlama (video inpainting) bu surumde yoktur; sanal
@@ -7612,6 +8679,247 @@ if __name__ == "__main__":
     main()
 ````
 
+## `Tools/convert_polyhaven_to_usdz.py`
+
+````python
+"""Convert CineAR's curated Poly Haven CC0 glTF props to mobile USDZ.
+
+Run with Blender 4.5 or newer:
+  blender --background --factory-startup --python Tools/convert_polyhaven_to_usdz.py -- \
+    ".asset-cache/polyhaven" "CineAR/RoomAssets"
+"""
+
+from pathlib import Path
+import sys
+
+import bpy
+
+
+ASSET_IDS = (
+    "metal_office_desk",
+    "SchoolChair_01",
+    "SchoolDesk_01",
+    "metal_trash_can",
+    "cardboard_box_01",
+    "plastic_crate_02",
+    "wooden_crate_02",
+    "Barrel_02",
+    "hand_truck",
+    "drawer_cabinet",
+    "vintage_wooden_drawer_01",
+    "steel_frame_shelves_01",
+    "metal_tool_chest",
+    "plastic_monobloc_chair_01",
+    "wooden_stool_01",
+    "WetFloorSign_01",
+    "korean_fire_extinguisher_01",
+    "security_camera_01",
+    "power_box_01",
+    "korean_public_payphone_01",
+    "wall_clock",
+    "caged_hanging_light",
+    "hanging_industrial_lamp",
+    "ceiling_fan",
+    "industrial_wall_lamp",
+    "industrial_wall_sconce",
+    "desk_lamp_arm_01",
+    "classic_laptop",
+    "television_02",
+    "boombox",
+)
+
+
+def arguments() -> tuple[Path, Path]:
+    try:
+        separator = sys.argv.index("--")
+        source_value, output_value = sys.argv[separator + 1 : separator + 3]
+    except (ValueError, IndexError) as error:
+        raise SystemExit("Expected: -- <Poly Haven source directory> <output directory>") from error
+
+    source = Path(source_value).resolve()
+    output = Path(output_value).resolve()
+    if not source.is_dir():
+        raise SystemExit(f"Source directory does not exist: {source}")
+    output.mkdir(parents=True, exist_ok=True)
+    return source, output
+
+
+def convert(source: Path, output: Path, asset_id: str) -> None:
+    asset_directory = source / asset_id
+    candidates = sorted(asset_directory.glob("*_1k.gltf"))
+    if len(candidates) != 1:
+        raise RuntimeError(f"Expected one 1K glTF for {asset_id}, found {len(candidates)}")
+
+    input_url = candidates[0]
+    output_url = output / f"{asset_id}.usdz"
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    imported = bpy.ops.import_scene.gltf(filepath=str(input_url))
+    if "FINISHED" not in imported:
+        raise RuntimeError(f"glTF import failed: {input_url}")
+
+    meshes = [item for item in bpy.context.scene.objects if item.type == "MESH"]
+    if not meshes:
+        raise RuntimeError(f"No mesh found in: {input_url}")
+
+    # Animation rigs are not needed for static AR props and add runtime overhead.
+    for item in list(bpy.context.scene.objects):
+        if item.type in {"CAMERA", "LIGHT"}:
+            bpy.data.objects.remove(item, do_unlink=True)
+
+    exported = bpy.ops.wm.usd_export(
+        filepath=str(output_url),
+        selected_objects_only=False,
+        visible_objects_only=True,
+        export_animation=False,
+        export_hair=False,
+        export_uvmaps=True,
+        rename_uvmaps=True,
+        export_mesh_colors=True,
+        export_normals=True,
+        export_materials=True,
+        export_subdivision="IGNORE",
+        export_armatures=False,
+        export_shapekeys=False,
+        use_instancing=False,
+        evaluation_mode="RENDER",
+        generate_preview_surface=True,
+        generate_materialx_network=False,
+        convert_orientation=True,
+        export_global_forward_selection="NEGATIVE_Z",
+        export_global_up_selection="Y",
+        export_textures=True,
+        export_textures_mode="NEW",
+        overwrite_textures=True,
+        relative_paths=True,
+        xform_op_mode="TRS",
+        root_prim_path="/CineARAsset",
+        export_custom_properties=False,
+        author_blender_name=False,
+        convert_world_material=False,
+        allow_unicode=False,
+        export_meshes=True,
+        export_lights=False,
+        export_cameras=False,
+        export_curves=False,
+        export_points=False,
+        export_volumes=False,
+        triangulate_meshes=True,
+        quad_method="SHORTEST_DIAGONAL",
+        ngon_method="BEAUTY",
+        usdz_downscale_size="1024",
+        merge_parent_xform=True,
+        convert_scene_units="METERS",
+        meters_per_unit=1.0,
+    )
+    if "FINISHED" not in exported or not output_url.is_file():
+        raise RuntimeError(f"USDZ export failed: {output_url}")
+    if output_url.stat().st_size < 1024:
+        raise RuntimeError(f"USDZ output is unexpectedly small: {output_url}")
+    print(f"CINEAR_USDZ {asset_id} {output_url.stat().st_size}")
+
+
+def main() -> None:
+    source, output = arguments()
+    for asset_id in ASSET_IDS:
+        convert(source, output, asset_id)
+
+
+if __name__ == "__main__":
+    main()
+````
+
+## `Tools/fetch_polyhaven_props.ps1`
+
+````powershell
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$OutputDirectory
+)
+
+$ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+
+$assetIDs = @(
+    "metal_office_desk",
+    "SchoolChair_01",
+    "SchoolDesk_01",
+    "metal_trash_can",
+    "cardboard_box_01",
+    "plastic_crate_02",
+    "wooden_crate_02",
+    "Barrel_02",
+    "hand_truck",
+    "drawer_cabinet",
+    "vintage_wooden_drawer_01",
+    "steel_frame_shelves_01",
+    "metal_tool_chest",
+    "plastic_monobloc_chair_01",
+    "wooden_stool_01",
+    "WetFloorSign_01",
+    "korean_fire_extinguisher_01",
+    "security_camera_01",
+    "power_box_01",
+    "korean_public_payphone_01",
+    "wall_clock",
+    "caged_hanging_light",
+    "hanging_industrial_lamp",
+    "ceiling_fan",
+    "industrial_wall_lamp",
+    "industrial_wall_sconce",
+    "desk_lamp_arm_01",
+    "classic_laptop",
+    "television_02",
+    "boombox"
+)
+
+function Save-VerifiedFile {
+    param(
+        [Parameter(Mandatory = $true)] [string]$URL,
+        [Parameter(Mandatory = $true)] [string]$Destination,
+        [Parameter(Mandatory = $true)] [string]$ExpectedMD5
+    )
+
+    $parent = Split-Path -Parent $Destination
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    if (Test-Path -LiteralPath $Destination) {
+        $current = (Get-FileHash -LiteralPath $Destination -Algorithm MD5).Hash.ToLowerInvariant()
+        if ($current -eq $ExpectedMD5.ToLowerInvariant()) { return }
+    }
+
+    Invoke-WebRequest -Uri $URL -OutFile $Destination -UseBasicParsing
+    $actual = (Get-FileHash -LiteralPath $Destination -Algorithm MD5).Hash.ToLowerInvariant()
+    if ($actual -ne $ExpectedMD5.ToLowerInvariant()) {
+        throw "MD5 mismatch for $Destination (expected $ExpectedMD5, got $actual)"
+    }
+}
+
+$root = [IO.Path]::GetFullPath($OutputDirectory)
+New-Item -ItemType Directory -Force -Path $root | Out-Null
+
+foreach ($assetID in $assetIDs) {
+    Write-Host "CINEAR_FETCH $assetID"
+    $files = Invoke-RestMethod -Uri "https://api.polyhaven.com/files/$assetID"
+    $entry = $files.gltf."1k".gltf
+    if ($null -eq $entry) {
+        throw "Poly Haven has no 1K glTF entry for $assetID"
+    }
+
+    $assetDirectory = Join-Path $root $assetID
+    $mainName = [IO.Path]::GetFileName(([Uri]$entry.url).AbsolutePath)
+    Save-VerifiedFile -URL $entry.url -Destination (Join-Path $assetDirectory $mainName) -ExpectedMD5 $entry.md5
+
+    foreach ($property in $entry.include.PSObject.Properties) {
+        $relative = $property.Name.Replace('/', [IO.Path]::DirectorySeparatorChar)
+        Save-VerifiedFile `
+            -URL $property.Value.url `
+            -Destination (Join-Path $assetDirectory $relative) `
+            -ExpectedMD5 $property.Value.md5
+    }
+}
+
+Write-Host "CINEAR_FETCH_COMPLETE $($assetIDs.Count) $root"
+````
+
 ## `Tools/generate_all_in_one_markdown.ps1`
 
 `````powershell
@@ -7667,7 +8975,7 @@ $sensitiveExtensions = [System.Collections.Generic.HashSet[string]]::new(
 ) | ForEach-Object { [void]$sensitiveExtensions.Add($_) }
 
 $candidatePaths = @(
-    & git -C $repoRoot ls-files --cached
+    & git -C $repoRoot ls-files --cached --others --exclude-standard
 ) + @($sourceRelativePath)
 
 if ($LASTEXITCODE -ne 0) {
@@ -7798,7 +9106,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Projenin amacı")
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 18 hazır dekoru veya kullanıcının USDZ modellerini zemine yerleştiren yerel iOS uygulamasıdır. Dekorlar taşınabilir, döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir.")
+[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 30 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Teknoloji ve ana yetenekler")
 [void]$builder.AppendLine()
@@ -7808,7 +9116,8 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
-[void]$builder.AppendLine("- Gerçekçi boyutlandırılmış 14 gömülü CC0 USDZ varlığı, 4 hafif prosedürel dekor ve paneli kapatan yerleştirme modu")
+[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 30 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
 [void]$builder.AppendLine("- USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok")
 [void]$builder.AppendLine("- Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli")
 [void]$builder.AppendLine("- AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i")
@@ -7848,7 +9157,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.")
 [void]$builder.AppendLine("3. Sonuç compact ``room.json`` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.")
 [void]$builder.AppendLine("4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.")
-[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 18 parçalık kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
+[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 30 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
 [void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.")
 [void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
 [void]$builder.AppendLine("8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.")
@@ -7973,7 +9282,7 @@ import bpy
 from mathutils import Vector
 
 
-def arguments() -> tuple[Path, Path]:
+def arguments() -> tuple[Path, Path, tuple[str, ...]]:
     try:
         separator = sys.argv.index("--")
         asset_value, output_value = sys.argv[separator + 1 : separator + 3]
@@ -7982,7 +9291,8 @@ def arguments() -> tuple[Path, Path]:
     assets = Path(asset_value).resolve()
     output = Path(output_value).resolve()
     output.mkdir(parents=True, exist_ok=True)
-    return assets, output
+    requested = tuple(sys.argv[separator + 3 :])
+    return assets, output, requested
 
 
 def look_at(item: bpy.types.Object, target: Vector) -> None:
@@ -8050,8 +9360,11 @@ def render(url: Path, output: Path) -> None:
 
 
 def main() -> None:
-    assets, output = arguments()
-    for url in sorted(assets.glob("*.usdz")):
+    assets, output, requested = arguments()
+    urls = [assets / f"{name}.usdz" for name in requested] if requested else sorted(assets.glob("*.usdz"))
+    for url in urls:
+        if not url.is_file():
+            raise RuntimeError(f"USDZ not found: {url}")
         render(url, output)
 
 

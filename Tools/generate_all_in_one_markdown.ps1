@@ -50,7 +50,7 @@ $sensitiveExtensions = [System.Collections.Generic.HashSet[string]]::new(
 ) | ForEach-Object { [void]$sensitiveExtensions.Add($_) }
 
 $candidatePaths = @(
-    & git -C $repoRoot ls-files --cached
+    & git -C $repoRoot ls-files --cached --others --exclude-standard
 ) + @($sourceRelativePath)
 
 if ($LASTEXITCODE -ne 0) {
@@ -181,7 +181,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Projenin amacı")
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 18 hazır dekoru veya kullanıcının USDZ modellerini zemine yerleştiren yerel iOS uygulamasıdır. Dekorlar taşınabilir, döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir.")
+[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 30 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Teknoloji ve ana yetenekler")
 [void]$builder.AppendLine()
@@ -191,7 +191,8 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
-[void]$builder.AppendLine("- Gerçekçi boyutlandırılmış 14 gömülü CC0 USDZ varlığı, 4 hafif prosedürel dekor ve paneli kapatan yerleştirme modu")
+[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 30 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
 [void]$builder.AppendLine("- USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok")
 [void]$builder.AppendLine("- Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli")
 [void]$builder.AppendLine("- AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i")
@@ -231,7 +232,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.")
 [void]$builder.AppendLine("3. Sonuç compact ``room.json`` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.")
 [void]$builder.AppendLine("4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.")
-[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 18 parçalık kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
+[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 30 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
 [void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.")
 [void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
 [void]$builder.AppendLine("8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.")

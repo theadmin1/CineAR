@@ -22,6 +22,7 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isARReady = false
     @Published private(set) var isPlacingProp = false
     @Published private(set) var isRoomOutlineVisible = false
+    @Published private(set) var selectedLightSettings: VirtualLightSettings?
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -33,6 +34,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var renderedAnchorIDs = Set<UUID>()
     private var knownPropAnchorIDs = Set<UUID>()
     private var renderedEntities: [UUID: ModelEntity] = [:]
+    private var renderedLights: [UUID: SpotLight] = [:]
+    private var renderedLightEmitters: [UUID: ModelEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
     private var renderGeneration: UInt64 = 0
@@ -52,6 +55,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var postScanThemeGeneration: UInt64 = 0
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
+    private var lastKnownCeilingY: Float?
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
@@ -155,14 +159,18 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
         renderedEntities.removeAll()
+        renderedLights.removeAll()
+        renderedLightEmitters.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
         selectedEntityID = nil
+        selectedLightSettings = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
+        lastKnownCeilingY = nil
         if roomCoordinateSpaceIsActive {
             updateKnownFloorFromRoomData()
         }
@@ -423,14 +431,19 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func selectProp(_ prop: PropKind) {
+        persistSelectedLightSettings()
         selectedProp = prop
         selectedEntityID = nil
+        selectedLightSettings = nil
         if prop == .custom, selectedAssetURL == nil {
             isPlacingProp = false
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
             isPlacingProp = true
-            publishStatus("\(prop.title) seçildi — kararlı yüzey görünce dokun", color: .blue)
+            publishStatus(
+                "\(prop.title) seçildi — \(placementInstruction(for: prop))",
+                color: .blue
+            )
         }
     }
 
@@ -440,6 +453,40 @@ final class ARSessionController: NSObject, ObservableObject {
         publishStatus("Yerleştirme iptal edildi", color: .yellow)
     }
 
+    private func placementInstruction(for prop: PropKind) -> String {
+        switch prop.placementSurface {
+        case .floor: "taranmış zemine dokun"
+        case .horizontal: "zemine veya masa gibi yatay yüzeye dokun"
+        case .wall: "taranmış duvara dokun"
+        case .ceiling: "telefonu tavana çevirip taranmış tavana dokun"
+        }
+    }
+
+    private func placementFailureMessage(for prop: PropKind) -> String {
+        switch prop.placementSurface {
+        case .floor:
+            "Kararlı zemin bulunamadı — zemini yavaşça tara, sonra tekrar dokun"
+        case .horizontal:
+            "Kararlı yatay yüzey bulunamadı — yüzeyi yavaşça tara, sonra tekrar dokun"
+        case .wall:
+            "Kararlı duvar bulunamadı — duvarı yavaşça tara, sonra tekrar dokun"
+        case .ceiling:
+            "Kararlı tavan bulunamadı — telefonu yukarı çevirip tavanı yavaşça tara"
+        }
+    }
+
+    private func selectRenderedEntity(id: UUID) {
+        persistSelectedLightSettings()
+        selectedEntityID = id
+        if let placement = projectStore.placement(id: id), placement.kind.emitsVirtualLight {
+            selectedLightSettings = placement.lightSettings ?? .defaultFixture
+            publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
+        } else {
+            selectedLightSettings = nil
+            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
+        }
+    }
+
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
@@ -447,8 +494,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if !isPlacingProp,
            let hitEntity = arView.entity(at: point),
            let id = entityID(from: hitEntity) {
-            selectedEntityID = id
-            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
+            selectRenderedEntity(id: id)
             return
         }
 
@@ -469,7 +515,7 @@ final class ARSessionController: NSObject, ObservableObject {
             for: selectedProp
         ) else {
             publishStatus(
-                "Kararlı yüzey bulunamadı — zemini yavaşça tara, sonra tekrar dokun",
+                placementFailureMessage(for: selectedProp),
                 color: .yellow
             )
             return
@@ -484,7 +530,8 @@ final class ARSessionController: NSObject, ObservableObject {
             id: id,
             kind: selectedProp,
             assetFileName: selectedProp == .custom ? selectedAssetURL?.lastPathComponent : nil,
-            transform: StoredTransform(defaultTransform(for: selectedProp))
+            transform: StoredTransform(defaultTransform(for: selectedProp)),
+            lightSettings: selectedProp.emitsVirtualLight ? .defaultFixture : nil
         )
         do {
             try projectStore.upsert(placement)
@@ -496,6 +543,7 @@ final class ARSessionController: NSObject, ObservableObject {
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
+            selectedLightSettings = placement.lightSettings
             isPlacingProp = false
             render(prop: selectedProp, id: id, for: anchor)
             if selectedProp == .custom {
@@ -519,11 +567,12 @@ final class ARSessionController: NSObject, ObservableObject {
         // RoomPlan replacement scene is virtual RealityKit content, so ARKit's plane
         // raycast below cannot intersect it on its own.
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point) {
-            let verticalComponent = abs(simd_normalize(hit.normal).y)
-            let acceptsSurface = (prop == .wall || prop == .lightPanel)
-                ? verticalComponent < 0.45
-                : verticalComponent > 0.72
-            if acceptsSurface {
+            if surfaceAccepts(
+                prop: prop,
+                normal: hit.normal,
+                position: hit.position,
+                cameraY: arView.cameraTransform.translation.y
+            ) {
                 return placementTransform(
                     position: hit.position,
                     normal: hit.normal,
@@ -537,44 +586,77 @@ final class ARSessionController: NSObject, ObservableObject {
         // It catches stable horizontal surfaces such as tables even when ARKit has
         // not promoted that patch to a plane anchor yet.
         if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
-            entityID(from: $0.entity) == nil && !belongsToRoomReality($0.entity)
-        }) {
-            let verticalComponent = abs(simd_normalize(hit.normal).y)
-            let acceptsSurface = (prop == .wall || prop == .lightPanel)
-                ? verticalComponent < 0.45
-                : verticalComponent > 0.72
-            if acceptsSurface {
-                return placementTransform(
-                    position: hit.position,
-                    normal: hit.normal,
+            entityID(from: $0.entity) == nil
+                && !belongsToRoomReality($0.entity)
+                && surfaceAccepts(
                     prop: prop,
-                    cameraPosition: arView.cameraTransform.translation
+                    normal: $0.normal,
+                    position: $0.position,
+                    cameraY: arView.cameraTransform.translation.y
                 )
-            }
+        }) {
+            return placementTransform(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation
+            )
         }
 
         let preferredAlignment: ARRaycastQuery.TargetAlignment =
-            (prop == .wall || prop == .lightPanel) ? .vertical : .horizontal
+            prop.placementSurface == .wall ? .vertical : .horizontal
         let queries: [(ARRaycastQuery.Target, ARRaycastQuery.TargetAlignment)] = [
             (.existingPlaneGeometry, preferredAlignment),
             (.existingPlaneInfinite, preferredAlignment)
         ]
 
         for (target, alignment) in queries {
-            if let result = arView.raycast(
+            let results = arView.raycast(
                 from: point,
                 allowing: target,
                 alignment: alignment
-            ).first {
-                return result.worldTransform
+            )
+            if let result = results.first(where: {
+                raycastResult($0, matches: prop, cameraY: arView.cameraTransform.translation.y)
+            }) {
+                let position = result.worldTransform.columns.3
+                return placementTransform(
+                    position: [position.x, position.y, position.z],
+                    normal: [
+                        result.worldTransform.columns.1.x,
+                        result.worldTransform.columns.1.y,
+                        result.worldTransform.columns.1.z
+                    ],
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
+            }
+        }
+
+        // RoomPlan also gives us a persistent ceiling height. Intersecting the screen
+        // ray with it keeps ceiling fixtures stable even when ARKit's live ceiling
+        // plane is temporarily outside the current camera frame.
+        if prop.placementSurface == .ceiling,
+           roomCoordinateSpaceIsActive,
+           let ceilingY = lastKnownCeilingY,
+           let ray = arView.ray(through: point) {
+            let direction = simd_normalize(ray.direction)
+            guard direction.y > 0.025 else { return nil }
+            let distance = (ceilingY - ray.origin.y) / direction.y
+            if distance.isFinite, distance >= 0.20, distance <= 8.0 {
+                return placementTransform(
+                    position: ray.origin + direction * distance,
+                    normal: [0, -1, 0],
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                )
             }
         }
 
         // A completed RoomPlan scan provides a persistent world-space floor level.
         // Intersect the exact screen ray with that recorded floor instead of guessing
         // from camera height. This remains stable while making the full floor tappable.
-        if prop != .wall,
-           prop != .lightPanel,
+        if prop.placementSurface == .floor || prop.placementSurface == .horizontal,
            roomCoordinateSpaceIsActive,
            let floorY = lastKnownFloorY,
            let ray = arView.ray(through: point) {
@@ -597,6 +679,45 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
+    private func surfaceAccepts(
+        prop: PropKind,
+        normal: SIMD3<Float>,
+        position: SIMD3<Float>,
+        cameraY: Float
+    ) -> Bool {
+        guard simd_length_squared(normal) > 0.000_001 else { return false }
+        let verticalComponent = abs(simd_normalize(normal).y)
+        switch prop.placementSurface {
+        case .wall:
+            return verticalComponent < 0.45
+        case .ceiling:
+            return verticalComponent > 0.72 && position.y > cameraY + 0.25
+        case .floor:
+            return verticalComponent > 0.72 && position.y < cameraY - 0.25
+        case .horizontal:
+            return verticalComponent > 0.72 && position.y < cameraY + 0.20
+        }
+    }
+
+    private func raycastResult(
+        _ result: ARRaycastResult,
+        matches prop: PropKind,
+        cameraY: Float
+    ) -> Bool {
+        let y = result.worldTransform.columns.3.y
+        let classification = (result.anchor as? ARPlaneAnchor)?.classification
+        switch prop.placementSurface {
+        case .wall:
+            return true
+        case .ceiling:
+            return classification == .ceiling || y > cameraY + 0.25
+        case .floor:
+            return classification == .floor || y < cameraY - 0.25
+        case .horizontal:
+            return classification != .ceiling && y < cameraY + 0.20
+        }
+    }
+
     private func updateKnownFloorFromRoomData() {
         guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
         let levels = room.floors.compactMap { floor -> Float? in
@@ -605,6 +726,15 @@ final class ARSessionController: NSObject, ObservableObject {
         }.sorted()
         if !levels.isEmpty {
             lastKnownFloorY = levels[levels.count / 2]
+        }
+        do {
+            if let ceilingY = try roomRealityRenderer.inferredCeilingLevel(
+                roomJSONURL: roomDataURL
+            ), ceilingY.isFinite {
+                lastKnownCeilingY = ceilingY
+            }
+        } catch {
+            lastKnownCeilingY = nil
         }
     }
 
@@ -634,7 +764,7 @@ final class ARSessionController: NSObject, ObservableObject {
         var transform = matrix_identity_float4x4
         transform.columns.3 = SIMD4(position.x, position.y, position.z, 1)
 
-        guard prop == .wall || prop == .lightPanel else { return transform }
+        guard prop.placementSurface == .wall else { return transform }
 
         // Wall props remain upright and face the camera side of the scanned wall.
         var forward = SIMD3<Float>(normal.x, 0, normal.z)
@@ -674,10 +804,13 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         renderedEntities[id]?.parent?.removeFromParent()
         renderedEntities[id] = nil
+        renderedLights[id] = nil
+        renderedLightEmitters[id] = nil
         assetLoadSubscriptions[id]?.cancel()
         assetLoadSubscriptions[id] = nil
         loadingEntityIDs.remove(id)
         selectedEntityID = nil
+        selectedLightSettings = nil
         publishStatus("Seçili dekor silindi", color: .green)
     }
 
@@ -704,11 +837,15 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedAnchorIDs.removeAll()
         knownPropAnchorIDs.removeAll()
         renderedEntities.removeAll()
+        renderedLights.removeAll()
+        renderedLightEmitters.removeAll()
         selectedEntityID = nil
+        selectedLightSettings = nil
         publishStatus("Sanal dekorlar temizlendi", color: .green)
     }
 
     func importUSDZ(from sourceURL: URL) {
+        persistSelectedLightSettings()
         let hasAccess = sourceURL.startAccessingSecurityScopedResource()
         defer {
             if hasAccess { sourceURL.stopAccessingSecurityScopedResource() }
@@ -718,6 +855,7 @@ final class ARSessionController: NSObject, ObservableObject {
             importedAssetURLs = projectStore.importedModelURLs
             selectedAssetURL = importedURL
             selectedProp = .custom
+            selectedLightSettings = nil
             isPlacingProp = true
             publishStatus("\(importedURL.lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .green)
         } catch {
@@ -730,9 +868,11 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func selectImportedAsset(_ url: URL) {
+        persistSelectedLightSettings()
         selectedAssetURL = url
         selectedProp = .custom
         selectedEntityID = nil
+        selectedLightSettings = nil
         isPlacingProp = true
         publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .blue)
     }
@@ -766,6 +906,7 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Sahne haritası zaten kaydediliyor", color: .yellow)
             return
         }
+        persistSelectedLightSettings()
         do {
             try persistAllEntityTransforms()
         } catch {
@@ -891,6 +1032,7 @@ final class ARSessionController: NSObject, ObservableObject {
         coachingOverlay?.isHidden = true
         publishStatus("HEVC kayıt hazırlanıyor...", color: .yellow)
 
+        persistSelectedLightSettings()
         do {
             try persistAllEntityTransforms()
             let url = try projectStore.nextRecordingURL()
@@ -971,6 +1113,47 @@ final class ARSessionController: NSObject, ObservableObject {
                 "Sahne tutarsız: \(id.uuidString) kimlikli anchor için dekor kaydı yok",
                 color: .red
             )
+            return
+        }
+
+        if let descriptor = prop.photorealDescriptor {
+            guard let modelURL = bundledAssetURL(named: descriptor.assetName) else {
+                publishStatus("\(prop.title) modeli uygulama paketinde bulunamadı", color: .red)
+                return
+            }
+            loadingEntityIDs.insert(id)
+            let generation = renderGeneration
+            let request = Entity.loadAsync(contentsOf: modelURL)
+            assetLoadSubscriptions[id] = request
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] completion in
+                    guard let self, self.renderGeneration == generation else { return }
+                    self.loadingEntityIDs.remove(id)
+                    self.assetLoadSubscriptions[id] = nil
+                    if case .failure(let error) = completion {
+                        self.publishStatus(
+                            "\(prop.title) yüklenemedi: \(error.localizedDescription)",
+                            color: .red
+                        )
+                    }
+                } receiveValue: { [weak self] content in
+                    guard let self,
+                          let entity = self.makePhotorealLibraryEntity(
+                            content: content,
+                            prop: prop,
+                            descriptor: descriptor
+                          ) else {
+                        self?.publishStatus("\(prop.title) ölçüsü hazırlanamadı", color: .red)
+                        return
+                    }
+                    self.attach(
+                        entity: entity,
+                        prop: prop,
+                        id: id,
+                        anchor: anchor,
+                        generation: generation
+                    )
+                }
             return
         }
 
@@ -1058,6 +1241,13 @@ final class ARSessionController: NSObject, ObservableObject {
             entity.generateCollisionShapes(recursive: true)
         }
         addContactShadow(to: entity, for: prop)
+        if prop.emitsVirtualLight {
+            let settings = placement.lightSettings ?? .defaultFixture
+            installVirtualLight(on: entity, prop: prop, id: id, settings: settings)
+            if selectedEntityID == id {
+                selectedLightSettings = settings
+            }
+        }
         anchorEntity.addChild(entity)
         arView.scene.addAnchor(anchorEntity)
 
@@ -1067,6 +1257,173 @@ final class ARSessionController: NSObject, ObservableObject {
 
         renderedAnchorIDs.insert(anchor.identifier)
         renderedEntities[id] = entity
+    }
+
+    func setSelectedLightEnabled(_ isEnabled: Bool) {
+        guard var settings = selectedLightSettings else { return }
+        settings.isEnabled = isEnabled
+        previewSelectedLight(settings)
+        persistSelectedLightSettings()
+    }
+
+    func setSelectedLightIntensity(_ lumens: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.intensityLumens = min(max(lumens, 0), 12_000)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightTemperature(_ kelvin: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.temperatureKelvin = min(max(kelvin, 2_000), 6_500)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightConeAngle(_ degrees: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.coneAngleDegrees = min(max(degrees, 15), 120)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightYaw(_ degrees: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.yawDegrees = min(max(degrees, -180), 180)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightTilt(_ degrees: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.tiltDegrees = min(max(degrees, -75), 75)
+        previewSelectedLight(settings)
+    }
+
+    func persistSelectedLightSettings() {
+        guard let id = selectedEntityID,
+              let settings = selectedLightSettings,
+              settings.isValid,
+              let placement = projectStore.placement(id: id),
+              placement.kind.emitsVirtualLight,
+              placement.lightSettings != settings else { return }
+        do {
+            try projectStore.updateLightSettings(id: id, settings: settings)
+        } catch {
+            publishStatus("Işık ayarları kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    private func previewSelectedLight(_ settings: VirtualLightSettings) {
+        selectedLightSettings = settings
+        guard let id = selectedEntityID,
+              let light = renderedLights[id],
+              let prop = projectStore.placement(id: id)?.kind else { return }
+        apply(settings: settings, to: light, prop: prop)
+    }
+
+    private func installVirtualLight(
+        on entity: ModelEntity,
+        prop: PropKind,
+        id: UUID,
+        settings: VirtualLightSettings
+    ) {
+        renderedLights[id]?.removeFromParent()
+        let light = SpotLight()
+        light.name = "cinear.virtual-light.\(id.uuidString)"
+        light.shadow = SpotLightComponent.Shadow()
+
+        let dimensions = prop.photorealDescriptor?.dimensions ?? SIMD3<Float>(0.5, 0.5, 0.5)
+        switch prop.placementSurface {
+        case .ceiling:
+            light.position = [0, -dimensions.y * 0.48, 0]
+        case .wall:
+            light.position = [0, 0, dimensions.z * 0.52]
+        case .floor, .horizontal:
+            light.position = [0, dimensions.y * 0.34, dimensions.z * 0.16]
+        }
+        entity.addChild(light)
+        renderedLights[id] = light
+        var emitterMaterial = UnlitMaterial()
+        emitterMaterial.color = .init(tint: .white)
+        let emitter: ModelEntity
+        if prop == .cagedCeilingLight || prop == .lightPanel {
+            emitter = ModelEntity(
+                mesh: .generateBox(size: [0.58, 0.018, 0.07], cornerRadius: 0.009),
+                materials: [emitterMaterial]
+            )
+        } else {
+            emitter = ModelEntity(
+                mesh: .generateSphere(radius: 0.035),
+                materials: [emitterMaterial]
+            )
+        }
+        emitter.name = "cinear.virtual-light.emitter"
+        light.addChild(emitter)
+        renderedLightEmitters[id] = emitter
+        apply(settings: settings, to: light, prop: prop)
+    }
+
+    private func apply(settings: VirtualLightSettings, to light: SpotLight, prop: PropKind) {
+        light.isEnabled = settings.isEnabled
+        light.light.intensity = settings.intensityLumens
+        light.light.color = Self.colorTemperature(kelvin: settings.temperatureKelvin)
+        light.light.innerAngleInDegrees = settings.coneAngleDegrees * 0.62
+        light.light.outerAngleInDegrees = settings.coneAngleDegrees
+        light.light.attenuationRadius = min(
+            max(sqrt(max(settings.intensityLumens, 1) / 1_000) * 4, 2),
+            12
+        )
+        let baseDirection: SIMD3<Float>
+        switch prop.placementSurface {
+        case .ceiling:
+            baseDirection = [0, -1, 0]
+        case .wall:
+            baseDirection = simd_normalize(SIMD3<Float>(0, -0.35, 1))
+        case .floor, .horizontal:
+            baseDirection = simd_normalize(SIMD3<Float>(0, -0.88, 0.32))
+        }
+        let yaw = simd_quatf(
+            angle: settings.effectiveYawDegrees * .pi / 180,
+            axis: SIMD3<Float>(0, 1, 0)
+        )
+        let tilt = simd_quatf(
+            angle: settings.effectiveTiltDegrees * .pi / 180,
+            axis: SIMD3<Float>(1, 0, 0)
+        )
+        let direction = simd_normalize(yaw.act(tilt.act(baseDirection)))
+        light.orientation = simd_quatf(
+            from: SIMD3<Float>(0, 0, -1),
+            to: direction
+        )
+        if let idText = light.name.split(separator: ".").last,
+           let id = UUID(uuidString: String(idText)),
+           let emitter = renderedLightEmitters[id] {
+            var material = UnlitMaterial()
+            material.color = .init(tint: Self.colorTemperature(kelvin: settings.temperatureKelvin))
+            if var model = emitter.components[ModelComponent.self] {
+                model.materials = [material]
+                emitter.components.set(model)
+            }
+        }
+    }
+
+    private static func colorTemperature(kelvin: Float) -> UIColor {
+        let temperature = Double(min(max(kelvin, 2_000), 6_500)) / 100
+        let red: Double
+        let green: Double
+        let blue: Double
+        if temperature <= 66 {
+            red = 255
+            green = 99.4708025861 * log(temperature) - 161.1195681661
+            blue = temperature <= 19
+                ? 0
+                : 138.5177312231 * log(temperature - 10) - 305.0447927307
+        } else {
+            red = 329.698727446 * pow(temperature - 60, -0.1332047592)
+            green = 288.1221695283 * pow(temperature - 60, -0.0755148492)
+            blue = 255
+        }
+        func channel(_ value: Double) -> CGFloat {
+            CGFloat(min(max(value, 0), 255) / 255)
+        }
+        return UIColor(red: channel(red), green: channel(green), blue: channel(blue), alpha: 1)
     }
 
     private func persistAllEntityTransforms() throws {
@@ -1128,10 +1485,20 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func defaultTransform(for prop: PropKind) -> Transform {
-        let height: Float
-        if let descriptor = libraryDescriptor(for: prop) {
-            height = descriptor.dimensions.y * 0.5
+        let translation: SIMD3<Float>
+        if let descriptor = prop.photorealDescriptor {
+            switch descriptor.surface {
+            case .floor, .horizontal:
+                translation = [0, descriptor.dimensions.y * 0.5, 0]
+            case .wall:
+                translation = [0, 0, descriptor.dimensions.z * 0.5 + 0.008]
+            case .ceiling:
+                translation = [0, -descriptor.dimensions.y * 0.5, 0]
+            }
+        } else if let descriptor = libraryDescriptor(for: prop) {
+            translation = [0, descriptor.dimensions.y * 0.5, 0]
         } else {
+            let height: Float
             switch prop {
             case .stage: height = 0.09
             case .crate: height = 0.275
@@ -1143,13 +1510,88 @@ final class ARSessionController: NSObject, ObservableObject {
                  .television, .refrigerator, .oven, .stove, .sink, .bathtub,
                  .toilet, .washerDryer, .stairs, .custom:
                 height = 0
+            default:
+                height = 0
             }
+            translation = [0, height, 0]
         }
         return Transform(
             scale: [1, 1, 1],
             rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
-            translation: [0, height, 0]
+            translation: translation
         )
+    }
+
+    private func bundledAssetURL(named assetName: String) -> URL? {
+        if let url = Bundle.main.url(
+            forResource: assetName,
+            withExtension: "usdz",
+            subdirectory: "RoomAssets"
+        ) ?? Bundle.main.url(forResource: assetName, withExtension: "usdz") {
+            return url
+        }
+        guard let resourceURL = Bundle.main.resourceURL else { return nil }
+        let explicitURL = resourceURL
+            .appendingPathComponent("RoomAssets", isDirectory: true)
+            .appendingPathComponent(assetName)
+            .appendingPathExtension("usdz")
+        return FileManager.default.fileExists(atPath: explicitURL.path) ? explicitURL : nil
+    }
+
+    private func makePhotorealLibraryEntity(
+        content: Entity,
+        prop: PropKind,
+        descriptor: PhotorealPropDescriptor
+    ) -> ModelEntity? {
+        let measurementRoot = Entity()
+        measurementRoot.addChild(content)
+        let bounds = measurementRoot.visualBounds(
+            recursive: true,
+            relativeTo: measurementRoot,
+            excludeInactive: true
+        )
+        content.removeFromParent()
+        let extents = bounds.extents
+        guard [extents.x, extents.y, extents.z].allSatisfy({ $0.isFinite && $0 > 0.0001 }) else {
+            return nil
+        }
+        let ratios = descriptor.dimensions / extents
+        let scale = min(ratios.x, ratios.y, ratios.z)
+        guard scale.isFinite, (0.001...1_000).contains(scale) else { return nil }
+
+        let centered = Entity()
+        centered.addChild(content)
+        centered.position = -bounds.center
+
+        let fitted = Entity()
+        fitted.addChild(centered)
+        fitted.scale = SIMD3(repeating: scale)
+
+        let root = ModelEntity()
+        root.name = "cinear.photoreal.\(prop.rawValue)"
+        root.addChild(fitted)
+        let fittedBounds = root.visualBounds(
+            recursive: true,
+            relativeTo: root,
+            excludeInactive: true
+        )
+        guard [fittedBounds.extents.x, fittedBounds.extents.y, fittedBounds.extents.z]
+            .allSatisfy({ $0.isFinite && $0 > 0.0001 && $0 < 12 }) else { return nil }
+
+        // The descriptor defines the placement envelope. Align the rendered mesh
+        // with the envelope's contact face so uniformly fitted assets never float.
+        switch descriptor.surface {
+        case .floor, .horizontal:
+            fitted.position.y = (-descriptor.dimensions.y + fittedBounds.extents.y) * 0.5
+        case .ceiling:
+            fitted.position.y = (descriptor.dimensions.y - fittedBounds.extents.y) * 0.5
+        case .wall:
+            fitted.position.z = (-descriptor.dimensions.z + fittedBounds.extents.z) * 0.5
+        }
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: descriptor.dimensions)]
+        )
+        return root
     }
 
     private func makeBundledLibraryEntity(for prop: PropKind) -> ModelEntity? {
@@ -1189,6 +1631,14 @@ final class ARSessionController: NSObject, ObservableObject {
     private func groundContactDescriptor(
         for prop: PropKind
     ) -> (width: Float, depth: Float, localY: Float)? {
+        if let descriptor = prop.photorealDescriptor,
+           descriptor.surface == .floor || descriptor.surface == .horizontal {
+            return (
+                descriptor.dimensions.x * 0.82,
+                descriptor.dimensions.z * 0.82,
+                -descriptor.dimensions.y * 0.5 + 0.004
+            )
+        }
         if let descriptor = libraryDescriptor(for: prop) {
             return (
                 descriptor.dimensions.x * 0.82,
@@ -1205,6 +1655,8 @@ final class ARSessionController: NSObject, ObservableObject {
         case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
              .bed, .bookcase, .television, .refrigerator, .oven, .stove,
              .sink, .bathtub, .toilet, .washerDryer, .stairs:
+            return nil
+        default:
             return nil
         }
     }
@@ -1229,6 +1681,7 @@ final class ARSessionController: NSObject, ObservableObject {
         case .stairs: (.stairs, [1.20, 1.20, 2.00])
         case .wall, .stage, .crate, .lightPanel, .plant, .floorLamp,
              .rug, .backdrop, .custom: nil
+        default: nil
         }
     }
 
@@ -1350,6 +1803,8 @@ final class ARSessionController: NSObject, ObservableObject {
              .refrigerator, .oven, .stove, .sink, .bathtub, .toilet,
              .washerDryer, .stairs, .custom:
             preconditionFailure("USDZ assets are loaded through the library path")
+        default:
+            preconditionFailure("Photoreal USDZ assets are loaded asynchronously")
         }
     }
 
@@ -1544,8 +1999,11 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             assetLoadSubscriptions[descriptor.id] = nil
             renderedEntities[descriptor.id]?.parent?.removeFromParent()
             renderedEntities[descriptor.id] = nil
+            renderedLights[descriptor.id] = nil
+            renderedLightEmitters[descriptor.id] = nil
             if selectedEntityID == descriptor.id {
                 selectedEntityID = nil
+                selectedLightSettings = nil
             }
         }
     }

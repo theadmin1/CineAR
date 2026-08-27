@@ -4,7 +4,7 @@ import RealityKit
 import simd
 
 struct SceneProject: Codable {
-    static let currentVersion = 2
+    static let currentVersion = 3
 
     var version = currentVersion
     var name = "Ana Set"
@@ -19,6 +19,40 @@ struct PlacementRecord: Codable, Identifiable {
     let kind: PropKind
     var assetFileName: String?
     var transform: StoredTransform
+    var lightSettings: VirtualLightSettings? = nil
+}
+
+struct VirtualLightSettings: Codable, Equatable {
+    static let defaultFixture = VirtualLightSettings(
+        isEnabled: true,
+        intensityLumens: 1_600,
+        temperatureKelvin: 4_200,
+        coneAngleDegrees: 72,
+        yawDegrees: 0,
+        tiltDegrees: 0
+    )
+
+    var isEnabled: Bool
+    var intensityLumens: Float
+    var temperatureKelvin: Float
+    var coneAngleDegrees: Float
+    // Optional for forward compatibility with version-3 scenes created before
+    // steerable fixtures were introduced.
+    var yawDegrees: Float?
+    var tiltDegrees: Float?
+
+    var effectiveYawDegrees: Float { yawDegrees ?? 0 }
+    var effectiveTiltDegrees: Float { tiltDegrees ?? 0 }
+
+    var isValid: Bool {
+        let yawIsValid = yawDegrees.map { $0.isFinite && (-180...180).contains($0) } ?? true
+        let tiltIsValid = tiltDegrees.map { $0.isFinite && (-75...75).contains($0) } ?? true
+        return intensityLumens.isFinite && (0...12_000).contains(intensityLumens)
+            && temperatureKelvin.isFinite && (2_000...6_500).contains(temperatureKelvin)
+            && coneAngleDegrees.isFinite && (15...120).contains(coneAngleDegrees)
+            && yawIsValid
+            && tiltIsValid
+    }
 }
 
 struct StoredWorldMapSnapshot {
@@ -65,6 +99,7 @@ enum SceneProjectStoreError: LocalizedError {
     case missingPlacement(UUID)
     case invalidAssetFileName(String)
     case unsupportedAssetType
+    case invalidLightSettings(UUID)
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
@@ -83,6 +118,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Geçersiz 3B model dosya adı: \(name)"
         case .unsupportedAssetType:
             "Yalnızca USDZ dosyaları içe aktarılabilir"
+        case .invalidLightSettings(let id):
+            "\(id.uuidString) kimlikli ışık ayarları geçersiz"
         case .worldMapOutOfDate:
             "Sahne son harita kaydından sonra değişmiş; önce yeniden Kaydet'e dokunun"
         case .worldMapChecksumMismatch:
@@ -197,6 +234,18 @@ final class SceneProjectStore {
                 }
                 candidate.placements[index].transform = StoredTransform(transform)
             }
+        }
+    }
+
+    func updateLightSettings(id: UUID, settings: VirtualLightSettings) throws {
+        try commit(invalidateWorldMap: false) { candidate in
+            guard let index = candidate.placements.firstIndex(where: { $0.id == id }) else {
+                throw SceneProjectStoreError.missingPlacement(id)
+            }
+            guard candidate.placements[index].kind.emitsVirtualLight, settings.isValid else {
+                throw SceneProjectStoreError.invalidLightSettings(id)
+            }
+            candidate.placements[index].lightSettings = settings
         }
     }
 
@@ -325,6 +374,11 @@ final class SceneProjectStore {
                     throw SceneProjectStoreError.invalidAssetFileName(
                         placement.assetFileName ?? "(eksik)"
                     )
+                }
+            }
+            if let lightSettings = placement.lightSettings {
+                guard placement.kind.emitsVirtualLight, lightSettings.isValid else {
+                    throw SceneProjectStoreError.invalidLightSettings(placement.id)
                 }
             }
         }

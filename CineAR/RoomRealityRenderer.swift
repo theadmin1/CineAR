@@ -543,6 +543,11 @@ final class RoomRealityRenderer {
         return try JSONDecoder().decode(CapturedRoom.self, from: data)
     }
 
+    func inferredCeilingLevel(roomJSONURL: URL) throws -> Float? {
+        let room = try Self.loadRoomJSON(from: roomJSONURL)
+        return inferredCeilingY(walls: room.walls, floors: room.floors)
+    }
+
     static func saveRoomJSON(_ room: CapturedRoom, to url: URL) throws {
         guard url.isFileURL else { throw RoomRealityRendererError.roomFileIsNotLocal }
         let encoder = JSONEncoder()

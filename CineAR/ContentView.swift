@@ -30,10 +30,15 @@ struct ContentView: View {
                     Spacer()
                     if session.isPlacingProp {
                         placementBar
-                    } else if controlsExpanded {
-                        controls
                     } else {
-                        compactControls
+                        if session.selectedLightSettings != nil {
+                            lightControls
+                        }
+                        if controlsExpanded {
+                            controls
+                        } else {
+                            compactControls
+                        }
                     }
                 }
                 .padding()
@@ -291,6 +296,108 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: Capsule())
     }
 
+    private var lightControls: some View {
+        VStack(spacing: 9) {
+            HStack {
+                Label("Sanal Işık", systemImage: "lightbulb.max.fill")
+                    .font(.subheadline.weight(.bold))
+                Spacer()
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { session.selectedLightSettings?.isEnabled ?? false },
+                        set: { session.setSelectedLightEnabled($0) }
+                    )
+                )
+                .labelsHidden()
+            }
+
+            if let settings = session.selectedLightSettings {
+                lightSliderRow(
+                    title: "Güç",
+                    valueText: "\(Int(settings.intensityLumens)) lm",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.intensityLumens ?? 1_600) },
+                        set: { session.setSelectedLightIntensity(Float($0)) }
+                    ),
+                    range: 0...12_000,
+                    step: 100
+                )
+                lightSliderRow(
+                    title: "Sıcaklık",
+                    valueText: "\(Int(settings.temperatureKelvin)) K",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.temperatureKelvin ?? 4_200) },
+                        set: { session.setSelectedLightTemperature(Float($0)) }
+                    ),
+                    range: 2_000...6_500,
+                    step: 100
+                )
+                lightSliderRow(
+                    title: "Yatay yön",
+                    valueText: "\(Int(settings.effectiveYawDegrees))°",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.effectiveYawDegrees ?? 0) },
+                        set: { session.setSelectedLightYaw(Float($0)) }
+                    ),
+                    range: -180...180,
+                    step: 1
+                )
+                lightSliderRow(
+                    title: "Dikey eğim",
+                    valueText: "\(Int(settings.effectiveTiltDegrees))°",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.effectiveTiltDegrees ?? 0) },
+                        set: { session.setSelectedLightTilt(Float($0)) }
+                    ),
+                    range: -75...75,
+                    step: 1
+                )
+                lightSliderRow(
+                    title: "Hüzme genişliği",
+                    valueText: "\(Int(settings.coneAngleDegrees))°",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.coneAngleDegrees ?? 72) },
+                        set: { session.setSelectedLightConeAngle(Float($0)) }
+                    ),
+                    range: 15...120,
+                    step: 1
+                )
+            }
+
+            Text("Bu ışık yalnızca sanal dekorları etkiler; gerçek kamera görüntüsü değiştirilmez.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func lightSliderRow(
+        title: String,
+        valueText: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double
+    ) -> some View {
+        VStack(spacing: 2) {
+            HStack {
+                Text(title).font(.caption.weight(.semibold))
+                Spacer()
+                Text(valueText).font(.caption.monospacedDigit())
+            }
+            Slider(
+                value: value,
+                in: range,
+                step: step,
+                onEditingChanged: { isEditing in
+                    if !isEditing { session.persistSelectedLightSettings() }
+                }
+            )
+        }
+    }
+
     private func compactButton(
         _ title: String,
         _ icon: String,
@@ -315,7 +422,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(session.selectedProp.title) yerleştir")
                     .font(.subheadline.weight(.bold))
-                Text("Yeşil takipte algılanmış zemine veya duvara dokun")
+                Text(placementPrompt)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -328,35 +435,63 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
+    private var placementPrompt: String {
+        switch session.selectedProp.placementSurface {
+        case .floor: "Yeşil takipte taranmış zemine dokun"
+        case .horizontal: "Yeşil takipte zemine veya yatay yüzeye dokun"
+        case .wall: "Yeşil takipte taranmış duvara dokun"
+        case .ceiling: "Telefonu yukarı çevirip taranmış tavana dokun"
+        }
+    }
+
     private var propLibrary: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3),
-                    spacing: 10
-                ) {
-                    ForEach(PropKind.furnitureCases) { prop in
-                        Button {
-                            session.selectProp(prop)
-                            showingPropLibrary = false
-                        } label: {
-                            VStack(spacing: 6) {
-                                Text(prop.symbol).font(.largeTitle)
-                                Text(prop.title)
-                                    .font(.caption.weight(.semibold))
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.75)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 92)
-                            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                VStack(alignment: .leading, spacing: 18) {
+                    ForEach(PropLibraryCategory.allCases) { category in
+                        let props = PropKind.photorealCases.filter {
+                            $0.photorealDescriptor?.category == category
                         }
-                        .buttonStyle(.plain)
+                        if !props.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(category.title)
+                                    .font(.headline)
+                                LazyVGrid(
+                                    columns: Array(
+                                        repeating: GridItem(.flexible(), spacing: 10),
+                                        count: 3
+                                    ),
+                                    spacing: 10
+                                ) {
+                                    ForEach(props) { prop in
+                                        Button {
+                                            session.selectProp(prop)
+                                            showingPropLibrary = false
+                                        } label: {
+                                            VStack(spacing: 6) {
+                                                Text(prop.symbol).font(.largeTitle)
+                                                Text(prop.title)
+                                                    .font(.caption.weight(.semibold))
+                                                    .lineLimit(2)
+                                                    .minimumScaleFactor(0.75)
+                                                    .multilineTextAlignment(.center)
+                                            }
+                                            .frame(maxWidth: .infinity, minHeight: 92)
+                                            .background(
+                                                .thinMaterial,
+                                                in: RoundedRectangle(cornerRadius: 14)
+                                            )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 .padding()
             }
-            .navigationTitle("3B Nesne Kütüphanesi")
+            .navigationTitle("30 Gerçekçi 3B Nesne")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

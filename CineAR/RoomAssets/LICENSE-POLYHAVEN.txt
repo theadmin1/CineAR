@@ -1,0 +1,48 @@
+Poly Haven Photoreal Prop Collection for CineAR
+
+Source catalog: https://polyhaven.com/models
+License: Creative Commons Zero (CC0 1.0 Universal)
+License page: https://polyhaven.com/license
+
+Poly Haven publishes these assets as public domain material. They may be used,
+modified, redistributed, and included in commercial applications without
+attribution. CineAR keeps this notice for provenance and reproducibility.
+
+The bundled USDZ files were generated from the official 1K glTF downloads with
+Blender 4.5 LTS. Textures are capped at 1024 px for predictable iPhone memory use.
+
+Included Poly Haven asset IDs (30):
+
+metal_office_desk
+SchoolChair_01
+SchoolDesk_01
+metal_trash_can
+cardboard_box_01
+plastic_crate_02
+wooden_crate_02
+Barrel_02
+hand_truck
+drawer_cabinet
+vintage_wooden_drawer_01
+steel_frame_shelves_01
+metal_tool_chest
+plastic_monobloc_chair_01
+wooden_stool_01
+WetFloorSign_01
+korean_fire_extinguisher_01
+security_camera_01
+power_box_01
+korean_public_payphone_01
+wall_clock
+caged_hanging_light
+hanging_industrial_lamp
+ceiling_fan
+industrial_wall_lamp
+industrial_wall_sconce
+desk_lamp_arm_01
+classic_laptop
+television_02
+boombox
+
+Individual source pages follow the form:
+https://polyhaven.com/a/<asset-id>

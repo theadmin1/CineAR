@@ -19,6 +19,8 @@ ios_distribution_private_key*
 
 # Downloaded source archives; converted CC0 USDZ files are committed instead
 Kenney-Furniture-Kit.zip
+.asset-cache/
+.tools-cache/
 
 # Generated handoff archives are release artifacts, not source files
 CineAR-Codemagic-Handoff-*.zip

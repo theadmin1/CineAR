@@ -71,6 +71,46 @@ final class BundledRoomRealityAssetProvider: RoomRealityAssetProviding {
 
         return result
     }
+
+    /// Loads a catalog model without replacing its authored PBR materials.
+    /// A uniform fit preserves the real object's proportions while keeping its
+    /// largest dimension inside the verified metre-sized mobile AR envelope.
+    func makePhotorealEntity(
+        assetName: String,
+        maximumDimensions: SIMD3<Float>
+    ) -> Entity? {
+        guard Self.isValidTargetDimensions(maximumDimensions),
+              let prototype = prototype(named: assetName) else { return nil }
+
+        let ratios = maximumDimensions / prototype.extents
+        let uniformScale = min(ratios.x, ratios.y, ratios.z)
+        guard uniformScale.isFinite,
+              uniformScale >= Self.minimumFitScale,
+              uniformScale <= Self.maximumFitScale else { return nil }
+
+        let clone = prototype.entity.clone(recursive: true)
+        clone.name = "cinear.photoreal.model.\(assetName)"
+
+        let centeredRoot = Entity()
+        centeredRoot.name = "cinear.photoreal.centered.\(assetName)"
+        centeredRoot.addChild(clone)
+        centeredRoot.position = -prototype.center
+
+        let fittedRoot = Entity()
+        fittedRoot.name = "cinear.photoreal.fitted.\(assetName)"
+        fittedRoot.addChild(centeredRoot)
+        fittedRoot.scale = SIMD3(repeating: uniformScale)
+
+        let result = Entity()
+        result.name = "cinear.photoreal.\(assetName)"
+        result.addChild(fittedRoot)
+        let bounds = result.visualBounds(
+            recursive: true,
+            relativeTo: result,
+            excludeInactive: true
+        )
+        return Self.isValidBounds(bounds) ? result : nil
+    }
 }
 
 private extension BundledRoomRealityAssetProvider {

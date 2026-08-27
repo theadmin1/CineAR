@@ -7,7 +7,7 @@ import bpy
 from mathutils import Vector
 
 
-def arguments() -> tuple[Path, Path]:
+def arguments() -> tuple[Path, Path, tuple[str, ...]]:
     try:
         separator = sys.argv.index("--")
         asset_value, output_value = sys.argv[separator + 1 : separator + 3]
@@ -16,7 +16,8 @@ def arguments() -> tuple[Path, Path]:
     assets = Path(asset_value).resolve()
     output = Path(output_value).resolve()
     output.mkdir(parents=True, exist_ok=True)
-    return assets, output
+    requested = tuple(sys.argv[separator + 3 :])
+    return assets, output, requested
 
 
 def look_at(item: bpy.types.Object, target: Vector) -> None:
@@ -84,8 +85,11 @@ def render(url: Path, output: Path) -> None:
 
 
 def main() -> None:
-    assets, output = arguments()
-    for url in sorted(assets.glob("*.usdz")):
+    assets, output, requested = arguments()
+    urls = [assets / f"{name}.usdz" for name in requested] if requested else sorted(assets.glob("*.usdz"))
+    for url in urls:
+        if not url.is_file():
+            raise RuntimeError(f"USDZ not found: {url}")
         render(url, output)
 
 
