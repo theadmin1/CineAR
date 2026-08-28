@@ -21,7 +21,10 @@
    ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
    butun hatlarin kayboldugunu dogrula.
 5. Kasa'yi sec. Alt panel otomatik kapanmali; once zeminin panelin daha once kapattigi
-   alt bolgesine, sonra orta ve uzak bolgesine dokun. Her dokunusta kasa gorunmeli.
+   alt bolgesine, sonra orta ve uzak bolgesine dokun. Parmak hareket ederken hedef
+   dokunulan noktayi izlemeli; takip/derinlik beklerken sari, masa veya koltuk gibi
+   zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
+   durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
 6. 30 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
@@ -35,14 +38,19 @@
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
    dogru yuzeyi buldugunu; RoomPlan kaydindan sonra uzak zemin ve tavan noktalarinda
-   kayitli duzlem yedeginin calistigini dogrula.
+   kayitli duzlem yedeginin calistigini dogrula. Zemin nesnesi seciliyken masa
+   tablasina dokun; nesne masaya yerlestirilmemeli. Ayni noktada `yatay yuzey`
+   nesnesi secildiginde masa bilincli olarak kabul edilmeli.
 8. Tavan veya duvar isigini sec. `Sanal Isik` panelinde ac/kapat, 0-12000 lumen,
-   2000-6500 K, yatay yon, dikey egim ve 15-120 derece huzme kontrollerini uctan
-   uca degistir. Isik hedefinin hem saga-sola hem yukari-asagi dondugunu dogrula.
-   Gercek kamera pikselleri degismemeli; sanal dekorlardaki aydinlanma ve golge
-   degismeli. Kaydet, uygulamayi kapat, yukle ve ayni degerlerin geri geldigini dogrula.
-   Yeni isik 6000 lumenle baslamali; fotogercekci sanal nesne uzerindeki aydinlanma
-   ac/kapat ve guc degisiminde ilk bakista ayirt edilebilmeli.
+   2000-6500 K, yatay yon, dikey egim, 8-90 derece huzme ve kenar yumusakligi
+   kontrollerini uctan uca degistir. Yeni isik 6000 lumen ve dar 18 derece spotla
+   baslamali. `Projektor Hedefini Sec`e basip once zemine, sonra duvara dokun;
+   isik ekseni secilen dunya noktasina donmeli. Saydam spot izi hedef yuzeye oturmali,
+   aci daraldikca kuculmeli, mesafe arttikca buyumeli ve egik yuzeyde elips olmali.
+   Gercek kamera pikselleri fiziksel olarak degismemeli; spot katmani kamera
+   gorunumunde belirgin olmali, gercek bir masa isin onune girdiginde derinlik
+   occlusion'i izi ortmeli. Sanal dekorlardaki aydinlanma ve golge de degismeli.
+   Kaydet, uygulamayi kapat, yukle; hedef noktasi dahil ayni degerlerin geri geldigini dogrula.
 9. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
    uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
    acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
@@ -50,7 +58,9 @@
    tamamlandiktan sonra ARKit'in ayri bir plane anchor uretmedigi uzak zemin
    noktalarinda da kayitli zemin seviyesiyle yerlestirme calismali.
 10. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
-   golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula.
+   golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula. Modelin en alt
+   gorunur noktasi zeminden 0-5 mm yukarida olmali. Modeli 0.5x ve 2x olcekle;
+   taban zemine sabit kalmali, havaya kalkmamali veya zemine gomulmemeli.
 11. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
    olceklendirme calismali. Donus/olcek sonrasinda projeyi kaydet.
 12. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
@@ -94,7 +104,9 @@
 
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
 - Elde relocalization hatasi: 5 cm'den az
-- Manuel dekor ile dokunulan gercek yuzey hizasi: referans noktalarda 3 cm'den az
+- Manuel dekor anchor'i ile dokunulan gercek yuzey hizasi: referans noktalarda 2 cm'den az
+- Modelin gercek alt siniri ile zemin arasindaki dikey bosluk: 5 mm'den az
+- Projektor hedef merkezinin dokunulan dunya noktasindan farki: 3 cm'den az
 - Kapi ve pencere boslugu kenar hatasi: 5 cm'den az
 - Kayit: hedef cihazda sabit 30 fps, gorunur tekrar eden kare olmamali
 - Ses-goruntu senkron farki: 40 ms'den az

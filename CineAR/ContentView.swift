@@ -16,6 +16,12 @@ struct ContentView: View {
             ARViewContainer(controller: session)
                 .ignoresSafeArea()
 
+            if session.isPlacingProp,
+               !session.isRecording,
+               !session.isRecordingTransitioning {
+                placementReticle
+            }
+
             if session.isRecording || session.isRecordingTransitioning {
                 Color.clear
                     .contentShape(Rectangle())
@@ -423,6 +429,22 @@ struct ContentView: View {
             }
 
             if let settings = session.selectedLightSettings {
+                Button {
+                    if session.isAimingLight {
+                        session.cancelSelectedLightTargeting()
+                    } else {
+                        session.beginSelectedLightTargeting()
+                    }
+                } label: {
+                    Label(
+                        session.isAimingLight ? "Hedef Seçimini İptal Et" : "Projektör Hedefini Seç",
+                        systemImage: session.isAimingLight ? "xmark.circle" : "scope"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(session.isAimingLight ? .red : .blue)
+
                 lightSliderRow(
                     title: "Güç",
                     valueText: "\(Int(settings.intensityLumens)) lm",
@@ -465,17 +487,27 @@ struct ContentView: View {
                 )
                 lightSliderRow(
                     title: "Hüzme genişliği",
-                    valueText: "\(Int(settings.coneAngleDegrees))°",
+                    valueText: "\(Int(settings.coneAngleDegrees))° spot",
                     value: Binding(
-                        get: { Double(session.selectedLightSettings?.coneAngleDegrees ?? 72) },
+                        get: { Double(session.selectedLightSettings?.coneAngleDegrees ?? 18) },
                         set: { session.setSelectedLightConeAngle(Float($0)) }
                     ),
-                    range: 15...120,
+                    range: 8...90,
                     step: 1
+                )
+                lightSliderRow(
+                    title: "Kenar yumuşaklığı",
+                    valueText: "%\(Int(settings.effectiveBeamSoftness * 100))",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.effectiveBeamSoftness ?? 0.34) },
+                        set: { session.setSelectedLightSoftness(Float($0)) }
+                    ),
+                    range: 0...1,
+                    step: 0.01
                 )
             }
 
-            Text("Bu ışık yalnızca sanal dekorları etkiler; gerçek kamera görüntüsü değiştirilmez.")
+            Text("Spot ışık sanal nesneleri aydınlatır; LiDAR yüzeyindeki yumuşak projektör izi kamera görünümünde hedef noktayı gösterir.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -532,9 +564,9 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(session.selectedProp.title) yerleştir")
                     .font(.subheadline.weight(.bold))
-                Text(placementPrompt)
+                Text(session.placementSurfaceMessage)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(session.placementSurfaceColor)
             }
             Spacer()
             Button("İptal") { session.cancelPlacement() }
@@ -545,13 +577,28 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private var placementPrompt: String {
-        switch session.selectedProp.placementSurface {
-        case .floor: "Yeşil takipte taranmış zemine dokun"
-        case .horizontal: "Yeşil takipte zemine veya yatay yüzeye dokun"
-        case .wall: "Yeşil takipte taranmış duvara dokun"
-        case .ceiling: "Telefonu yukarı çevirip taranmış tavana dokun"
+    private var placementReticle: some View {
+        GeometryReader { proxy in
+            let point = session.placementReticlePoint
+                ?? CGPoint(x: proxy.size.width * 0.5, y: proxy.size.height * 0.5)
+            ZStack {
+                Circle()
+                    .stroke(session.placementSurfaceColor, lineWidth: 3)
+                    .frame(width: 46, height: 46)
+                Circle()
+                    .fill(session.placementSurfaceColor)
+                    .frame(width: 7, height: 7)
+                Rectangle()
+                    .fill(session.placementSurfaceColor)
+                    .frame(width: 66, height: 1)
+                Rectangle()
+                    .fill(session.placementSurfaceColor)
+                    .frame(width: 1, height: 66)
+            }
+            .position(point)
         }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var propLibrary: some View {

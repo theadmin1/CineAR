@@ -48,16 +48,24 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
-  sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim ve
-  15-120 derece huzme genisligi; sanal isik yalnizca sanal dekorlari etkiler
+  sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
+  8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar
+- `Projektor Hedefini Sec` ile zemine, masaya veya duvara dokunup SpotLight'i tam
+  dunya koordinatina yoneltme; mesafe ve aciya gore olceklenen, egik yuzeyde elipse
+  donusen yumusak isik izi kamera gorunumunde hedef noktayi belirginlestirir
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
-- LiDAR scene-understanding collision ile kayitli RoomPlan zemin/tavan seviyeleri
-  sayesinde taranmis alanin tamaminda kararli yerlestirme
+- `.floor` sinifli ARKit duzlemi, `.floor` sinifli LiDAR mesh yuzleri, RoomPlan zemin
+  kotu ve dokunulan pikseldeki orta/yuksek guvenli `smoothedSceneDepth` olcumunu
+  birlestiren kati zemin cozucu; masa gibi siniflandirilmamis yatay yuzey zemine gecmez
+- Parmakla dokunulan noktayi izleyen yesil/sari/kirmizi hedef gostergesi ve metre
+  cinsinden derinlik geri bildirimi
+- USDZ'nin gercek alt/ust/arka gorsel sinirini yuzey temas pivotuna alan donusum;
+  dondurme ve olceklendirme sonrasinda modelin tabani zeminden kopmaz veya gomulmez
 - RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
@@ -88,16 +96,21 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
    `Hazir 3B Nesne Kutuphanesi` icindeki 30 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
-7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken nesnenin istedigi
-   zemine, yatay yuzeye, duvara veya tavana dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
+7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
+   Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
+   dokunun. Zemin nesnelerinde masa/koltuk gibi bir yuzey kirmizi olur. Kararli yuzey
+   yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
    koymaz; hedef yuzeyi yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
    kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
    modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
 
 8. Bir lamba yerlestirildiginde veya tekrar secildiginde `Sanal Isik` panelinden
-   guc, renk sicakligi, koni acisi ve acik/kapali durumu degistirilebilir. Bu isik
-   kamera pikselini degil, yalnizca RealityKit dekorlarini ve onlarin golgelerini etkiler.
+   `Projektor Hedefini Sec`e basin ve isin vuracagi yuzeye dokunun. Guc, renk
+   sicakligi, spot acisi, kenar yumusakligi ve acik/kapali durumu degistirilebilir.
+   RealityKit SpotLight sanal dekorlari ve golgelerini fiziksel olarak aydinlatir;
+   gercek kamera pikseli yeniden isiklandirilmaz, fakat LiDAR yuzeyine oturan saydam
+   projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
 9. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
    degilse istek siraya alinir ve otomatik tamamlanir.
@@ -142,7 +155,8 @@ CineARProjects/MainSet/
   Recordings/*.mov
 ```
 
-`scene.json`, dekor kimliklerini, yerel transformlarini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
+`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, projektor hedef
+koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
 haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama

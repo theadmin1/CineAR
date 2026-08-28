@@ -5,7 +5,7 @@ import RealityKit
 import simd
 
 struct SceneProject: Codable {
-    static let currentVersion = 3
+    static let currentVersion = 4
 
     var version = currentVersion
     var name = "Ana Set"
@@ -30,9 +30,10 @@ struct VirtualLightSettings: Codable, Equatable {
         // environment lighting while still leaving headroom for art direction.
         intensityLumens: 6_000,
         temperatureKelvin: 4_200,
-        coneAngleDegrees: 72,
+        coneAngleDegrees: 18,
         yawDegrees: 0,
-        tiltDegrees: 0
+        tiltDegrees: 0,
+        beamSoftness: 0.34
     )
 
     var isEnabled: Bool
@@ -43,18 +44,74 @@ struct VirtualLightSettings: Codable, Equatable {
     // steerable fixtures were introduced.
     var yawDegrees: Float?
     var tiltDegrees: Float?
+    // Version-4 projector data is optional so scenes saved by earlier releases
+    // continue to decode without migration failures. The target is stored in the
+    // restored AR world coordinate system and therefore survives world-map reloads.
+    var beamSoftness: Float?
+    var targetPosition: [Float]?
+    var targetNormal: [Float]?
+
+    init(
+        isEnabled: Bool,
+        intensityLumens: Float,
+        temperatureKelvin: Float,
+        coneAngleDegrees: Float,
+        yawDegrees: Float? = nil,
+        tiltDegrees: Float? = nil,
+        beamSoftness: Float? = nil,
+        targetPosition: [Float]? = nil,
+        targetNormal: [Float]? = nil
+    ) {
+        self.isEnabled = isEnabled
+        self.intensityLumens = intensityLumens
+        self.temperatureKelvin = temperatureKelvin
+        self.coneAngleDegrees = coneAngleDegrees
+        self.yawDegrees = yawDegrees
+        self.tiltDegrees = tiltDegrees
+        self.beamSoftness = beamSoftness
+        self.targetPosition = targetPosition
+        self.targetNormal = targetNormal
+    }
 
     var effectiveYawDegrees: Float { yawDegrees ?? 0 }
     var effectiveTiltDegrees: Float { tiltDegrees ?? 0 }
+    var effectiveBeamSoftness: Float { beamSoftness ?? 0.34 }
+
+    var projectorTarget: SIMD3<Float>? {
+        guard let targetPosition,
+              targetPosition.count == 3,
+              targetPosition.allSatisfy(\.isFinite) else { return nil }
+        return SIMD3(targetPosition[0], targetPosition[1], targetPosition[2])
+    }
+
+    var projectorTargetNormal: SIMD3<Float>? {
+        guard let targetNormal,
+              targetNormal.count == 3,
+              targetNormal.allSatisfy(\.isFinite) else { return nil }
+        let normal = SIMD3(targetNormal[0], targetNormal[1], targetNormal[2])
+        guard simd_length_squared(normal) > 0.000_001 else { return nil }
+        return simd_normalize(normal)
+    }
 
     var isValid: Bool {
         let yawIsValid = yawDegrees.map { $0.isFinite && (-180...180).contains($0) } ?? true
         let tiltIsValid = tiltDegrees.map { $0.isFinite && (-75...75).contains($0) } ?? true
+        let softnessIsValid = beamSoftness.map { $0.isFinite && (0...1).contains($0) } ?? true
+        let targetIsValid = targetPosition.map {
+            $0.count == 3 && $0.allSatisfy(\.isFinite)
+        } ?? true
+        let targetNormalIsValid = targetNormal.map {
+            guard $0.count == 3, $0.allSatisfy(\.isFinite) else { return false }
+            return simd_length_squared(SIMD3($0[0], $0[1], $0[2])) > 0.000_001
+        } ?? true
         return intensityLumens.isFinite && (0...12_000).contains(intensityLumens)
             && temperatureKelvin.isFinite && (2_000...6_500).contains(temperatureKelvin)
-            && coneAngleDegrees.isFinite && (15...120).contains(coneAngleDegrees)
+            && coneAngleDegrees.isFinite && (8...120).contains(coneAngleDegrees)
             && yawIsValid
             && tiltIsValid
+            && softnessIsValid
+            && targetIsValid
+            && targetNormalIsValid
     }
 }
 
@@ -252,33 +309,12 @@ final class SceneProjectStore {
         return recoveredPlacements.count
     }
 
-    private static func recoveredDefaultTransform(for kind: PropKind) -> StoredTransform {
-        let translation: SIMD3<Float>
-        if let descriptor = kind.photorealDescriptor {
-            switch descriptor.surface {
-            case .floor, .horizontal:
-                translation = [0, descriptor.dimensions.y * 0.5, 0]
-            case .wall:
-                translation = [0, 0, descriptor.dimensions.z * 0.5 + 0.008]
-            case .ceiling:
-                translation = [0, -descriptor.dimensions.y * 0.5, 0]
-            }
-        } else {
-            switch kind {
-            case .stage: translation = [0, 0.09, 0]
-            case .crate: translation = [0, 0.275, 0]
-            case .plant: translation = [0, 0.18, 0]
-            case .floorLamp: translation = [0, 0.025, 0]
-            case .rug: translation = [0, 0.006, 0]
-            case .backdrop: translation = [0, 0.90, 0]
-            default: translation = .zero
-            }
-        }
+    private static func recoveredDefaultTransform(for _: PropKind) -> StoredTransform {
         return StoredTransform(
             Transform(
                 scale: [1, 1, 1],
                 rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
-                translation: translation
+                translation: .zero
             )
         )
     }
@@ -541,7 +577,25 @@ final class SceneProjectStore {
     private static func decodeProject(from url: URL) throws -> SceneProject {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let project = try decoder.decode(SceneProject.self, from: Data(contentsOf: url))
+        var project = try decoder.decode(SceneProject.self, from: Data(contentsOf: url))
+        if project.version < 4 {
+            // Earlier renderers stored a half-height offset in the placement entity.
+            // Version 4 uses a contact-plane pivot, so retaining that legacy offset
+            // would make every restored object float above its anchor.
+            for index in project.placements.indices {
+                guard project.placements[index].transform.translation.count == 3 else { continue }
+                project.placements[index].transform.translation = [0, 0, 0]
+                if var light = project.placements[index].lightSettings {
+                    if abs(light.coneAngleDegrees - 72) < 0.01 {
+                        light.coneAngleDegrees = 18
+                    }
+                    if light.beamSoftness == nil { light.beamSoftness = 0.34 }
+                    project.placements[index].lightSettings = light
+                }
+            }
+            project.version = 4
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }

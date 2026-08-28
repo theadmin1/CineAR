@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.10.4`
-- Proje build numarası: `17`
+- Uygulama sürümü: `0.11.0`
+- Proje build numarası: `18`
 - Git dalı: `main`
-- Kaynak commit: `590cbfaa7e5232fbc1fe98669e3bb280daf173d6`
-- Oluşturulma zamanı: `2026-08-27 18:52:59 +03:00`
+- Kaynak commit: `7e775a75f780faf1a4962b5894d15ad6fb30e3ce`
+- Oluşturulma zamanı: `2026-08-28 13:24:56 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -258,14 +258,14 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 435 | 17725 |
-| `CineAR/ARSessionController.swift` | 2814 | 117068 |
+| `CineAR/ARSessionController.swift` | 3750 | 156282 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 637 | 25253 |
+| `CineAR/ContentView.swift` | 684 | 27209 |
 | `CineAR/Info.plist` | 56 | 1855 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 345 | 13775 |
@@ -275,12 +275,12 @@ Yok.
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2073 | 79050 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
-| `CineAR/SceneProjectStore.swift` | 598 | 24122 |
+| `CineAR/SceneProjectStore.swift` | 652 | 26559 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 115 | 7323 |
+| `Docs/DEVICE_TEST.md` | 127 | 8343 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 174 | 10626 |
+| `README.md` | 188 | 11663 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -1052,13 +1052,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 18;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.4;
+				MARKETING_VERSION = 0.11.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1075,12 +1075,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 17;
+				CURRENT_PROJECT_VERSION = 18;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.10.4;
+				MARKETING_VERSION = 0.11.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1591,6 +1591,7 @@ final class AIDepthOcclusionRenderer {
 ````swift
 import ARKit
 import Combine
+import Foundation
 import RealityKit
 import RoomPlan
 import simd
@@ -1614,6 +1615,10 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isPlacingProp = false
     @Published private(set) var isRoomOutlineVisible = false
     @Published private(set) var selectedLightSettings: VirtualLightSettings?
+    @Published private(set) var isAimingLight = false
+    @Published private(set) var placementSurfaceMessage = "Yüzey ölçülüyor"
+    @Published private(set) var placementSurfaceColor: Color = .yellow
+    @Published private(set) var placementReticlePoint: CGPoint?
     @Published private(set) var aiEnhancementEnabled = false
     @Published private(set) var aiServerAddress = ""
     @Published private(set) var aiEnhancementStatus: AIEnhancementStatus = .disabled
@@ -1635,6 +1640,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var renderedLights: [UUID: SpotLight] = [:]
     private var renderedLightEmitters: [UUID: ModelEntity] = [:]
+    private var renderedLightFootprints: [UUID: AnchorEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
     private var renderGeneration: UInt64 = 0
@@ -1655,6 +1661,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
     private var lastKnownCeilingY: Float?
+    private let floorSurfaceTracker = FloorSurfaceTracker()
+    private var lastPlacementGuidanceTimestamp: TimeInterval = 0
+    private var lastProjectorRefreshTimestamp: TimeInterval = 0
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
@@ -1723,6 +1732,14 @@ final class ARSessionController: NSObject, ObservableObject {
         tap.cancelsTouchesInView = false
         tap.delegate = self
         view.addGestureRecognizer(tap)
+        let surfaceProbe = UILongPressGestureRecognizer(
+            target: self,
+            action: #selector(handleSurfaceProbe(_:))
+        )
+        surfaceProbe.minimumPressDuration = 0
+        surfaceProbe.cancelsTouchesInView = false
+        surfaceProbe.delegate = self
+        view.addGestureRecognizer(surfaceProbe)
         addCoachingOverlay(to: view)
 
         arView = view
@@ -1760,6 +1777,10 @@ final class ARSessionController: NSObject, ObservableObject {
            ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
         }
+        if enableAdvancedOcclusion,
+           ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        }
         return configuration
     }
 
@@ -1793,10 +1814,13 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
+        renderedLightFootprints.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
         selectedEntityID = nil
         selectedLightSettings = nil
+        isAimingLight = false
+        placementReticlePoint = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
         aiEnhancementClient.cancel()
@@ -1805,6 +1829,7 @@ final class ARSessionController: NSObject, ObservableObject {
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
         lastKnownCeilingY = nil
+        floorSurfaceTracker.reset()
         if roomCoordinateSpaceIsActive {
             updateKnownFloorFromRoomData()
         }
@@ -2188,6 +2213,8 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func selectProp(_ prop: PropKind) {
         persistSelectedLightSettings()
+        isAimingLight = false
+        placementReticlePoint = nil
         selectedProp = prop
         selectedEntityID = nil
         selectedLightSettings = nil
@@ -2196,6 +2223,8 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
             isPlacingProp = true
+            placementSurfaceMessage = "LiDAR yüzeyi doğrulanıyor"
+            placementSurfaceColor = .yellow
             publishStatus(
                 "\(prop.title) seçildi — \(placementInstruction(for: prop))",
                 color: .blue
@@ -2206,6 +2235,9 @@ final class ARSessionController: NSObject, ObservableObject {
     func cancelPlacement() {
         guard isPlacingProp else { return }
         isPlacingProp = false
+        placementSurfaceMessage = "Yerleştirme kapalı"
+        placementSurfaceColor = .yellow
+        placementReticlePoint = nil
         publishStatus("Yerleştirme iptal edildi", color: .yellow)
     }
 
@@ -2233,6 +2265,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func selectRenderedEntity(id: UUID) {
         persistSelectedLightSettings()
+        isAimingLight = false
         selectedEntityID = id
         if let placement = projectStore.placement(id: id), placement.kind.emitsVirtualLight {
             selectedLightSettings = placement.lightSettings ?? .defaultFixture
@@ -2246,6 +2279,11 @@ final class ARSessionController: NSObject, ObservableObject {
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
+
+        if isAimingLight {
+            retargetSelectedLight(in: arView, at: point)
+            return
+        }
 
         if !isPlacingProp,
            let hitEntity = arView.entity(at: point),
@@ -2265,7 +2303,7 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
-        guard let placementTransform = placementWorldTransform(
+        guard let placementSolution = placementSolution(
             in: arView,
             at: point,
             for: selectedProp
@@ -2276,6 +2314,7 @@ final class ARSessionController: NSObject, ObservableObject {
             )
             return
         }
+        let placementTransform = placementSolution.transform
 
         let id = UUID()
         guard selectedProp != .custom || selectedAssetURL != nil else {
@@ -2302,11 +2341,15 @@ final class ARSessionController: NSObject, ObservableObject {
             selectedEntityID = id
             selectedLightSettings = placement.lightSettings
             isPlacingProp = false
+            placementReticlePoint = nil
             render(prop: selectedProp, id: id, for: anchor)
             if selectedProp == .custom {
                 publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
             } else if renderedEntities[id] != nil {
-                publishStatus("\(selectedProp.title) sahneye sabitlendi", color: .green)
+                publishStatus(
+                    "\(selectedProp.title) yüzeye sabitlendi — \(placementSolution.source.title)",
+                    color: .green
+                )
             } else {
                 publishStatus("\(selectedProp.title) hazırlanıyor...", color: .yellow)
             }
@@ -2315,11 +2358,24 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
-    private func placementWorldTransform(
+    @objc private func handleSurfaceProbe(_ recognizer: UILongPressGestureRecognizer) {
+        guard isPlacingProp, let arView,
+              recognizer.state == .began || recognizer.state == .changed else { return }
+        let point = recognizer.location(in: arView)
+        placementReticlePoint = point
+        guard let frame = arView.session.currentFrame else { return }
+        updatePlacementGuidance(using: frame, at: point, force: true)
+    }
+
+    private func placementSolution(
         in arView: ARView,
         at point: CGPoint,
         for prop: PropKind
-    ) -> simd_float4x4? {
+    ) -> PlacementSurfaceSolution? {
+        if prop.placementSurface == .floor {
+            return strictFloorPlacementSolution(in: arView, at: point, for: prop)
+        }
+
         // When a room theme is visible, use the geometry the user actually sees. The
         // RoomPlan replacement scene is virtual RealityKit content, so ARKit's plane
         // raycast below cannot intersect it on its own.
@@ -2330,11 +2386,17 @@ final class ARSessionController: NSObject, ObservableObject {
                 position: hit.position,
                 cameraY: arView.cameraTransform.translation.y
             ) {
-                return placementTransform(
+                return PlacementSurfaceSolution(
+                    transform: placementTransform(
+                        position: hit.position,
+                        normal: hit.normal,
+                        prop: prop,
+                        cameraPosition: arView.cameraTransform.translation
+                    ),
                     position: hit.position,
                     normal: hit.normal,
-                    prop: prop,
-                    cameraPosition: arView.cameraTransform.translation
+                    source: .roomPlanGeometry,
+                    depthMeters: nil
                 )
             }
         }
@@ -2352,11 +2414,17 @@ final class ARSessionController: NSObject, ObservableObject {
                     cameraY: arView.cameraTransform.translation.y
                 )
         }) {
-            return placementTransform(
+            return PlacementSurfaceSolution(
+                transform: placementTransform(
+                    position: hit.position,
+                    normal: hit.normal,
+                    prop: prop,
+                    cameraPosition: arView.cameraTransform.translation
+                ),
                 position: hit.position,
                 normal: hit.normal,
-                prop: prop,
-                cameraPosition: arView.cameraTransform.translation
+                source: .lidarMesh,
+                depthMeters: nil
             )
         }
 
@@ -2377,15 +2445,23 @@ final class ARSessionController: NSObject, ObservableObject {
                 raycastResult($0, matches: prop, cameraY: arView.cameraTransform.translation.y)
             }) {
                 let position = result.worldTransform.columns.3
-                return placementTransform(
-                    position: [position.x, position.y, position.z],
-                    normal: [
+                let worldPosition = SIMD3<Float>(position.x, position.y, position.z)
+                let normal = SIMD3<Float>(
                         result.worldTransform.columns.1.x,
                         result.worldTransform.columns.1.y,
                         result.worldTransform.columns.1.z
-                    ],
-                    prop: prop,
-                    cameraPosition: arView.cameraTransform.translation
+                    )
+                return PlacementSurfaceSolution(
+                    transform: placementTransform(
+                        position: worldPosition,
+                        normal: normal,
+                        prop: prop,
+                        cameraPosition: arView.cameraTransform.translation
+                    ),
+                    position: worldPosition,
+                    normal: normal,
+                    source: .arkitPlane,
+                    depthMeters: nil
                 )
             }
         }
@@ -2401,11 +2477,18 @@ final class ARSessionController: NSObject, ObservableObject {
             guard direction.y > 0.025 else { return nil }
             let distance = (ceilingY - ray.origin.y) / direction.y
             if distance.isFinite, distance >= 0.20, distance <= 8.0 {
-                return placementTransform(
-                    position: ray.origin + direction * distance,
+                let position = ray.origin + direction * distance
+                return PlacementSurfaceSolution(
+                    transform: placementTransform(
+                        position: position,
+                        normal: [0, -1, 0],
+                        prop: prop,
+                        cameraPosition: arView.cameraTransform.translation
+                    ),
+                    position: position,
                     normal: [0, -1, 0],
-                    prop: prop,
-                    cameraPosition: arView.cameraTransform.translation
+                    source: .roomPlanLevel,
+                    depthMeters: nil
                 )
             }
         }
@@ -2413,7 +2496,7 @@ final class ARSessionController: NSObject, ObservableObject {
         // A completed RoomPlan scan provides a persistent world-space floor level.
         // Intersect the exact screen ray with that recorded floor instead of guessing
         // from camera height. This remains stable while making the full floor tappable.
-        if prop.placementSurface == .floor || prop.placementSurface == .horizontal,
+        if prop.placementSurface == .horizontal,
            roomCoordinateSpaceIsActive,
            let floorY = lastKnownFloorY,
            let ray = arView.ray(through: point) {
@@ -2421,11 +2504,18 @@ final class ARSessionController: NSObject, ObservableObject {
             guard direction.y < -0.025 else { return nil }
             let distance = (floorY - ray.origin.y) / direction.y
             if distance.isFinite, distance >= 0.20, distance <= 8.0 {
-                return placementTransform(
-                    position: ray.origin + direction * distance,
+                let position = ray.origin + direction * distance
+                return PlacementSurfaceSolution(
+                    transform: placementTransform(
+                        position: position,
+                        normal: [0, 1, 0],
+                        prop: prop,
+                        cameraPosition: arView.cameraTransform.translation
+                    ),
+                    position: position,
                     normal: [0, 1, 0],
-                    prop: prop,
-                    cameraPosition: arView.cameraTransform.translation
+                    source: .roomPlanLevel,
+                    depthMeters: nil
                 )
             }
         }
@@ -2434,6 +2524,181 @@ final class ARSessionController: NSObject, ObservableObject {
         // for a single frame but visibly swims once the camera moves. The user keeps
         // placement mode active until ARKit has a persistent plane/RoomPlan surface.
         return nil
+    }
+
+    /// Floor props use a deliberately stricter resolver than generic horizontal
+    /// props. A table is horizontal and often sits more than 25 cm below the camera;
+    /// height alone can therefore never prove that a hit is the floor.
+    private func strictFloorPlacementSolution(
+        in arView: ARView,
+        at point: CGPoint,
+        for prop: PropKind
+    ) -> PlacementSurfaceSolution? {
+        guard let frame = arView.session.currentFrame else { return nil }
+        let cameraY = frame.camera.transform.columns.3.y
+        let depth = sceneDepthSample(frame: frame, in: arView, at: point)
+
+        // A finite classified plane is the strongest tap-local ARKit result. When
+        // LiDAR depth exists it must agree, preventing a floor plane behind a table
+        // from accepting the table pixel as a floor placement.
+        let classifiedResults = arView.raycast(
+            from: point,
+            allowing: .existingPlaneGeometry,
+            alignment: .horizontal
+        )
+        for result in classifiedResults {
+            guard let plane = result.anchor as? ARPlaneAnchor,
+                  plane.classification == .floor else { continue }
+            let position = SIMD3<Float>(
+                result.worldTransform.columns.3.x,
+                result.worldTransform.columns.3.y,
+                result.worldTransform.columns.3.z
+            )
+            guard depth.map({ floorDepthAgrees($0, position: position, floorY: position.y) })
+                    ?? true else { continue }
+            return floorSolution(
+                position: position,
+                normal: [0, 1, 0],
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation,
+                source: .classifiedFloorPlane,
+                depth: depth
+            )
+        }
+
+        guard let floor = floorSurfaceTracker.estimate(cameraY: cameraY),
+              floor.isStable else { return nil }
+        lastKnownFloorY = floor.y
+
+        // Scene-understanding collision is exact to the reconstructed LiDAR mesh,
+        // but RealityKit doesn't expose the mesh face classification in this hit.
+        // Require agreement with both the classified floor level and tap-local depth.
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
+            entityID(from: $0.entity) == nil
+                && !belongsToRoomReality($0.entity)
+                && !belongsToProjectorVisualization($0.entity)
+                && abs(simd_normalize($0.normal).y) >= 0.78
+                && abs($0.position.y - floor.y) <= 0.055
+        }), let depth,
+           floorDepthAgrees(depth, position: hit.position, floorY: floor.y) {
+            return floorSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation,
+                source: .lidarMesh,
+                depth: depth
+            )
+        }
+
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
+           abs(simd_normalize(hit.normal).y) >= 0.78,
+           abs(hit.position.y - floor.y) <= 0.055,
+           let depth,
+           floorDepthAgrees(depth, position: hit.position, floorY: floor.y) {
+            return floorSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation,
+                source: .roomPlanGeometry,
+                depth: depth
+            )
+        }
+
+        // Extend the trusted floor only when the current depth pixel independently
+        // lands on that same metric level. This makes an already-scanned floor fully
+        // tappable without ever projecting through furniture in the foreground.
+        guard let ray = arView.ray(through: point) else { return nil }
+        let direction = simd_normalize(ray.direction)
+        guard direction.y < -0.025 else { return nil }
+        let distance = (floor.y - ray.origin.y) / direction.y
+        guard distance.isFinite, (0.20...8.0).contains(distance) else { return nil }
+        let position = ray.origin + direction * distance
+        guard let depth,
+              floorDepthAgrees(depth, position: position, floorY: floor.y) else { return nil }
+        return floorSolution(
+            position: position,
+            normal: [0, 1, 0],
+            prop: prop,
+            cameraPosition: arView.cameraTransform.translation,
+            source: floor.source,
+            depth: depth
+        )
+    }
+
+    private func floorSolution(
+        position: SIMD3<Float>,
+        normal: SIMD3<Float>,
+        prop: PropKind,
+        cameraPosition: SIMD3<Float>,
+        source: PlacementSurfaceSource,
+        depth: SceneDepthSurfaceSample?
+    ) -> PlacementSurfaceSolution {
+        PlacementSurfaceSolution(
+            transform: placementTransform(
+                position: position,
+                normal: normal,
+                prop: prop,
+                cameraPosition: cameraPosition
+            ),
+            position: position,
+            normal: normal,
+            source: source,
+            depthMeters: depth?.depthMeters
+        )
+    }
+
+    private func floorDepthAgrees(
+        _ depth: SceneDepthSurfaceSample,
+        position: SIMD3<Float>,
+        floorY: Float
+    ) -> Bool {
+        guard abs(depth.worldPoint.y - floorY) <= 0.10,
+              simd_distance(depth.worldPoint, position) <= 0.22 else { return false }
+        if let normal = depth.worldNormal {
+            return abs(normal.y) >= 0.68
+        }
+        return true
+    }
+
+    private func updatePlacementGuidance(
+        using frame: ARFrame,
+        at requestedPoint: CGPoint? = nil,
+        force: Bool = false
+    ) {
+        guard isPlacingProp, let arView,
+              force || frame.timestamp - lastPlacementGuidanceTimestamp >= 0.14 else { return }
+        lastPlacementGuidanceTimestamp = frame.timestamp
+        guard isARReady, case .normal = frame.camera.trackingState else {
+            placementSurfaceMessage = "Sarı: dünya takibinin yeşile dönmesini bekle"
+            placementSurfaceColor = .yellow
+            return
+        }
+        let point = requestedPoint
+            ?? placementReticlePoint
+            ?? CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        if let solution = placementSolution(in: arView, at: point, for: selectedProp) {
+            let depthText = solution.depthMeters.map { String(format: " • %.2f m", $0) } ?? ""
+            placementSurfaceMessage = "Doğrulandı: \(solution.source.title)\(depthText)"
+            placementSurfaceColor = .green
+            return
+        }
+
+        if selectedProp.placementSurface == .floor {
+            let cameraY = frame.camera.transform.columns.3.y
+            if let estimate = floorSurfaceTracker.estimate(cameraY: cameraY), estimate.isStable,
+               sceneDepthSample(frame: frame, in: arView, at: point) != nil {
+                placementSurfaceMessage = "Kırmızı: görünen yüzey zemin değil"
+                placementSurfaceColor = .red
+            } else {
+                placementSurfaceMessage = "Sarı: LiDAR zemini ölçüyor"
+                placementSurfaceColor = .yellow
+            }
+        } else {
+            placementSurfaceMessage = "Sarı: uygun yüzeyi yavaşça tara"
+            placementSurfaceColor = .yellow
+        }
     }
 
     private func surfaceAccepts(
@@ -2469,20 +2734,24 @@ final class ARSessionController: NSObject, ObservableObject {
         case .ceiling:
             return classification == .ceiling || y > cameraY + 0.25
         case .floor:
-            return classification == .floor || y < cameraY - 0.25
+            return classification == .floor
         case .horizontal:
             return classification != .ceiling && y < cameraY + 0.20
         }
     }
 
     private func updateKnownFloorFromRoomData() {
+        floorSurfaceTracker.clearRoomFloor()
+        lastKnownFloorY = nil
         guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
         let levels = room.floors.compactMap { floor -> Float? in
             let y = floor.transform.columns.3.y
             return y.isFinite ? y : nil
         }.sorted()
         if !levels.isEmpty {
-            lastKnownFloorY = levels[levels.count / 2]
+            let roomFloorY = levels[levels.count / 2]
+            floorSurfaceTracker.setRoomFloor(roomFloorY)
+            lastKnownFloorY = roomFloorY
         }
         do {
             if let ceilingY = try roomRealityRenderer.inferredCeilingLevel(
@@ -2497,19 +2766,119 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func updateKnownFloor(from anchors: [ARAnchor]) {
         guard let cameraY = arView?.session.currentFrame?.camera.transform.columns.3.y else { return }
-        let planes = anchors.compactMap { $0 as? ARPlaneAnchor }.filter {
-            $0.alignment == .horizontal
+        floorSurfaceTracker.update(with: anchors, cameraY: cameraY)
+        if let estimate = floorSurfaceTracker.estimate(cameraY: cameraY), estimate.isStable {
+            lastKnownFloorY = estimate.y
         }
-        let classifiedFloors = planes.filter { $0.classification == .floor }
-        let candidates = classifiedFloors.isEmpty ? planes : classifiedFloors
-        let levels = candidates.map { $0.transform.columns.3.y }.filter {
-            $0.isFinite && $0 < cameraY - 0.20
+    }
+
+    private func sceneDepthSample(
+        frame: ARFrame,
+        in arView: ARView,
+        at viewPoint: CGPoint
+    ) -> SceneDepthSurfaceSample? {
+        guard arView.bounds.width > 1, arView.bounds.height > 1,
+              let sceneDepth = frame.smoothedSceneDepth ?? frame.sceneDepth else { return nil }
+        let depthMap = sceneDepth.depthMap
+        let depthWidth = CVPixelBufferGetWidth(depthMap)
+        let depthHeight = CVPixelBufferGetHeight(depthMap)
+        guard depthWidth > 4, depthHeight > 4 else { return nil }
+
+        let orientation = arView.window?.windowScene?.interfaceOrientation ?? .portrait
+        let normalizedViewPoint = CGPoint(
+            x: viewPoint.x / arView.bounds.width,
+            y: viewPoint.y / arView.bounds.height
+        )
+        let imagePoint = normalizedViewPoint.applying(
+            frame.displayTransform(
+                for: orientation,
+                viewportSize: arView.bounds.size
+            ).inverted()
+        )
+        guard imagePoint.x.isFinite, imagePoint.y.isFinite,
+              (0...1).contains(imagePoint.x), (0...1).contains(imagePoint.y) else { return nil }
+
+        let centerX = min(max(Int(imagePoint.x * CGFloat(depthWidth - 1)), 2), depthWidth - 3)
+        let centerY = min(max(Int(imagePoint.y * CGFloat(depthHeight - 1)), 2), depthHeight - 3)
+        let confidenceMap = sceneDepth.confidenceMap
+
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        if let confidenceMap { CVPixelBufferLockBaseAddress(confidenceMap, .readOnly) }
+        defer {
+            if let confidenceMap { CVPixelBufferUnlockBaseAddress(confidenceMap, .readOnly) }
+            CVPixelBufferUnlockBaseAddress(depthMap, .readOnly)
         }
-        if let closest = levels.min(by: {
-            abs($0 - (cameraY - 1.40)) < abs($1 - (cameraY - 1.40))
-        }) {
-            lastKnownFloorY = closest
+        guard let depthBase = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
+        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+        let confidenceBase = confidenceMap.flatMap { CVPixelBufferGetBaseAddress($0) }
+        let confidenceBytesPerRow = confidenceMap.map { CVPixelBufferGetBytesPerRow($0) } ?? 0
+
+        func confidenceIsUsable(x: Int, y: Int) -> Bool {
+            guard let confidenceBase else { return true }
+            let value = confidenceBase
+                .advanced(by: y * confidenceBytesPerRow + x)
+                .assumingMemoryBound(to: UInt8.self).pointee
+            return value >= UInt8(ARConfidenceLevel.medium.rawValue)
         }
+
+        func depthValue(x: Int, y: Int) -> Float? {
+            guard x >= 0, x < depthWidth, y >= 0, y < depthHeight,
+                  confidenceIsUsable(x: x, y: y) else { return nil }
+            let row = depthBase.advanced(by: y * depthBytesPerRow)
+            let value = row.assumingMemoryBound(to: Float32.self)[x]
+            return value.isFinite && (0.15...8.0).contains(value) ? value : nil
+        }
+
+        var neighborhood: [Float] = []
+        neighborhood.reserveCapacity(25)
+        for y in (centerY - 2)...(centerY + 2) {
+            for x in (centerX - 2)...(centerX + 2) {
+                if let value = depthValue(x: x, y: y) { neighborhood.append(value) }
+            }
+        }
+        guard neighborhood.count >= 9 else { return nil }
+        neighborhood.sort()
+        let medianDepth = neighborhood[neighborhood.count / 2]
+
+        func unproject(x: Int, y: Int, depth: Float) -> SIMD3<Float> {
+            let imageResolution = frame.camera.imageResolution
+            let scaleX = Float(depthWidth) / Float(imageResolution.width)
+            let scaleY = Float(depthHeight) / Float(imageResolution.height)
+            let intrinsics = frame.camera.intrinsics
+            let fx = intrinsics.columns.0.x * scaleX
+            let fy = intrinsics.columns.1.y * scaleY
+            let cx = intrinsics.columns.2.x * scaleX
+            let cy = intrinsics.columns.2.y * scaleY
+            let cameraPoint = SIMD4<Float>(
+                (Float(x) - cx) / fx * depth,
+                -(Float(y) - cy) / fy * depth,
+                -depth,
+                1
+            )
+            let worldPoint = frame.camera.transform * cameraPoint
+            return SIMD3(worldPoint.x, worldPoint.y, worldPoint.z)
+        }
+
+        let worldPoint = unproject(x: centerX, y: centerY, depth: medianDepth)
+        var worldNormal: SIMD3<Float>?
+        if let leftDepth = depthValue(x: centerX - 2, y: centerY),
+           let rightDepth = depthValue(x: centerX + 2, y: centerY),
+           let upperDepth = depthValue(x: centerX, y: centerY - 2),
+           let lowerDepth = depthValue(x: centerX, y: centerY + 2) {
+            let horizontal = unproject(x: centerX + 2, y: centerY, depth: rightDepth)
+                - unproject(x: centerX - 2, y: centerY, depth: leftDepth)
+            let vertical = unproject(x: centerX, y: centerY + 2, depth: lowerDepth)
+                - unproject(x: centerX, y: centerY - 2, depth: upperDepth)
+            let crossed = simd_cross(horizontal, vertical)
+            if simd_length_squared(crossed) > 0.000_001 {
+                worldNormal = simd_normalize(crossed)
+            }
+        }
+        return SceneDepthSurfaceSample(
+            worldPoint: worldPoint,
+            worldNormal: worldNormal,
+            depthMeters: medianDepth
+        )
     }
 
     private func placementTransform(
@@ -2584,6 +2953,7 @@ final class ARSessionController: NSObject, ObservableObject {
             arView.session.remove(anchor: anchor)
         }
         renderedEntities.values.forEach { $0.parent?.removeFromParent() }
+        renderedLightFootprints.values.forEach { $0.scene?.removeAnchor($0) }
         renderedAnchorIDs.removeAll()
         renderedAnchorIDByPlacementID.removeAll()
         knownPropAnchorIDs.removeAll()
@@ -2593,8 +2963,10 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
+        renderedLightFootprints.removeAll()
         selectedEntityID = nil
         selectedLightSettings = nil
+        isAimingLight = false
         publishStatus("Sanal dekorlar temizlendi", color: .green)
     }
 
@@ -2633,6 +3005,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func showSceneLightControls() {
         persistSelectedLightSettings()
+        isAimingLight = false
         if let placement = projectStore.project.placements.last(where: {
             $0.kind.emitsVirtualLight
         }) {
@@ -2659,6 +3032,8 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedEntityID = nil
         selectedLightSettings = nil
         isPlacingProp = true
+        placementSurfaceMessage = "Sarı: LiDAR tavanı ölçüyor"
+        placementSurfaceColor = .yellow
         publishStatus(
             "Sahne ışığı eklemek için taranmış tavana dokun",
             color: .blue
@@ -2845,12 +3220,16 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
+        if let footprint = renderedLightFootprints.removeValue(forKey: id) {
+            footprint.scene?.removeAnchor(footprint)
+        }
         assetLoadSubscriptions[id]?.cancel()
         assetLoadSubscriptions[id] = nil
         loadingEntityIDs.remove(id)
         if clearSelection, selectedEntityID == id {
             selectedEntityID = nil
             selectedLightSettings = nil
+            isAimingLight = false
         }
     }
 
@@ -3296,6 +3675,7 @@ final class ARSessionController: NSObject, ObservableObject {
               renderedEntities[id] == nil,
               let placement = projectStore.placement(id: id),
               placement.kind == prop else { return }
+        let entity = makeContactPivotEntity(content: entity, for: prop)
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
@@ -3312,6 +3692,11 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         anchorEntity.addChild(entity)
         arView.scene.addAnchor(anchorEntity)
+        if prop.emitsVirtualLight,
+           let light = renderedLights[id],
+           let settings = placement.lightSettings ?? selectedLightSettings {
+            apply(settings: settings, to: light, prop: prop)
+        }
 
         // Translation is deliberately excluded: a placed prop stays bound to its
         // world anchor. Rotation and scale remain available for art direction.
@@ -3340,6 +3725,7 @@ final class ARSessionController: NSObject, ObservableObject {
               placement.kind == prop else { return false }
 
         let preservedTransform = current.transform
+        let entity = makeContactPivotEntity(content: entity, for: prop)
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
@@ -3361,6 +3747,13 @@ final class ARSessionController: NSObject, ObservableObject {
             }
         }
         parent.addChild(entity)
+        if prop.emitsVirtualLight,
+           let light = renderedLights[id] {
+            let settings = (selectedEntityID == id ? selectedLightSettings : nil)
+                ?? placement.lightSettings
+                ?? .defaultFixture
+            apply(settings: settings, to: light, prop: prop)
+        }
         arView.installGestures([.rotation, .scale], for: entity)
         renderedEntities[id] = entity
         return true
@@ -3387,20 +3780,49 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func setSelectedLightConeAngle(_ degrees: Float) {
         guard var settings = selectedLightSettings else { return }
-        settings.coneAngleDegrees = min(max(degrees, 15), 120)
+        settings.coneAngleDegrees = min(max(degrees, 8), 120)
+        previewSelectedLight(settings)
+    }
+
+    func setSelectedLightSoftness(_ softness: Float) {
+        guard var settings = selectedLightSettings else { return }
+        settings.beamSoftness = min(max(softness, 0), 1)
         previewSelectedLight(settings)
     }
 
     func setSelectedLightYaw(_ degrees: Float) {
         guard var settings = selectedLightSettings else { return }
         settings.yawDegrees = min(max(degrees, -180), 180)
+        settings.targetPosition = nil
+        settings.targetNormal = nil
         previewSelectedLight(settings)
     }
 
     func setSelectedLightTilt(_ degrees: Float) {
         guard var settings = selectedLightSettings else { return }
         settings.tiltDegrees = min(max(degrees, -75), 75)
+        settings.targetPosition = nil
+        settings.targetNormal = nil
         previewSelectedLight(settings)
+    }
+
+    func beginSelectedLightTargeting() {
+        guard selectedEntityID != nil, selectedLightSettings != nil else {
+            publishStatus("Önce sahnedeki bir ışığı seç", color: .yellow)
+            return
+        }
+        isPlacingProp = false
+        isAimingLight = true
+        publishStatus(
+            "Projektör hedefi — ışığın vuracağı zemin, masa veya duvara dokun",
+            color: .blue
+        )
+    }
+
+    func cancelSelectedLightTargeting() {
+        guard isAimingLight else { return }
+        isAimingLight = false
+        publishStatus("Projektör hedef seçimi iptal edildi", color: .yellow)
     }
 
     func persistSelectedLightSettings() {
@@ -3423,6 +3845,77 @@ final class ARSessionController: NSObject, ObservableObject {
               let light = renderedLights[id],
               let prop = projectStore.placement(id: id)?.kind else { return }
         apply(settings: settings, to: light, prop: prop)
+    }
+
+    private func retargetSelectedLight(in arView: ARView, at point: CGPoint) {
+        guard let id = selectedEntityID,
+              var settings = selectedLightSettings,
+              renderedLights[id] != nil else {
+            isAimingLight = false
+            publishStatus("Işık hedeflenemedi; sahnedeki ışığı yeniden seç", color: .yellow)
+            return
+        }
+        guard let hit = projectorSurfaceHit(in: arView, at: point) else {
+            publishStatus("Projektör hedefi bulunamadı; yüzeyi biraz daha tara", color: .yellow)
+            return
+        }
+        let normal = simd_normalize(hit.normal)
+        settings.targetPosition = [hit.position.x, hit.position.y, hit.position.z]
+        settings.targetNormal = [normal.x, normal.y, normal.z]
+        selectedLightSettings = settings
+        isAimingLight = false
+        previewSelectedLight(settings)
+        persistSelectedLightSettings()
+        publishStatus(
+            String(format: "Projektör hedefi sabitlendi — %.2f m", hit.distanceMeters),
+            color: .green
+        )
+    }
+
+    private func projectorSurfaceHit(in arView: ARView, at point: CGPoint) -> ProjectorSurfaceHit? {
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
+            entityID(from: $0.entity) == nil
+                && !belongsToProjectorVisualization($0.entity)
+        }), simd_length_squared(hit.normal) > 0.000_001 {
+            let distance = simd_distance(hit.position, arView.cameraTransform.translation)
+            return ProjectorSurfaceHit(
+                position: hit.position,
+                normal: hit.normal,
+                distanceMeters: distance
+            )
+        }
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
+           simd_length_squared(hit.normal) > 0.000_001 {
+            return ProjectorSurfaceHit(
+                position: hit.position,
+                normal: hit.normal,
+                distanceMeters: simd_distance(hit.position, arView.cameraTransform.translation)
+            )
+        }
+        for alignment in [ARRaycastQuery.TargetAlignment.horizontal, .vertical] {
+            if let result = arView.raycast(
+                from: point,
+                allowing: .existingPlaneGeometry,
+                alignment: alignment
+            ).first {
+                let position = SIMD3<Float>(
+                    result.worldTransform.columns.3.x,
+                    result.worldTransform.columns.3.y,
+                    result.worldTransform.columns.3.z
+                )
+                let normal = SIMD3<Float>(
+                    result.worldTransform.columns.1.x,
+                    result.worldTransform.columns.1.y,
+                    result.worldTransform.columns.1.z
+                )
+                return ProjectorSurfaceHit(
+                    position: position,
+                    normal: normal,
+                    distanceMeters: simd_distance(position, arView.cameraTransform.translation)
+                )
+            }
+        }
+        return nil
     }
 
     private func installVirtualLight(
@@ -3471,34 +3964,50 @@ final class ARSessionController: NSObject, ObservableObject {
         light.isEnabled = settings.isEnabled
         light.light.intensity = settings.intensityLumens
         light.light.color = Self.colorTemperature(kelvin: settings.temperatureKelvin)
-        light.light.innerAngleInDegrees = settings.coneAngleDegrees * 0.62
+        light.light.innerAngleInDegrees = settings.coneAngleDegrees
+            * (1 - settings.effectiveBeamSoftness * 0.72)
         light.light.outerAngleInDegrees = settings.coneAngleDegrees
         light.light.attenuationRadius = min(
             max(sqrt(max(settings.intensityLumens, 1) / 1_000) * 4, 2),
             12
         )
-        let baseDirection: SIMD3<Float>
-        switch prop.placementSurface {
-        case .ceiling:
-            baseDirection = [0, -1, 0]
-        case .wall:
-            baseDirection = simd_normalize(SIMD3<Float>(0, -0.35, 1))
-        case .floor, .horizontal:
-            baseDirection = simd_normalize(SIMD3<Float>(0, -0.88, 0.32))
+        if let target = settings.projectorTarget,
+           let parent = light.parent {
+            let parentWorld = parent.transformMatrix(relativeTo: nil)
+            let localTarget4 = simd_inverse(parentWorld) * SIMD4(target.x, target.y, target.z, 1)
+            let localTarget = SIMD3(localTarget4.x, localTarget4.y, localTarget4.z)
+            let direction = localTarget - light.position
+            if simd_length_squared(direction) > 0.000_001 {
+                light.orientation = simd_quatf(
+                    from: SIMD3<Float>(0, 0, -1),
+                    to: simd_normalize(direction)
+                )
+                light.light.attenuationRadius = min(max(simd_length(direction) * 1.35, 2), 20)
+            }
+        } else {
+            let baseDirection: SIMD3<Float>
+            switch prop.placementSurface {
+            case .ceiling:
+                baseDirection = [0, -1, 0]
+            case .wall:
+                baseDirection = simd_normalize(SIMD3<Float>(0, -0.35, 1))
+            case .floor, .horizontal:
+                baseDirection = simd_normalize(SIMD3<Float>(0, -0.88, 0.32))
+            }
+            let yaw = simd_quatf(
+                angle: settings.effectiveYawDegrees * .pi / 180,
+                axis: SIMD3<Float>(0, 1, 0)
+            )
+            let tilt = simd_quatf(
+                angle: settings.effectiveTiltDegrees * .pi / 180,
+                axis: SIMD3<Float>(1, 0, 0)
+            )
+            let direction = simd_normalize(yaw.act(tilt.act(baseDirection)))
+            light.orientation = simd_quatf(
+                from: SIMD3<Float>(0, 0, -1),
+                to: direction
+            )
         }
-        let yaw = simd_quatf(
-            angle: settings.effectiveYawDegrees * .pi / 180,
-            axis: SIMD3<Float>(0, 1, 0)
-        )
-        let tilt = simd_quatf(
-            angle: settings.effectiveTiltDegrees * .pi / 180,
-            axis: SIMD3<Float>(1, 0, 0)
-        )
-        let direction = simd_normalize(yaw.act(tilt.act(baseDirection)))
-        light.orientation = simd_quatf(
-            from: SIMD3<Float>(0, 0, -1),
-            to: direction
-        )
         if let idText = light.name.split(separator: ".").last,
            let id = UUID(uuidString: String(idText)),
            let emitter = renderedLightEmitters[id] {
@@ -3509,6 +4018,164 @@ final class ARSessionController: NSObject, ObservableObject {
                 emitter.components.set(model)
             }
         }
+        refreshProjectorFootprint(id: entityID(for: light), settings: settings)
+    }
+
+    private func refreshProjectorLights() {
+        for (id, light) in renderedLights {
+            guard let placement = projectStore.placement(id: id) else { continue }
+            let settings = (selectedEntityID == id ? selectedLightSettings : nil)
+                ?? placement.lightSettings
+                ?? .defaultFixture
+            apply(settings: settings, to: light, prop: placement.kind)
+        }
+    }
+
+    private func refreshProjectorFootprint(
+        id: UUID?,
+        settings: VirtualLightSettings
+    ) {
+        guard let id, let arView, let light = renderedLights[id], light.scene != nil,
+              settings.isEnabled, settings.intensityLumens > 1 else {
+            if let id, let footprint = renderedLightFootprints.removeValue(forKey: id) {
+                footprint.scene?.removeAnchor(footprint)
+            }
+            return
+        }
+
+        let lightWorld = light.transformMatrix(relativeTo: nil)
+        let origin = SIMD3<Float>(
+            lightWorld.columns.3.x,
+            lightWorld.columns.3.y,
+            lightWorld.columns.3.z
+        )
+        let forward = simd_normalize(SIMD3<Float>(
+            -lightWorld.columns.2.x,
+            -lightWorld.columns.2.y,
+            -lightWorld.columns.2.z
+        ))
+
+        let target: SIMD3<Float>
+        let storedNormal: SIMD3<Float>?
+        if let storedTarget = settings.projectorTarget {
+            target = storedTarget
+            storedNormal = settings.projectorTargetNormal
+        } else if forward.y < -0.025,
+                  let floorY = lastKnownFloorY {
+            let distance = (floorY - origin.y) / forward.y
+            guard distance.isFinite, (0.15...20).contains(distance) else { return }
+            target = origin + forward * distance
+            storedNormal = [0, 1, 0]
+        } else {
+            if let footprint = renderedLightFootprints.removeValue(forKey: id) {
+                footprint.scene?.removeAnchor(footprint)
+            }
+            return
+        }
+
+        let beam = target - origin
+        let distance = simd_length(beam)
+        guard distance.isFinite, distance >= 0.08, distance <= 20 else { return }
+        let direction = beam / distance
+        var normal = storedNormal ?? -direction
+        guard simd_length_squared(normal) > 0.000_001 else { return }
+        normal = simd_normalize(normal)
+        if simd_dot(normal, -direction) < 0 { normal = -normal }
+
+        let halfAngle = settings.coneAngleDegrees * .pi / 360
+        let radius = min(max(tan(halfAngle) * distance, 0.045), 3.5)
+        let incidence = max(abs(simd_dot(direction, normal)), 0.28)
+        let elongatedRadius = min(radius / incidence, radius * 3.2)
+
+        let anchor: AnchorEntity
+        let visualRoot: Entity
+        if let existing = renderedLightFootprints[id],
+           let existingRoot = existing.children.first {
+            anchor = existing
+            visualRoot = existingRoot
+        } else {
+            anchor = AnchorEntity(world: .zero)
+            anchor.name = "cinear.projector.anchor.\(id.uuidString)"
+            visualRoot = Entity()
+            visualRoot.name = "cinear.projector.surface.\(id.uuidString)"
+            anchor.addChild(visualRoot)
+            let factors: [Float] = [1.0, 0.82, 0.64, 0.46, 0.28]
+            for (index, factor) in factors.enumerated() {
+                guard let disc = makeProjectorDisc(index: index) else { continue }
+                disc.name = "cinear.projector.disc.\(index)"
+                disc.position.y = Float(index) * 0.00035
+                disc.scale = [factor, 1, factor]
+                visualRoot.addChild(disc)
+            }
+            arView.scene.addAnchor(anchor)
+            renderedLightFootprints[id] = anchor
+        }
+
+        var projectedForward = direction - normal * simd_dot(direction, normal)
+        if simd_length_squared(projectedForward) < 0.000_001 {
+            projectedForward = SIMD3<Float>(0, 0, 1)
+                - normal * simd_dot(SIMD3<Float>(0, 0, 1), normal)
+        }
+        if simd_length_squared(projectedForward) < 0.000_001 {
+            projectedForward = SIMD3<Float>(1, 0, 0)
+                - normal * simd_dot(SIMD3<Float>(1, 0, 0), normal)
+        }
+        let surfaceForward = simd_normalize(projectedForward)
+        let surfaceRight = simd_normalize(simd_cross(normal, surfaceForward))
+        let orientationMatrix = simd_float3x3(columns: (
+            surfaceRight,
+            normal,
+            surfaceForward
+        ))
+        visualRoot.position = target + normal * 0.006
+        visualRoot.orientation = simd_quatf(orientationMatrix)
+
+        let factors: [Float] = [1.0, 0.82, 0.64, 0.46, 0.28]
+        let intensity = min(max(settings.intensityLumens / 12_000, 0), 1)
+        let color = Self.colorTemperature(kelvin: settings.temperatureKelvin)
+        for (index, child) in visualRoot.children.enumerated() {
+            guard index < factors.count, let disc = child as? ModelEntity else { continue }
+            let factor = factors[index]
+            disc.scale = [radius * factor, 1, elongatedRadius * factor]
+            let edgeWeight = Float(index + 1) / Float(factors.count)
+            let alpha = CGFloat(
+                min(0.34, (0.018 + intensity * 0.105)
+                    * (0.55 + edgeWeight * (1.2 - settings.effectiveBeamSoftness * 0.45)))
+            )
+            var material = UnlitMaterial()
+            material.color = .init(tint: color.withAlphaComponent(alpha))
+            if var model = disc.components[ModelComponent.self] {
+                model.materials = [material]
+                disc.components.set(model)
+            }
+        }
+    }
+
+    private func makeProjectorDisc(index: Int) -> ModelEntity? {
+        let segments = 48
+        var positions: [SIMD3<Float>] = [.zero]
+        positions.reserveCapacity(segments + 1)
+        for segment in 0..<segments {
+            let angle = Float(segment) / Float(segments) * 2 * .pi
+            positions.append([cos(angle), 0, sin(angle)])
+        }
+        var indices: [UInt32] = []
+        indices.reserveCapacity(segments * 3)
+        for segment in 0..<segments {
+            indices.append(0)
+            indices.append(UInt32((segment + 1) % segments + 1))
+            indices.append(UInt32(segment + 1))
+        }
+        var descriptor = MeshDescriptor(name: "cinear.projector.disc.\(index)")
+        descriptor.positions = MeshBuffers.Positions(positions)
+        descriptor.primitives = .triangles(indices)
+        guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
+        return ModelEntity(mesh: mesh, materials: [UnlitMaterial()])
+    }
+
+    private func entityID(for light: SpotLight) -> UUID? {
+        guard let idText = light.name.split(separator: ".").last else { return nil }
+        return UUID(uuidString: String(idText))
     }
 
     private static func colorTemperature(kelvin: Float) -> UIColor {
@@ -3591,41 +4258,61 @@ final class ARSessionController: NSObject, ObservableObject {
         return false
     }
 
-    private func defaultTransform(for prop: PropKind) -> Transform {
-        let translation: SIMD3<Float>
-        if let descriptor = prop.photorealDescriptor {
-            switch descriptor.surface {
-            case .floor, .horizontal:
-                translation = [0, descriptor.dimensions.y * 0.5, 0]
-            case .wall:
-                translation = [0, 0, descriptor.dimensions.z * 0.5 + 0.008]
-            case .ceiling:
-                translation = [0, -descriptor.dimensions.y * 0.5, 0]
-            }
-        } else if let descriptor = libraryDescriptor(for: prop) {
-            translation = [0, descriptor.dimensions.y * 0.5, 0]
-        } else {
-            let height: Float
-            switch prop {
-            case .stage: height = 0.09
-            case .crate: height = 0.275
-            case .plant: height = 0.18
-            case .floorLamp: height = 0.025
-            case .rug: height = 0.006
-            case .backdrop: height = 0.90
-            case .lightPanel, .wall, .chair, .table, .sofa, .bed, .bookcase,
-                 .television, .refrigerator, .oven, .stove, .sink, .bathtub,
-                 .toilet, .washerDryer, .stairs, .custom:
-                height = 0
-            default:
-                height = 0
-            }
-            translation = [0, height, 0]
+    private func belongsToProjectorVisualization(_ entity: Entity) -> Bool {
+        var candidate: Entity? = entity
+        while let current = candidate {
+            if current.name.hasPrefix("cinear.projector.") { return true }
+            candidate = current.parent
         }
+        return false
+    }
+
+    /// Wraps every visual in a surface-contact pivot. Rotation and scale then happen
+    /// around the physical contact point instead of the USDZ's often arbitrary center.
+    private func makeContactPivotEntity(
+        content: ModelEntity,
+        for prop: PropKind
+    ) -> ModelEntity {
+        if content.name.hasPrefix("cinear.contact-pivot") { return content }
+        let root = ModelEntity()
+        root.name = "cinear.contact-pivot.\(prop.rawValue)"
+        root.addChild(content)
+        let bounds = root.visualBounds(
+            recursive: true,
+            relativeTo: root,
+            excludeInactive: false
+        )
+        let extents = bounds.extents
+        if [extents.x, extents.y, extents.z].allSatisfy({ $0.isFinite && $0 > 0.0001 }) {
+            switch prop.placementSurface {
+            case .floor, .horizontal:
+                let minimumY = bounds.center.y - extents.y * 0.5
+                content.position.y -= minimumY
+            case .ceiling:
+                let maximumY = bounds.center.y + extents.y * 0.5
+                content.position.y -= maximumY
+            case .wall:
+                let minimumZ = bounds.center.z - extents.z * 0.5
+                content.position.z += 0.008 - minimumZ
+            }
+            root.collision = CollisionComponent(
+                shapes: [ShapeResource.generateBox(size: SIMD3(
+                    max(extents.x, 0.04),
+                    max(extents.y, 0.04),
+                    max(extents.z, 0.04)
+                ))]
+            )
+        } else if content.collision == nil {
+            content.generateCollisionShapes(recursive: true)
+        }
+        return root
+    }
+
+    private func defaultTransform(for prop: PropKind) -> Transform {
         return Transform(
             scale: [1, 1, 1],
             rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
-            translation: translation
+            translation: .zero
         )
     }
 
@@ -3785,22 +4472,21 @@ final class ARSessionController: NSObject, ObservableObject {
             return (
                 descriptor.dimensions.x * 0.82,
                 descriptor.dimensions.z * 0.82,
-                -descriptor.dimensions.y * 0.5 + 0.004
+                0.004
             )
         }
         if let descriptor = libraryDescriptor(for: prop) {
             return (
                 descriptor.dimensions.x * 0.82,
                 descriptor.dimensions.z * 0.82,
-                -descriptor.dimensions.y * 0.5 + 0.004
+                0.004
             )
         }
         switch prop {
-        case .stage: return (1.82, 1.22, -0.086)
-        case .crate: return (0.48, 0.48, -0.271)
-        case .plant: return (0.31, 0.31, -0.176)
-        case .floorLamp: return (0.30, 0.30, -0.021)
-        case .backdrop: return (2.10, 0.18, -0.896)
+        case .stage: return (1.82, 1.22, 0.004)
+        case .crate: return (0.48, 0.48, 0.004)
+        case .plant: return (0.31, 0.31, 0.004)
+        case .floorLamp: return (0.30, 0.30, 0.004)
         case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
              .bed, .bookcase, .television, .refrigerator, .oven, .stove,
              .sink, .bathtub, .toilet, .washerDryer, .stairs:
@@ -4116,6 +4802,11 @@ final class ARSessionController: NSObject, ObservableObject {
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        updatePlacementGuidance(using: frame)
+        if frame.timestamp - lastProjectorRefreshTimestamp >= 0.16 {
+            lastProjectorRefreshTimestamp = frame.timestamp
+            refreshProjectorLights()
+        }
         submitFrameToAIIfNeeded(frame)
     }
 
@@ -4158,6 +4849,12 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 
     func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+        floorSurfaceTracker.remove(anchors)
+        if let cameraY = session.currentFrame?.camera.transform.columns.3.y {
+            if let estimate = floorSurfaceTracker.estimate(cameraY: cameraY), estimate.isStable {
+                lastKnownFloorY = estimate.y
+            }
+        }
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
             knownPropAnchorIDs.remove(anchor.identifier)
@@ -4374,6 +5071,245 @@ extension ARSessionController: UIGestureRecognizerDelegate {
         // The placement/selection tap must not disable RealityKit's translation,
         // rotation and scale recognizers installed on manual props.
         true
+    }
+}
+
+private struct SceneDepthSurfaceSample {
+    let worldPoint: SIMD3<Float>
+    let worldNormal: SIMD3<Float>?
+    let depthMeters: Float
+}
+
+private struct ProjectorSurfaceHit {
+    let position: SIMD3<Float>
+    let normal: SIMD3<Float>
+    let distanceMeters: Float
+}
+
+private struct PlacementSurfaceSolution {
+    let transform: simd_float4x4
+    let position: SIMD3<Float>
+    let normal: SIMD3<Float>
+    let source: PlacementSurfaceSource
+    let depthMeters: Float?
+}
+
+private enum PlacementSurfaceSource: Equatable {
+    case classifiedFloorPlane
+    case classifiedFloorMesh
+    case lidarMesh
+    case arkitPlane
+    case roomPlanGeometry
+    case roomPlanLevel
+
+    var title: String {
+        switch self {
+        case .classifiedFloorPlane: "ARKit zemin"
+        case .classifiedFloorMesh: "LiDAR zemin"
+        case .lidarMesh: "LiDAR yüzey"
+        case .arkitPlane: "ARKit yüzey"
+        case .roomPlanGeometry: "RoomPlan yüzey"
+        case .roomPlanLevel: "RoomPlan kotu"
+        }
+    }
+}
+
+private struct FloorSurfaceEstimate {
+    let y: Float
+    let isStable: Bool
+    let source: PlacementSurfaceSource
+}
+
+/// Maintains a metric floor level from classified AR planes, classified LiDAR mesh
+/// faces and a completed RoomPlan scan. Unclassified horizontal planes are never
+/// admitted: they are commonly desks, shelves or seats.
+private final class FloorSurfaceTracker {
+    private var roomFloorY: Float?
+    private var classifiedPlaneLevels: [UUID: Float] = [:]
+    private var classifiedMeshLevels: [UUID: Float] = [:]
+    private var liveHistory: [Float] = []
+    private var latestLiveSource: PlacementSurfaceSource = .classifiedFloorMesh
+
+    func reset() {
+        roomFloorY = nil
+        classifiedPlaneLevels.removeAll()
+        classifiedMeshLevels.removeAll()
+        liveHistory.removeAll()
+        latestLiveSource = .classifiedFloorMesh
+    }
+
+    func setRoomFloor(_ y: Float) {
+        guard y.isFinite else { return }
+        roomFloorY = y
+    }
+
+    func clearRoomFloor() {
+        roomFloorY = nil
+    }
+
+    func remove(_ anchors: [ARAnchor]) {
+        for anchor in anchors {
+            classifiedPlaneLevels[anchor.identifier] = nil
+            classifiedMeshLevels[anchor.identifier] = nil
+        }
+    }
+
+    func update(with anchors: [ARAnchor], cameraY: Float) {
+        guard cameraY.isFinite else { return }
+        for anchor in anchors {
+            if let plane = anchor as? ARPlaneAnchor {
+                if plane.alignment == .horizontal,
+                   plane.classification == .floor,
+                   plane.transform.columns.3.y.isFinite {
+                    classifiedPlaneLevels[plane.identifier] = plane.transform.columns.3.y
+                } else {
+                    classifiedPlaneLevels[plane.identifier] = nil
+                }
+            } else if let mesh = anchor as? ARMeshAnchor {
+                if let level = Self.classifiedFloorLevel(in: mesh), level.isFinite {
+                    classifiedMeshLevels[mesh.identifier] = level
+                } else {
+                    classifiedMeshLevels[mesh.identifier] = nil
+                }
+            }
+        }
+
+        let expectedFloor = cameraY - 1.35
+        let planeCandidates = classifiedPlaneLevels.values.filter {
+            $0 < cameraY - 0.30 && $0 > cameraY - 3.2
+        }
+        let meshCandidates = classifiedMeshLevels.values.filter {
+            $0 < cameraY - 0.30 && $0 > cameraY - 3.2
+        }
+        let candidates: [Float]
+        if !planeCandidates.isEmpty {
+            candidates = planeCandidates
+            latestLiveSource = .classifiedFloorPlane
+        } else {
+            candidates = meshCandidates
+            latestLiveSource = .classifiedFloorMesh
+        }
+        guard let candidate = candidates.min(by: {
+            abs($0 - expectedFloor) < abs($1 - expectedFloor)
+        }) else { return }
+
+        if let last = liveHistory.last, abs(last - candidate) > 0.18 {
+            liveHistory.removeAll()
+        }
+        liveHistory.append(candidate)
+        if liveHistory.count > 24 {
+            liveHistory.removeFirst(liveHistory.count - 24)
+        }
+    }
+
+    func estimate(cameraY: Float) -> FloorSurfaceEstimate? {
+        let liveMedian = Self.median(liveHistory)
+        let liveSpread: Float
+        if let liveMedian {
+            liveSpread = Self.median(liveHistory.map { abs($0 - liveMedian) }) ?? .greatestFiniteMagnitude
+        } else {
+            liveSpread = .greatestFiniteMagnitude
+        }
+        let minimumHistory = latestLiveSource == .classifiedFloorPlane ? 2 : 4
+        let liveIsStable = liveHistory.count >= minimumHistory && liveSpread <= 0.035
+
+        if let liveMedian, liveIsStable {
+            if let roomFloorY, abs(roomFloorY - liveMedian) <= 0.08 {
+                return FloorSurfaceEstimate(
+                    y: (roomFloorY + liveMedian * 2) / 3,
+                    isStable: true,
+                    source: latestLiveSource
+                )
+            }
+            return FloorSurfaceEstimate(
+                y: liveMedian,
+                isStable: true,
+                source: latestLiveSource
+            )
+        }
+        if let roomFloorY,
+           roomFloorY < cameraY - 0.25,
+           roomFloorY > cameraY - 3.2 {
+            return FloorSurfaceEstimate(
+                y: roomFloorY,
+                isStable: true,
+                source: .roomPlanLevel
+            )
+        }
+        if let liveMedian {
+            return FloorSurfaceEstimate(
+                y: liveMedian,
+                isStable: false,
+                source: latestLiveSource
+            )
+        }
+        return nil
+    }
+
+    private static func classifiedFloorLevel(in anchor: ARMeshAnchor) -> Float? {
+        let geometry = anchor.geometry
+        guard geometry.faces.count > 0 else { return nil }
+        let maximumSamples = 240
+        let step = max(1, geometry.faces.count / maximumSamples)
+        var levels: [Float] = []
+        levels.reserveCapacity(min(geometry.faces.count, maximumSamples))
+
+        for faceIndex in stride(from: 0, to: geometry.faces.count, by: step) {
+            guard classification(of: faceIndex, in: geometry) == .floor else { continue }
+            let indices = vertexIndices(of: faceIndex, in: geometry)
+            guard indices.count == 3 else { continue }
+            let vertices = indices.map { vertex(at: $0, in: geometry) }
+            let localCenter = (vertices[0] + vertices[1] + vertices[2]) / 3
+            let worldCenter = anchor.transform * SIMD4(localCenter.x, localCenter.y, localCenter.z, 1)
+            if worldCenter.y.isFinite { levels.append(worldCenter.y) }
+        }
+        guard levels.count >= 3 else { return nil }
+        return median(levels)
+    }
+
+    private static func classification(
+        of faceIndex: Int,
+        in geometry: ARMeshGeometry
+    ) -> ARMeshClassification {
+        guard let source = geometry.classification,
+              faceIndex >= 0, faceIndex < source.count else { return .none }
+        let address = source.buffer.contents().advanced(
+            by: source.offset + faceIndex * source.stride
+        )
+        let raw = Int(address.assumingMemoryBound(to: UInt8.self).pointee)
+        return ARMeshClassification(rawValue: raw) ?? .none
+    }
+
+    private static func vertexIndices(of faceIndex: Int, in geometry: ARMeshGeometry) -> [Int] {
+        let faces = geometry.faces
+        let start = faceIndex * faces.indexCountPerPrimitive
+        return (0..<faces.indexCountPerPrimitive).map { offset in
+            let address = faces.buffer.contents().advanced(
+                by: (start + offset) * faces.bytesPerIndex
+            )
+            if faces.bytesPerIndex == MemoryLayout<UInt16>.size {
+                return Int(address.assumingMemoryBound(to: UInt16.self).pointee)
+            }
+            return Int(address.assumingMemoryBound(to: UInt32.self).pointee)
+        }
+    }
+
+    private static func vertex(at index: Int, in geometry: ARMeshGeometry) -> SIMD3<Float> {
+        let vertices = geometry.vertices
+        let address = vertices.buffer.contents().advanced(
+            by: vertices.offset + index * vertices.stride
+        )
+        let values = address.assumingMemoryBound(to: Float.self)
+        return SIMD3(values[0], values[1], values[2])
+    }
+
+    private static func median(_ values: [Float]) -> Float? {
+        guard !values.isEmpty else { return nil }
+        let sorted = values.sorted()
+        if sorted.count.isMultiple(of: 2) {
+            return (sorted[sorted.count / 2 - 1] + sorted[sorted.count / 2]) * 0.5
+        }
+        return sorted[sorted.count / 2]
     }
 }
 
@@ -4881,6 +5817,12 @@ struct ContentView: View {
             ARViewContainer(controller: session)
                 .ignoresSafeArea()
 
+            if session.isPlacingProp,
+               !session.isRecording,
+               !session.isRecordingTransitioning {
+                placementReticle
+            }
+
             if session.isRecording || session.isRecordingTransitioning {
                 Color.clear
                     .contentShape(Rectangle())
@@ -5288,6 +6230,22 @@ struct ContentView: View {
             }
 
             if let settings = session.selectedLightSettings {
+                Button {
+                    if session.isAimingLight {
+                        session.cancelSelectedLightTargeting()
+                    } else {
+                        session.beginSelectedLightTargeting()
+                    }
+                } label: {
+                    Label(
+                        session.isAimingLight ? "Hedef Seçimini İptal Et" : "Projektör Hedefini Seç",
+                        systemImage: session.isAimingLight ? "xmark.circle" : "scope"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(session.isAimingLight ? .red : .blue)
+
                 lightSliderRow(
                     title: "Güç",
                     valueText: "\(Int(settings.intensityLumens)) lm",
@@ -5330,17 +6288,27 @@ struct ContentView: View {
                 )
                 lightSliderRow(
                     title: "Hüzme genişliği",
-                    valueText: "\(Int(settings.coneAngleDegrees))°",
+                    valueText: "\(Int(settings.coneAngleDegrees))° spot",
                     value: Binding(
-                        get: { Double(session.selectedLightSettings?.coneAngleDegrees ?? 72) },
+                        get: { Double(session.selectedLightSettings?.coneAngleDegrees ?? 18) },
                         set: { session.setSelectedLightConeAngle(Float($0)) }
                     ),
-                    range: 15...120,
+                    range: 8...90,
                     step: 1
+                )
+                lightSliderRow(
+                    title: "Kenar yumuşaklığı",
+                    valueText: "%\(Int(settings.effectiveBeamSoftness * 100))",
+                    value: Binding(
+                        get: { Double(session.selectedLightSettings?.effectiveBeamSoftness ?? 0.34) },
+                        set: { session.setSelectedLightSoftness(Float($0)) }
+                    ),
+                    range: 0...1,
+                    step: 0.01
                 )
             }
 
-            Text("Bu ışık yalnızca sanal dekorları etkiler; gerçek kamera görüntüsü değiştirilmez.")
+            Text("Spot ışık sanal nesneleri aydınlatır; LiDAR yüzeyindeki yumuşak projektör izi kamera görünümünde hedef noktayı gösterir.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -5397,9 +6365,9 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(session.selectedProp.title) yerleştir")
                     .font(.subheadline.weight(.bold))
-                Text(placementPrompt)
+                Text(session.placementSurfaceMessage)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(session.placementSurfaceColor)
             }
             Spacer()
             Button("İptal") { session.cancelPlacement() }
@@ -5410,13 +6378,28 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
-    private var placementPrompt: String {
-        switch session.selectedProp.placementSurface {
-        case .floor: "Yeşil takipte taranmış zemine dokun"
-        case .horizontal: "Yeşil takipte zemine veya yatay yüzeye dokun"
-        case .wall: "Yeşil takipte taranmış duvara dokun"
-        case .ceiling: "Telefonu yukarı çevirip taranmış tavana dokun"
+    private var placementReticle: some View {
+        GeometryReader { proxy in
+            let point = session.placementReticlePoint
+                ?? CGPoint(x: proxy.size.width * 0.5, y: proxy.size.height * 0.5)
+            ZStack {
+                Circle()
+                    .stroke(session.placementSurfaceColor, lineWidth: 3)
+                    .frame(width: 46, height: 46)
+                Circle()
+                    .fill(session.placementSurfaceColor)
+                    .frame(width: 7, height: 7)
+                Rectangle()
+                    .fill(session.placementSurfaceColor)
+                    .frame(width: 66, height: 1)
+                Rectangle()
+                    .fill(session.placementSurfaceColor)
+                    .frame(width: 1, height: 66)
+            }
+            .position(point)
         }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var propLibrary: some View {
@@ -9380,7 +10363,7 @@ import RealityKit
 import simd
 
 struct SceneProject: Codable {
-    static let currentVersion = 3
+    static let currentVersion = 4
 
     var version = currentVersion
     var name = "Ana Set"
@@ -9405,9 +10388,10 @@ struct VirtualLightSettings: Codable, Equatable {
         // environment lighting while still leaving headroom for art direction.
         intensityLumens: 6_000,
         temperatureKelvin: 4_200,
-        coneAngleDegrees: 72,
+        coneAngleDegrees: 18,
         yawDegrees: 0,
-        tiltDegrees: 0
+        tiltDegrees: 0,
+        beamSoftness: 0.34
     )
 
     var isEnabled: Bool
@@ -9418,18 +10402,74 @@ struct VirtualLightSettings: Codable, Equatable {
     // steerable fixtures were introduced.
     var yawDegrees: Float?
     var tiltDegrees: Float?
+    // Version-4 projector data is optional so scenes saved by earlier releases
+    // continue to decode without migration failures. The target is stored in the
+    // restored AR world coordinate system and therefore survives world-map reloads.
+    var beamSoftness: Float?
+    var targetPosition: [Float]?
+    var targetNormal: [Float]?
+
+    init(
+        isEnabled: Bool,
+        intensityLumens: Float,
+        temperatureKelvin: Float,
+        coneAngleDegrees: Float,
+        yawDegrees: Float? = nil,
+        tiltDegrees: Float? = nil,
+        beamSoftness: Float? = nil,
+        targetPosition: [Float]? = nil,
+        targetNormal: [Float]? = nil
+    ) {
+        self.isEnabled = isEnabled
+        self.intensityLumens = intensityLumens
+        self.temperatureKelvin = temperatureKelvin
+        self.coneAngleDegrees = coneAngleDegrees
+        self.yawDegrees = yawDegrees
+        self.tiltDegrees = tiltDegrees
+        self.beamSoftness = beamSoftness
+        self.targetPosition = targetPosition
+        self.targetNormal = targetNormal
+    }
 
     var effectiveYawDegrees: Float { yawDegrees ?? 0 }
     var effectiveTiltDegrees: Float { tiltDegrees ?? 0 }
+    var effectiveBeamSoftness: Float { beamSoftness ?? 0.34 }
+
+    var projectorTarget: SIMD3<Float>? {
+        guard let targetPosition,
+              targetPosition.count == 3,
+              targetPosition.allSatisfy(\.isFinite) else { return nil }
+        return SIMD3(targetPosition[0], targetPosition[1], targetPosition[2])
+    }
+
+    var projectorTargetNormal: SIMD3<Float>? {
+        guard let targetNormal,
+              targetNormal.count == 3,
+              targetNormal.allSatisfy(\.isFinite) else { return nil }
+        let normal = SIMD3(targetNormal[0], targetNormal[1], targetNormal[2])
+        guard simd_length_squared(normal) > 0.000_001 else { return nil }
+        return simd_normalize(normal)
+    }
 
     var isValid: Bool {
         let yawIsValid = yawDegrees.map { $0.isFinite && (-180...180).contains($0) } ?? true
         let tiltIsValid = tiltDegrees.map { $0.isFinite && (-75...75).contains($0) } ?? true
+        let softnessIsValid = beamSoftness.map { $0.isFinite && (0...1).contains($0) } ?? true
+        let targetIsValid = targetPosition.map {
+            $0.count == 3 && $0.allSatisfy(\.isFinite)
+        } ?? true
+        let targetNormalIsValid = targetNormal.map {
+            guard $0.count == 3, $0.allSatisfy(\.isFinite) else { return false }
+            return simd_length_squared(SIMD3($0[0], $0[1], $0[2])) > 0.000_001
+        } ?? true
         return intensityLumens.isFinite && (0...12_000).contains(intensityLumens)
             && temperatureKelvin.isFinite && (2_000...6_500).contains(temperatureKelvin)
-            && coneAngleDegrees.isFinite && (15...120).contains(coneAngleDegrees)
+            && coneAngleDegrees.isFinite && (8...120).contains(coneAngleDegrees)
             && yawIsValid
             && tiltIsValid
+            && softnessIsValid
+            && targetIsValid
+            && targetNormalIsValid
     }
 }
 
@@ -9627,33 +10667,12 @@ final class SceneProjectStore {
         return recoveredPlacements.count
     }
 
-    private static func recoveredDefaultTransform(for kind: PropKind) -> StoredTransform {
-        let translation: SIMD3<Float>
-        if let descriptor = kind.photorealDescriptor {
-            switch descriptor.surface {
-            case .floor, .horizontal:
-                translation = [0, descriptor.dimensions.y * 0.5, 0]
-            case .wall:
-                translation = [0, 0, descriptor.dimensions.z * 0.5 + 0.008]
-            case .ceiling:
-                translation = [0, -descriptor.dimensions.y * 0.5, 0]
-            }
-        } else {
-            switch kind {
-            case .stage: translation = [0, 0.09, 0]
-            case .crate: translation = [0, 0.275, 0]
-            case .plant: translation = [0, 0.18, 0]
-            case .floorLamp: translation = [0, 0.025, 0]
-            case .rug: translation = [0, 0.006, 0]
-            case .backdrop: translation = [0, 0.90, 0]
-            default: translation = .zero
-            }
-        }
+    private static func recoveredDefaultTransform(for _: PropKind) -> StoredTransform {
         return StoredTransform(
             Transform(
                 scale: [1, 1, 1],
                 rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
-                translation: translation
+                translation: .zero
             )
         )
     }
@@ -9916,7 +10935,25 @@ final class SceneProjectStore {
     private static func decodeProject(from url: URL) throws -> SceneProject {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let project = try decoder.decode(SceneProject.self, from: Data(contentsOf: url))
+        var project = try decoder.decode(SceneProject.self, from: Data(contentsOf: url))
+        if project.version < 4 {
+            // Earlier renderers stored a half-height offset in the placement entity.
+            // Version 4 uses a contact-plane pivot, so retaining that legacy offset
+            // would make every restored object float above its anchor.
+            for index in project.placements.indices {
+                guard project.placements[index].transform.translation.count == 3 else { continue }
+                project.placements[index].transform.translation = [0, 0, 0]
+                if var light = project.placements[index].lightSettings {
+                    if abs(light.coneAngleDegrees - 72) < 0.01 {
+                        light.coneAngleDegrees = 18
+                    }
+                    if light.beamSoftness == nil { light.beamSoftness = 0.34 }
+                    project.placements[index].lightSettings = light
+                }
+            }
+            project.version = 4
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }
@@ -10223,7 +11260,10 @@ incelemesine uygulama gondermesi mumkun degildir.
    ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
    butun hatlarin kayboldugunu dogrula.
 5. Kasa'yi sec. Alt panel otomatik kapanmali; once zeminin panelin daha once kapattigi
-   alt bolgesine, sonra orta ve uzak bolgesine dokun. Her dokunusta kasa gorunmeli.
+   alt bolgesine, sonra orta ve uzak bolgesine dokun. Parmak hareket ederken hedef
+   dokunulan noktayi izlemeli; takip/derinlik beklerken sari, masa veya koltuk gibi
+   zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
+   durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
 6. 30 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
@@ -10237,14 +11277,19 @@ incelemesine uygulama gondermesi mumkun degildir.
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
    dogru yuzeyi buldugunu; RoomPlan kaydindan sonra uzak zemin ve tavan noktalarinda
-   kayitli duzlem yedeginin calistigini dogrula.
+   kayitli duzlem yedeginin calistigini dogrula. Zemin nesnesi seciliyken masa
+   tablasina dokun; nesne masaya yerlestirilmemeli. Ayni noktada `yatay yuzey`
+   nesnesi secildiginde masa bilincli olarak kabul edilmeli.
 8. Tavan veya duvar isigini sec. `Sanal Isik` panelinde ac/kapat, 0-12000 lumen,
-   2000-6500 K, yatay yon, dikey egim ve 15-120 derece huzme kontrollerini uctan
-   uca degistir. Isik hedefinin hem saga-sola hem yukari-asagi dondugunu dogrula.
-   Gercek kamera pikselleri degismemeli; sanal dekorlardaki aydinlanma ve golge
-   degismeli. Kaydet, uygulamayi kapat, yukle ve ayni degerlerin geri geldigini dogrula.
-   Yeni isik 6000 lumenle baslamali; fotogercekci sanal nesne uzerindeki aydinlanma
-   ac/kapat ve guc degisiminde ilk bakista ayirt edilebilmeli.
+   2000-6500 K, yatay yon, dikey egim, 8-90 derece huzme ve kenar yumusakligi
+   kontrollerini uctan uca degistir. Yeni isik 6000 lumen ve dar 18 derece spotla
+   baslamali. `Projektor Hedefini Sec`e basip once zemine, sonra duvara dokun;
+   isik ekseni secilen dunya noktasina donmeli. Saydam spot izi hedef yuzeye oturmali,
+   aci daraldikca kuculmeli, mesafe arttikca buyumeli ve egik yuzeyde elips olmali.
+   Gercek kamera pikselleri fiziksel olarak degismemeli; spot katmani kamera
+   gorunumunde belirgin olmali, gercek bir masa isin onune girdiginde derinlik
+   occlusion'i izi ortmeli. Sanal dekorlardaki aydinlanma ve golge de degismeli.
+   Kaydet, uygulamayi kapat, yukle; hedef noktasi dahil ayni degerlerin geri geldigini dogrula.
 9. Takip `limited` iken veya kalici duzlem bulunmadan zemin noktasina dokun;
    uygulama nesneyi kamera onunde tahmini bir noktaya koymamali, yerlestirme modunu
    acik tutup zemini yavasca tarama mesaji gostermeli. Takip `normal` ve duzlem
@@ -10252,7 +11297,9 @@ incelemesine uygulama gondermesi mumkun degildir.
    tamamlandiktan sonra ARKit'in ayri bir plane anchor uretmedigi uzak zemin
    noktalarinda da kayitli zemin seviyesiyle yerlestirme calismali.
 10. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
-   golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula.
+   golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula. Modelin en alt
+   gorunur noktasi zeminden 0-5 mm yukarida olmali. Modeli 0.5x ve 2x olcekle;
+   taban zemine sabit kalmali, havaya kalkmamali veya zemine gomulmemeli.
 11. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
    olceklendirme calismali. Donus/olcek sonrasinda projeyi kaydet.
 12. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
@@ -10296,7 +11343,9 @@ incelemesine uygulama gondermesi mumkun degildir.
 
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
 - Elde relocalization hatasi: 5 cm'den az
-- Manuel dekor ile dokunulan gercek yuzey hizasi: referans noktalarda 3 cm'den az
+- Manuel dekor anchor'i ile dokunulan gercek yuzey hizasi: referans noktalarda 2 cm'den az
+- Modelin gercek alt siniri ile zemin arasindaki dikey bosluk: 5 mm'den az
+- Projektor hedef merkezinin dokunulan dunya noktasindan farki: 3 cm'den az
 - Kapi ve pencere boslugu kenar hatasi: 5 cm'den az
 - Kayit: hedef cihazda sabit 30 fps, gorunur tekrar eden kare olmamali
 - Ses-goruntu senkron farki: 40 ms'den az
@@ -10398,16 +11447,24 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
-  sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim ve
-  15-120 derece huzme genisligi; sanal isik yalnizca sanal dekorlari etkiler
+  sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
+  8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar
+- `Projektor Hedefini Sec` ile zemine, masaya veya duvara dokunup SpotLight'i tam
+  dunya koordinatina yoneltme; mesafe ve aciya gore olceklenen, egik yuzeyde elipse
+  donusen yumusak isik izi kamera gorunumunde hedef noktayi belirginlestirir
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
 - Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
-- LiDAR scene-understanding collision ile kayitli RoomPlan zemin/tavan seviyeleri
-  sayesinde taranmis alanin tamaminda kararli yerlestirme
+- `.floor` sinifli ARKit duzlemi, `.floor` sinifli LiDAR mesh yuzleri, RoomPlan zemin
+  kotu ve dokunulan pikseldeki orta/yuksek guvenli `smoothedSceneDepth` olcumunu
+  birlestiren kati zemin cozucu; masa gibi siniflandirilmamis yatay yuzey zemine gecmez
+- Parmakla dokunulan noktayi izleyen yesil/sari/kirmizi hedef gostergesi ve metre
+  cinsinden derinlik geri bildirimi
+- USDZ'nin gercek alt/ust/arka gorsel sinirini yuzey temas pivotuna alan donusum;
+  dondurme ve olceklendirme sonrasinda modelin tabani zeminden kopmaz veya gomulmez
 - RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
@@ -10438,16 +11495,21 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
    `Hazir 3B Nesne Kutuphanesi` icindeki 30 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
-7. Kontrol paneli otomatik kapandiginda durum cubugu yesilken nesnenin istedigi
-   zemine, yatay yuzeye, duvara veya tavana dokunun. Kararli yuzey yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
+7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
+   Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
+   dokunun. Zemin nesnelerinde masa/koltuk gibi bir yuzey kirmizi olur. Kararli yuzey
+   yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
    koymaz; hedef yuzeyi yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
    kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
    modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
    dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
 
 8. Bir lamba yerlestirildiginde veya tekrar secildiginde `Sanal Isik` panelinden
-   guc, renk sicakligi, koni acisi ve acik/kapali durumu degistirilebilir. Bu isik
-   kamera pikselini degil, yalnizca RealityKit dekorlarini ve onlarin golgelerini etkiler.
+   `Projektor Hedefini Sec`e basin ve isin vuracagi yuzeye dokunun. Guc, renk
+   sicakligi, spot acisi, kenar yumusakligi ve acik/kapali durumu degistirilebilir.
+   RealityKit SpotLight sanal dekorlari ve golgelerini fiziksel olarak aydinlatir;
+   gercek kamera pikseli yeniden isiklandirilmaz, fakat LiDAR yuzeyine oturan saydam
+   projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
 9. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
    degilse istek siraya alinir ve otomatik tamamlanir.
@@ -10492,7 +11554,8 @@ CineARProjects/MainSet/
   Recordings/*.mov
 ```
 
-`scene.json`, dekor kimliklerini, yerel transformlarini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
+`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, projektor hedef
+koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
 haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama
