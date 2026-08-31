@@ -118,8 +118,11 @@ final class ARSessionController: NSObject, ObservableObject {
     private static let aiServerDefaultsKey = "cinear.aiDepth.server"
     // The user's verified RTX server on the current LAN. This is a real initial
     // value, not a TextField placeholder; it remains editable if DHCP changes it.
-    private static let defaultAIServerAddress = "http://192.168.1.9:8765"
-    private static let obsoleteAIServerExample = "http://192.168.1.20:8765"
+    private static let defaultAIServerAddress = "http://192.168.1.12:8765"
+    private static let obsoleteAIServerAddresses: Set<String> = [
+        "http://192.168.1.9:8765",
+        "http://192.168.1.20:8765"
+    ]
     private static let liveAppleSceneID = UUID(
         uuidString: "C1EA0000-0000-4000-8000-000000000001"
     )!
@@ -141,7 +144,7 @@ final class ARSessionController: NSObject, ObservableObject {
         let storedAIAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if let storedAIAddress,
-           storedAIAddress != Self.obsoleteAIServerExample,
+           !Self.obsoleteAIServerAddresses.contains(storedAIAddress),
            AIEnhancementClient.serverURL(from: storedAIAddress) != nil {
             aiServerAddress = storedAIAddress
         } else {

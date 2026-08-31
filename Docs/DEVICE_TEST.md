@@ -9,7 +9,8 @@
 
 ## Fonksiyon testi
 
-1. Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
+1. Uygulama acilir acilmaz alt panelde `Odayi Tara` dugmesinin gorundugunu dogrula.
+   Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
 2. Tarama sirasinda yalniz RoomPlan'in beyaz/seffaf kilavuzlarinin gorundugunu;
    tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
@@ -80,7 +81,7 @@
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
 15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
-    kontrol et; alan ilk kurulumda gercek deger olarak `http://192.168.1.9:8765` icermeli
+    kontrol et; alan ilk kurulumda gercek deger olarak `http://192.168.1.12:8765` icermeli
     ve ekran baglantiyi otomatik test etmeli. Basarili test AI anahtarini otomatik
     acmali. Durumun
     once `Aktif` veya `PC bagli - LiDAR karesi bekleniyor`, scene depth geldiginde

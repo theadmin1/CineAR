@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.12.0`
-- Proje build numarası: `19`
+- Uygulama sürümü: `0.12.1`
+- Proje build numarası: `20`
 - Git dalı: `main`
-- Kaynak commit: `6f00e9612714e2565eee86d2719fc43cc7a4518c`
-- Oluşturulma zamanı: `2026-08-31 18:50:54 +03:00`
+- Kaynak commit: `9cf315a62052e32ffab60a00b76684f2c9da10d5`
+- Oluşturulma zamanı: `2026-08-31 21:55:23 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -248,9 +248,9 @@ Yok.
 | --- | ---: | ---: |
 | `.gitignore` | 30 | 559 |
 | `AIService/fusion.py` | 100 | 3952 |
-| `AIService/README.md` | 51 | 2155 |
+| `AIService/README.md` | 56 | 2480 |
 | `AIService/requirements.txt` | 10 | 186 |
-| `AIService/run_server.ps1` | 34 | 1146 |
+| `AIService/run_server.ps1` | 49 | 1778 |
 | `AIService/server.py` | 197 | 7404 |
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
@@ -258,14 +258,14 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 435 | 17725 |
-| `CineAR/ARSessionController.swift` | 4394 | 182787 |
+| `CineAR/ARSessionController.swift` | 4397 | 182864 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 933 | 39081 |
+| `CineAR/ContentView.swift` | 977 | 41036 |
 | `CineAR/Info.plist` | 58 | 2069 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 358 | 14201 |
@@ -278,9 +278,9 @@ Yok.
 | `CineAR/SceneProjectStore.swift` | 887 | 36386 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 141 | 9480 |
+| `Docs/DEVICE_TEST.md` | 142 | 9565 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 216 | 13308 |
+| `README.md` | 221 | 13670 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -452,6 +452,11 @@ Guvenlik Duvari sorarsa Python icin yalnizca `Ozel aglar` erisimini acin. Konsol
 yazilan `http://192.168...:8765` adresini CineAR icindeki `AI Derinlik` ayarina girin.
 iPhone ve PC ayni yerel agda olmalidir.
 
+Hotspot veya Wi-Fi degistiginde IP adresi de degisir. `run_server.ps1`, varsayilan ag
+gecidi bulunan etkin Wi-Fi/Ethernet baglantisini secer; VMware/VirtualBox gibi sanal
+adaptorlere ait adresleri iPhone adresi olarak gostermez. Betigi yeniden baslatin ve
+ekranda yazan yeni adresi uygulamadaki `AI Derinlik` alanina girin.
+
 PC'de saglik adresi calisip iPhone baglanamiyorsa iPhone Safari'de konsolda yazan
 adresin sonuna `/health` ekleyerek acin. Safari de acamiyorsa Wi-Fi istemci yalitimi
 ve Windows Guvenlik Duvari kontrol edilmelidir. Safari aciyor fakat CineAR acamiyorsa
@@ -513,17 +518,32 @@ $modelCache = Join-Path $PSScriptRoot ".cache"
 $env:HF_HOME = Join-Path $modelCache "huggingface"
 $env:TORCH_HOME = Join-Path $modelCache "torch"
 
-$address = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+$activeNetwork = Get-NetIPConfiguration -ErrorAction SilentlyContinue |
     Where-Object {
-        $_.IPAddress -notlike "127.*" -and
-        $_.IPAddress -notlike "169.254.*" -and
-        $_.InterfaceAlias -notmatch "Loopback|vEthernet"
+        $_.NetAdapter.Status -eq "Up" -and
+        $_.IPv4DefaultGateway -and
+        $_.IPv4Address
     } |
-    Sort-Object InterfaceMetric |
-    Select-Object -First 1 -ExpandProperty IPAddress
+    Sort-Object { $_.NetIPInterface.InterfaceMetric } |
+    Select-Object -First 1
+
+$address = $activeNetwork.IPv4Address.IPAddress | Select-Object -First 1
+if (-not $address) {
+    $address = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.IPAddress -notlike "127.*" -and
+            $_.IPAddress -notlike "169.254.*" -and
+            $_.InterfaceAlias -notmatch "Loopback|vEthernet|VMware|VirtualBox"
+        } |
+        Sort-Object InterfaceMetric |
+        Select-Object -First 1 -ExpandProperty IPAddress
+}
 
 if ($address) {
     Write-Host "iPhone sunucu adresi: http://${address}:8765"
+    Write-Host "CineAR > AI Derinlik alanina bu adresi yazin. iPhone ve PC ayni Wi-Fi'da olmali."
+} else {
+    Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."
 }
 Write-Host "Ilk acilis model dosyalarini indirecegi icin birkac dakika surebilir."
 
@@ -1052,13 +1072,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.12.0;
+				MARKETING_VERSION = 0.12.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1075,12 +1095,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.12.0;
+				MARKETING_VERSION = 0.12.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1709,8 +1729,11 @@ final class ARSessionController: NSObject, ObservableObject {
     private static let aiServerDefaultsKey = "cinear.aiDepth.server"
     // The user's verified RTX server on the current LAN. This is a real initial
     // value, not a TextField placeholder; it remains editable if DHCP changes it.
-    private static let defaultAIServerAddress = "http://192.168.1.9:8765"
-    private static let obsoleteAIServerExample = "http://192.168.1.20:8765"
+    private static let defaultAIServerAddress = "http://192.168.1.12:8765"
+    private static let obsoleteAIServerAddresses: Set<String> = [
+        "http://192.168.1.9:8765",
+        "http://192.168.1.20:8765"
+    ]
     private static let liveAppleSceneID = UUID(
         uuidString: "C1EA0000-0000-4000-8000-000000000001"
     )!
@@ -1732,7 +1755,7 @@ final class ARSessionController: NSObject, ObservableObject {
         let storedAIAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if let storedAIAddress,
-           storedAIAddress != Self.obsoleteAIServerExample,
+           !Self.obsoleteAIServerAddresses.contains(storedAIAddress),
            AIEnhancementClient.serverURL(from: storedAIAddress) != nil {
             aiServerAddress = storedAIAddress
         } else {
@@ -6642,9 +6665,8 @@ struct ContentView: View {
             }
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                utilityButton("Oda Tara", "viewfinder") {
-                    session.pauseForRoomScan()
-                    showingRoomScanner = true
+                utilityButton(session.hasScannedRoom ? "Yeniden Tara" : "Oda Tara", "viewfinder") {
+                    beginRoomScan()
                 }
                 .disabled(!RoomScannerController.isSupported || !session.isARReady)
 
@@ -6855,23 +6877,68 @@ struct ContentView: View {
     }
 
     private var compactControls: some View {
-        HStack(spacing: 8) {
-            compactButton("Kontroller", "slider.horizontal.3") {
-                controlsExpanded = true
+        VStack(spacing: 8) {
+            Button {
+                beginRoomScan()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "viewfinder.circle.fill")
+                        .font(.title2)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(session.hasScannedRoom ? "Odayı Yeniden Tara" : "Odayı Tara")
+                            .font(.subheadline.weight(.bold))
+                        Text(roomScanAvailabilityText)
+                            .font(.caption2)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color.accentColor.opacity(0.9), in: RoundedRectangle(cornerRadius: 13))
             }
-            compactButton("Nesneler", "shippingbox.fill") {
-                showingPropLibrary = true
-            }
-            compactButton("Sahne", "list.bullet.rectangle") {
-                showingSceneContents = true
-            }
-            compactButton("Mekânlar", "square.stack.3d.up.fill") {
-                showingSavedPlaces = true
+            .buttonStyle(.plain)
+            .disabled(!RoomScannerController.isSupported || !session.isARReady)
+            .opacity(RoomScannerController.isSupported ? (session.isARReady ? 1 : 0.7) : 0.55)
+            .accessibilityHint(roomScanAvailabilityText)
+
+            HStack(spacing: 8) {
+                compactButton("Kontroller", "slider.horizontal.3") {
+                    controlsExpanded = true
+                }
+                compactButton("Nesneler", "shippingbox.fill") {
+                    showingPropLibrary = true
+                }
+                compactButton("Sahne", "list.bullet.rectangle") {
+                    showingSceneContents = true
+                }
+                compactButton("Mekânlar", "square.stack.3d.up.fill") {
+                    showingSavedPlaces = true
+                }
             }
         }
         .disabled(session.isRecordingTransitioning)
         .padding(8)
-        .background(.ultraThinMaterial, in: Capsule())
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var roomScanAvailabilityText: String {
+        if !RoomScannerController.isSupported {
+            return "Bu cihaz RoomPlan taramasını desteklemiyor"
+        }
+        if !session.isARReady {
+            return "Kamera ve AR takibi hazırlanıyor…"
+        }
+        return session.hasScannedRoom ? "Yeni bir oda taraması başlat" : "Duvar, zemin ve büyük nesneleri tara"
+    }
+
+    private func beginRoomScan() {
+        guard RoomScannerController.isSupported, session.isARReady else { return }
+        session.pauseForRoomScan()
+        showingRoomScanner = true
     }
 
     private var lightControls: some View {
@@ -12391,7 +12458,8 @@ incelemesine uygulama gondermesi mumkun degildir.
 
 ## Fonksiyon testi
 
-1. Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
+1. Uygulama acilir acilmaz alt panelde `Odayi Tara` dugmesinin gorundugunu dogrula.
+   Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
 2. Tarama sirasinda yalniz RoomPlan'in beyaz/seffaf kilavuzlarinin gorundugunu;
    tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
@@ -12462,7 +12530,7 @@ incelemesine uygulama gondermesi mumkun degildir.
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
 15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
-    kontrol et; alan ilk kurulumda gercek deger olarak `http://192.168.1.9:8765` icermeli
+    kontrol et; alan ilk kurulumda gercek deger olarak `http://192.168.1.12:8765` icermeli
     ve ekran baglantiyi otomatik test etmeli. Basarili test AI anahtarini otomatik
     acmali. Durumun
     once `Aktif` veya `PC bagli - LiDAR karesi bekleniyor`, scene depth geldiginde
@@ -12657,7 +12725,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 1. `CineAR.xcodeproj` dosyasini Xcode ile acin.
 2. Bundle Identifier'i size ait benzersiz bir degerle degistirin.
 3. Signing icin Team secin ve uygulamayi gercek iPhone'a yukleyin.
-4. `Oda Tara` ile tum duvarlari, kapi/pencereleri ve odadaki buyuk objeleri tarayin.
+4. Ana ekranin altindaki her zaman gorunen `Odayi Tara` dugmesiyle tum duvarlari,
+   kapi/pencereleri ve odadaki buyuk objeleri tarayin. AR henuz hazir degilse dugme
+   uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
+   olarak degisir.
 5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
@@ -12704,10 +12775,12 @@ bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
 CineAR izni kontrol edilir.
 
-Bu kurulumda dogrulanan PC adresi `http://192.168.1.9:8765` uygulamaya gercek
+Bu kurulumda dogrulanan PC adresi `http://192.168.1.12:8765` uygulamaya gercek
 baslangic degeri olarak yazilir ve AI ekrani acilinca otomatik test edilir. Adres
 DHCP nedeniyle degisirse terminaldeki yeni adres ayni alana yazilabilir; Safari'de
 kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayiklar.
+Hotspot veya Wi-Fi degistiginde betik yeniden baslatilir; varsayilan ag gecidine sahip
+etkin Wi-Fi/Ethernet adresi otomatik secilir ve VMware gibi sanal adaptorler atlanir.
 
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;

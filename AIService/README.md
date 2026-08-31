@@ -19,6 +19,11 @@ Guvenlik Duvari sorarsa Python icin yalnizca `Ozel aglar` erisimini acin. Konsol
 yazilan `http://192.168...:8765` adresini CineAR icindeki `AI Derinlik` ayarina girin.
 iPhone ve PC ayni yerel agda olmalidir.
 
+Hotspot veya Wi-Fi degistiginde IP adresi de degisir. `run_server.ps1`, varsayilan ag
+gecidi bulunan etkin Wi-Fi/Ethernet baglantisini secer; VMware/VirtualBox gibi sanal
+adaptorlere ait adresleri iPhone adresi olarak gostermez. Betigi yeniden baslatin ve
+ekranda yazan yeni adresi uygulamadaki `AI Derinlik` alanina girin.
+
 PC'de saglik adresi calisip iPhone baglanamiyorsa iPhone Safari'de konsolda yazan
 adresin sonuna `/health` ekleyerek acin. Safari de acamiyorsa Wi-Fi istemci yalitimi
 ve Windows Guvenlik Duvari kontrol edilmelidir. Safari aciyor fakat CineAR acamiyorsa

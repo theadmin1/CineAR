@@ -101,7 +101,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 1. `CineAR.xcodeproj` dosyasini Xcode ile acin.
 2. Bundle Identifier'i size ait benzersiz bir degerle degistirin.
 3. Signing icin Team secin ve uygulamayi gercek iPhone'a yukleyin.
-4. `Oda Tara` ile tum duvarlari, kapi/pencereleri ve odadaki buyuk objeleri tarayin.
+4. Ana ekranin altindaki her zaman gorunen `Odayi Tara` dugmesiyle tum duvarlari,
+   kapi/pencereleri ve odadaki buyuk objeleri tarayin. AR henuz hazir degilse dugme
+   uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
+   olarak degisir.
 5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
@@ -148,10 +151,12 @@ bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
 CineAR izni kontrol edilir.
 
-Bu kurulumda dogrulanan PC adresi `http://192.168.1.9:8765` uygulamaya gercek
+Bu kurulumda dogrulanan PC adresi `http://192.168.1.12:8765` uygulamaya gercek
 baslangic degeri olarak yazilir ve AI ekrani acilinca otomatik test edilir. Adres
 DHCP nedeniyle degisirse terminaldeki yeni adres ayni alana yazilabilir; Safari'de
 kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayiklar.
+Hotspot veya Wi-Fi degistiginde betik yeniden baslatilir; varsayilan ag gecidine sahip
+etkin Wi-Fi/Ethernet adresi otomatik secilir ve VMware gibi sanal adaptorler atlanir.
 
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;

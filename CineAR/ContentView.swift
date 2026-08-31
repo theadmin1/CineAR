@@ -197,9 +197,8 @@ struct ContentView: View {
             }
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                utilityButton("Oda Tara", "viewfinder") {
-                    session.pauseForRoomScan()
-                    showingRoomScanner = true
+                utilityButton(session.hasScannedRoom ? "Yeniden Tara" : "Oda Tara", "viewfinder") {
+                    beginRoomScan()
                 }
                 .disabled(!RoomScannerController.isSupported || !session.isARReady)
 
@@ -410,23 +409,68 @@ struct ContentView: View {
     }
 
     private var compactControls: some View {
-        HStack(spacing: 8) {
-            compactButton("Kontroller", "slider.horizontal.3") {
-                controlsExpanded = true
+        VStack(spacing: 8) {
+            Button {
+                beginRoomScan()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "viewfinder.circle.fill")
+                        .font(.title2)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(session.hasScannedRoom ? "Odayı Yeniden Tara" : "Odayı Tara")
+                            .font(.subheadline.weight(.bold))
+                        Text(roomScanAvailabilityText)
+                            .font(.caption2)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color.accentColor.opacity(0.9), in: RoundedRectangle(cornerRadius: 13))
             }
-            compactButton("Nesneler", "shippingbox.fill") {
-                showingPropLibrary = true
-            }
-            compactButton("Sahne", "list.bullet.rectangle") {
-                showingSceneContents = true
-            }
-            compactButton("Mekânlar", "square.stack.3d.up.fill") {
-                showingSavedPlaces = true
+            .buttonStyle(.plain)
+            .disabled(!RoomScannerController.isSupported || !session.isARReady)
+            .opacity(RoomScannerController.isSupported ? (session.isARReady ? 1 : 0.7) : 0.55)
+            .accessibilityHint(roomScanAvailabilityText)
+
+            HStack(spacing: 8) {
+                compactButton("Kontroller", "slider.horizontal.3") {
+                    controlsExpanded = true
+                }
+                compactButton("Nesneler", "shippingbox.fill") {
+                    showingPropLibrary = true
+                }
+                compactButton("Sahne", "list.bullet.rectangle") {
+                    showingSceneContents = true
+                }
+                compactButton("Mekânlar", "square.stack.3d.up.fill") {
+                    showingSavedPlaces = true
+                }
             }
         }
         .disabled(session.isRecordingTransitioning)
         .padding(8)
-        .background(.ultraThinMaterial, in: Capsule())
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var roomScanAvailabilityText: String {
+        if !RoomScannerController.isSupported {
+            return "Bu cihaz RoomPlan taramasını desteklemiyor"
+        }
+        if !session.isARReady {
+            return "Kamera ve AR takibi hazırlanıyor…"
+        }
+        return session.hasScannedRoom ? "Yeni bir oda taraması başlat" : "Duvar, zemin ve büyük nesneleri tara"
+    }
+
+    private func beginRoomScan() {
+        guard RoomScannerController.isSupported, session.isARReady else { return }
+        session.pauseForRoomScan()
+        showingRoomScanner = true
     }
 
     private var lightControls: some View {
