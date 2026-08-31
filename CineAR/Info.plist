@@ -27,7 +27,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Gercek mekani taramak ve sanal seti goruntulemek icin kamera kullanilir.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>AR cekimi sirasinda ses kaydetmek icin mikrofon kullanilir.</string>
+	<string>AR cekimi sirasinda ses kaydetmek ve canli CGI komutlarini algilamak icin mikrofon kullanilir.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Elma ve kan selalesi gibi canli CGI efektlerini Turkce sesli komutlarla yonetmek icin konusma tanima kullanilir.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>SAM 2 ve Depth Anything derinlik servisine ayni Wi-Fi agindaki bilgisayardan baglanmak icin yerel ag kullanilir.</string>
 	<key>NSAppTransportSecurity</key>

@@ -8,8 +8,14 @@ struct ContentView: View {
     @State private var showingAssetImporter = false
     @State private var showingPropLibrary = false
     @State private var showingAISettings = false
+    @State private var showingSceneContents = false
+    @State private var showingSavedPlaces = false
+    @State private var showingCGIStudio = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
+    @State private var sceneObjectPendingDeletion: SceneObjectSummary?
+    @State private var savedPlacePendingDeletion: SavedPlaceSummary?
+    @State private var newSavedPlaceName = ""
 
     var body: some View {
         ZStack {
@@ -87,6 +93,18 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingAISettings) {
             aiSettings
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingSceneContents) {
+            sceneContents
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingSavedPlaces) {
+            savedPlacesLibrary
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingCGIStudio) {
+            liveCGIStudio
                 .presentationDetents([.medium, .large])
         }
     }
@@ -195,6 +213,12 @@ struct ContentView: View {
                 utilityButton("Yükle", "arrow.clockwise.icloud") {
                     session.loadWorldMap()
                 }
+                utilityButton("Sahne Listesi", "list.bullet.rectangle") {
+                    showingSceneContents = true
+                }
+                utilityButton("Mekânlar", "square.stack.3d.up.fill") {
+                    showingSavedPlaces = true
+                }
                 utilityButton("Seçileni Sil", "trash") {
                     session.removeSelectedProp()
                 }
@@ -210,6 +234,9 @@ struct ContentView: View {
                 }
                 utilityButton("Sahne Işığı", "lightbulb.max.fill") {
                     session.showSceneLightControls()
+                }
+                utilityButton("Canlı CGI", "wand.and.stars") {
+                    showingCGIStudio = true
                 }
 
                 if let url = session.lastRecordingURL {
@@ -390,22 +417,12 @@ struct ContentView: View {
             compactButton("Nesneler", "shippingbox.fill") {
                 showingPropLibrary = true
             }
-            compactButton(
-                session.isRoomOutlineVisible ? "Gerçek" : "Hatlar",
-                session.isRoomOutlineVisible ? "camera.fill" : "square.dashed.inset.filled"
-            ) {
-                if session.isRoomOutlineVisible {
-                    session.showOriginalReality()
-                } else {
-                    session.showRoomOutline()
-                }
+            compactButton("Sahne", "list.bullet.rectangle") {
+                showingSceneContents = true
             }
-            .disabled(!session.hasScannedRoom)
-            compactButton("Oda Tara", "viewfinder") {
-                session.pauseForRoomScan()
-                showingRoomScanner = true
+            compactButton("Mekânlar", "square.stack.3d.up.fill") {
+                showingSavedPlaces = true
             }
-            .disabled(!RoomScannerController.isSupported || !session.isARReady)
         }
         .disabled(session.isRecordingTransitioning)
         .padding(8)
@@ -599,6 +616,238 @@ struct ContentView: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private var sceneContents: some View {
+        NavigationStack {
+            Group {
+                if session.sceneObjects.isEmpty {
+                    ContentUnavailableView(
+                        "Sahne Boş",
+                        systemImage: "cube.transparent",
+                        description: Text("Eklediğin nesneler ve canlı efektler burada listelenecek.")
+                    )
+                } else {
+                    List {
+                        Section("\(session.sceneObjects.count) sahne öğesi") {
+                            ForEach(session.sceneObjects) { item in
+                                HStack(spacing: 12) {
+                                    Button {
+                                        session.selectSceneObject(id: item.id)
+                                        showingSceneContents = false
+                                    } label: {
+                                        HStack(spacing: 12) {
+                                            Text(item.symbol).font(.title2)
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(item.title)
+                                                    .font(.body.weight(.semibold))
+                                                Text(item.detail)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            if item.id == session.selectedEntityID {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(.green)
+                                            }
+                                        }
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button(role: .destructive) {
+                                        sceneObjectPendingDeletion = item
+                                    } label: {
+                                        Image(systemName: "trash")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .accessibilityLabel("\(item.title) öğesini sil")
+                                }
+                            }
+                        }
+
+                        Section {
+                            Button(role: .destructive) {
+                                session.removeAllProps()
+                            } label: {
+                                Label("Sahnedeki Her Şeyi Sil", systemImage: "trash.slash")
+                            }
+                        } footer: {
+                            Text("Silme işlemi taranmış oda kaydını değil, sanal nesne ve efektleri kaldırır.")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Sahne İçeriği")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingSceneContents = false }
+                }
+            }
+            .alert(
+                "Sahne öğesi silinsin mi?",
+                isPresented: Binding(
+                    get: { sceneObjectPendingDeletion != nil },
+                    set: { if !$0 { sceneObjectPendingDeletion = nil } }
+                ),
+                presenting: sceneObjectPendingDeletion
+            ) { item in
+                Button("Sil", role: .destructive) {
+                    session.removeSceneObject(id: item.id)
+                    sceneObjectPendingDeletion = nil
+                }
+                Button("Vazgeç", role: .cancel) {
+                    sceneObjectPendingDeletion = nil
+                }
+            } message: { item in
+                Text("\(item.title) sahneden ve scene.json kaydından kaldırılacak.")
+            }
+        }
+    }
+
+    private var savedPlacesLibrary: some View {
+        NavigationStack {
+            List {
+                Section("Yeni kayıt") {
+                    TextField("Mekân adı (isteğe bağlı)", text: $newSavedPlaceName)
+                    Button {
+                        session.saveWorldMap(archiveName: newSavedPlaceName)
+                        newSavedPlaceName = ""
+                    } label: {
+                        Label("Aktif Mekânı Kaydet", systemImage: "square.and.arrow.down.fill")
+                    }
+                    Text("Dünya haritası, tarama, nesneler, ışıklar ve özel USDZ dosyaları birlikte saklanır.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Kayıtlı mekânlar") {
+                    if session.savedPlaces.isEmpty {
+                        Text("Henüz arşivlenmiş mekân yok.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(session.savedPlaces) { place in
+                            HStack(spacing: 12) {
+                                Button {
+                                    session.loadSavedPlace(id: place.id)
+                                    showingSavedPlaces = false
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: place.hasRoomScan
+                                            ? "viewfinder.circle.fill"
+                                            : "cube.transparent")
+                                            .font(.title2)
+                                            .foregroundStyle(place.hasRoomScan ? .green : .blue)
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text(place.name)
+                                                .font(.body.weight(.semibold))
+                                            Text(
+                                                "\(place.objectCount) öğe • "
+                                                    + place.updatedAt.formatted(
+                                                        date: .abbreviated,
+                                                        time: .shortened
+                                                    )
+                                            )
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+
+                                Button(role: .destructive) {
+                                    savedPlacePendingDeletion = place
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("\(place.name) kaydını sil")
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Kayıtlı Mekânlar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingSavedPlaces = false }
+                }
+            }
+            .alert(
+                "Mekân kaydı silinsin mi?",
+                isPresented: Binding(
+                    get: { savedPlacePendingDeletion != nil },
+                    set: { if !$0 { savedPlacePendingDeletion = nil } }
+                ),
+                presenting: savedPlacePendingDeletion
+            ) { place in
+                Button("Sil", role: .destructive) {
+                    session.deleteSavedPlace(id: place.id)
+                    savedPlacePendingDeletion = nil
+                }
+                Button("Vazgeç", role: .cancel) {
+                    savedPlacePendingDeletion = nil
+                }
+            } message: { place in
+                Text("\(place.name) arşivi kalıcı olarak silinecek; aktif sahne etkilenmeyecek.")
+            }
+        }
+    }
+
+    private var liveCGIStudio: some View {
+        NavigationStack {
+            Form {
+                Section("Gerçek zamanlı efektler") {
+                    Button {
+                        session.selectProp(.bloodWaterfall)
+                        showingCGIStudio = false
+                    } label: {
+                        Label("Kan Şelalesi Yerleştir", systemImage: "drop.triangle.fill")
+                    }
+                    Text("Başlangıç noktasını taranmış duvarda seç; akış dünya koordinatına sabitlenir ve sahne kaydıyla geri gelir.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Toggle(
+                        "Avuçta Canlı Elma",
+                        isOn: Binding(
+                            get: { session.isLiveAppleEnabled },
+                            set: { session.setLiveAppleEnabled($0) }
+                        )
+                    )
+                    Text("Vision el eklemlerini, LiDAR ise avuç derinliğini ölçer. Elma geçici canlı efekttir; sahneye sabitlenmez.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Türkçe sesli komut") {
+                    Button {
+                        session.toggleCGIVoiceCommands()
+                    } label: {
+                        Label(
+                            session.isListeningForCGICommands ? "Dinlemeyi Durdur" : "Komut Dinle",
+                            systemImage: session.isListeningForCGICommands ? "stop.circle.fill" : "mic.circle.fill"
+                        )
+                    }
+                    Text("“Elimde elma olsun”, “elmayı kaldır” veya “kan şelalesi aksın” diyebilirsin.")
+                        .font(.caption)
+                    LabeledContent("Durum", value: session.liveCGIStatus)
+                }
+            }
+            .navigationTitle("Canlı CGI")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingCGIStudio = false }
+                }
+            }
+        }
     }
 
     private var propLibrary: some View {

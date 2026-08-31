@@ -9,6 +9,7 @@ enum PropPlacementSurface: String, Codable {
 }
 
 enum PropLibraryCategory: String, CaseIterable, Identifiable {
+    case effects
     case furniture
     case storage
     case equipment
@@ -20,6 +21,7 @@ enum PropLibraryCategory: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .effects: "Canlı CGI"
         case .furniture: "Mobilya"
         case .storage: "Depolama"
         case .equipment: "Ekipman"
@@ -63,6 +65,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case rug
     case backdrop
     case custom
+    case bloodWaterfall
+    case apple
 
     // Curated Poly Haven CC0 photoreal catalog (30 objects).
     case metalOfficeDesk
@@ -123,6 +127,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .rug: "Halı"
         case .backdrop: "Fon Perdesi"
         case .custom: "USDZ"
+        case .bloodWaterfall: "Kan Şelalesi"
+        case .apple: "Elma"
         case .metalOfficeDesk: "Metal Ofis Masası"
         case .schoolChair: "Okul Sandalyesi"
         case .schoolDesk: "Okul Sırası"
@@ -182,6 +188,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .rug: "🟫"
         case .backdrop: "🎞️"
         case .custom: "🎭"
+        case .bloodWaterfall: "🩸"
+        case .apple: "🍎"
         case .metalTrashCan: "🗑️"
         case .blueBarrel: "🛢️"
         case .handTruck: "🛒"
@@ -200,7 +208,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    static let quickCases: [PropKind] = [.wall, .stage, .crate, .lightPanel, .custom]
+    static let quickCases: [PropKind] = [
+        .wall, .stage, .crate, .lightPanel, .bloodWaterfall, .apple, .custom
+    ]
+    static let effectCases: [PropKind] = [.bloodWaterfall, .apple]
     static let furnitureCases: [PropKind] = photorealCases
 
     static let photorealCases: [PropKind] = [
@@ -284,8 +295,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     var placementSurface: PropPlacementSurface {
         if let surface = photorealDescriptor?.surface { return surface }
         switch self {
-        case .wall, .lightPanel, .backdrop:
+        case .wall, .lightPanel, .backdrop, .bloodWaterfall:
             return PropPlacementSurface.wall
+        case .apple:
+            return PropPlacementSurface.horizontal
         case .custom:
             return PropPlacementSurface.horizontal
         default:

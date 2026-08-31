@@ -79,7 +79,19 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   yedekleyip dunya haritasi anchor'larindan taninan dekorlari yeniden kurma
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
+- `Sahne Listesi` ile sahnedeki tum nesne, isik ve CGI efektlerini ada gore secme;
+  tek tek onayla silme veya sanal sahnenin tamamini temizleme
+- Her manuel `Kaydet` ve tamamlanan oda taramasinda `scene.json`, dunya haritasi,
+  `room.json` ve o mekana ait ozel USDZ'leri dogrulanmis ayri arsiv olarak saklama
+- `Kayitli Mekanlar` listesinden tarih/nesne sayisini gorme, onceki mekani yukleme
+  veya aktif sahneyi etkilemeden arsiv kaydini silme
 - Kayitli mekanda relocalization
+- Duvara anchor edilen, uygulama yeniden acildiginda sahne kaydiyla geri gelen
+  hareketli kan selalesi CGI efekti
+- Vision el-eklem takibi ile LiDAR avuc derinligini birlestirip elmayi elde canli
+  izleme; insan/scene-depth occlusion ve zamansal konum yumusatma
+- `Elimde elma olsun`, `elmayi kaldir` ve `kan selalesi aksin` Turkce sesli
+  komutlari; ses kullanilamayan ortamlar icin ayni islemlerin dugmeleri
 - Arayuzsiz cekim modu; ekrana iki kez dokunarak kaydi bitirme
 - HEVC video ve 48 kHz AAC mikrofon sesini `.mov` dosyasina yazma
 - Son cekimi iOS Share Sheet ile disari aktarma
@@ -113,8 +125,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
 9. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
-   degilse istek siraya alinir ve otomatik tamamlanir.
-10. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
+   degilse istek siraya alinir ve otomatik tamamlanir. Manuel kayit `Kayitli Mekanlar`
+   icinde ayri bir arsiv olusturur; listeden eski tarama ve o taramaya ait nesneler
+   birlikte geri yuklenir.
+10. `Sahne` listesinden eklenmis nesneyi secin veya cop kutusuyla tek basina silin.
+    `Canli CGI` ekraninda kan selalesini secip taranmis duvara dokunun; `Avucta Canli
+    Elma`yi acip elinizi kameraya gosterin. Isterseniz ayni islemleri Turkce sesli
+    komutla baslatin.
+11. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
 
 ## PC AI derinlik denemesi
@@ -153,6 +171,12 @@ CineARProjects/MainSet/
   room.json
   Assets/*.usdz
   Recordings/*.mov
+CineARProjects/SavedPlaces/<UUID>/
+  place.json
+  scene.json
+  worldmap.arexperience
+  room.json
+  Assets/*.usdz
 ```
 
 `scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, projektor hedef
@@ -162,6 +186,10 @@ haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak b
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama
 kapanirken gereksiz bellek yukune yol acan ikinci bir RoomPlan `room.usdz` arsivi
 uretilmez.
+
+`SavedPlaces` altindaki her klasor bagimsiz ve once dogrulanan bir mekansal anlik
+goruntudur. Yukleme sirasinda checksum, anchor/dekor eslesmesi ve ozel USDZ varligi
+kontrol edilir; aktif `MainSet` ancak bu kontroller gecerse islemsel olarak degistirilir.
 
 ## Uretim siniri
 

@@ -1,11 +1,23 @@
 import ARKit
+import AVFoundation
 import Combine
 import Foundation
+import ImageIO
 import RealityKit
 import RoomPlan
+import Speech
 import simd
 import SwiftUI
 import UIKit
+import Vision
+
+struct SceneObjectSummary: Identifiable, Equatable {
+    let id: UUID
+    let title: String
+    let symbol: String
+    let detail: String
+    let isLiveEffect: Bool
+}
 
 @MainActor
 final class ARSessionController: NSObject, ObservableObject {
@@ -31,6 +43,11 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var aiEnhancementEnabled = false
     @Published private(set) var aiServerAddress = ""
     @Published private(set) var aiEnhancementStatus: AIEnhancementStatus = .disabled
+    @Published private(set) var sceneObjects: [SceneObjectSummary] = []
+    @Published private(set) var savedPlaces: [SavedPlaceSummary] = []
+    @Published private(set) var isLiveAppleEnabled = false
+    @Published private(set) var isListeningForCGICommands = false
+    @Published private(set) var liveCGIStatus = "Hazır efekt seç veya Türkçe komut ver"
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -77,6 +94,24 @@ final class ARSessionController: NSObject, ObservableObject {
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
     private var pendingAutoSaveAnchorIDs = Set<UUID>()
+    private var shouldArchiveAfterNextSave = false
+    private var pendingArchiveName: String?
+    private var bloodWaterfallParticles: [UUID: [BloodWaterfallParticle]] = [:]
+    private var liveAppleAnchor: AnchorEntity?
+    private var filteredLiveApplePosition: SIMD3<Float>?
+    private var lastLiveAppleObservationTimestamp: TimeInterval = 0
+    private var lastHandDetectionTimestamp: TimeInterval = 0
+    private var handDetectionInFlight = false
+    private let handDetectionQueue = DispatchQueue(
+        label: "com.cinear.hand-pose",
+        qos: .userInitiated
+    )
+    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "tr_TR"))
+    private let speechAudioEngine = AVAudioEngine()
+    private var speechRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var speechTask: SFSpeechRecognitionTask?
+    private var lastProcessedCGITranscript = ""
+    private var hasSpeechInputTap = false
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
     private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
@@ -85,6 +120,9 @@ final class ARSessionController: NSObject, ObservableObject {
     // value, not a TextField placeholder; it remains editable if DHCP changes it.
     private static let defaultAIServerAddress = "http://192.168.1.9:8765"
     private static let obsoleteAIServerExample = "http://192.168.1.20:8765"
+    private static let liveAppleSceneID = UUID(
+        uuidString: "C1EA0000-0000-4000-8000-000000000001"
+    )!
 
     private enum RecordingPhase {
         case idle
@@ -113,6 +151,11 @@ final class ARSessionController: NSObject, ObservableObject {
         aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+        if projectStore.savedPlaces.isEmpty,
+           projectStore.project.worldMapChecksum != nil {
+            _ = try? projectStore.archiveCurrentProject(preferredName: "Önceki Mekân")
+        }
+        refreshSceneCatalogs()
         // Opaque room replacements can cover people and make the camera feel unstable.
         // Always launch in the real-camera view; the legacy renderer stays internal.
         UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
@@ -224,12 +267,15 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
         renderedLightFootprints.removeAll()
+        bloodWaterfallParticles.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
         selectedEntityID = nil
         selectedLightSettings = nil
         isAimingLight = false
         placementReticlePoint = nil
+        liveAppleAnchor = nil
+        filteredLiveApplePosition = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
         aiEnhancementClient.cancel()
@@ -260,6 +306,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func pauseForRoomScan() {
         cancelPlacement()
+        if isListeningForCGICommands { stopCGIVoiceCommands() }
         aiEnhancementClient.cancel()
         aiDepthRenderer.clear()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
@@ -444,6 +491,8 @@ final class ARSessionController: NSObject, ObservableObject {
             } else {
                 updateKnownFloorFromRoomData()
                 shouldSaveWorldMapWhenReady = hasScannedRoom
+                shouldArchiveAfterNextSave = hasScannedRoom
+                pendingArchiveName = nil
                 completionStatus = (
                     "Tarama kaydedildi — sahne haritası takip hazır olunca otomatik kaydedilecek",
                     .green
@@ -685,6 +734,311 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    func selectSceneObject(id: UUID) {
+        if id == Self.liveAppleSceneID {
+            publishStatus("Canlı elma efekti seçildi — kapatmak için Sahne listesindeki çöp kutusunu kullan", color: .blue)
+            return
+        }
+        guard projectStore.placement(id: id) != nil else {
+            refreshSceneCatalogs()
+            publishStatus("Sahne öğesi artık bulunmuyor", color: .yellow)
+            return
+        }
+        isPlacingProp = false
+        placementReticlePoint = nil
+        selectRenderedEntity(id: id)
+    }
+
+    func setLiveAppleEnabled(_ enabled: Bool) {
+        isLiveAppleEnabled = enabled
+        filteredLiveApplePosition = nil
+        lastLiveAppleObservationTimestamp = 0
+        if enabled {
+            liveCGIStatus = "Elini kameraya göster; elma avuç merkezine bağlanacak"
+            publishStatus("Canlı elma etkin — avucunu açık biçimde kameraya göster", color: .green)
+        } else {
+            if let anchor = liveAppleAnchor {
+                anchor.scene?.removeAnchor(anchor)
+            }
+            liveAppleAnchor = nil
+            liveCGIStatus = "Canlı elma kapalı"
+        }
+        refreshSceneCatalogs()
+    }
+
+    func toggleCGIVoiceCommands() {
+        if isListeningForCGICommands {
+            stopCGIVoiceCommands()
+        } else {
+            startCGIVoiceCommands()
+        }
+    }
+
+    func stopCGIVoiceCommands() {
+        speechTask?.cancel()
+        speechTask = nil
+        speechRequest?.endAudio()
+        speechRequest = nil
+        if speechAudioEngine.isRunning { speechAudioEngine.stop() }
+        if hasSpeechInputTap {
+            speechAudioEngine.inputNode.removeTap(onBus: 0)
+            hasSpeechInputTap = false
+        }
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        isListeningForCGICommands = false
+        if liveCGIStatus == "Dinliyorum…" {
+            liveCGIStatus = "Sesli komut kapalı"
+        }
+    }
+
+    private func startCGIVoiceCommands() {
+        switch SFSpeechRecognizer.authorizationStatus() {
+        case .authorized:
+            requestMicrophoneAndBeginCGISpeechRecognition()
+        case .notDetermined:
+            SFSpeechRecognizer.requestAuthorization { [weak self] status in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if status == .authorized {
+                        self.requestMicrophoneAndBeginCGISpeechRecognition()
+                    } else {
+                        self.liveCGIStatus = "Konuşma tanıma izni verilmedi"
+                        self.publishStatus("Ayarlar'dan Konuşma Tanıma iznini aç", color: .yellow)
+                    }
+                }
+            }
+        case .denied, .restricted:
+            liveCGIStatus = "Konuşma tanıma izni kapalı"
+            publishStatus("Ayarlar'dan Konuşma Tanıma iznini aç", color: .yellow)
+        @unknown default:
+            liveCGIStatus = "Konuşma tanıma kullanılamıyor"
+        }
+    }
+
+    private func requestMicrophoneAndBeginCGISpeechRecognition() {
+        let audioSession = AVAudioSession.sharedInstance()
+        switch audioSession.recordPermission {
+        case .granted:
+            beginCGISpeechRecognition()
+        case .undetermined:
+            audioSession.requestRecordPermission { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if granted {
+                        self.beginCGISpeechRecognition()
+                    } else {
+                        self.liveCGIStatus = "Mikrofon izni verilmedi"
+                        self.publishStatus("Ayarlar'dan Mikrofon iznini aç", color: .yellow)
+                    }
+                }
+            }
+        case .denied:
+            liveCGIStatus = "Mikrofon izni kapalı"
+            publishStatus("Ayarlar'dan Mikrofon iznini aç", color: .yellow)
+        @unknown default:
+            liveCGIStatus = "Mikrofon kullanılamıyor"
+        }
+    }
+
+    private func beginCGISpeechRecognition() {
+        guard let speechRecognizer, speechRecognizer.isAvailable else {
+            liveCGIStatus = "Türkçe konuşma tanıma şu anda kullanılamıyor"
+            return
+        }
+        stopCGIVoiceCommands()
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(
+                .playAndRecord,
+                mode: .measurement,
+                options: [.duckOthers, .defaultToSpeaker]
+            )
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+
+            let request = SFSpeechAudioBufferRecognitionRequest()
+            request.shouldReportPartialResults = true
+            request.taskHint = .confirmation
+            if speechRecognizer.supportsOnDeviceRecognition {
+                request.requiresOnDeviceRecognition = true
+            }
+            speechRequest = request
+            lastProcessedCGITranscript = ""
+
+            let inputNode = speechAudioEngine.inputNode
+            let format = inputNode.outputFormat(forBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1_024, format: format) {
+                [weak request] buffer, _ in
+                request?.append(buffer)
+            }
+            hasSpeechInputTap = true
+            speechAudioEngine.prepare()
+            try speechAudioEngine.start()
+            isListeningForCGICommands = true
+            liveCGIStatus = "Dinliyorum…"
+
+            speechTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let result {
+                        self.handleCGITranscript(
+                            result.bestTranscription.formattedString,
+                            isFinal: result.isFinal
+                        )
+                    }
+                    if error != nil {
+                        self.stopCGIVoiceCommands()
+                    }
+                }
+            }
+        } catch {
+            stopCGIVoiceCommands()
+            liveCGIStatus = "Mikrofon başlatılamadı: \(error.localizedDescription)"
+            publishStatus(liveCGIStatus, color: .red)
+        }
+    }
+
+    private func handleCGITranscript(_ transcript: String, isFinal: Bool) {
+        let command = transcript.folding(
+            options: [.caseInsensitive, .diacriticInsensitive],
+            locale: Locale(identifier: "tr_TR")
+        ).lowercased()
+        guard command != lastProcessedCGITranscript else { return }
+
+        if command.contains("kan selalesi") || command.contains("kan ak") {
+            lastProcessedCGITranscript = command
+            selectProp(.bloodWaterfall)
+            liveCGIStatus = "Kan şelalesi seçildi; başlangıç için duvara dokun"
+            if isFinal { stopCGIVoiceCommands() }
+            return
+        }
+        if command.contains("elma") {
+            lastProcessedCGITranscript = command
+            let shouldRemove = command.contains("kaldir")
+                || command.contains("sil")
+                || command.contains("kapat")
+            setLiveAppleEnabled(!shouldRemove)
+            liveCGIStatus = shouldRemove
+                ? "Elma efekti kaldırıldı"
+                : "Elma etkin; elini kameraya göster"
+            if isFinal { stopCGIVoiceCommands() }
+            return
+        }
+        liveCGIStatus = transcript.isEmpty ? "Dinliyorum…" : "Duyulan: \(transcript)"
+        if isFinal { stopCGIVoiceCommands() }
+    }
+
+    private func updateLiveAppleTracking(using frame: ARFrame) {
+        guard isLiveAppleEnabled, isARReady, !isRoomScanActive, !isSessionInterrupted,
+              let arView else { return }
+        if frame.timestamp - lastHandDetectionTimestamp < 0.12 || handDetectionInFlight {
+            if frame.timestamp - lastLiveAppleObservationTimestamp > 0.42 {
+                liveAppleAnchor?.isEnabled = false
+            }
+            return
+        }
+        lastHandDetectionTimestamp = frame.timestamp
+        handDetectionInFlight = true
+        let pixelBuffer = frame.capturedImage
+        let viewportSize = arView.bounds.size
+        let imageOrientation: CGImagePropertyOrientation
+        switch arView.window?.windowScene?.interfaceOrientation {
+        case .some(.landscapeLeft): imageOrientation = .up
+        case .some(.landscapeRight): imageOrientation = .down
+        case .some(.portraitUpsideDown): imageOrientation = .left
+        default: imageOrientation = .right
+        }
+        handDetectionQueue.async { [weak self, weak arView] in
+            let request = VNDetectHumanHandPoseRequest()
+            request.maximumHandCount = 1
+            var normalizedPalm: CGPoint?
+            do {
+                let handler = VNImageRequestHandler(
+                    cvPixelBuffer: pixelBuffer,
+                    orientation: imageOrientation,
+                    options: [:]
+                )
+                try handler.perform([request])
+                if let observation = request.results?.first {
+                    let points = try observation.recognizedPoints(.all)
+                    let jointNames: [VNHumanHandPoseObservation.JointName] = [
+                        .wrist, .indexMCP, .middleMCP, .littleMCP
+                    ]
+                    let valid = jointNames.compactMap { name -> VNRecognizedPoint? in
+                        guard let point = points[name], point.confidence >= 0.30 else { return nil }
+                        return point
+                    }
+                    if valid.count >= 3 {
+                        let count = CGFloat(valid.count)
+                        normalizedPalm = CGPoint(
+                            x: valid.reduce(CGFloat.zero) { $0 + $1.location.x } / count,
+                            y: valid.reduce(CGFloat.zero) { $0 + $1.location.y } / count
+                        )
+                    }
+                }
+            } catch {
+                normalizedPalm = nil
+            }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.handDetectionInFlight = false
+                guard self.isLiveAppleEnabled,
+                      let arView,
+                      let normalizedPalm,
+                      viewportSize.width > 0,
+                      viewportSize.height > 0 else { return }
+                let point = CGPoint(
+                    x: normalizedPalm.x * viewportSize.width,
+                    y: (1 - normalizedPalm.y) * viewportSize.height
+                )
+                self.placeLiveApple(using: frame, in: arView, at: point)
+            }
+        }
+    }
+
+    private func placeLiveApple(using frame: ARFrame, in arView: ARView, at point: CGPoint) {
+        guard let depth = sceneDepthSample(frame: frame, in: arView, at: point) else {
+            liveCGIStatus = "El görüldü; avuç derinliği ölçülüyor"
+            return
+        }
+        let cameraPosition = SIMD3<Float>(
+            frame.camera.transform.columns.3.x,
+            frame.camera.transform.columns.3.y,
+            frame.camera.transform.columns.3.z
+        )
+        var towardCamera = cameraPosition - depth.worldPoint
+        if simd_length_squared(towardCamera) > 0.000_001 {
+            towardCamera = simd_normalize(towardCamera)
+        } else {
+            towardCamera = [0, 0, 1]
+        }
+        let measured = depth.worldPoint + towardCamera * 0.045 + SIMD3<Float>(0, 0.055, 0)
+        let filtered: SIMD3<Float>
+        if let previous = filteredLiveApplePosition,
+           simd_distance(previous, measured) < 0.45 {
+            filtered = previous + (measured - previous) * 0.24
+        } else {
+            filtered = measured
+        }
+        filteredLiveApplePosition = filtered
+        lastLiveAppleObservationTimestamp = frame.timestamp
+
+        let anchor: AnchorEntity
+        if let existing = liveAppleAnchor, existing.scene != nil {
+            anchor = existing
+        } else {
+            anchor = AnchorEntity(world: filtered)
+            anchor.name = "cinear.cgi.live-apple"
+            let apple = makeAppleEntity()
+            apple.position.y = -0.065
+            anchor.addChild(apple)
+            arView.scene.addAnchor(anchor)
+            liveAppleAnchor = anchor
+        }
+        anchor.position = filtered
+        anchor.isEnabled = true
+        liveCGIStatus = String(format: "Elma avuçta • %.2f m", depth.depthMeters)
+    }
+
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
@@ -752,6 +1106,7 @@ final class ARSessionController: NSObject, ObservableObject {
             isPlacingProp = false
             placementReticlePoint = nil
             render(prop: selectedProp, id: id, for: anchor)
+            refreshSceneCatalogs()
             if selectedProp == .custom {
                 publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
             } else if renderedEntities[id] != nil {
@@ -1318,8 +1673,22 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func removeSelectedProp() {
-        guard let id = selectedEntityID, let arView else {
+        guard let id = selectedEntityID else {
             publishStatus("Önce silinecek dekoru seç", color: .yellow)
+            return
+        }
+        removeSceneObject(id: id)
+    }
+
+    func removeSceneObject(id: UUID) {
+        if id == Self.liveAppleSceneID {
+            setLiveAppleEnabled(false)
+            publishStatus("Canlı elma efekti sahneden kaldırıldı", color: .green)
+            return
+        }
+        guard let arView, let placement = projectStore.placement(id: id) else {
+            refreshSceneCatalogs()
+            publishStatus("Silinecek sahne öğesi bulunamadı", color: .yellow)
             return
         }
         do {
@@ -1339,7 +1708,8 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         managedPropAnchorsByPlacementID[id] = nil
         detachRenderedPlacement(id: id, clearSelection: true)
-        publishStatus("Seçili dekor silindi", color: .green)
+        refreshSceneCatalogs()
+        publishStatus("\(placement.kind.title) sahneden silindi", color: .green)
     }
 
     func removeAllProps() {
@@ -1376,6 +1746,8 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedEntityID = nil
         selectedLightSettings = nil
         isAimingLight = false
+        setLiveAppleEnabled(false)
+        refreshSceneCatalogs()
         publishStatus("Sanal dekorlar temizlendi", color: .green)
     }
 
@@ -1449,14 +1821,19 @@ final class ARSessionController: NSObject, ObservableObject {
         )
     }
 
-    func saveWorldMap() {
+    func saveWorldMap(archiveName: String? = nil) {
+        shouldArchiveAfterNextSave = true
+        let normalizedName = archiveName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        pendingArchiveName = normalizedName.flatMap { $0.isEmpty ? nil : $0 }
         guard let arView else {
+            shouldArchiveAfterNextSave = false
+            pendingArchiveName = nil
             publishStatus("AR görünümü henüz hazır değil", color: .red)
             return
         }
         guard !isSavingWorldMap else {
             shouldSaveWorldMapWhenReady = true
-            publishStatus("Mevcut kayıttan sonra bir kez daha kaydedilecek", color: .yellow)
+            publishStatus("Mevcut kayıt tamamlanınca mekân arşivlenecek", color: .yellow)
             return
         }
         guard let trackingState = arView.session.currentFrame?.camera.trackingState,
@@ -1530,9 +1907,12 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         self.discardOrphanedRenderedContent(survivingIDs: survivingIDs)
                         self.isSavingWorldMap = false
+                        let archiveResult = self.archiveSavedPlaceIfRequested()
+                        self.refreshSceneCatalogs()
+                        let archiveDetail = archiveResult.message.map { " — " + $0 } ?? ""
                         self.publishStatus(
-                            "Sahne kaydı onarıldı — \(discardedCount) anchorsız kayıt temizlendi",
-                            color: .yellow
+                            "Sahne kaydı onarıldı — \(discardedCount) anchorsız kayıt temizlendi\(archiveDetail)",
+                            color: archiveResult.failed ? .yellow : .green
                         )
                         return
                     }
@@ -1542,7 +1922,15 @@ final class ARSessionController: NSObject, ObservableObject {
                     )
                     try self.projectStore.saveWorldMapData(data)
                     self.isSavingWorldMap = false
-                    self.publishStatus("Set projesi ve dünya haritası kaydedildi", color: .green)
+                    let archiveResult = self.shouldSaveWorldMapWhenReady
+                        ? (message: nil, failed: false)
+                        : self.archiveSavedPlaceIfRequested()
+                    self.refreshSceneCatalogs()
+                    let archiveDetail = archiveResult.message.map { " — " + $0 } ?? ""
+                    self.publishStatus(
+                        "Set projesi ve dünya haritası kaydedildi\(archiveDetail)",
+                        color: archiveResult.failed ? .yellow : .green
+                    )
                 } catch {
                     if let cinearError = error as? CineARError,
                        case .sceneSnapshotMismatch = cinearError,
@@ -1561,6 +1949,8 @@ final class ARSessionController: NSObject, ObservableObject {
                         return
                     }
                     self.isSavingWorldMap = false
+                    self.shouldArchiveAfterNextSave = false
+                    self.pendingArchiveName = nil
                     self.publishStatus(
                         "Kaydetme başarısız: \(error.localizedDescription)",
                         color: .red
@@ -1629,6 +2019,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
+        bloodWaterfallParticles[id] = nil
         if let footprint = renderedLightFootprints.removeValue(forKey: id) {
             footprint.scene?.removeAnchor(footprint)
         }
@@ -1818,6 +2209,9 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            importedAssetURLs = projectStore.importedModelURLs
+            hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+            refreshSceneCatalogs()
             runSession(initialWorldMap: worldMap)
             let prefix = recoveryNotice.map { $0 + " — " } ?? ""
             publishStatus(prefix + "aynı alanı göster; kamera yeniden konumlanıyor", color: .yellow)
@@ -1827,11 +2221,53 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    func loadSavedPlace(id: UUID) {
+        guard !isSavingWorldMap else {
+            publishStatus("Kaydetme tamamlanmadan başka mekân yüklenemez", color: .yellow)
+            return
+        }
+        do {
+            let snapshot = try projectStore.installSavedPlace(id: id)
+            guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+                ofClass: ARWorldMap.self,
+                from: snapshot.data
+            ) else {
+                throw CineARError.worldMapUnavailable
+            }
+            try validate(worldMap: worldMap, placements: snapshot.project.placements)
+            projectStore.activate(snapshot)
+            importedAssetURLs = projectStore.importedModelURLs
+            hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+            roomCoordinateSpaceIsActive = hasScannedRoom
+            roomRealityRenderer.clear()
+            roomRealityRenderer.isVisible = false
+            isRoomOutlineVisible = false
+            setLiveAppleEnabled(false)
+            refreshSceneCatalogs()
+            runSession(initialWorldMap: worldMap)
+            publishStatus("Kayıtlı mekân açıldı — aynı alanı göstererek yeniden konumlan", color: .yellow)
+        } catch {
+            refreshSceneCatalogs()
+            publishStatus("Mekân yüklenemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func deleteSavedPlace(id: UUID) {
+        do {
+            try projectStore.deleteSavedPlace(id: id)
+            refreshSceneCatalogs()
+            publishStatus("Kayıtlı mekân silindi", color: .green)
+        } catch {
+            publishStatus("Mekân silinemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
     func startRecording() {
         guard case .idle = recordingPhase else {
             publishStatus("Kayıt işlemi zaten devam ediyor", color: .yellow)
             return
         }
+        if isListeningForCGICommands { stopCGIVoiceCommands() }
         recordingPhase = .starting
         isRecordingTransitioning = true
         coachingOverlay?.isHidden = true
@@ -2114,6 +2550,43 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedAnchorIDs.insert(anchor.identifier)
         renderedAnchorIDByPlacementID[id] = anchor.identifier
         renderedEntities[id] = entity
+        if prop == .bloodWaterfall {
+            installBloodWaterfallRuntime(on: entity, id: id)
+        }
+    }
+
+    private func installBloodWaterfallRuntime(on entity: ModelEntity, id: UUID) {
+        var particles: [BloodWaterfallParticle] = []
+        for index in 0..<18 {
+            guard let drop = entity.findEntity(named: "cinear.blood.drop.\(index)") as? ModelEntity
+            else { continue }
+            particles.append(
+                BloodWaterfallParticle(
+                    entity: drop,
+                    phase: Float(index) / 18,
+                    lateral: drop.position.x,
+                    depth: drop.position.z
+                )
+            )
+        }
+        bloodWaterfallParticles[id] = particles
+    }
+
+    private func updateBloodWaterfalls(timestamp: TimeInterval) {
+        let time = Float(timestamp)
+        for particles in bloodWaterfallParticles.values {
+            for (index, particle) in particles.enumerated() {
+                let progress = (time * (0.62 + Float(index % 4) * 0.035) + particle.phase)
+                    .truncatingRemainder(dividingBy: 1)
+                particle.entity.position = [
+                    particle.lateral + sin(time * 2.3 + Float(index)) * 0.012,
+                    -0.04 - progress * 1.43,
+                    particle.depth
+                ]
+                let stretch = 1.35 + min(progress * 1.8, 1.5)
+                particle.entity.scale = [1, stretch, 1]
+            }
+        }
     }
 
     @discardableResult
@@ -2896,9 +3369,10 @@ final class ARSessionController: NSObject, ObservableObject {
         case .crate: return (0.48, 0.48, 0.004)
         case .plant: return (0.31, 0.31, 0.004)
         case .floorLamp: return (0.30, 0.30, 0.004)
+        case .apple: return (0.13, 0.13, 0.004)
         case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
              .bed, .bookcase, .television, .refrigerator, .oven, .stove,
-             .sink, .bathtub, .toilet, .washerDryer, .stairs:
+             .sink, .bathtub, .toilet, .washerDryer, .stairs, .bloodWaterfall:
             return nil
         default:
             return nil
@@ -3043,6 +3517,12 @@ final class ARSessionController: NSObject, ObservableObject {
                 materials: [material]
             )
 
+        case .bloodWaterfall:
+            return makeBloodWaterfallEntity()
+
+        case .apple:
+            return makeAppleEntity()
+
         case .chair, .table, .sofa, .bed, .bookcase, .television,
              .refrigerator, .oven, .stove, .sink, .bathtub, .toilet,
              .washerDryer, .stairs, .custom:
@@ -3050,6 +3530,97 @@ final class ARSessionController: NSObject, ObservableObject {
         default:
             preconditionFailure("Photoreal USDZ assets are loaded asynchronously")
         }
+    }
+
+    private func makeAppleEntity() -> ModelEntity {
+        let skin = RealityMaterialRecipe(
+            0.64, 0.025, 0.018,
+            roughness: 0.31,
+            metallic: 0.02
+        ).makeMaterial()
+        let stemMaterial = RealityMaterialRecipe(
+            0.18, 0.07, 0.025,
+            roughness: 0.88
+        ).makeMaterial()
+        let leafMaterial = RealityMaterialRecipe(
+            0.04, 0.28, 0.055,
+            roughness: 0.68
+        ).makeMaterial()
+
+        let root = ModelEntity()
+        root.name = "cinear.cgi.apple"
+        let body = ModelEntity(mesh: .generateSphere(radius: 0.065), materials: [skin])
+        body.scale = [1.0, 0.92, 1.0]
+        body.position.y = 0.062
+        let crown = ModelEntity(mesh: .generateSphere(radius: 0.046), materials: [skin])
+        crown.scale = [1.08, 0.46, 1.08]
+        crown.position.y = 0.105
+        let stem = ModelEntity(
+            mesh: .generateBox(size: [0.009, 0.046, 0.009], cornerRadius: 0.003),
+            materials: [stemMaterial]
+        )
+        stem.position = [0.004, 0.145, 0]
+        stem.orientation = simd_quatf(angle: -0.18, axis: [0, 0, 1])
+        let leaf = ModelEntity(
+            mesh: .generateBox(size: [0.047, 0.004, 0.021], cornerRadius: 0.008),
+            materials: [leafMaterial]
+        )
+        leaf.position = [0.026, 0.143, 0]
+        leaf.orientation = simd_quatf(angle: 0.30, axis: [0, 0, 1])
+        root.addChild(body)
+        root.addChild(crown)
+        root.addChild(stem)
+        root.addChild(leaf)
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateSphere(radius: 0.069)]
+        )
+        return root
+    }
+
+    private func makeBloodWaterfallEntity() -> ModelEntity {
+        let root = ModelEntity()
+        root.name = "cinear.cgi.blood-waterfall"
+        let liquid = RealityMaterialRecipe(
+            0.40, 0.006, 0.012,
+            alpha: 0.82,
+            roughness: 0.24,
+            metallic: 0.03
+        ).makeMaterial()
+        let darkLiquid = RealityMaterialRecipe(
+            0.16, 0.002, 0.008,
+            alpha: 0.72,
+            roughness: 0.32
+        ).makeMaterial()
+
+        let sheet = ModelEntity(
+            mesh: .generateBox(size: [0.72, 1.48, 0.018], cornerRadius: 0.009),
+            materials: [liquid]
+        )
+        sheet.name = "cinear.blood.sheet"
+        sheet.position = [0, -0.73, 0.035]
+        root.addChild(sheet)
+
+        for index in 0..<18 {
+            let radius = Float(0.017 + Double(index % 4) * 0.003)
+            let drop = ModelEntity(mesh: .generateSphere(radius: radius), materials: [
+                index.isMultiple(of: 3) ? darkLiquid : liquid
+            ])
+            drop.name = "cinear.blood.drop.\(index)"
+            let lateral = (Float(index % 6) - 2.5) * 0.11
+            drop.position = [lateral, -Float(index) / 18 * 1.42, 0.065 + Float(index % 3) * 0.009]
+            drop.scale.y = 1.8 + Float(index % 3) * 0.35
+            root.addChild(drop)
+        }
+
+        let puddle = ModelEntity(mesh: .generateSphere(radius: 0.5), materials: [darkLiquid])
+        puddle.name = "cinear.blood.puddle"
+        puddle.position = [0, -1.49, 0.22]
+        puddle.scale = [0.86, 0.022, 0.34]
+        root.addChild(puddle)
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: [0.76, 1.54, 0.08])]
+        )
+        return root
     }
 
     private func addCoachingOverlay(to view: ARView) {
@@ -3066,6 +3637,70 @@ final class ARSessionController: NSObject, ObservableObject {
             coaching.topAnchor.constraint(equalTo: view.topAnchor),
             coaching.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+
+    private func refreshSceneCatalogs() {
+        var titleCounts: [String: Int] = [:]
+        let placements = projectStore.project.placements.reversed().map { placement in
+            let baseTitle: String
+            if placement.kind == .custom, let fileName = placement.assetFileName {
+                baseTitle = URL(fileURLWithPath: fileName).deletingPathExtension().lastPathComponent
+            } else {
+                baseTitle = placement.kind.title
+            }
+            let occurrence = (titleCounts[baseTitle] ?? 0) + 1
+            titleCounts[baseTitle] = occurrence
+            let title = occurrence == 1 ? baseTitle : "\(baseTitle) \(occurrence)"
+            return SceneObjectSummary(
+                id: placement.id,
+                title: title,
+                symbol: placement.kind.symbol,
+                detail: sceneObjectDetail(for: placement),
+                isLiveEffect: placement.kind == .bloodWaterfall
+            )
+        }
+        var result = Array(placements)
+        if isLiveAppleEnabled {
+            result.insert(
+                SceneObjectSummary(
+                    id: Self.liveAppleSceneID,
+                    title: "Eldeki Elma",
+                    symbol: "🍎",
+                    detail: "Canlı CGI • Vision el takibi",
+                    isLiveEffect: true
+                ),
+                at: 0
+            )
+        }
+        sceneObjects = result
+        savedPlaces = projectStore.savedPlaces
+    }
+
+    private func sceneObjectDetail(for placement: PlacementRecord) -> String {
+        let surface: String
+        switch placement.kind.placementSurface {
+        case .floor: surface = "Zemin"
+        case .horizontal: surface = "Yatay yüzey"
+        case .wall: surface = "Duvar"
+        case .ceiling: surface = "Tavan"
+        }
+        if placement.kind == .bloodWaterfall { return "Canlı CGI • Duvara sabit" }
+        if placement.kind.emitsVirtualLight { return "Sanal ışık • \(surface)" }
+        return surface
+    }
+
+    private func archiveSavedPlaceIfRequested() -> (message: String?, failed: Bool) {
+        guard shouldArchiveAfterNextSave else { return (nil, false) }
+        shouldArchiveAfterNextSave = false
+        let name = pendingArchiveName
+        pendingArchiveName = nil
+        do {
+            let summary = try projectStore.archiveCurrentProject(preferredName: name)
+            savedPlaces = projectStore.savedPlaces
+            return ("\(summary.name) Kayıtlı Mekânlar'a eklendi", false)
+        } catch {
+            return ("mekân arşivlenemedi: \(error.localizedDescription)", true)
+        }
     }
 
     private func publishStatus(_ text: String, color: Color) {
@@ -3212,6 +3847,8 @@ final class ARSessionController: NSObject, ObservableObject {
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         updatePlacementGuidance(using: frame)
+        updateBloodWaterfalls(timestamp: frame.timestamp)
+        updateLiveAppleTracking(using: frame)
         if frame.timestamp - lastProjectorRefreshTimestamp >= 0.16 {
             lastProjectorRefreshTimestamp = frame.timestamp
             refreshProjectorLights()
@@ -3487,6 +4124,13 @@ private struct SceneDepthSurfaceSample {
     let worldPoint: SIMD3<Float>
     let worldNormal: SIMD3<Float>?
     let depthMeters: Float
+}
+
+private struct BloodWaterfallParticle {
+    let entity: ModelEntity
+    let phase: Float
+    let lateral: Float
+    let depth: Float
 }
 
 private struct ProjectorSurfaceHit {

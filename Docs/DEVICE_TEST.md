@@ -90,15 +90,29 @@
     RTX 3050'de 1500 ms'yi asan fakat 6000 ms'nin altinda kalan basarili HTTP sonucu
     baglanti hatasi sayilmamali; dunya-koordinatli AI mesh'i yine uygulanmali.
     Servisi kapatinca eski AI mesh'i kaybolmali ve ARKit occlusion devam etmeli.
-16. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
-17. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
+16. `Sahne Listesi`ni ac; tum dekor, isik ve CGI efektlerinin ayri satirda gorundugunu
+    dogrula. Listeden bir nesneyi sec, sonra cop kutusuyla sil; yalniz o nesne ve
+    anchor'i kaybolmali. `Tumunu Sil` ile tum sanal objelerin silindigini test et.
+17. En az iki farkli odayi tara ve her birinde `Kaydet`e bas. `Kayitli Mekanlar`
+    listesinde ad, tarih, tarama simgesi ve nesne sayisi gorunmeli. Ilk kaydi yukle;
+    `room.json`, dunya haritasi, nesneler, projektor hedefleri ve ozel USDZ'ler birlikte
+    geri gelmeli. Ikinci arsivi sil; aktif sahne etkilenmemeli.
+18. `Canli CGI` icinden kan selalesini secip taranmis duvara dokun. Akis duvarin
+    baslangic noktasinda kalmali, damlalar hareket etmeli, gercek bir kisi/nesne onune
+    girdiginde derinlik occlusion calismali. Kaydet-yukle sonrasinda efekt ayni dunya
+    konumunda yeniden baslamali.
+19. `Avucta Canli Elma`yi ac; acik avucu kameraya goster ve eli on/arka/yana hareket
+    ettir. Elma LiDAR derinliginde avucu izlemeli, ani olcumlerde sicrama yapmamali ve
+    el 0.42 saniyeden uzun kaybolursa gizlenmeli. `Elimde elma olsun`, `elmayi kaldir`
+    ve `kan selalesi aksin` komutlarini Turkce test et; dugme yedegi de calismali.
+20. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
     Anchor gecici kaldirilirsa nesne/armatur silinmemeli; canli anchor geri gelmezse
     son dunya donusumunde otomatik yeniden baglanmali. Kesintiden once `Beyaz Hatlar`
     aciksa takip duzelince hatlar tekrar gorunmeli.
-18. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-19. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+21. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+22. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 

@@ -126,6 +126,15 @@ struct RecoveredWorldMapSnapshot {
     let discardedAnchorCount: Int
 }
 
+struct SavedPlaceSummary: Codable, Identifiable, Equatable {
+    let id: UUID
+    var name: String
+    let createdAt: Date
+    var updatedAt: Date
+    var objectCount: Int
+    var hasRoomScan: Bool
+}
+
 struct StoredTransform: Codable {
     var translation: [Float]
     var rotation: [Float]
@@ -169,6 +178,8 @@ enum SceneProjectStoreError: LocalizedError {
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
+    case savedPlaceNotFound(UUID)
+    case invalidSavedPlace(UUID)
 
     var errorDescription: String? {
         switch self {
@@ -192,6 +203,10 @@ enum SceneProjectStoreError: LocalizedError {
             "worldmap ve scene.json aynı kayıt sürümüne ait değil"
         case .emptyWorldMap:
             "Dünya haritası dosyası boş"
+        case .savedPlaceNotFound(let id):
+            "Kayıtlı mekân bulunamadı: \(id.uuidString)"
+        case .invalidSavedPlace:
+            "Kayıtlı mekân dosyaları eksik veya birbiriyle eşleşmiyor"
         }
     }
 }
@@ -210,6 +225,10 @@ final class SceneProjectStore {
                 at: projectDirectory,
                 withIntermediateDirectories: true
             )
+            try fileManager.createDirectory(
+                at: savedPlacesDirectory,
+                withIntermediateDirectories: true
+            )
             if fileManager.fileExists(atPath: projectURL.path) {
                 project = try Self.decodeProject(from: projectURL)
             }
@@ -226,9 +245,17 @@ final class SceneProjectStore {
     }
 
     var projectDirectory: URL {
+        projectsRootDirectory
+            .appendingPathComponent("MainSet", isDirectory: true)
+    }
+
+    var projectsRootDirectory: URL {
         let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return documents.appendingPathComponent("CineARProjects", isDirectory: true)
-            .appendingPathComponent("MainSet", isDirectory: true)
+    }
+
+    var savedPlacesDirectory: URL {
+        projectsRootDirectory.appendingPathComponent("SavedPlaces", isDirectory: true)
     }
 
     var projectURL: URL { projectDirectory.appendingPathComponent("scene.json") }
@@ -240,6 +267,194 @@ final class SceneProjectStore {
     }
     var assetsDirectory: URL {
         projectDirectory.appendingPathComponent("Assets", isDirectory: true)
+    }
+
+    var savedPlaces: [SavedPlaceSummary] {
+        let directories = (try? fileManager.contentsOfDirectory(
+            at: savedPlacesDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        return directories.compactMap { directory in
+            guard ((try? directory.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false)
+            else { return nil }
+            return try? Self.decodeSavedPlaceManifest(
+                from: directory.appendingPathComponent("place.json")
+            )
+        }.sorted { lhs, rhs in
+            if lhs.updatedAt == rhs.updatedAt { return lhs.name < rhs.name }
+            return lhs.updatedAt > rhs.updatedAt
+        }
+    }
+
+    @discardableResult
+    func archiveCurrentProject(preferredName: String? = nil) throws -> SavedPlaceSummary {
+        let snapshot = try worldMapSnapshotForLoading()
+        let identifier = UUID()
+        let stagingURL = savedPlacesDirectory.appendingPathComponent(
+            ".staging-\(identifier.uuidString)",
+            isDirectory: true
+        )
+        let destinationURL = savedPlaceDirectory(id: identifier)
+        try fileManager.createDirectory(at: savedPlacesDirectory, withIntermediateDirectories: true)
+        removeIfPresent(stagingURL)
+        try fileManager.createDirectory(at: stagingURL, withIntermediateDirectories: true)
+
+        let now = Date()
+        let suppliedName = preferredName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let summary = SavedPlaceSummary(
+            id: identifier,
+            name: suppliedName.flatMap { $0.isEmpty ? nil : $0 } ?? Self.defaultSavedPlaceName(now),
+            createdAt: now,
+            updatedAt: now,
+            objectCount: snapshot.project.placements.count,
+            hasRoomScan: fileManager.fileExists(atPath: roomDataURL.path)
+        )
+
+        do {
+            try Self.encode(snapshot.project).write(
+                to: stagingURL.appendingPathComponent("scene.json"),
+                options: .atomic
+            )
+            try snapshot.data.write(
+                to: stagingURL.appendingPathComponent("worldmap.arexperience"),
+                options: .atomic
+            )
+            if fileManager.fileExists(atPath: roomDataURL.path) {
+                try fileManager.copyItem(
+                    at: roomDataURL,
+                    to: stagingURL.appendingPathComponent("room.json")
+                )
+            }
+            if fileManager.fileExists(atPath: assetsDirectory.path) {
+                try fileManager.copyItem(
+                    at: assetsDirectory,
+                    to: stagingURL.appendingPathComponent("Assets", isDirectory: true)
+                )
+            }
+            try Self.encodeSavedPlaceManifest(summary).write(
+                to: stagingURL.appendingPathComponent("place.json"),
+                options: .atomic
+            )
+            try fileManager.moveItem(at: stagingURL, to: destinationURL)
+            return summary
+        } catch {
+            removeIfPresent(stagingURL)
+            throw error
+        }
+    }
+
+    /// Validates a saved scene before replacing the active working set. The current
+    /// set is backed up for the duration of the transaction and restored on failure.
+    func installSavedPlace(id: UUID) throws -> StoredWorldMapSnapshot {
+        let sourceDirectory = savedPlaceDirectory(id: id)
+        guard fileManager.fileExists(atPath: sourceDirectory.path) else {
+            throw SceneProjectStoreError.savedPlaceNotFound(id)
+        }
+        let manifest = try Self.decodeSavedPlaceManifest(
+            from: sourceDirectory.appendingPathComponent("place.json")
+        )
+        guard manifest.id == id else { throw SceneProjectStoreError.invalidSavedPlace(id) }
+
+        let candidate = try Self.decodeProject(
+            from: sourceDirectory.appendingPathComponent("scene.json")
+        )
+        let worldMapData = try Data(
+            contentsOf: sourceDirectory.appendingPathComponent("worldmap.arexperience")
+        )
+        guard !worldMapData.isEmpty,
+              candidate.worldMapChecksum == Self.checksum(for: worldMapData) else {
+            throw SceneProjectStoreError.invalidSavedPlace(id)
+        }
+        guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+            ofClass: ARWorldMap.self,
+            from: worldMapData
+        ) else {
+            throw SceneProjectStoreError.invalidSavedPlace(id)
+        }
+        let placementKinds = Dictionary(uniqueKeysWithValues: candidate.placements.map {
+            ($0.id, $0.kind)
+        })
+        let anchorDescriptors = worldMap.anchors.compactMap {
+            PropKind.descriptor(from: $0.name)
+        }
+        var anchorKinds: [UUID: PropKind] = [:]
+        for descriptor in anchorDescriptors {
+            guard anchorKinds.updateValue(descriptor.kind, forKey: descriptor.id) == nil else {
+                throw SceneProjectStoreError.invalidSavedPlace(id)
+            }
+        }
+        guard anchorKinds == placementKinds else {
+            throw SceneProjectStoreError.invalidSavedPlace(id)
+        }
+        for placement in candidate.placements where placement.kind == .custom {
+            guard let fileName = placement.assetFileName,
+                  fileManager.fileExists(atPath: sourceDirectory
+                    .appendingPathComponent("Assets", isDirectory: true)
+                    .appendingPathComponent(fileName).path) else {
+                throw SceneProjectStoreError.invalidSavedPlace(id)
+            }
+        }
+
+        let backupDirectory = projectsRootDirectory.appendingPathComponent(
+            ".active-backup-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
+        let managedNames = ["scene.json", "worldmap.arexperience", "room.json", "Assets"]
+        do {
+            for name in managedNames {
+                let activeURL = projectDirectory.appendingPathComponent(name)
+                if fileManager.fileExists(atPath: activeURL.path) {
+                    try fileManager.moveItem(
+                        at: activeURL,
+                        to: backupDirectory.appendingPathComponent(name)
+                    )
+                }
+            }
+            for name in managedNames {
+                let archivedURL = sourceDirectory.appendingPathComponent(name)
+                guard fileManager.fileExists(atPath: archivedURL.path) else { continue }
+                try fileManager.copyItem(
+                    at: archivedURL,
+                    to: projectDirectory.appendingPathComponent(name)
+                )
+            }
+            project = candidate
+            initializationError = nil
+            removeIfPresent(backupDirectory)
+            return StoredWorldMapSnapshot(data: worldMapData, project: candidate)
+        } catch {
+            for name in managedNames {
+                removeIfPresent(projectDirectory.appendingPathComponent(name))
+                let backupURL = backupDirectory.appendingPathComponent(name)
+                if fileManager.fileExists(atPath: backupURL.path) {
+                    try? fileManager.moveItem(
+                        at: backupURL,
+                        to: projectDirectory.appendingPathComponent(name)
+                    )
+                }
+            }
+            removeIfPresent(backupDirectory)
+            throw error
+        }
+    }
+
+    func deleteSavedPlace(id: UUID) throws {
+        let directory = savedPlaceDirectory(id: id)
+        guard fileManager.fileExists(atPath: directory.path) else {
+            throw SceneProjectStoreError.savedPlaceNotFound(id)
+        }
+        try fileManager.removeItem(at: directory)
+    }
+
+    private func savedPlaceDirectory(id: UUID) -> URL {
+        savedPlacesDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
+    }
+
+    private func removeIfPresent(_ url: URL) {
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        try? fileManager.removeItem(at: url)
     }
 
     /// The shared ARSession keeps the same coordinate space while RoomPlan scans.
@@ -572,6 +787,26 @@ final class SceneProjectStore {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         return try encoder.encode(project)
+    }
+
+    private static func encodeSavedPlaceManifest(_ summary: SavedPlaceSummary) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(summary)
+    }
+
+    private static func decodeSavedPlaceManifest(from url: URL) throws -> SavedPlaceSummary {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(SavedPlaceSummary.self, from: Data(contentsOf: url))
+    }
+
+    private static func defaultSavedPlaceName(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM yyyy HH:mm"
+        return "Mekân \(formatter.string(from: date))"
     }
 
     private static func decodeProject(from url: URL) throws -> SceneProject {

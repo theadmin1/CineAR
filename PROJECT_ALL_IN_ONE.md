@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.11.0`
-- Proje build numarası: `18`
+- Uygulama sürümü: `0.12.0`
+- Proje build numarası: `19`
 - Git dalı: `main`
-- Kaynak commit: `7e775a75f780faf1a4962b5894d15ad6fb30e3ce`
-- Oluşturulma zamanı: `2026-08-28 13:24:56 +03:00`
+- Kaynak commit: `6f00e9612714e2565eee86d2719fc43cc7a4518c`
+- Oluşturulma zamanı: `2026-08-31 18:50:54 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -258,29 +258,29 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 435 | 17725 |
-| `CineAR/ARSessionController.swift` | 3750 | 156282 |
+| `CineAR/ARSessionController.swift` | 4394 | 182787 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 684 | 27209 |
-| `CineAR/Info.plist` | 56 | 1855 |
+| `CineAR/ContentView.swift` | 933 | 39081 |
+| `CineAR/Info.plist` | 58 | 2069 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
-| `CineAR/PropKind.swift` | 345 | 13775 |
+| `CineAR/PropKind.swift` | 358 | 14201 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2073 | 79050 |
 | `CineAR/RoomScanner.swift` | 601 | 20139 |
-| `CineAR/SceneProjectStore.swift` | 652 | 26559 |
+| `CineAR/SceneProjectStore.swift` | 887 | 36386 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 127 | 8343 |
+| `Docs/DEVICE_TEST.md` | 141 | 9480 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 188 | 11663 |
+| `README.md` | 216 | 13308 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -1052,13 +1052,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.11.0;
+				MARKETING_VERSION = 0.12.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1075,12 +1075,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.11.0;
+				MARKETING_VERSION = 0.12.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1590,13 +1590,25 @@ final class AIDepthOcclusionRenderer {
 
 ````swift
 import ARKit
+import AVFoundation
 import Combine
 import Foundation
+import ImageIO
 import RealityKit
 import RoomPlan
+import Speech
 import simd
 import SwiftUI
 import UIKit
+import Vision
+
+struct SceneObjectSummary: Identifiable, Equatable {
+    let id: UUID
+    let title: String
+    let symbol: String
+    let detail: String
+    let isLiveEffect: Bool
+}
 
 @MainActor
 final class ARSessionController: NSObject, ObservableObject {
@@ -1622,6 +1634,11 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var aiEnhancementEnabled = false
     @Published private(set) var aiServerAddress = ""
     @Published private(set) var aiEnhancementStatus: AIEnhancementStatus = .disabled
+    @Published private(set) var sceneObjects: [SceneObjectSummary] = []
+    @Published private(set) var savedPlaces: [SavedPlaceSummary] = []
+    @Published private(set) var isLiveAppleEnabled = false
+    @Published private(set) var isListeningForCGICommands = false
+    @Published private(set) var liveCGIStatus = "Hazır efekt seç veya Türkçe komut ver"
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -1668,6 +1685,24 @@ final class ARSessionController: NSObject, ObservableObject {
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
     private var pendingAutoSaveAnchorIDs = Set<UUID>()
+    private var shouldArchiveAfterNextSave = false
+    private var pendingArchiveName: String?
+    private var bloodWaterfallParticles: [UUID: [BloodWaterfallParticle]] = [:]
+    private var liveAppleAnchor: AnchorEntity?
+    private var filteredLiveApplePosition: SIMD3<Float>?
+    private var lastLiveAppleObservationTimestamp: TimeInterval = 0
+    private var lastHandDetectionTimestamp: TimeInterval = 0
+    private var handDetectionInFlight = false
+    private let handDetectionQueue = DispatchQueue(
+        label: "com.cinear.hand-pose",
+        qos: .userInitiated
+    )
+    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "tr_TR"))
+    private let speechAudioEngine = AVAudioEngine()
+    private var speechRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var speechTask: SFSpeechRecognitionTask?
+    private var lastProcessedCGITranscript = ""
+    private var hasSpeechInputTap = false
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
     private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
@@ -1676,6 +1711,9 @@ final class ARSessionController: NSObject, ObservableObject {
     // value, not a TextField placeholder; it remains editable if DHCP changes it.
     private static let defaultAIServerAddress = "http://192.168.1.9:8765"
     private static let obsoleteAIServerExample = "http://192.168.1.20:8765"
+    private static let liveAppleSceneID = UUID(
+        uuidString: "C1EA0000-0000-4000-8000-000000000001"
+    )!
 
     private enum RecordingPhase {
         case idle
@@ -1704,6 +1742,11 @@ final class ARSessionController: NSObject, ObservableObject {
         aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+        if projectStore.savedPlaces.isEmpty,
+           projectStore.project.worldMapChecksum != nil {
+            _ = try? projectStore.archiveCurrentProject(preferredName: "Önceki Mekân")
+        }
+        refreshSceneCatalogs()
         // Opaque room replacements can cover people and make the camera feel unstable.
         // Always launch in the real-camera view; the legacy renderer stays internal.
         UserDefaults.standard.removeObject(forKey: Self.realityThemeDefaultsKey)
@@ -1815,12 +1858,15 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
         renderedLightFootprints.removeAll()
+        bloodWaterfallParticles.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
         selectedEntityID = nil
         selectedLightSettings = nil
         isAimingLight = false
         placementReticlePoint = nil
+        liveAppleAnchor = nil
+        filteredLiveApplePosition = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
         aiEnhancementClient.cancel()
@@ -1851,6 +1897,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func pauseForRoomScan() {
         cancelPlacement()
+        if isListeningForCGICommands { stopCGIVoiceCommands() }
         aiEnhancementClient.cancel()
         aiDepthRenderer.clear()
         let themeAwaitingSafeRestore = pendingRealityThemeAfterScan
@@ -2035,6 +2082,8 @@ final class ARSessionController: NSObject, ObservableObject {
             } else {
                 updateKnownFloorFromRoomData()
                 shouldSaveWorldMapWhenReady = hasScannedRoom
+                shouldArchiveAfterNextSave = hasScannedRoom
+                pendingArchiveName = nil
                 completionStatus = (
                     "Tarama kaydedildi — sahne haritası takip hazır olunca otomatik kaydedilecek",
                     .green
@@ -2276,6 +2325,311 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    func selectSceneObject(id: UUID) {
+        if id == Self.liveAppleSceneID {
+            publishStatus("Canlı elma efekti seçildi — kapatmak için Sahne listesindeki çöp kutusunu kullan", color: .blue)
+            return
+        }
+        guard projectStore.placement(id: id) != nil else {
+            refreshSceneCatalogs()
+            publishStatus("Sahne öğesi artık bulunmuyor", color: .yellow)
+            return
+        }
+        isPlacingProp = false
+        placementReticlePoint = nil
+        selectRenderedEntity(id: id)
+    }
+
+    func setLiveAppleEnabled(_ enabled: Bool) {
+        isLiveAppleEnabled = enabled
+        filteredLiveApplePosition = nil
+        lastLiveAppleObservationTimestamp = 0
+        if enabled {
+            liveCGIStatus = "Elini kameraya göster; elma avuç merkezine bağlanacak"
+            publishStatus("Canlı elma etkin — avucunu açık biçimde kameraya göster", color: .green)
+        } else {
+            if let anchor = liveAppleAnchor {
+                anchor.scene?.removeAnchor(anchor)
+            }
+            liveAppleAnchor = nil
+            liveCGIStatus = "Canlı elma kapalı"
+        }
+        refreshSceneCatalogs()
+    }
+
+    func toggleCGIVoiceCommands() {
+        if isListeningForCGICommands {
+            stopCGIVoiceCommands()
+        } else {
+            startCGIVoiceCommands()
+        }
+    }
+
+    func stopCGIVoiceCommands() {
+        speechTask?.cancel()
+        speechTask = nil
+        speechRequest?.endAudio()
+        speechRequest = nil
+        if speechAudioEngine.isRunning { speechAudioEngine.stop() }
+        if hasSpeechInputTap {
+            speechAudioEngine.inputNode.removeTap(onBus: 0)
+            hasSpeechInputTap = false
+        }
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        isListeningForCGICommands = false
+        if liveCGIStatus == "Dinliyorum…" {
+            liveCGIStatus = "Sesli komut kapalı"
+        }
+    }
+
+    private func startCGIVoiceCommands() {
+        switch SFSpeechRecognizer.authorizationStatus() {
+        case .authorized:
+            requestMicrophoneAndBeginCGISpeechRecognition()
+        case .notDetermined:
+            SFSpeechRecognizer.requestAuthorization { [weak self] status in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if status == .authorized {
+                        self.requestMicrophoneAndBeginCGISpeechRecognition()
+                    } else {
+                        self.liveCGIStatus = "Konuşma tanıma izni verilmedi"
+                        self.publishStatus("Ayarlar'dan Konuşma Tanıma iznini aç", color: .yellow)
+                    }
+                }
+            }
+        case .denied, .restricted:
+            liveCGIStatus = "Konuşma tanıma izni kapalı"
+            publishStatus("Ayarlar'dan Konuşma Tanıma iznini aç", color: .yellow)
+        @unknown default:
+            liveCGIStatus = "Konuşma tanıma kullanılamıyor"
+        }
+    }
+
+    private func requestMicrophoneAndBeginCGISpeechRecognition() {
+        let audioSession = AVAudioSession.sharedInstance()
+        switch audioSession.recordPermission {
+        case .granted:
+            beginCGISpeechRecognition()
+        case .undetermined:
+            audioSession.requestRecordPermission { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if granted {
+                        self.beginCGISpeechRecognition()
+                    } else {
+                        self.liveCGIStatus = "Mikrofon izni verilmedi"
+                        self.publishStatus("Ayarlar'dan Mikrofon iznini aç", color: .yellow)
+                    }
+                }
+            }
+        case .denied:
+            liveCGIStatus = "Mikrofon izni kapalı"
+            publishStatus("Ayarlar'dan Mikrofon iznini aç", color: .yellow)
+        @unknown default:
+            liveCGIStatus = "Mikrofon kullanılamıyor"
+        }
+    }
+
+    private func beginCGISpeechRecognition() {
+        guard let speechRecognizer, speechRecognizer.isAvailable else {
+            liveCGIStatus = "Türkçe konuşma tanıma şu anda kullanılamıyor"
+            return
+        }
+        stopCGIVoiceCommands()
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(
+                .playAndRecord,
+                mode: .measurement,
+                options: [.duckOthers, .defaultToSpeaker]
+            )
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+
+            let request = SFSpeechAudioBufferRecognitionRequest()
+            request.shouldReportPartialResults = true
+            request.taskHint = .confirmation
+            if speechRecognizer.supportsOnDeviceRecognition {
+                request.requiresOnDeviceRecognition = true
+            }
+            speechRequest = request
+            lastProcessedCGITranscript = ""
+
+            let inputNode = speechAudioEngine.inputNode
+            let format = inputNode.outputFormat(forBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1_024, format: format) {
+                [weak request] buffer, _ in
+                request?.append(buffer)
+            }
+            hasSpeechInputTap = true
+            speechAudioEngine.prepare()
+            try speechAudioEngine.start()
+            isListeningForCGICommands = true
+            liveCGIStatus = "Dinliyorum…"
+
+            speechTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let result {
+                        self.handleCGITranscript(
+                            result.bestTranscription.formattedString,
+                            isFinal: result.isFinal
+                        )
+                    }
+                    if error != nil {
+                        self.stopCGIVoiceCommands()
+                    }
+                }
+            }
+        } catch {
+            stopCGIVoiceCommands()
+            liveCGIStatus = "Mikrofon başlatılamadı: \(error.localizedDescription)"
+            publishStatus(liveCGIStatus, color: .red)
+        }
+    }
+
+    private func handleCGITranscript(_ transcript: String, isFinal: Bool) {
+        let command = transcript.folding(
+            options: [.caseInsensitive, .diacriticInsensitive],
+            locale: Locale(identifier: "tr_TR")
+        ).lowercased()
+        guard command != lastProcessedCGITranscript else { return }
+
+        if command.contains("kan selalesi") || command.contains("kan ak") {
+            lastProcessedCGITranscript = command
+            selectProp(.bloodWaterfall)
+            liveCGIStatus = "Kan şelalesi seçildi; başlangıç için duvara dokun"
+            if isFinal { stopCGIVoiceCommands() }
+            return
+        }
+        if command.contains("elma") {
+            lastProcessedCGITranscript = command
+            let shouldRemove = command.contains("kaldir")
+                || command.contains("sil")
+                || command.contains("kapat")
+            setLiveAppleEnabled(!shouldRemove)
+            liveCGIStatus = shouldRemove
+                ? "Elma efekti kaldırıldı"
+                : "Elma etkin; elini kameraya göster"
+            if isFinal { stopCGIVoiceCommands() }
+            return
+        }
+        liveCGIStatus = transcript.isEmpty ? "Dinliyorum…" : "Duyulan: \(transcript)"
+        if isFinal { stopCGIVoiceCommands() }
+    }
+
+    private func updateLiveAppleTracking(using frame: ARFrame) {
+        guard isLiveAppleEnabled, isARReady, !isRoomScanActive, !isSessionInterrupted,
+              let arView else { return }
+        if frame.timestamp - lastHandDetectionTimestamp < 0.12 || handDetectionInFlight {
+            if frame.timestamp - lastLiveAppleObservationTimestamp > 0.42 {
+                liveAppleAnchor?.isEnabled = false
+            }
+            return
+        }
+        lastHandDetectionTimestamp = frame.timestamp
+        handDetectionInFlight = true
+        let pixelBuffer = frame.capturedImage
+        let viewportSize = arView.bounds.size
+        let imageOrientation: CGImagePropertyOrientation
+        switch arView.window?.windowScene?.interfaceOrientation {
+        case .some(.landscapeLeft): imageOrientation = .up
+        case .some(.landscapeRight): imageOrientation = .down
+        case .some(.portraitUpsideDown): imageOrientation = .left
+        default: imageOrientation = .right
+        }
+        handDetectionQueue.async { [weak self, weak arView] in
+            let request = VNDetectHumanHandPoseRequest()
+            request.maximumHandCount = 1
+            var normalizedPalm: CGPoint?
+            do {
+                let handler = VNImageRequestHandler(
+                    cvPixelBuffer: pixelBuffer,
+                    orientation: imageOrientation,
+                    options: [:]
+                )
+                try handler.perform([request])
+                if let observation = request.results?.first {
+                    let points = try observation.recognizedPoints(.all)
+                    let jointNames: [VNHumanHandPoseObservation.JointName] = [
+                        .wrist, .indexMCP, .middleMCP, .littleMCP
+                    ]
+                    let valid = jointNames.compactMap { name -> VNRecognizedPoint? in
+                        guard let point = points[name], point.confidence >= 0.30 else { return nil }
+                        return point
+                    }
+                    if valid.count >= 3 {
+                        let count = CGFloat(valid.count)
+                        normalizedPalm = CGPoint(
+                            x: valid.reduce(CGFloat.zero) { $0 + $1.location.x } / count,
+                            y: valid.reduce(CGFloat.zero) { $0 + $1.location.y } / count
+                        )
+                    }
+                }
+            } catch {
+                normalizedPalm = nil
+            }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.handDetectionInFlight = false
+                guard self.isLiveAppleEnabled,
+                      let arView,
+                      let normalizedPalm,
+                      viewportSize.width > 0,
+                      viewportSize.height > 0 else { return }
+                let point = CGPoint(
+                    x: normalizedPalm.x * viewportSize.width,
+                    y: (1 - normalizedPalm.y) * viewportSize.height
+                )
+                self.placeLiveApple(using: frame, in: arView, at: point)
+            }
+        }
+    }
+
+    private func placeLiveApple(using frame: ARFrame, in arView: ARView, at point: CGPoint) {
+        guard let depth = sceneDepthSample(frame: frame, in: arView, at: point) else {
+            liveCGIStatus = "El görüldü; avuç derinliği ölçülüyor"
+            return
+        }
+        let cameraPosition = SIMD3<Float>(
+            frame.camera.transform.columns.3.x,
+            frame.camera.transform.columns.3.y,
+            frame.camera.transform.columns.3.z
+        )
+        var towardCamera = cameraPosition - depth.worldPoint
+        if simd_length_squared(towardCamera) > 0.000_001 {
+            towardCamera = simd_normalize(towardCamera)
+        } else {
+            towardCamera = [0, 0, 1]
+        }
+        let measured = depth.worldPoint + towardCamera * 0.045 + SIMD3<Float>(0, 0.055, 0)
+        let filtered: SIMD3<Float>
+        if let previous = filteredLiveApplePosition,
+           simd_distance(previous, measured) < 0.45 {
+            filtered = previous + (measured - previous) * 0.24
+        } else {
+            filtered = measured
+        }
+        filteredLiveApplePosition = filtered
+        lastLiveAppleObservationTimestamp = frame.timestamp
+
+        let anchor: AnchorEntity
+        if let existing = liveAppleAnchor, existing.scene != nil {
+            anchor = existing
+        } else {
+            anchor = AnchorEntity(world: filtered)
+            anchor.name = "cinear.cgi.live-apple"
+            let apple = makeAppleEntity()
+            apple.position.y = -0.065
+            anchor.addChild(apple)
+            arView.scene.addAnchor(anchor)
+            liveAppleAnchor = anchor
+        }
+        anchor.position = filtered
+        anchor.isEnabled = true
+        liveCGIStatus = String(format: "Elma avuçta • %.2f m", depth.depthMeters)
+    }
+
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
@@ -2343,6 +2697,7 @@ final class ARSessionController: NSObject, ObservableObject {
             isPlacingProp = false
             placementReticlePoint = nil
             render(prop: selectedProp, id: id, for: anchor)
+            refreshSceneCatalogs()
             if selectedProp == .custom {
                 publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
             } else if renderedEntities[id] != nil {
@@ -2909,8 +3264,22 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func removeSelectedProp() {
-        guard let id = selectedEntityID, let arView else {
+        guard let id = selectedEntityID else {
             publishStatus("Önce silinecek dekoru seç", color: .yellow)
+            return
+        }
+        removeSceneObject(id: id)
+    }
+
+    func removeSceneObject(id: UUID) {
+        if id == Self.liveAppleSceneID {
+            setLiveAppleEnabled(false)
+            publishStatus("Canlı elma efekti sahneden kaldırıldı", color: .green)
+            return
+        }
+        guard let arView, let placement = projectStore.placement(id: id) else {
+            refreshSceneCatalogs()
+            publishStatus("Silinecek sahne öğesi bulunamadı", color: .yellow)
             return
         }
         do {
@@ -2930,7 +3299,8 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         managedPropAnchorsByPlacementID[id] = nil
         detachRenderedPlacement(id: id, clearSelection: true)
-        publishStatus("Seçili dekor silindi", color: .green)
+        refreshSceneCatalogs()
+        publishStatus("\(placement.kind.title) sahneden silindi", color: .green)
     }
 
     func removeAllProps() {
@@ -2967,6 +3337,8 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedEntityID = nil
         selectedLightSettings = nil
         isAimingLight = false
+        setLiveAppleEnabled(false)
+        refreshSceneCatalogs()
         publishStatus("Sanal dekorlar temizlendi", color: .green)
     }
 
@@ -3040,14 +3412,19 @@ final class ARSessionController: NSObject, ObservableObject {
         )
     }
 
-    func saveWorldMap() {
+    func saveWorldMap(archiveName: String? = nil) {
+        shouldArchiveAfterNextSave = true
+        let normalizedName = archiveName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        pendingArchiveName = normalizedName.flatMap { $0.isEmpty ? nil : $0 }
         guard let arView else {
+            shouldArchiveAfterNextSave = false
+            pendingArchiveName = nil
             publishStatus("AR görünümü henüz hazır değil", color: .red)
             return
         }
         guard !isSavingWorldMap else {
             shouldSaveWorldMapWhenReady = true
-            publishStatus("Mevcut kayıttan sonra bir kez daha kaydedilecek", color: .yellow)
+            publishStatus("Mevcut kayıt tamamlanınca mekân arşivlenecek", color: .yellow)
             return
         }
         guard let trackingState = arView.session.currentFrame?.camera.trackingState,
@@ -3121,9 +3498,12 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         self.discardOrphanedRenderedContent(survivingIDs: survivingIDs)
                         self.isSavingWorldMap = false
+                        let archiveResult = self.archiveSavedPlaceIfRequested()
+                        self.refreshSceneCatalogs()
+                        let archiveDetail = archiveResult.message.map { " — " + $0 } ?? ""
                         self.publishStatus(
-                            "Sahne kaydı onarıldı — \(discardedCount) anchorsız kayıt temizlendi",
-                            color: .yellow
+                            "Sahne kaydı onarıldı — \(discardedCount) anchorsız kayıt temizlendi\(archiveDetail)",
+                            color: archiveResult.failed ? .yellow : .green
                         )
                         return
                     }
@@ -3133,7 +3513,15 @@ final class ARSessionController: NSObject, ObservableObject {
                     )
                     try self.projectStore.saveWorldMapData(data)
                     self.isSavingWorldMap = false
-                    self.publishStatus("Set projesi ve dünya haritası kaydedildi", color: .green)
+                    let archiveResult = self.shouldSaveWorldMapWhenReady
+                        ? (message: nil, failed: false)
+                        : self.archiveSavedPlaceIfRequested()
+                    self.refreshSceneCatalogs()
+                    let archiveDetail = archiveResult.message.map { " — " + $0 } ?? ""
+                    self.publishStatus(
+                        "Set projesi ve dünya haritası kaydedildi\(archiveDetail)",
+                        color: archiveResult.failed ? .yellow : .green
+                    )
                 } catch {
                     if let cinearError = error as? CineARError,
                        case .sceneSnapshotMismatch = cinearError,
@@ -3152,6 +3540,8 @@ final class ARSessionController: NSObject, ObservableObject {
                         return
                     }
                     self.isSavingWorldMap = false
+                    self.shouldArchiveAfterNextSave = false
+                    self.pendingArchiveName = nil
                     self.publishStatus(
                         "Kaydetme başarısız: \(error.localizedDescription)",
                         color: .red
@@ -3220,6 +3610,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
+        bloodWaterfallParticles[id] = nil
         if let footprint = renderedLightFootprints.removeValue(forKey: id) {
             footprint.scene?.removeAnchor(footprint)
         }
@@ -3409,6 +3800,9 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            importedAssetURLs = projectStore.importedModelURLs
+            hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+            refreshSceneCatalogs()
             runSession(initialWorldMap: worldMap)
             let prefix = recoveryNotice.map { $0 + " — " } ?? ""
             publishStatus(prefix + "aynı alanı göster; kamera yeniden konumlanıyor", color: .yellow)
@@ -3418,11 +3812,53 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    func loadSavedPlace(id: UUID) {
+        guard !isSavingWorldMap else {
+            publishStatus("Kaydetme tamamlanmadan başka mekân yüklenemez", color: .yellow)
+            return
+        }
+        do {
+            let snapshot = try projectStore.installSavedPlace(id: id)
+            guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+                ofClass: ARWorldMap.self,
+                from: snapshot.data
+            ) else {
+                throw CineARError.worldMapUnavailable
+            }
+            try validate(worldMap: worldMap, placements: snapshot.project.placements)
+            projectStore.activate(snapshot)
+            importedAssetURLs = projectStore.importedModelURLs
+            hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+            roomCoordinateSpaceIsActive = hasScannedRoom
+            roomRealityRenderer.clear()
+            roomRealityRenderer.isVisible = false
+            isRoomOutlineVisible = false
+            setLiveAppleEnabled(false)
+            refreshSceneCatalogs()
+            runSession(initialWorldMap: worldMap)
+            publishStatus("Kayıtlı mekân açıldı — aynı alanı göstererek yeniden konumlan", color: .yellow)
+        } catch {
+            refreshSceneCatalogs()
+            publishStatus("Mekân yüklenemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func deleteSavedPlace(id: UUID) {
+        do {
+            try projectStore.deleteSavedPlace(id: id)
+            refreshSceneCatalogs()
+            publishStatus("Kayıtlı mekân silindi", color: .green)
+        } catch {
+            publishStatus("Mekân silinemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
     func startRecording() {
         guard case .idle = recordingPhase else {
             publishStatus("Kayıt işlemi zaten devam ediyor", color: .yellow)
             return
         }
+        if isListeningForCGICommands { stopCGIVoiceCommands() }
         recordingPhase = .starting
         isRecordingTransitioning = true
         coachingOverlay?.isHidden = true
@@ -3705,6 +4141,43 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedAnchorIDs.insert(anchor.identifier)
         renderedAnchorIDByPlacementID[id] = anchor.identifier
         renderedEntities[id] = entity
+        if prop == .bloodWaterfall {
+            installBloodWaterfallRuntime(on: entity, id: id)
+        }
+    }
+
+    private func installBloodWaterfallRuntime(on entity: ModelEntity, id: UUID) {
+        var particles: [BloodWaterfallParticle] = []
+        for index in 0..<18 {
+            guard let drop = entity.findEntity(named: "cinear.blood.drop.\(index)") as? ModelEntity
+            else { continue }
+            particles.append(
+                BloodWaterfallParticle(
+                    entity: drop,
+                    phase: Float(index) / 18,
+                    lateral: drop.position.x,
+                    depth: drop.position.z
+                )
+            )
+        }
+        bloodWaterfallParticles[id] = particles
+    }
+
+    private func updateBloodWaterfalls(timestamp: TimeInterval) {
+        let time = Float(timestamp)
+        for particles in bloodWaterfallParticles.values {
+            for (index, particle) in particles.enumerated() {
+                let progress = (time * (0.62 + Float(index % 4) * 0.035) + particle.phase)
+                    .truncatingRemainder(dividingBy: 1)
+                particle.entity.position = [
+                    particle.lateral + sin(time * 2.3 + Float(index)) * 0.012,
+                    -0.04 - progress * 1.43,
+                    particle.depth
+                ]
+                let stretch = 1.35 + min(progress * 1.8, 1.5)
+                particle.entity.scale = [1, stretch, 1]
+            }
+        }
     }
 
     @discardableResult
@@ -4487,9 +4960,10 @@ final class ARSessionController: NSObject, ObservableObject {
         case .crate: return (0.48, 0.48, 0.004)
         case .plant: return (0.31, 0.31, 0.004)
         case .floorLamp: return (0.30, 0.30, 0.004)
+        case .apple: return (0.13, 0.13, 0.004)
         case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
              .bed, .bookcase, .television, .refrigerator, .oven, .stove,
-             .sink, .bathtub, .toilet, .washerDryer, .stairs:
+             .sink, .bathtub, .toilet, .washerDryer, .stairs, .bloodWaterfall:
             return nil
         default:
             return nil
@@ -4634,6 +5108,12 @@ final class ARSessionController: NSObject, ObservableObject {
                 materials: [material]
             )
 
+        case .bloodWaterfall:
+            return makeBloodWaterfallEntity()
+
+        case .apple:
+            return makeAppleEntity()
+
         case .chair, .table, .sofa, .bed, .bookcase, .television,
              .refrigerator, .oven, .stove, .sink, .bathtub, .toilet,
              .washerDryer, .stairs, .custom:
@@ -4641,6 +5121,97 @@ final class ARSessionController: NSObject, ObservableObject {
         default:
             preconditionFailure("Photoreal USDZ assets are loaded asynchronously")
         }
+    }
+
+    private func makeAppleEntity() -> ModelEntity {
+        let skin = RealityMaterialRecipe(
+            0.64, 0.025, 0.018,
+            roughness: 0.31,
+            metallic: 0.02
+        ).makeMaterial()
+        let stemMaterial = RealityMaterialRecipe(
+            0.18, 0.07, 0.025,
+            roughness: 0.88
+        ).makeMaterial()
+        let leafMaterial = RealityMaterialRecipe(
+            0.04, 0.28, 0.055,
+            roughness: 0.68
+        ).makeMaterial()
+
+        let root = ModelEntity()
+        root.name = "cinear.cgi.apple"
+        let body = ModelEntity(mesh: .generateSphere(radius: 0.065), materials: [skin])
+        body.scale = [1.0, 0.92, 1.0]
+        body.position.y = 0.062
+        let crown = ModelEntity(mesh: .generateSphere(radius: 0.046), materials: [skin])
+        crown.scale = [1.08, 0.46, 1.08]
+        crown.position.y = 0.105
+        let stem = ModelEntity(
+            mesh: .generateBox(size: [0.009, 0.046, 0.009], cornerRadius: 0.003),
+            materials: [stemMaterial]
+        )
+        stem.position = [0.004, 0.145, 0]
+        stem.orientation = simd_quatf(angle: -0.18, axis: [0, 0, 1])
+        let leaf = ModelEntity(
+            mesh: .generateBox(size: [0.047, 0.004, 0.021], cornerRadius: 0.008),
+            materials: [leafMaterial]
+        )
+        leaf.position = [0.026, 0.143, 0]
+        leaf.orientation = simd_quatf(angle: 0.30, axis: [0, 0, 1])
+        root.addChild(body)
+        root.addChild(crown)
+        root.addChild(stem)
+        root.addChild(leaf)
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateSphere(radius: 0.069)]
+        )
+        return root
+    }
+
+    private func makeBloodWaterfallEntity() -> ModelEntity {
+        let root = ModelEntity()
+        root.name = "cinear.cgi.blood-waterfall"
+        let liquid = RealityMaterialRecipe(
+            0.40, 0.006, 0.012,
+            alpha: 0.82,
+            roughness: 0.24,
+            metallic: 0.03
+        ).makeMaterial()
+        let darkLiquid = RealityMaterialRecipe(
+            0.16, 0.002, 0.008,
+            alpha: 0.72,
+            roughness: 0.32
+        ).makeMaterial()
+
+        let sheet = ModelEntity(
+            mesh: .generateBox(size: [0.72, 1.48, 0.018], cornerRadius: 0.009),
+            materials: [liquid]
+        )
+        sheet.name = "cinear.blood.sheet"
+        sheet.position = [0, -0.73, 0.035]
+        root.addChild(sheet)
+
+        for index in 0..<18 {
+            let radius = Float(0.017 + Double(index % 4) * 0.003)
+            let drop = ModelEntity(mesh: .generateSphere(radius: radius), materials: [
+                index.isMultiple(of: 3) ? darkLiquid : liquid
+            ])
+            drop.name = "cinear.blood.drop.\(index)"
+            let lateral = (Float(index % 6) - 2.5) * 0.11
+            drop.position = [lateral, -Float(index) / 18 * 1.42, 0.065 + Float(index % 3) * 0.009]
+            drop.scale.y = 1.8 + Float(index % 3) * 0.35
+            root.addChild(drop)
+        }
+
+        let puddle = ModelEntity(mesh: .generateSphere(radius: 0.5), materials: [darkLiquid])
+        puddle.name = "cinear.blood.puddle"
+        puddle.position = [0, -1.49, 0.22]
+        puddle.scale = [0.86, 0.022, 0.34]
+        root.addChild(puddle)
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: [0.76, 1.54, 0.08])]
+        )
+        return root
     }
 
     private func addCoachingOverlay(to view: ARView) {
@@ -4657,6 +5228,70 @@ final class ARSessionController: NSObject, ObservableObject {
             coaching.topAnchor.constraint(equalTo: view.topAnchor),
             coaching.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+
+    private func refreshSceneCatalogs() {
+        var titleCounts: [String: Int] = [:]
+        let placements = projectStore.project.placements.reversed().map { placement in
+            let baseTitle: String
+            if placement.kind == .custom, let fileName = placement.assetFileName {
+                baseTitle = URL(fileURLWithPath: fileName).deletingPathExtension().lastPathComponent
+            } else {
+                baseTitle = placement.kind.title
+            }
+            let occurrence = (titleCounts[baseTitle] ?? 0) + 1
+            titleCounts[baseTitle] = occurrence
+            let title = occurrence == 1 ? baseTitle : "\(baseTitle) \(occurrence)"
+            return SceneObjectSummary(
+                id: placement.id,
+                title: title,
+                symbol: placement.kind.symbol,
+                detail: sceneObjectDetail(for: placement),
+                isLiveEffect: placement.kind == .bloodWaterfall
+            )
+        }
+        var result = Array(placements)
+        if isLiveAppleEnabled {
+            result.insert(
+                SceneObjectSummary(
+                    id: Self.liveAppleSceneID,
+                    title: "Eldeki Elma",
+                    symbol: "🍎",
+                    detail: "Canlı CGI • Vision el takibi",
+                    isLiveEffect: true
+                ),
+                at: 0
+            )
+        }
+        sceneObjects = result
+        savedPlaces = projectStore.savedPlaces
+    }
+
+    private func sceneObjectDetail(for placement: PlacementRecord) -> String {
+        let surface: String
+        switch placement.kind.placementSurface {
+        case .floor: surface = "Zemin"
+        case .horizontal: surface = "Yatay yüzey"
+        case .wall: surface = "Duvar"
+        case .ceiling: surface = "Tavan"
+        }
+        if placement.kind == .bloodWaterfall { return "Canlı CGI • Duvara sabit" }
+        if placement.kind.emitsVirtualLight { return "Sanal ışık • \(surface)" }
+        return surface
+    }
+
+    private func archiveSavedPlaceIfRequested() -> (message: String?, failed: Bool) {
+        guard shouldArchiveAfterNextSave else { return (nil, false) }
+        shouldArchiveAfterNextSave = false
+        let name = pendingArchiveName
+        pendingArchiveName = nil
+        do {
+            let summary = try projectStore.archiveCurrentProject(preferredName: name)
+            savedPlaces = projectStore.savedPlaces
+            return ("\(summary.name) Kayıtlı Mekânlar'a eklendi", false)
+        } catch {
+            return ("mekân arşivlenemedi: \(error.localizedDescription)", true)
+        }
     }
 
     private func publishStatus(_ text: String, color: Color) {
@@ -4803,6 +5438,8 @@ final class ARSessionController: NSObject, ObservableObject {
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         updatePlacementGuidance(using: frame)
+        updateBloodWaterfalls(timestamp: frame.timestamp)
+        updateLiveAppleTracking(using: frame)
         if frame.timestamp - lastProjectorRefreshTimestamp >= 0.16 {
             lastProjectorRefreshTimestamp = frame.timestamp
             refreshProjectorLights()
@@ -5078,6 +5715,13 @@ private struct SceneDepthSurfaceSample {
     let worldPoint: SIMD3<Float>
     let worldNormal: SIMD3<Float>?
     let depthMeters: Float
+}
+
+private struct BloodWaterfallParticle {
+    let entity: ModelEntity
+    let phase: Float
+    let lateral: Float
+    let depth: Float
 }
 
 private struct ProjectorSurfaceHit {
@@ -5809,8 +6453,14 @@ struct ContentView: View {
     @State private var showingAssetImporter = false
     @State private var showingPropLibrary = false
     @State private var showingAISettings = false
+    @State private var showingSceneContents = false
+    @State private var showingSavedPlaces = false
+    @State private var showingCGIStudio = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
+    @State private var sceneObjectPendingDeletion: SceneObjectSummary?
+    @State private var savedPlacePendingDeletion: SavedPlaceSummary?
+    @State private var newSavedPlaceName = ""
 
     var body: some View {
         ZStack {
@@ -5888,6 +6538,18 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingAISettings) {
             aiSettings
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingSceneContents) {
+            sceneContents
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingSavedPlaces) {
+            savedPlacesLibrary
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingCGIStudio) {
+            liveCGIStudio
                 .presentationDetents([.medium, .large])
         }
     }
@@ -5996,6 +6658,12 @@ struct ContentView: View {
                 utilityButton("Yükle", "arrow.clockwise.icloud") {
                     session.loadWorldMap()
                 }
+                utilityButton("Sahne Listesi", "list.bullet.rectangle") {
+                    showingSceneContents = true
+                }
+                utilityButton("Mekânlar", "square.stack.3d.up.fill") {
+                    showingSavedPlaces = true
+                }
                 utilityButton("Seçileni Sil", "trash") {
                     session.removeSelectedProp()
                 }
@@ -6011,6 +6679,9 @@ struct ContentView: View {
                 }
                 utilityButton("Sahne Işığı", "lightbulb.max.fill") {
                     session.showSceneLightControls()
+                }
+                utilityButton("Canlı CGI", "wand.and.stars") {
+                    showingCGIStudio = true
                 }
 
                 if let url = session.lastRecordingURL {
@@ -6191,22 +6862,12 @@ struct ContentView: View {
             compactButton("Nesneler", "shippingbox.fill") {
                 showingPropLibrary = true
             }
-            compactButton(
-                session.isRoomOutlineVisible ? "Gerçek" : "Hatlar",
-                session.isRoomOutlineVisible ? "camera.fill" : "square.dashed.inset.filled"
-            ) {
-                if session.isRoomOutlineVisible {
-                    session.showOriginalReality()
-                } else {
-                    session.showRoomOutline()
-                }
+            compactButton("Sahne", "list.bullet.rectangle") {
+                showingSceneContents = true
             }
-            .disabled(!session.hasScannedRoom)
-            compactButton("Oda Tara", "viewfinder") {
-                session.pauseForRoomScan()
-                showingRoomScanner = true
+            compactButton("Mekânlar", "square.stack.3d.up.fill") {
+                showingSavedPlaces = true
             }
-            .disabled(!RoomScannerController.isSupported || !session.isARReady)
         }
         .disabled(session.isRecordingTransitioning)
         .padding(8)
@@ -6402,6 +7063,238 @@ struct ContentView: View {
         .accessibilityHidden(true)
     }
 
+    private var sceneContents: some View {
+        NavigationStack {
+            Group {
+                if session.sceneObjects.isEmpty {
+                    ContentUnavailableView(
+                        "Sahne Boş",
+                        systemImage: "cube.transparent",
+                        description: Text("Eklediğin nesneler ve canlı efektler burada listelenecek.")
+                    )
+                } else {
+                    List {
+                        Section("\(session.sceneObjects.count) sahne öğesi") {
+                            ForEach(session.sceneObjects) { item in
+                                HStack(spacing: 12) {
+                                    Button {
+                                        session.selectSceneObject(id: item.id)
+                                        showingSceneContents = false
+                                    } label: {
+                                        HStack(spacing: 12) {
+                                            Text(item.symbol).font(.title2)
+                                            VStack(alignment: .leading, spacing: 3) {
+                                                Text(item.title)
+                                                    .font(.body.weight(.semibold))
+                                                Text(item.detail)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            if item.id == session.selectedEntityID {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(.green)
+                                            }
+                                        }
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button(role: .destructive) {
+                                        sceneObjectPendingDeletion = item
+                                    } label: {
+                                        Image(systemName: "trash")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .accessibilityLabel("\(item.title) öğesini sil")
+                                }
+                            }
+                        }
+
+                        Section {
+                            Button(role: .destructive) {
+                                session.removeAllProps()
+                            } label: {
+                                Label("Sahnedeki Her Şeyi Sil", systemImage: "trash.slash")
+                            }
+                        } footer: {
+                            Text("Silme işlemi taranmış oda kaydını değil, sanal nesne ve efektleri kaldırır.")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Sahne İçeriği")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingSceneContents = false }
+                }
+            }
+            .alert(
+                "Sahne öğesi silinsin mi?",
+                isPresented: Binding(
+                    get: { sceneObjectPendingDeletion != nil },
+                    set: { if !$0 { sceneObjectPendingDeletion = nil } }
+                ),
+                presenting: sceneObjectPendingDeletion
+            ) { item in
+                Button("Sil", role: .destructive) {
+                    session.removeSceneObject(id: item.id)
+                    sceneObjectPendingDeletion = nil
+                }
+                Button("Vazgeç", role: .cancel) {
+                    sceneObjectPendingDeletion = nil
+                }
+            } message: { item in
+                Text("\(item.title) sahneden ve scene.json kaydından kaldırılacak.")
+            }
+        }
+    }
+
+    private var savedPlacesLibrary: some View {
+        NavigationStack {
+            List {
+                Section("Yeni kayıt") {
+                    TextField("Mekân adı (isteğe bağlı)", text: $newSavedPlaceName)
+                    Button {
+                        session.saveWorldMap(archiveName: newSavedPlaceName)
+                        newSavedPlaceName = ""
+                    } label: {
+                        Label("Aktif Mekânı Kaydet", systemImage: "square.and.arrow.down.fill")
+                    }
+                    Text("Dünya haritası, tarama, nesneler, ışıklar ve özel USDZ dosyaları birlikte saklanır.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Kayıtlı mekânlar") {
+                    if session.savedPlaces.isEmpty {
+                        Text("Henüz arşivlenmiş mekân yok.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(session.savedPlaces) { place in
+                            HStack(spacing: 12) {
+                                Button {
+                                    session.loadSavedPlace(id: place.id)
+                                    showingSavedPlaces = false
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: place.hasRoomScan
+                                            ? "viewfinder.circle.fill"
+                                            : "cube.transparent")
+                                            .font(.title2)
+                                            .foregroundStyle(place.hasRoomScan ? .green : .blue)
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text(place.name)
+                                                .font(.body.weight(.semibold))
+                                            Text(
+                                                "\(place.objectCount) öğe • "
+                                                    + place.updatedAt.formatted(
+                                                        date: .abbreviated,
+                                                        time: .shortened
+                                                    )
+                                            )
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+
+                                Button(role: .destructive) {
+                                    savedPlacePendingDeletion = place
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("\(place.name) kaydını sil")
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Kayıtlı Mekânlar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingSavedPlaces = false }
+                }
+            }
+            .alert(
+                "Mekân kaydı silinsin mi?",
+                isPresented: Binding(
+                    get: { savedPlacePendingDeletion != nil },
+                    set: { if !$0 { savedPlacePendingDeletion = nil } }
+                ),
+                presenting: savedPlacePendingDeletion
+            ) { place in
+                Button("Sil", role: .destructive) {
+                    session.deleteSavedPlace(id: place.id)
+                    savedPlacePendingDeletion = nil
+                }
+                Button("Vazgeç", role: .cancel) {
+                    savedPlacePendingDeletion = nil
+                }
+            } message: { place in
+                Text("\(place.name) arşivi kalıcı olarak silinecek; aktif sahne etkilenmeyecek.")
+            }
+        }
+    }
+
+    private var liveCGIStudio: some View {
+        NavigationStack {
+            Form {
+                Section("Gerçek zamanlı efektler") {
+                    Button {
+                        session.selectProp(.bloodWaterfall)
+                        showingCGIStudio = false
+                    } label: {
+                        Label("Kan Şelalesi Yerleştir", systemImage: "drop.triangle.fill")
+                    }
+                    Text("Başlangıç noktasını taranmış duvarda seç; akış dünya koordinatına sabitlenir ve sahne kaydıyla geri gelir.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Toggle(
+                        "Avuçta Canlı Elma",
+                        isOn: Binding(
+                            get: { session.isLiveAppleEnabled },
+                            set: { session.setLiveAppleEnabled($0) }
+                        )
+                    )
+                    Text("Vision el eklemlerini, LiDAR ise avuç derinliğini ölçer. Elma geçici canlı efekttir; sahneye sabitlenmez.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Türkçe sesli komut") {
+                    Button {
+                        session.toggleCGIVoiceCommands()
+                    } label: {
+                        Label(
+                            session.isListeningForCGICommands ? "Dinlemeyi Durdur" : "Komut Dinle",
+                            systemImage: session.isListeningForCGICommands ? "stop.circle.fill" : "mic.circle.fill"
+                        )
+                    }
+                    Text("“Elimde elma olsun”, “elmayı kaldır” veya “kan şelalesi aksın” diyebilirsin.")
+                        .font(.caption)
+                    LabeledContent("Durum", value: session.liveCGIStatus)
+                }
+            }
+            .navigationTitle("Canlı CGI")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingCGIStudio = false }
+                }
+            }
+        }
+    }
+
     private var propLibrary: some View {
         NavigationStack {
             ScrollView {
@@ -6516,7 +7409,9 @@ struct ContentView: View {
 	<key>NSCameraUsageDescription</key>
 	<string>Gercek mekani taramak ve sanal seti goruntulemek icin kamera kullanilir.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>AR cekimi sirasinda ses kaydetmek icin mikrofon kullanilir.</string>
+	<string>AR cekimi sirasinda ses kaydetmek ve canli CGI komutlarini algilamak icin mikrofon kullanilir.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Elma ve kan selalesi gibi canli CGI efektlerini Turkce sesli komutlarla yonetmek icin konusma tanima kullanilir.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>SAM 2 ve Depth Anything derinlik servisine ayni Wi-Fi agindaki bilgisayardan baglanmak icin yerel ag kullanilir.</string>
 	<key>NSAppTransportSecurity</key>
@@ -6977,6 +7872,7 @@ enum PropPlacementSurface: String, Codable {
 }
 
 enum PropLibraryCategory: String, CaseIterable, Identifiable {
+    case effects
     case furniture
     case storage
     case equipment
@@ -6988,6 +7884,7 @@ enum PropLibraryCategory: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .effects: "Canlı CGI"
         case .furniture: "Mobilya"
         case .storage: "Depolama"
         case .equipment: "Ekipman"
@@ -7031,6 +7928,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case rug
     case backdrop
     case custom
+    case bloodWaterfall
+    case apple
 
     // Curated Poly Haven CC0 photoreal catalog (30 objects).
     case metalOfficeDesk
@@ -7091,6 +7990,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .rug: "Halı"
         case .backdrop: "Fon Perdesi"
         case .custom: "USDZ"
+        case .bloodWaterfall: "Kan Şelalesi"
+        case .apple: "Elma"
         case .metalOfficeDesk: "Metal Ofis Masası"
         case .schoolChair: "Okul Sandalyesi"
         case .schoolDesk: "Okul Sırası"
@@ -7150,6 +8051,8 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .rug: "🟫"
         case .backdrop: "🎞️"
         case .custom: "🎭"
+        case .bloodWaterfall: "🩸"
+        case .apple: "🍎"
         case .metalTrashCan: "🗑️"
         case .blueBarrel: "🛢️"
         case .handTruck: "🛒"
@@ -7168,7 +8071,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    static let quickCases: [PropKind] = [.wall, .stage, .crate, .lightPanel, .custom]
+    static let quickCases: [PropKind] = [
+        .wall, .stage, .crate, .lightPanel, .bloodWaterfall, .apple, .custom
+    ]
+    static let effectCases: [PropKind] = [.bloodWaterfall, .apple]
     static let furnitureCases: [PropKind] = photorealCases
 
     static let photorealCases: [PropKind] = [
@@ -7252,8 +8158,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     var placementSurface: PropPlacementSurface {
         if let surface = photorealDescriptor?.surface { return surface }
         switch self {
-        case .wall, .lightPanel, .backdrop:
+        case .wall, .lightPanel, .backdrop, .bloodWaterfall:
             return PropPlacementSurface.wall
+        case .apple:
+            return PropPlacementSurface.horizontal
         case .custom:
             return PropPlacementSurface.horizontal
         default:
@@ -10484,6 +11392,15 @@ struct RecoveredWorldMapSnapshot {
     let discardedAnchorCount: Int
 }
 
+struct SavedPlaceSummary: Codable, Identifiable, Equatable {
+    let id: UUID
+    var name: String
+    let createdAt: Date
+    var updatedAt: Date
+    var objectCount: Int
+    var hasRoomScan: Bool
+}
+
 struct StoredTransform: Codable {
     var translation: [Float]
     var rotation: [Float]
@@ -10527,6 +11444,8 @@ enum SceneProjectStoreError: LocalizedError {
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
+    case savedPlaceNotFound(UUID)
+    case invalidSavedPlace(UUID)
 
     var errorDescription: String? {
         switch self {
@@ -10550,6 +11469,10 @@ enum SceneProjectStoreError: LocalizedError {
             "worldmap ve scene.json aynı kayıt sürümüne ait değil"
         case .emptyWorldMap:
             "Dünya haritası dosyası boş"
+        case .savedPlaceNotFound(let id):
+            "Kayıtlı mekân bulunamadı: \(id.uuidString)"
+        case .invalidSavedPlace:
+            "Kayıtlı mekân dosyaları eksik veya birbiriyle eşleşmiyor"
         }
     }
 }
@@ -10568,6 +11491,10 @@ final class SceneProjectStore {
                 at: projectDirectory,
                 withIntermediateDirectories: true
             )
+            try fileManager.createDirectory(
+                at: savedPlacesDirectory,
+                withIntermediateDirectories: true
+            )
             if fileManager.fileExists(atPath: projectURL.path) {
                 project = try Self.decodeProject(from: projectURL)
             }
@@ -10584,9 +11511,17 @@ final class SceneProjectStore {
     }
 
     var projectDirectory: URL {
+        projectsRootDirectory
+            .appendingPathComponent("MainSet", isDirectory: true)
+    }
+
+    var projectsRootDirectory: URL {
         let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return documents.appendingPathComponent("CineARProjects", isDirectory: true)
-            .appendingPathComponent("MainSet", isDirectory: true)
+    }
+
+    var savedPlacesDirectory: URL {
+        projectsRootDirectory.appendingPathComponent("SavedPlaces", isDirectory: true)
     }
 
     var projectURL: URL { projectDirectory.appendingPathComponent("scene.json") }
@@ -10598,6 +11533,194 @@ final class SceneProjectStore {
     }
     var assetsDirectory: URL {
         projectDirectory.appendingPathComponent("Assets", isDirectory: true)
+    }
+
+    var savedPlaces: [SavedPlaceSummary] {
+        let directories = (try? fileManager.contentsOfDirectory(
+            at: savedPlacesDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        return directories.compactMap { directory in
+            guard ((try? directory.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false)
+            else { return nil }
+            return try? Self.decodeSavedPlaceManifest(
+                from: directory.appendingPathComponent("place.json")
+            )
+        }.sorted { lhs, rhs in
+            if lhs.updatedAt == rhs.updatedAt { return lhs.name < rhs.name }
+            return lhs.updatedAt > rhs.updatedAt
+        }
+    }
+
+    @discardableResult
+    func archiveCurrentProject(preferredName: String? = nil) throws -> SavedPlaceSummary {
+        let snapshot = try worldMapSnapshotForLoading()
+        let identifier = UUID()
+        let stagingURL = savedPlacesDirectory.appendingPathComponent(
+            ".staging-\(identifier.uuidString)",
+            isDirectory: true
+        )
+        let destinationURL = savedPlaceDirectory(id: identifier)
+        try fileManager.createDirectory(at: savedPlacesDirectory, withIntermediateDirectories: true)
+        removeIfPresent(stagingURL)
+        try fileManager.createDirectory(at: stagingURL, withIntermediateDirectories: true)
+
+        let now = Date()
+        let suppliedName = preferredName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let summary = SavedPlaceSummary(
+            id: identifier,
+            name: suppliedName.flatMap { $0.isEmpty ? nil : $0 } ?? Self.defaultSavedPlaceName(now),
+            createdAt: now,
+            updatedAt: now,
+            objectCount: snapshot.project.placements.count,
+            hasRoomScan: fileManager.fileExists(atPath: roomDataURL.path)
+        )
+
+        do {
+            try Self.encode(snapshot.project).write(
+                to: stagingURL.appendingPathComponent("scene.json"),
+                options: .atomic
+            )
+            try snapshot.data.write(
+                to: stagingURL.appendingPathComponent("worldmap.arexperience"),
+                options: .atomic
+            )
+            if fileManager.fileExists(atPath: roomDataURL.path) {
+                try fileManager.copyItem(
+                    at: roomDataURL,
+                    to: stagingURL.appendingPathComponent("room.json")
+                )
+            }
+            if fileManager.fileExists(atPath: assetsDirectory.path) {
+                try fileManager.copyItem(
+                    at: assetsDirectory,
+                    to: stagingURL.appendingPathComponent("Assets", isDirectory: true)
+                )
+            }
+            try Self.encodeSavedPlaceManifest(summary).write(
+                to: stagingURL.appendingPathComponent("place.json"),
+                options: .atomic
+            )
+            try fileManager.moveItem(at: stagingURL, to: destinationURL)
+            return summary
+        } catch {
+            removeIfPresent(stagingURL)
+            throw error
+        }
+    }
+
+    /// Validates a saved scene before replacing the active working set. The current
+    /// set is backed up for the duration of the transaction and restored on failure.
+    func installSavedPlace(id: UUID) throws -> StoredWorldMapSnapshot {
+        let sourceDirectory = savedPlaceDirectory(id: id)
+        guard fileManager.fileExists(atPath: sourceDirectory.path) else {
+            throw SceneProjectStoreError.savedPlaceNotFound(id)
+        }
+        let manifest = try Self.decodeSavedPlaceManifest(
+            from: sourceDirectory.appendingPathComponent("place.json")
+        )
+        guard manifest.id == id else { throw SceneProjectStoreError.invalidSavedPlace(id) }
+
+        let candidate = try Self.decodeProject(
+            from: sourceDirectory.appendingPathComponent("scene.json")
+        )
+        let worldMapData = try Data(
+            contentsOf: sourceDirectory.appendingPathComponent("worldmap.arexperience")
+        )
+        guard !worldMapData.isEmpty,
+              candidate.worldMapChecksum == Self.checksum(for: worldMapData) else {
+            throw SceneProjectStoreError.invalidSavedPlace(id)
+        }
+        guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(
+            ofClass: ARWorldMap.self,
+            from: worldMapData
+        ) else {
+            throw SceneProjectStoreError.invalidSavedPlace(id)
+        }
+        let placementKinds = Dictionary(uniqueKeysWithValues: candidate.placements.map {
+            ($0.id, $0.kind)
+        })
+        let anchorDescriptors = worldMap.anchors.compactMap {
+            PropKind.descriptor(from: $0.name)
+        }
+        var anchorKinds: [UUID: PropKind] = [:]
+        for descriptor in anchorDescriptors {
+            guard anchorKinds.updateValue(descriptor.kind, forKey: descriptor.id) == nil else {
+                throw SceneProjectStoreError.invalidSavedPlace(id)
+            }
+        }
+        guard anchorKinds == placementKinds else {
+            throw SceneProjectStoreError.invalidSavedPlace(id)
+        }
+        for placement in candidate.placements where placement.kind == .custom {
+            guard let fileName = placement.assetFileName,
+                  fileManager.fileExists(atPath: sourceDirectory
+                    .appendingPathComponent("Assets", isDirectory: true)
+                    .appendingPathComponent(fileName).path) else {
+                throw SceneProjectStoreError.invalidSavedPlace(id)
+            }
+        }
+
+        let backupDirectory = projectsRootDirectory.appendingPathComponent(
+            ".active-backup-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
+        let managedNames = ["scene.json", "worldmap.arexperience", "room.json", "Assets"]
+        do {
+            for name in managedNames {
+                let activeURL = projectDirectory.appendingPathComponent(name)
+                if fileManager.fileExists(atPath: activeURL.path) {
+                    try fileManager.moveItem(
+                        at: activeURL,
+                        to: backupDirectory.appendingPathComponent(name)
+                    )
+                }
+            }
+            for name in managedNames {
+                let archivedURL = sourceDirectory.appendingPathComponent(name)
+                guard fileManager.fileExists(atPath: archivedURL.path) else { continue }
+                try fileManager.copyItem(
+                    at: archivedURL,
+                    to: projectDirectory.appendingPathComponent(name)
+                )
+            }
+            project = candidate
+            initializationError = nil
+            removeIfPresent(backupDirectory)
+            return StoredWorldMapSnapshot(data: worldMapData, project: candidate)
+        } catch {
+            for name in managedNames {
+                removeIfPresent(projectDirectory.appendingPathComponent(name))
+                let backupURL = backupDirectory.appendingPathComponent(name)
+                if fileManager.fileExists(atPath: backupURL.path) {
+                    try? fileManager.moveItem(
+                        at: backupURL,
+                        to: projectDirectory.appendingPathComponent(name)
+                    )
+                }
+            }
+            removeIfPresent(backupDirectory)
+            throw error
+        }
+    }
+
+    func deleteSavedPlace(id: UUID) throws {
+        let directory = savedPlaceDirectory(id: id)
+        guard fileManager.fileExists(atPath: directory.path) else {
+            throw SceneProjectStoreError.savedPlaceNotFound(id)
+        }
+        try fileManager.removeItem(at: directory)
+    }
+
+    private func savedPlaceDirectory(id: UUID) -> URL {
+        savedPlacesDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
+    }
+
+    private func removeIfPresent(_ url: URL) {
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        try? fileManager.removeItem(at: url)
     }
 
     /// The shared ARSession keeps the same coordinate space while RoomPlan scans.
@@ -10930,6 +12053,26 @@ final class SceneProjectStore {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
         return try encoder.encode(project)
+    }
+
+    private static func encodeSavedPlaceManifest(_ summary: SavedPlaceSummary) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(summary)
+    }
+
+    private static func decodeSavedPlaceManifest(from url: URL) throws -> SavedPlaceSummary {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(SavedPlaceSummary.self, from: Data(contentsOf: url))
+    }
+
+    private static func defaultSavedPlaceName(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "tr_TR")
+        formatter.dateFormat = "d MMM yyyy HH:mm"
+        return "Mekân \(formatter.string(from: date))"
     }
 
     private static func decodeProject(from url: URL) throws -> SceneProject {
@@ -11329,15 +12472,29 @@ incelemesine uygulama gondermesi mumkun degildir.
     RTX 3050'de 1500 ms'yi asan fakat 6000 ms'nin altinda kalan basarili HTTP sonucu
     baglanti hatasi sayilmamali; dunya-koordinatli AI mesh'i yine uygulanmali.
     Servisi kapatinca eski AI mesh'i kaybolmali ve ARKit occlusion devam etmeli.
-16. `Tumunu Sil` ile tum manuel objelerin silindigini test et.
-17. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
+16. `Sahne Listesi`ni ac; tum dekor, isik ve CGI efektlerinin ayri satirda gorundugunu
+    dogrula. Listeden bir nesneyi sec, sonra cop kutusuyla sil; yalniz o nesne ve
+    anchor'i kaybolmali. `Tumunu Sil` ile tum sanal objelerin silindigini test et.
+17. En az iki farkli odayi tara ve her birinde `Kaydet`e bas. `Kayitli Mekanlar`
+    listesinde ad, tarih, tarama simgesi ve nesne sayisi gorunmeli. Ilk kaydi yukle;
+    `room.json`, dunya haritasi, nesneler, projektor hedefleri ve ozel USDZ'ler birlikte
+    geri gelmeli. Ikinci arsivi sil; aktif sahne etkilenmemeli.
+18. `Canli CGI` icinden kan selalesini secip taranmis duvara dokun. Akis duvarin
+    baslangic noktasinda kalmali, damlalar hareket etmeli, gercek bir kisi/nesne onune
+    girdiginde derinlik occlusion calismali. Kaydet-yukle sonrasinda efekt ayni dunya
+    konumunda yeniden baslamali.
+19. `Avucta Canli Elma`yi ac; acik avucu kameraya goster ve eli on/arka/yana hareket
+    ettir. Elma LiDAR derinliginde avucu izlemeli, ani olcumlerde sicrama yapmamali ve
+    el 0.42 saniyeden uzun kaybolursa gizlenmeli. `Elimde elma olsun`, `elmayi kaldir`
+    ve `kan selalesi aksin` komutlarini Turkce test et; dugme yedegi de calismali.
+20. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
     Anchor gecici kaldirilirsa nesne/armatur silinmemeli; canli anchor geri gelmezse
     son dunya donusumunde otomatik yeniden baglanmali. Kesintiden once `Beyaz Hatlar`
     aciksa takip duzelince hatlar tekrar gorunmeli.
-18. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
-19. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+21. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
+22. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
 
 ## Baslangic kabul esikleri
 
@@ -11478,7 +12635,19 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   yedekleyip dunya haritasi anchor'larindan taninan dekorlari yeniden kurma
 - Files uzerinden USDZ dekor kutuphanesine model aktarma
 - ARWorldMap, anchor ve dekor transformlarini kalici proje olarak kaydetme
+- `Sahne Listesi` ile sahnedeki tum nesne, isik ve CGI efektlerini ada gore secme;
+  tek tek onayla silme veya sanal sahnenin tamamini temizleme
+- Her manuel `Kaydet` ve tamamlanan oda taramasinda `scene.json`, dunya haritasi,
+  `room.json` ve o mekana ait ozel USDZ'leri dogrulanmis ayri arsiv olarak saklama
+- `Kayitli Mekanlar` listesinden tarih/nesne sayisini gorme, onceki mekani yukleme
+  veya aktif sahneyi etkilemeden arsiv kaydini silme
 - Kayitli mekanda relocalization
+- Duvara anchor edilen, uygulama yeniden acildiginda sahne kaydiyla geri gelen
+  hareketli kan selalesi CGI efekti
+- Vision el-eklem takibi ile LiDAR avuc derinligini birlestirip elmayi elde canli
+  izleme; insan/scene-depth occlusion ve zamansal konum yumusatma
+- `Elimde elma olsun`, `elmayi kaldir` ve `kan selalesi aksin` Turkce sesli
+  komutlari; ses kullanilamayan ortamlar icin ayni islemlerin dugmeleri
 - Arayuzsiz cekim modu; ekrana iki kez dokunarak kaydi bitirme
 - HEVC video ve 48 kHz AAC mikrofon sesini `.mov` dosyasina yazma
 - Son cekimi iOS Share Sheet ile disari aktarma
@@ -11512,8 +12681,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
 9. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
-   degilse istek siraya alinir ve otomatik tamamlanir.
-10. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
+   degilse istek siraya alinir ve otomatik tamamlanir. Manuel kayit `Kayitli Mekanlar`
+   icinde ayri bir arsiv olusturur; listeden eski tarama ve o taramaya ait nesneler
+   birlikte geri yuklenir.
+10. `Sahne` listesinden eklenmis nesneyi secin veya cop kutusuyla tek basina silin.
+    `Canli CGI` ekraninda kan selalesini secip taranmis duvara dokunun; `Avucta Canli
+    Elma`yi acip elinizi kameraya gosterin. Isterseniz ayni islemleri Turkce sesli
+    komutla baslatin.
+11. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
    ekrana iki kez dokunun.
 
 ## PC AI derinlik denemesi
@@ -11552,6 +12727,12 @@ CineARProjects/MainSet/
   room.json
   Assets/*.usdz
   Recordings/*.mov
+CineARProjects/SavedPlaces/<UUID>/
+  place.json
+  scene.json
+  worldmap.arexperience
+  room.json
+  Assets/*.usdz
 ```
 
 `scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, projektor hedef
@@ -11561,6 +12742,10 @@ haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak b
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama
 kapanirken gereksiz bellek yukune yol acan ikinci bir RoomPlan `room.usdz` arsivi
 uretilmez.
+
+`SavedPlaces` altindaki her klasor bagimsiz ve once dogrulanan bir mekansal anlik
+goruntudur. Yukleme sirasinda checksum, anchor/dekor eslesmesi ve ozel USDZ varligi
+kontrol edilir; aktif `MainSet` ancak bu kontroller gecerse islemsel olarak degistirilir.
 
 ## Uretim siniri
 
