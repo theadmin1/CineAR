@@ -325,12 +325,10 @@ final class ARSessionController: NSObject, ObservableObject {
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         arView?.isHidden = true
-        // RoomPlan already performs its own LiDAR processing. Temporarily omit the
-        // additional mesh/person passes so scanning does not run three heavy pipelines.
-        arView?.session.run(
-            configuration(enableAdvancedOcclusion: false),
-            options: [.resetSceneReconstruction]
-        )
+        // Keep the already-stable world-tracking configuration untouched. Re-running
+        // the shared ARSession here creates an initializing gap just as RoomPlan starts,
+        // which RoomPlan reports as `worldTrackingFailure`. RoomPlan preserves the
+        // settings of a supplied, already-running ARSession.
         do {
             try persistAllEntityTransforms()
         } catch {

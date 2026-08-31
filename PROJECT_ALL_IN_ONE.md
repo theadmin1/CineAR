@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.12.1`
-- Proje build numarası: `20`
+- Uygulama sürümü: `0.12.2`
+- Proje build numarası: `21`
 - Git dalı: `main`
-- Kaynak commit: `9cf315a62052e32ffab60a00b76684f2c9da10d5`
-- Oluşturulma zamanı: `2026-08-31 21:55:23 +03:00`
+- Kaynak commit: `5a07b5ff7581804896a49d070e7dac16c5ccf201`
+- Oluşturulma zamanı: `2026-08-31 22:15:51 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -258,7 +258,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 435 | 17725 |
-| `CineAR/ARSessionController.swift` | 4397 | 182864 |
+| `CineAR/ARSessionController.swift` | 4395 | 182866 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -274,13 +274,13 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2073 | 79050 |
-| `CineAR/RoomScanner.swift` | 601 | 20139 |
+| `CineAR/RoomScanner.swift` | 677 | 23459 |
 | `CineAR/SceneProjectStore.swift` | 887 | 36386 |
 | `codemagic.yaml` | 131 | 4245 |
 | `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 142 | 9565 |
+| `Docs/DEVICE_TEST.md` | 145 | 9822 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 221 | 13670 |
+| `README.md` | 223 | 13845 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -1072,13 +1072,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.12.1;
+				MARKETING_VERSION = 0.12.2;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1095,12 +1095,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.12.1;
+				MARKETING_VERSION = 0.12.2;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1936,12 +1936,10 @@ final class ARSessionController: NSObject, ObservableObject {
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         arView?.isHidden = true
-        // RoomPlan already performs its own LiDAR processing. Temporarily omit the
-        // additional mesh/person passes so scanning does not run three heavy pipelines.
-        arView?.session.run(
-            configuration(enableAdvancedOcclusion: false),
-            options: [.resetSceneReconstruction]
-        )
+        // Keep the already-stable world-tracking configuration untouched. Re-running
+        // the shared ARSession here creates an initializing gap just as RoomPlan starts,
+        // which RoomPlan reports as `worldTrackingFailure`. RoomPlan preserves the
+        // settings of a supplied, already-running ARSession.
         do {
             try persistAllEntityTransforms()
         } catch {
@@ -10978,15 +10976,20 @@ final class RoomScannerController: NSObject, ObservableObject {
         guard !isTornDown, !isSessionRunning, !isProcessing else { return }
 
         scanGeneration &+= 1
+        let isRetryingAfterFailure = failureMessage != nil
         stagingTask?.cancel()
         stagingTask = nil
         shouldExport = true
         discardPendingExport()
         exportSucceeded = false
         failureMessage = nil
-        statusText = "Odayı yavaşça tarayın"
-        isSessionRunning = true
-        captureView.captureSession.run(configuration: configuration)
+        statusText = "Dünya takibi hazırlanıyor…"
+        isProcessing = true
+        if isRetryingAfterFailure,
+           let arConfiguration = captureView.captureSession.arSession.configuration {
+            captureView.captureSession.arSession.run(arConfiguration, options: [])
+        }
+        startWhenWorldTrackingIsReady(generation: scanGeneration, attempt: 0)
     }
 
     func finish() {
@@ -11032,6 +11035,77 @@ final class RoomScannerController: NSObject, ObservableObject {
         statusText = message
     }
 
+    private func startWhenWorldTrackingIsReady(generation: UInt64, attempt: Int) {
+        guard scanGeneration == generation,
+              !isTornDown,
+              shouldExport,
+              isProcessing,
+              !isSessionRunning else { return }
+
+        let trackingState = captureView.captureSession.arSession.currentFrame?.camera.trackingState
+        if case .normal? = trackingState {
+            isProcessing = false
+            isSessionRunning = true
+            statusText = "Odayı yavaşça tarayın"
+            captureView.captureSession.run(configuration: configuration)
+            return
+        }
+
+        guard attempt < 32 else {
+            recordFailure(
+                "Dünya takibi hazır olmadı. Kamerayı kitaplık veya köşe gibi detaylı bir alana tutup Tekrar Tara'ya basın"
+            )
+            return
+        }
+
+        if let trackingState {
+            switch trackingState {
+            case .limited(.excessiveMotion):
+                statusText = "Telefonu sabit ve yavaş tutun…"
+            case .limited(.insufficientFeatures):
+                statusText = "Kamerayı detaylı ve aydınlık bir alana yöneltin…"
+            case .limited(.relocalizing):
+                statusText = "Oda koordinatları yeniden bulunuyor…"
+            case .limited(.initializing):
+                statusText = "Dünya takibi hazırlanıyor…"
+            case .notAvailable:
+                statusText = "Kamera takibi yeniden başlatılıyor…"
+            case .normal:
+                break
+            @unknown default:
+                statusText = "Dünya takibi hazırlanıyor…"
+            }
+        } else {
+            statusText = "Dünya takibi hazırlanıyor…"
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            self?.startWhenWorldTrackingIsReady(generation: generation, attempt: attempt + 1)
+        }
+    }
+
+    private func scanFailureMessage(for error: Error) -> String {
+        guard let captureError = error as? RoomCaptureSession.CaptureError else {
+            return "Tarama hatası: \(error.localizedDescription)"
+        }
+        switch captureError {
+        case .worldTrackingFailure:
+            return "Dünya takibi kesildi. Telefonu yavaşlatın, detaylı bir yüzeye yöneltip Tekrar Tara'ya basın"
+        case .deviceTooHot:
+            return "iPhone çok ısındı. Cihaz soğuduktan sonra tekrar tarayın"
+        case .exceedSceneSizeLimit:
+            return "Tarama alanı RoomPlan sınırını aştı. Odayı daha küçük bölümler halinde tarayın"
+        case .deviceNotSupported:
+            return "Bu cihaz RoomPlan oda taramasını desteklemiyor"
+        case .invalidARConfiguration:
+            return "AR yapılandırması RoomPlan ile uyumlu değil. Taramayı kapatıp yeniden açın"
+        case .internalError:
+            return "RoomPlan geçici bir hata verdi. Taramayı yeniden deneyin"
+        @unknown default:
+            return "Tarama hatası: \(error.localizedDescription)"
+        }
+    }
+
     private func discardPendingExport() {
         guard let pendingArtifacts else { return }
         roomStore.discard(pendingArtifacts)
@@ -11073,7 +11147,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
         error: Error?
     ) {
         guard let error else { return }
-        let message = "Tarama hatası: \(error.localizedDescription)"
+        let message = scanFailureMessage(for: error)
         let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
             guard let self,
@@ -11092,7 +11166,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         guard shouldExport else { return false }
         guard let error else { return true }
 
-        let message = "Tarama hatası: \(error.localizedDescription)"
+        let message = scanFailureMessage(for: error)
         let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
             guard let self,
@@ -12461,6 +12535,9 @@ incelemesine uygulama gondermesi mumkun degildir.
 1. Uygulama acilir acilmaz alt panelde `Odayi Tara` dugmesinin gorundugunu dogrula.
    Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
+   Tarama acilirken RoomPlan baslamadan once dunya takibinin hazirlanmasini bekledigini
+   ve `World tracking failure` ham hata metninin gorunmedigini kontrol et. Takibi
+   bilerek zayiflatip `Tekrar Tara`ya basinca paylasilan AR oturumu yeniden calismali.
 2. Tarama sirasinda yalniz RoomPlan'in beyaz/seffaf kilavuzlarinin gorundugunu;
    tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
 3. Tarama boyunca kamera hareketinin akici oldugunu, ana gorunume donuste gercek
@@ -12653,6 +12730,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
   cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
+- RoomPlan acilirken kararlı AR karesini bekleme; `worldTrackingFailure` sonrasinda
+  paylasilan oturumu guvenli yeniden calistiran ve Turkce yonlendirme veren tekrar deneme
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
 - Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
 - Tarama sirasinda RoomPlan'in hafif, beyaz ve seffaf kilavuz cizgileri

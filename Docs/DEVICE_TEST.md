@@ -12,6 +12,9 @@
 1. Uygulama acilir acilmaz alt panelde `Odayi Tara` dugmesinin gorundugunu dogrula.
    Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
+   Tarama acilirken RoomPlan baslamadan once dunya takibinin hazirlanmasini bekledigini
+   ve `World tracking failure` ham hata metninin gorunmedigini kontrol et. Takibi
+   bilerek zayiflatip `Tekrar Tara`ya basinca paylasilan AR oturumu yeniden calismali.
 2. Tarama sirasinda yalniz RoomPlan'in beyaz/seffaf kilavuzlarinin gorundugunu;
    tarama onayindan sonra opak duvar, zemin veya mobilya kaplamasi olusmadigini dogrula.
 3. Tarama boyunca kamera hareketinin akici oldugunu, ana gorunume donuste gercek

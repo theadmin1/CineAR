@@ -250,15 +250,20 @@ final class RoomScannerController: NSObject, ObservableObject {
         guard !isTornDown, !isSessionRunning, !isProcessing else { return }
 
         scanGeneration &+= 1
+        let isRetryingAfterFailure = failureMessage != nil
         stagingTask?.cancel()
         stagingTask = nil
         shouldExport = true
         discardPendingExport()
         exportSucceeded = false
         failureMessage = nil
-        statusText = "Odayı yavaşça tarayın"
-        isSessionRunning = true
-        captureView.captureSession.run(configuration: configuration)
+        statusText = "Dünya takibi hazırlanıyor…"
+        isProcessing = true
+        if isRetryingAfterFailure,
+           let arConfiguration = captureView.captureSession.arSession.configuration {
+            captureView.captureSession.arSession.run(arConfiguration, options: [])
+        }
+        startWhenWorldTrackingIsReady(generation: scanGeneration, attempt: 0)
     }
 
     func finish() {
@@ -304,6 +309,77 @@ final class RoomScannerController: NSObject, ObservableObject {
         statusText = message
     }
 
+    private func startWhenWorldTrackingIsReady(generation: UInt64, attempt: Int) {
+        guard scanGeneration == generation,
+              !isTornDown,
+              shouldExport,
+              isProcessing,
+              !isSessionRunning else { return }
+
+        let trackingState = captureView.captureSession.arSession.currentFrame?.camera.trackingState
+        if case .normal? = trackingState {
+            isProcessing = false
+            isSessionRunning = true
+            statusText = "Odayı yavaşça tarayın"
+            captureView.captureSession.run(configuration: configuration)
+            return
+        }
+
+        guard attempt < 32 else {
+            recordFailure(
+                "Dünya takibi hazır olmadı. Kamerayı kitaplık veya köşe gibi detaylı bir alana tutup Tekrar Tara'ya basın"
+            )
+            return
+        }
+
+        if let trackingState {
+            switch trackingState {
+            case .limited(.excessiveMotion):
+                statusText = "Telefonu sabit ve yavaş tutun…"
+            case .limited(.insufficientFeatures):
+                statusText = "Kamerayı detaylı ve aydınlık bir alana yöneltin…"
+            case .limited(.relocalizing):
+                statusText = "Oda koordinatları yeniden bulunuyor…"
+            case .limited(.initializing):
+                statusText = "Dünya takibi hazırlanıyor…"
+            case .notAvailable:
+                statusText = "Kamera takibi yeniden başlatılıyor…"
+            case .normal:
+                break
+            @unknown default:
+                statusText = "Dünya takibi hazırlanıyor…"
+            }
+        } else {
+            statusText = "Dünya takibi hazırlanıyor…"
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            self?.startWhenWorldTrackingIsReady(generation: generation, attempt: attempt + 1)
+        }
+    }
+
+    private func scanFailureMessage(for error: Error) -> String {
+        guard let captureError = error as? RoomCaptureSession.CaptureError else {
+            return "Tarama hatası: \(error.localizedDescription)"
+        }
+        switch captureError {
+        case .worldTrackingFailure:
+            return "Dünya takibi kesildi. Telefonu yavaşlatın, detaylı bir yüzeye yöneltip Tekrar Tara'ya basın"
+        case .deviceTooHot:
+            return "iPhone çok ısındı. Cihaz soğuduktan sonra tekrar tarayın"
+        case .exceedSceneSizeLimit:
+            return "Tarama alanı RoomPlan sınırını aştı. Odayı daha küçük bölümler halinde tarayın"
+        case .deviceNotSupported:
+            return "Bu cihaz RoomPlan oda taramasını desteklemiyor"
+        case .invalidARConfiguration:
+            return "AR yapılandırması RoomPlan ile uyumlu değil. Taramayı kapatıp yeniden açın"
+        case .internalError:
+            return "RoomPlan geçici bir hata verdi. Taramayı yeniden deneyin"
+        @unknown default:
+            return "Tarama hatası: \(error.localizedDescription)"
+        }
+    }
+
     private func discardPendingExport() {
         guard let pendingArtifacts else { return }
         roomStore.discard(pendingArtifacts)
@@ -345,7 +421,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
         error: Error?
     ) {
         guard let error else { return }
-        let message = "Tarama hatası: \(error.localizedDescription)"
+        let message = scanFailureMessage(for: error)
         let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
             guard let self,
@@ -364,7 +440,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         guard shouldExport else { return false }
         guard let error else { return true }
 
-        let message = "Tarama hatası: \(error.localizedDescription)"
+        let message = scanFailureMessage(for: error)
         let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
             guard let self,

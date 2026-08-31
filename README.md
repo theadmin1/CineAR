@@ -29,6 +29,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
   cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
+- RoomPlan acilirken kararlı AR karesini bekleme; `worldTrackingFailure` sonrasinda
+  paylasilan oturumu guvenli yeniden calistiran ve Turkce yonlendirme veren tekrar deneme
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
 - Yeni taramadan sonra takip normale donunce `room.json` ile eslesen dunya haritasini otomatik kaydetme
 - Tarama sirasinda RoomPlan'in hafif, beyaz ve seffaf kilavuz cizgileri
