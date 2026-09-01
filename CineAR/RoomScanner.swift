@@ -89,15 +89,15 @@ struct CapturedRoomStore {
         let identifier = UUID().uuidString
         let jsonBackupURL = backupSibling(of: roomJSONURL, identifier: identifier)
         let hadJSON = fileManager.fileExists(atPath: roomJSONURL.path)
-        var installedJSON = false
+        var createdJSONBackup = false
 
         do {
             if hadJSON {
                 try fileManager.copyItem(at: roomJSONURL, to: jsonBackupURL)
+                createdJSONBackup = true
             }
 
             try install(staged.roomJSONURL, at: roomJSONURL)
-            installedJSON = true
 
             removeIfPresent(jsonBackupURL)
             removeIfPresent(modelURL)
@@ -105,7 +105,7 @@ struct CapturedRoomStore {
             let originalMessage = error.localizedDescription
             var rollbackMessages: [String] = []
 
-            if installedJSON {
+            if createdJSONBackup {
                 do {
                     try restore(
                         finalURL: roomJSONURL,
@@ -115,6 +115,9 @@ struct CapturedRoomStore {
                 } catch {
                     rollbackMessages.append(error.localizedDescription)
                 }
+            } else if !hadJSON {
+                // A failed first install must not leave a partial destination behind.
+                removeIfPresent(roomJSONURL)
             }
 
             discard(staged)

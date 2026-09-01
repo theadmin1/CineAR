@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.14.1`
-- Proje build numarası: `25`
+- Uygulama sürümü: `0.14.2`
+- Proje build numarası: `26`
 - Git dalı: `main`
-- Kaynak commit: `7ff2a4dc766d9437cacf5b41ec68e56c5325c036`
-- Oluşturulma zamanı: `2026-09-01 13:47:37 +03:00`
+- Kaynak commit: `69f93342975b6add47b7ceacc1175bb4c813d081`
+- Oluşturulma zamanı: `2026-09-01 15:21:56 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -260,7 +260,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 450 | 18702 |
-| `CineAR/ARSessionController.swift` | 4927 | 204907 |
+| `CineAR/ARSessionController.swift` | 4932 | 205228 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -276,7 +276,7 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2073 | 79050 |
-| `CineAR/RoomScanner.swift` | 722 | 25676 |
+| `CineAR/RoomScanner.swift` | 725 | 25857 |
 | `CineAR/SceneProjectStore.swift` | 887 | 36386 |
 | `codemagic.yaml` | 138 | 4626 |
 | `Docs/CODEMAGIC.md` | 86 | 4715 |
@@ -1096,13 +1096,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.14.1;
+				MARKETING_VERSION = 0.14.2;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1119,12 +1119,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 26;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.14.1;
+				MARKETING_VERSION = 0.14.2;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1679,6 +1679,12 @@ struct FloorMeterReading: Equatable {
     let tiltDegrees: Float?
     let sourceTitle: String
     let isVisibleFloor: Bool
+}
+
+/// Core Video buffers are reference-counted and remain immutable while Vision reads them.
+/// This wrapper makes that cross-queue lifetime guarantee explicit to Swift concurrency.
+private struct SendablePixelBuffer: @unchecked Sendable {
+    let value: CVPixelBuffer
 }
 
 @MainActor
@@ -2610,10 +2616,10 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func placementInstruction(for prop: PropKind) -> String {
         switch prop.placementSurface {
-        case .floor: "taranmış zemine dokun"
-        case .horizontal: "zemine veya masa gibi yatay yüzeye dokun"
-        case .wall: "taranmış duvara dokun"
-        case .ceiling: "telefonu tavana çevirip taranmış tavana dokun"
+        case .floor: return "taranmış zemine dokun"
+        case .horizontal: return "zemine veya masa gibi yatay yüzeye dokun"
+        case .wall: return "taranmış duvara dokun"
+        case .ceiling: return "telefonu tavana çevirip taranmış tavana dokun"
         }
     }
 
@@ -2623,13 +2629,13 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         switch prop.placementSurface {
         case .floor:
-            "Kararlı zemin bulunamadı — zemini yavaşça tara, sonra tekrar dokun"
+            return "Kararlı zemin bulunamadı — zemini yavaşça tara, sonra tekrar dokun"
         case .horizontal:
-            "Kararlı yatay yüzey bulunamadı — yüzeyi yavaşça tara, sonra tekrar dokun"
+            return "Kararlı yatay yüzey bulunamadı — yüzeyi yavaşça tara, sonra tekrar dokun"
         case .wall:
-            "Kararlı duvar bulunamadı — duvarı yavaşça tara, sonra tekrar dokun"
+            return "Kararlı duvar bulunamadı — duvarı yavaşça tara, sonra tekrar dokun"
         case .ceiling:
-            "Kararlı tavan bulunamadı — telefonu yukarı çevirip tavanı yavaşça tara"
+            return "Kararlı tavan bulunamadı — telefonu yukarı çevirip tavanı yavaşça tara"
         }
     }
 
@@ -2730,12 +2736,11 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func requestMicrophoneAndBeginCGISpeechRecognition() {
-        let audioSession = AVAudioSession.sharedInstance()
-        switch audioSession.recordPermission {
+        switch AVAudioApplication.shared.recordPermission {
         case .granted:
             beginCGISpeechRecognition()
         case .undetermined:
-            audioSession.requestRecordPermission { [weak self] granted in
+            AVAudioApplication.requestRecordPermission { [weak self] granted in
                 DispatchQueue.main.async {
                     guard let self else { return }
                     if granted {
@@ -2874,7 +2879,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         lastHandDetectionTimestamp = frame.timestamp
         handDetectionInFlight = true
-        let pixelBuffer = frame.capturedImage
+        let pixelBuffer = SendablePixelBuffer(value: frame.capturedImage)
         let viewportSize = arView.bounds.size
         let interfaceOrientation = arView.window?.windowScene?.interfaceOrientation ?? .portrait
         let imageOrientation: CGImagePropertyOrientation
@@ -2890,7 +2895,7 @@ final class ARSessionController: NSObject, ObservableObject {
             var normalizedPalm: CGPoint?
             do {
                 let handler = VNImageRequestHandler(
-                    cvPixelBuffer: pixelBuffer,
+                    cvPixelBuffer: pixelBuffer.value,
                     orientation: imageOrientation,
                     options: [:]
                 )
@@ -11675,15 +11680,15 @@ struct CapturedRoomStore {
         let identifier = UUID().uuidString
         let jsonBackupURL = backupSibling(of: roomJSONURL, identifier: identifier)
         let hadJSON = fileManager.fileExists(atPath: roomJSONURL.path)
-        var installedJSON = false
+        var createdJSONBackup = false
 
         do {
             if hadJSON {
                 try fileManager.copyItem(at: roomJSONURL, to: jsonBackupURL)
+                createdJSONBackup = true
             }
 
             try install(staged.roomJSONURL, at: roomJSONURL)
-            installedJSON = true
 
             removeIfPresent(jsonBackupURL)
             removeIfPresent(modelURL)
@@ -11691,7 +11696,7 @@ struct CapturedRoomStore {
             let originalMessage = error.localizedDescription
             var rollbackMessages: [String] = []
 
-            if installedJSON {
+            if createdJSONBackup {
                 do {
                     try restore(
                         finalURL: roomJSONURL,
@@ -11701,6 +11706,9 @@ struct CapturedRoomStore {
                 } catch {
                     rollbackMessages.append(error.localizedDescription)
                 }
+            } else if !hadJSON {
+                // A failed first install must not leave a partial destination behind.
+                removeIfPresent(roomJSONURL)
             }
 
             discard(staged)

@@ -31,6 +31,12 @@ struct FloorMeterReading: Equatable {
     let isVisibleFloor: Bool
 }
 
+/// Core Video buffers are reference-counted and remain immutable while Vision reads them.
+/// This wrapper makes that cross-queue lifetime guarantee explicit to Swift concurrency.
+private struct SendablePixelBuffer: @unchecked Sendable {
+    let value: CVPixelBuffer
+}
+
 @MainActor
 final class ARSessionController: NSObject, ObservableObject {
     @Published var selectedProp: PropKind = .crate
@@ -960,10 +966,10 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func placementInstruction(for prop: PropKind) -> String {
         switch prop.placementSurface {
-        case .floor: "taranmış zemine dokun"
-        case .horizontal: "zemine veya masa gibi yatay yüzeye dokun"
-        case .wall: "taranmış duvara dokun"
-        case .ceiling: "telefonu tavana çevirip taranmış tavana dokun"
+        case .floor: return "taranmış zemine dokun"
+        case .horizontal: return "zemine veya masa gibi yatay yüzeye dokun"
+        case .wall: return "taranmış duvara dokun"
+        case .ceiling: return "telefonu tavana çevirip taranmış tavana dokun"
         }
     }
 
@@ -973,13 +979,13 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         switch prop.placementSurface {
         case .floor:
-            "Kararlı zemin bulunamadı — zemini yavaşça tara, sonra tekrar dokun"
+            return "Kararlı zemin bulunamadı — zemini yavaşça tara, sonra tekrar dokun"
         case .horizontal:
-            "Kararlı yatay yüzey bulunamadı — yüzeyi yavaşça tara, sonra tekrar dokun"
+            return "Kararlı yatay yüzey bulunamadı — yüzeyi yavaşça tara, sonra tekrar dokun"
         case .wall:
-            "Kararlı duvar bulunamadı — duvarı yavaşça tara, sonra tekrar dokun"
+            return "Kararlı duvar bulunamadı — duvarı yavaşça tara, sonra tekrar dokun"
         case .ceiling:
-            "Kararlı tavan bulunamadı — telefonu yukarı çevirip tavanı yavaşça tara"
+            return "Kararlı tavan bulunamadı — telefonu yukarı çevirip tavanı yavaşça tara"
         }
     }
 
@@ -1080,12 +1086,11 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func requestMicrophoneAndBeginCGISpeechRecognition() {
-        let audioSession = AVAudioSession.sharedInstance()
-        switch audioSession.recordPermission {
+        switch AVAudioApplication.shared.recordPermission {
         case .granted:
             beginCGISpeechRecognition()
         case .undetermined:
-            audioSession.requestRecordPermission { [weak self] granted in
+            AVAudioApplication.requestRecordPermission { [weak self] granted in
                 DispatchQueue.main.async {
                     guard let self else { return }
                     if granted {
@@ -1224,7 +1229,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         lastHandDetectionTimestamp = frame.timestamp
         handDetectionInFlight = true
-        let pixelBuffer = frame.capturedImage
+        let pixelBuffer = SendablePixelBuffer(value: frame.capturedImage)
         let viewportSize = arView.bounds.size
         let interfaceOrientation = arView.window?.windowScene?.interfaceOrientation ?? .portrait
         let imageOrientation: CGImagePropertyOrientation
@@ -1240,7 +1245,7 @@ final class ARSessionController: NSObject, ObservableObject {
             var normalizedPalm: CGPoint?
             do {
                 let handler = VNImageRequestHandler(
-                    cvPixelBuffer: pixelBuffer,
+                    cvPixelBuffer: pixelBuffer.value,
                     orientation: imageOrientation,
                     options: [:]
                 )
