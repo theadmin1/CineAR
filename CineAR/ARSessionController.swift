@@ -996,6 +996,10 @@ final class ARSessionController: NSObject, ObservableObject {
         if let placement = projectStore.placement(id: id), placement.kind.emitsVirtualLight {
             selectedLightSettings = placement.lightSettings ?? .defaultFixture
             publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
+        } else if let placement = projectStore.placement(id: id),
+                  placement.kind.photorealDescriptor != nil {
+            selectedLightSettings = nil
+            publishStatus("Dekor seçildi — gerçek dünya ölçeği kilitli; döndürebilirsin", color: .blue)
         } else {
             selectedLightSettings = nil
             publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
@@ -1480,7 +1484,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if prop.placementSurface == .floor {
             return strictFloorPlacementSolution(in: arView, at: point, for: prop)
         }
-        if prop == .bloodWaterfall {
+        if prop.placementSurface == .wall {
             return strictWallPlacementSolution(in: arView, at: point, for: prop)
         }
 
@@ -1634,7 +1638,7 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
-    /// The waterfall must be attached to the physical wall under the user's finger.
+    /// Every wall prop must be attached to the physical wall under the user's finger.
     /// Infinite planes and camera-relative guesses can appear stable for one frame but
     /// slide when the camera moves, so this resolver requires finite wall geometry and
     /// agreement with the current LiDAR depth pixel.
@@ -1644,7 +1648,8 @@ final class ARSessionController: NSObject, ObservableObject {
         for prop: PropKind
     ) -> PlacementSurfaceSolution? {
         guard let frame = arView.session.currentFrame,
-              let depth = sceneDepthSample(frame: frame, in: arView, at: point) else { return nil }
+              let depth = sceneDepthSample(frame: frame, in: arView, at: point),
+              (0.20...5.0).contains(depth.depthMeters) else { return nil }
         let cameraPosition = arView.cameraTransform.translation
 
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
@@ -1733,12 +1738,16 @@ final class ARSessionController: NSObject, ObservableObject {
         position: SIMD3<Float>,
         normal: SIMD3<Float>
     ) -> Bool {
-        guard simd_length_squared(normal) > 0.000_001,
-              abs(simd_normalize(normal).y) <= 0.42,
-              simd_distance(depth.worldPoint, position) <= 0.22 else { return false }
+        guard simd_length_squared(normal) > 0.000_001 else { return false }
+        let candidateNormal = simd_normalize(normal)
+        let maximumSeparation = min(max(0.055 + depth.depthMeters * 0.012, 0.07), 0.11)
+        guard abs(candidateNormal.y) <= 0.38,
+              simd_distance(depth.worldPoint, position) <= maximumSeparation else { return false }
         if let depthNormal = depth.worldNormal {
             guard simd_length_squared(depthNormal) > 0.000_001 else { return false }
-            return abs(simd_normalize(depthNormal).y) <= 0.58
+            let measuredNormal = simd_normalize(depthNormal)
+            return abs(measuredNormal.y) <= 0.48
+                && abs(simd_dot(candidateNormal, measuredNormal)) >= 0.76
         }
         return true
     }
@@ -1912,7 +1921,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 placementSurfaceMessage = "Sarı: LiDAR zemini ölçüyor"
                 placementSurfaceColor = .yellow
             }
-        } else if selectedProp == .bloodWaterfall {
+        } else if selectedProp.placementSurface == .wall {
             if sceneDepthSample(frame: frame, in: arView, at: point) != nil {
                 placementSurfaceMessage = "Kırmızı: görünen nokta doğrulanmış dikey duvar değil"
                 placementSurfaceColor = .red
@@ -3061,6 +3070,11 @@ final class ARSessionController: NSObject, ObservableObject {
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
+        if prop.photorealDescriptor != nil {
+            // Catalog dimensions are measured in metres. Keeping scale at one prevents
+            // a distant object from becoming toy-sized or oversized after a stray pinch.
+            entity.scale = SIMD3<Float>(repeating: 1)
+        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -3081,8 +3095,13 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         // Translation is deliberately excluded: a placed prop stays bound to its
-        // world anchor. Rotation and scale remain available for art direction.
-        arView.installGestures([.rotation, .scale], for: entity)
+        // world anchor. Measured catalog props keep their physical scale; unmeasured
+        // and imported props retain scale control for art direction.
+        if prop.photorealDescriptor != nil {
+            arView.installGestures([.rotation], for: entity)
+        } else {
+            arView.installGestures([.rotation, .scale], for: entity)
+        }
 
         renderedAnchorIDs.insert(anchor.identifier)
         renderedAnchorIDByPlacementID[id] = anchor.identifier
@@ -3152,6 +3171,9 @@ final class ARSessionController: NSObject, ObservableObject {
 
         entity.name = id.uuidString
         entity.transform = preservedTransform
+        if prop.photorealDescriptor != nil {
+            entity.scale = SIMD3<Float>(repeating: 1)
+        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -3173,7 +3195,11 @@ final class ARSessionController: NSObject, ObservableObject {
                 ?? .defaultFixture
             apply(settings: settings, to: light, prop: prop)
         }
-        arView.installGestures([.rotation, .scale], for: entity)
+        if prop.photorealDescriptor != nil {
+            arView.installGestures([.rotation], for: entity)
+        } else {
+            arView.installGestures([.rotation, .scale], for: entity)
+        }
         renderedEntities[id] = entity
         return true
     }
@@ -3867,6 +3893,26 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func addContactShadow(to entity: ModelEntity, for prop: PropKind) {
+        if prop.placementSurface == .wall,
+           prop != .bloodWaterfall,
+           let dimensions = prop.photorealDescriptor?.dimensions
+                ?? libraryDescriptor(for: prop)?.dimensions {
+            let material = RealityMaterialRecipe(
+                0.008, 0.010, 0.014,
+                alpha: 0.17,
+                roughness: 1
+            ).makeMaterial()
+            let shadow = ModelEntity(
+                mesh: .generateSphere(radius: 0.5),
+                materials: [material]
+            )
+            shadow.name = "cinear.wall-contact-shadow"
+            shadow.scale = [dimensions.x * 0.88, dimensions.y * 0.88, 0.006]
+            shadow.position = [0, 0, 0.004]
+            entity.addChild(shadow)
+            return
+        }
+
         guard let contact = groundContactDescriptor(for: prop) else { return }
         let material = RealityMaterialRecipe(
             0.015, 0.018, 0.022,

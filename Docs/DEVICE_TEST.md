@@ -138,6 +138,11 @@
     surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
     gorunmeli. Internet kapaliyken uygulama acilmaya devam etmeli ve manuel kontrolde
     anlasilir hata mesaji cikmali.
+26. Ankesorlu telefon gibi bir duvar katalog nesnesini yaklasik 1 metre mesafeden
+    taranmis duvara yerlestir. Kamerayla 1-4 metre arasinda yana yururken arka yuzun
+    duvardan ayrilmadigini, fiziksel olcegin degismedigini ve temas golgesinin duvar
+    uzerinde kaldigini dogrula. Sonsuz duzlem veya farkli derinlikteki duvar kabul
+    edilmemeli; hedef ancak LiDAR derinligiyle sonlu duvar uyustugunda yesil olmali.
 
 ## Baslangic kabul esikleri
 
@@ -145,6 +150,7 @@
 - Elde relocalization hatasi: 5 cm'den az
 - Manuel dekor anchor'i ile dokunulan gercek yuzey hizasi: referans noktalarda 2 cm'den az
 - Modelin gercek alt siniri ile zemin arasindaki dikey bosluk: 5 mm'den az
+- Duvar modelinin gercek arka siniri ile duvar arasindaki bosluk: 1 cm'den az
 - Projektor hedef merkezinin dokunulan dunya noktasindan farki: 3 cm'den az
 - Kapi ve pencere boslugu kenar hatasi: 5 cm'den az
 - Kayit: hedef cihazda sabit 30 fps, gorunur tekrar eden kare olmamali

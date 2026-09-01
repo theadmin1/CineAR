@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.14.2`
-- Proje build numarası: `26`
+- Uygulama sürümü: `0.14.3`
+- Proje build numarası: `27`
 - Git dalı: `main`
-- Kaynak commit: `69f93342975b6add47b7ceacc1175bb4c813d081`
-- Oluşturulma zamanı: `2026-09-01 15:21:56 +03:00`
+- Kaynak commit: `88c340ae4f8e730081a513e85d4269c35e91188f`
+- Oluşturulma zamanı: `2026-09-01 17:38:37 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -260,7 +260,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 450 | 18702 |
-| `CineAR/ARSessionController.swift` | 4932 | 205228 |
+| `CineAR/ARSessionController.swift` | 4978 | 207382 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -280,9 +280,9 @@ Yok.
 | `CineAR/SceneProjectStore.swift` | 887 | 36386 |
 | `codemagic.yaml` | 138 | 4626 |
 | `Docs/CODEMAGIC.md` | 86 | 4715 |
-| `Docs/DEVICE_TEST.md` | 166 | 11523 |
+| `Docs/DEVICE_TEST.md` | 172 | 12021 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 247 | 15839 |
+| `README.md` | 250 | 16067 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -1096,13 +1096,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.14.2;
+				MARKETING_VERSION = 0.14.3;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1119,12 +1119,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 27;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.14.2;
+				MARKETING_VERSION = 0.14.3;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2646,6 +2646,10 @@ final class ARSessionController: NSObject, ObservableObject {
         if let placement = projectStore.placement(id: id), placement.kind.emitsVirtualLight {
             selectedLightSettings = placement.lightSettings ?? .defaultFixture
             publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
+        } else if let placement = projectStore.placement(id: id),
+                  placement.kind.photorealDescriptor != nil {
+            selectedLightSettings = nil
+            publishStatus("Dekor seçildi — gerçek dünya ölçeği kilitli; döndürebilirsin", color: .blue)
         } else {
             selectedLightSettings = nil
             publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
@@ -3130,7 +3134,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if prop.placementSurface == .floor {
             return strictFloorPlacementSolution(in: arView, at: point, for: prop)
         }
-        if prop == .bloodWaterfall {
+        if prop.placementSurface == .wall {
             return strictWallPlacementSolution(in: arView, at: point, for: prop)
         }
 
@@ -3284,7 +3288,7 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
-    /// The waterfall must be attached to the physical wall under the user's finger.
+    /// Every wall prop must be attached to the physical wall under the user's finger.
     /// Infinite planes and camera-relative guesses can appear stable for one frame but
     /// slide when the camera moves, so this resolver requires finite wall geometry and
     /// agreement with the current LiDAR depth pixel.
@@ -3294,7 +3298,8 @@ final class ARSessionController: NSObject, ObservableObject {
         for prop: PropKind
     ) -> PlacementSurfaceSolution? {
         guard let frame = arView.session.currentFrame,
-              let depth = sceneDepthSample(frame: frame, in: arView, at: point) else { return nil }
+              let depth = sceneDepthSample(frame: frame, in: arView, at: point),
+              (0.20...5.0).contains(depth.depthMeters) else { return nil }
         let cameraPosition = arView.cameraTransform.translation
 
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
@@ -3383,12 +3388,16 @@ final class ARSessionController: NSObject, ObservableObject {
         position: SIMD3<Float>,
         normal: SIMD3<Float>
     ) -> Bool {
-        guard simd_length_squared(normal) > 0.000_001,
-              abs(simd_normalize(normal).y) <= 0.42,
-              simd_distance(depth.worldPoint, position) <= 0.22 else { return false }
+        guard simd_length_squared(normal) > 0.000_001 else { return false }
+        let candidateNormal = simd_normalize(normal)
+        let maximumSeparation = min(max(0.055 + depth.depthMeters * 0.012, 0.07), 0.11)
+        guard abs(candidateNormal.y) <= 0.38,
+              simd_distance(depth.worldPoint, position) <= maximumSeparation else { return false }
         if let depthNormal = depth.worldNormal {
             guard simd_length_squared(depthNormal) > 0.000_001 else { return false }
-            return abs(simd_normalize(depthNormal).y) <= 0.58
+            let measuredNormal = simd_normalize(depthNormal)
+            return abs(measuredNormal.y) <= 0.48
+                && abs(simd_dot(candidateNormal, measuredNormal)) >= 0.76
         }
         return true
     }
@@ -3562,7 +3571,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 placementSurfaceMessage = "Sarı: LiDAR zemini ölçüyor"
                 placementSurfaceColor = .yellow
             }
-        } else if selectedProp == .bloodWaterfall {
+        } else if selectedProp.placementSurface == .wall {
             if sceneDepthSample(frame: frame, in: arView, at: point) != nil {
                 placementSurfaceMessage = "Kırmızı: görünen nokta doğrulanmış dikey duvar değil"
                 placementSurfaceColor = .red
@@ -4711,6 +4720,11 @@ final class ARSessionController: NSObject, ObservableObject {
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
+        if prop.photorealDescriptor != nil {
+            // Catalog dimensions are measured in metres. Keeping scale at one prevents
+            // a distant object from becoming toy-sized or oversized after a stray pinch.
+            entity.scale = SIMD3<Float>(repeating: 1)
+        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -4731,8 +4745,13 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         // Translation is deliberately excluded: a placed prop stays bound to its
-        // world anchor. Rotation and scale remain available for art direction.
-        arView.installGestures([.rotation, .scale], for: entity)
+        // world anchor. Measured catalog props keep their physical scale; unmeasured
+        // and imported props retain scale control for art direction.
+        if prop.photorealDescriptor != nil {
+            arView.installGestures([.rotation], for: entity)
+        } else {
+            arView.installGestures([.rotation, .scale], for: entity)
+        }
 
         renderedAnchorIDs.insert(anchor.identifier)
         renderedAnchorIDByPlacementID[id] = anchor.identifier
@@ -4802,6 +4821,9 @@ final class ARSessionController: NSObject, ObservableObject {
 
         entity.name = id.uuidString
         entity.transform = preservedTransform
+        if prop.photorealDescriptor != nil {
+            entity.scale = SIMD3<Float>(repeating: 1)
+        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -4823,7 +4845,11 @@ final class ARSessionController: NSObject, ObservableObject {
                 ?? .defaultFixture
             apply(settings: settings, to: light, prop: prop)
         }
-        arView.installGestures([.rotation, .scale], for: entity)
+        if prop.photorealDescriptor != nil {
+            arView.installGestures([.rotation], for: entity)
+        } else {
+            arView.installGestures([.rotation, .scale], for: entity)
+        }
         renderedEntities[id] = entity
         return true
     }
@@ -5517,6 +5543,26 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func addContactShadow(to entity: ModelEntity, for prop: PropKind) {
+        if prop.placementSurface == .wall,
+           prop != .bloodWaterfall,
+           let dimensions = prop.photorealDescriptor?.dimensions
+                ?? libraryDescriptor(for: prop)?.dimensions {
+            let material = RealityMaterialRecipe(
+                0.008, 0.010, 0.014,
+                alpha: 0.17,
+                roughness: 1
+            ).makeMaterial()
+            let shadow = ModelEntity(
+                mesh: .generateSphere(radius: 0.5),
+                materials: [material]
+            )
+            shadow.name = "cinear.wall-contact-shadow"
+            shadow.scale = [dimensions.x * 0.88, dimensions.y * 0.88, 0.006]
+            shadow.position = [0, 0, 0.004]
+            entity.addChild(shadow)
+            return
+        }
+
         guard let contact = groundContactDescriptor(for: prop) else { return }
         let material = RealityMaterialRecipe(
             0.015, 0.018, 0.022,
@@ -13581,6 +13627,11 @@ incelemesine uygulama gondermesi mumkun degildir.
     surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
     gorunmeli. Internet kapaliyken uygulama acilmaya devam etmeli ve manuel kontrolde
     anlasilir hata mesaji cikmali.
+26. Ankesorlu telefon gibi bir duvar katalog nesnesini yaklasik 1 metre mesafeden
+    taranmis duvara yerlestir. Kamerayla 1-4 metre arasinda yana yururken arka yuzun
+    duvardan ayrilmadigini, fiziksel olcegin degismedigini ve temas golgesinin duvar
+    uzerinde kaldigini dogrula. Sonsuz duzlem veya farkli derinlikteki duvar kabul
+    edilmemeli; hedef ancak LiDAR derinligiyle sonlu duvar uyustugunda yesil olmali.
 
 ## Baslangic kabul esikleri
 
@@ -13588,6 +13639,7 @@ incelemesine uygulama gondermesi mumkun degildir.
 - Elde relocalization hatasi: 5 cm'den az
 - Manuel dekor anchor'i ile dokunulan gercek yuzey hizasi: referans noktalarda 2 cm'den az
 - Modelin gercek alt siniri ile zemin arasindaki dikey bosluk: 5 mm'den az
+- Duvar modelinin gercek arka siniri ile duvar arasindaki bosluk: 1 cm'den az
 - Projektor hedef merkezinin dokunulan dunya noktasindan farki: 3 cm'den az
 - Kapi ve pencere boslugu kenar hatasi: 5 cm'den az
 - Kayit: hedef cihazda sabit 30 fps, gorunur tekrar eden kare olmamali
@@ -13701,6 +13753,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
+- Duvar kataloglari yalnizca sonlu ARKit/LiDAR duvari ile dokunulan pikselin derinligi
+  uyustugunda yerlesir; fiziksel olcekleri kilitlenir ve duvar temas golgesi eklenir
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
   8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar
@@ -13710,7 +13764,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
-- Dekor konumunu dunya anchor'ina kilitleyip yalniz dondurme ve olceklendirmeye izin verme
+- Dekor konumunu dunya anchor'ina kilitleme; olculu kataloglarda yalniz dondurme,
+  ozel/olcusuz dekorlarda dondurme ve olceklendirmeye izin verme
 - Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
 - `.floor` sinifli ARKit duzlemi, `.floor` sinifli LiDAR mesh yuzleri, RoomPlan zemin
