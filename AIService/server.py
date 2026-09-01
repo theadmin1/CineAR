@@ -6,6 +6,7 @@ import asyncio
 from contextlib import asynccontextmanager, nullcontext
 from io import BytesIO
 import os
+import socket
 from threading import Lock
 import time
 
@@ -16,6 +17,7 @@ from PIL import Image
 import torch
 import torch.nn.functional as torch_functional
 from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+from zeroconf import IPVersion, ServiceInfo, Zeroconf
 
 from AIService.fusion import fuse_depth
 
@@ -28,6 +30,106 @@ SAM_MODEL_ID = os.environ.get("CINEAR_SAM_MODEL", "facebook/sam2.1-hiera-tiny")
 SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "6"))
 SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "448"))
 MAX_PIXELS = 640 * 480
+SERVICE_PORT = 8765
+BONJOUR_SERVICE_TYPE = "_cinear-ai._tcp.local."
+BONJOUR_REFRESH_SECONDS = 5
+bonjour_url: str | None = None
+
+
+def make_bonjour_service(address: str, hostname: str | None = None) -> ServiceInfo:
+    """Build the DNS-SD record advertised to CineAR on the same LAN."""
+    socket.inet_aton(address)
+    hostname = (hostname or socket.gethostname()).strip() or "cinear-pc"
+    service_url = f"http://{address}:{SERVICE_PORT}"
+    return ServiceInfo(
+        type_=BONJOUR_SERVICE_TYPE,
+        name=f"CineAR AI {hostname}.{BONJOUR_SERVICE_TYPE}",
+        addresses=[socket.inet_aton(address)],
+        port=SERVICE_PORT,
+        properties={"url": service_url, "api": "1"},
+        server=f"{hostname}.local.",
+    )
+
+
+def discover_lan_ipv4(fallback: str | None = None) -> str | None:
+    """Return the IPv4 selected by Windows' current default route without sending data."""
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        probe.connect(("192.0.2.1", 9))
+        address = probe.getsockname()[0]
+        if not address.startswith(("127.", "169.254.")):
+            return address
+    except OSError:
+        pass
+    finally:
+        probe.close()
+    return fallback
+
+
+def register_bonjour_service(address: str | None = None) -> tuple[Zeroconf, ServiceInfo] | None:
+    global bonjour_url
+    address = (address or os.environ.get("CINEAR_ADVERTISE_ADDRESS", "")).strip()
+    if not address:
+        print("CineAR Bonjour: LAN address is unavailable; manual URL remains usable.")
+        return None
+    zeroconf: Zeroconf | None = None
+    try:
+        info = make_bonjour_service(address)
+        zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
+        zeroconf.register_service(info, allow_name_change=True)
+        bonjour_url = f"http://{address}:{SERVICE_PORT}"
+        print(f"CineAR Bonjour: advertising {bonjour_url}")
+        return zeroconf, info
+    except Exception as error:
+        bonjour_url = None
+        if zeroconf is not None:
+            zeroconf.close()
+        print(f"CineAR Bonjour warning: {type(error).__name__}: {error}")
+        return None
+
+
+def unregister_bonjour_service(advertisement: tuple[Zeroconf, ServiceInfo]) -> None:
+    global bonjour_url
+    zeroconf, info = advertisement
+    try:
+        zeroconf.unregister_service(info)
+    finally:
+        zeroconf.close()
+        bonjour_url = None
+
+
+async def monitor_bonjour_address(
+    initial_address: str | None,
+    initial_advertisement: tuple[Zeroconf, ServiceInfo] | None,
+) -> None:
+    """Republish the service when DHCP, Wi-Fi, or hotspot changes the PC address."""
+    current_address = initial_address if initial_advertisement is not None else None
+    advertisement = initial_advertisement
+    try:
+        while True:
+            await asyncio.sleep(BONJOUR_REFRESH_SECONDS)
+            detected_address = await asyncio.to_thread(
+                discover_lan_ipv4,
+                current_address or initial_address,
+            )
+            if not detected_address or detected_address == current_address:
+                continue
+            if advertisement is not None:
+                previous_advertisement = advertisement
+                advertisement = None
+                current_address = None
+                await asyncio.to_thread(
+                    unregister_bonjour_service,
+                    previous_advertisement,
+                )
+            advertisement = await asyncio.to_thread(
+                register_bonjour_service,
+                detected_address,
+            )
+            current_address = detected_address if advertisement is not None else None
+    finally:
+        if advertisement is not None:
+            await asyncio.to_thread(unregister_bonjour_service, advertisement)
 
 
 class InferenceModels:
@@ -132,7 +234,20 @@ models = InferenceModels()
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await asyncio.to_thread(models.load)
-    yield
+    configured_address = os.environ.get("CINEAR_ADVERTISE_ADDRESS", "").strip() or None
+    initial_address = await asyncio.to_thread(discover_lan_ipv4, configured_address)
+    advertisement = await asyncio.to_thread(register_bonjour_service, initial_address)
+    bonjour_monitor = asyncio.create_task(
+        monitor_bonjour_address(initial_address, advertisement)
+    )
+    try:
+        yield
+    finally:
+        bonjour_monitor.cancel()
+        try:
+            await bonjour_monitor
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="CineAR AI Depth", version="1.0", lifespan=lifespan)
@@ -147,6 +262,7 @@ def health() -> dict[str, object]:
         "sam_model": SAM_MODEL_ID,
         "sam_points_per_side": SAM_POINTS_PER_SIDE,
         "sam_max_side": SAM_MAX_SIDE,
+        "bonjour_url": bonjour_url,
         "error": models.load_error,
     }
 

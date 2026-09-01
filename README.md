@@ -59,8 +59,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
-- Duvar kataloglari yalnizca sonlu ARKit/LiDAR duvari ile dokunulan pikselin derinligi
-  uyustugunda yerlesir; fiziksel olcekleri kilitlenir ve duvar temas golgesi eklenir
+- Duvar kataloglari gorunur beyaz hatlara bagli kalmadan sonlu RoomPlan/ARKit/LiDAR
+  duvarina yerlesir; varsa dokunulan derinlik pikseli uyusmazligi reddeder, gecici
+  derinlik kesintisi yerlestirmeyi kilitlemez. Fiziksel olcek ve duvar golgesi korunur
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
   8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar
@@ -83,7 +84,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   dondurme ve olceklendirme sonrasinda modelin tabani zeminden kopmaz veya gomulmez
 - RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
-- Zemin dekorlarinda yari seffaf temas golgesi ve daha dengeli PBR malzemeler
+- Modelin gercek gorsel sinirindan uretilen iki katmanli yumusak temas golgesi;
+  ARKit ortam isigi degistikce golge yogunlugu da yumusakca uyarlanir
+- Telefon zeminde sabitken o seviyeyi Minecraft benzeri `Y 97.00` katmani olarak
+  kilitleyen, tavani LiDAR ile ayni koordinatta olcen kalici koordinat sistemi
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - RoomPlan gecisi veya relocalization bir uygulama anchor'ini gecici kaldirirsa gorseli
   silmeden canli anchor'a yeniden baglama; geri gelmeyen anchor'i son guvenilir dunya
@@ -127,10 +131,13 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
    olarak degisir. Tarama ekranindaki `Zemin / Duvar / Nesne` sayacinda en az bir
    zemin ve bir duvar gorulmeden `Taramayi Bitir` etkinlesmez.
-   `Zemin` dugmesiyle olceri acin; beyaz grid zemine sabitlenir, kirmizi X ve mavi Z
-   eksenleri ilk dogrulanan noktayi sifir kabul eder. `Sifiri Yenile` yeni bir yerel
-   koordinat baslangici olusturur. Kirmizi durum, merkez pikselde masa/koltuk gibi bir
-   nesnenin gercek zemini kapattigini belirtir.
+   `Koordinat` dugmesiyle olceri acin. `Telefonla Zemin Y97`ye basip telefonu ekrani
+   zemine, arka kamerasi tavana bakacak sekilde bir saniye sabit birakin; bu fiziksel
+   seviye `Y 97.00` olur. Ardindan `Tavani Olc` ile merkez artiyi bos tavana tutun;
+   tavan katmani ve metre cinsinden oda yuksekligi ayni koordinatta hesaplanir.
+   Beyaz grid zemine sabitlenir, kirmizi X ve mavi Z eksenleri ilk dogrulanan noktayi
+   sifir kabul eder. `X/Z Sifirla` yatay baslangici yeniler. Kirmizi durum, merkez
+   pikselde masa/koltuk gibi bir nesnenin gercek zemini kapattigini belirtir.
 5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
@@ -171,8 +178,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 
 RTX bilgisayarda once `AIService/setup_windows.ps1`, sonra
 `AIService/run_server.ps1` calistirilir. Konsolda yazan yerel IP, uygulamadaki
-`Kontroller > AI Derinlik` alaninda dogrulanir; ekran acilinca baglanti otomatik
-test edilir ve basariliysa AI anahtari acilir. `PC bagli - LiDAR karesi bekleniyor` mesaji
+`Kontroller > AI Derinlik` ekraninda Bonjour ile otomatik bulunur ve `/health` ile
+dogrulanir; basariliysa AI anahtari acilir. `PC bagli - LiDAR karesi bekleniyor` mesaji
 sunucu baglantisinin basarili oldugunu, telefonun henuz scene-depth karesi uretmedigini
 belirtir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
@@ -180,12 +187,12 @@ bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
 CineAR izni kontrol edilir.
 
-Bu kurulumda dogrulanan PC adresi `http://192.168.1.12:8765` uygulamaya gercek
-baslangic degeri olarak yazilir ve AI ekrani acilinca otomatik test edilir. Adres
-DHCP nedeniyle degisirse terminaldeki yeni adres ayni alana yazilabilir; Safari'de
+Kayitli PC adresi yalniz yedektir. Adres DHCP nedeniyle degisirse veya hotspot/Wi-Fi
+degistirilirse sunucu varsayilan rotayi 5 saniyede bir denetler, Bonjour yayinini yeni
+IP ile yeniler ve iPhone adresi elle giris istemeden alir. Ilk acilista etkin
+Wi-Fi/Ethernet adresi otomatik secilir ve VMware gibi sanal adaptorler atlanir.
+Bonjour engellenirse terminaldeki adres ayni alana elle yazilabilir; Safari'de
 kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayiklar.
-Hotspot veya Wi-Fi degistiginde betik yeniden baslatilir; varsayilan ag gecidine sahip
-etkin Wi-Fi/Ethernet adresi otomatik secilir ve VMware gibi sanal adaptorler atlanir.
 
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;
@@ -213,8 +220,8 @@ CineARProjects/SavedPlaces/<UUID>/
   Assets/*.usdz
 ```
 
-`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, projektor hedef
-koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
+`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, kalibre edilmis
+zemin/tavan kotlarini, projektor hedef koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
 haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama
@@ -235,7 +242,8 @@ ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
 Bu surumde Poly Haven'dan donusturulmus 30 CC0, 1K PBR USDZ model vardir.
 Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
-boyutlarina normalize edilir ve kendi yuzey turune oturtulur. Eski projeler icin
+boyutlarina normalize edilir, sahne listesinde `genislik x yukseklik x derinlik`
+olarak gosterilir ve olculmus katalog modellerinin olcegi kilitlenir. Eski projeler icin
 Kenney Furniture Kit'ten 14 CC0 USDZ ve 4 hafif dekor kaynakta korunur.
 Kaynak/lisans `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` ve
 `CineAR/RoomAssets/LICENSE-KENNEY.txt`, tekrar uretim/dogrulama araclari `Tools/`

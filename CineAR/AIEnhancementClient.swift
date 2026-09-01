@@ -48,7 +48,7 @@ enum AIEnhancementError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidServerAddress: "Geçerli bir PC adresi gir (ör. http://192.168.1.20:8765)"
+        case .invalidServerAddress: "PC otomatik bulunamadı; terminaldeki http://...:8765 adresini gir"
         case .missingSceneDepth: "Bu karede LiDAR derinliği yok"
         case .imageEncodingFailed: "Kamera karesi AI servisi için hazırlanamadı"
         case .invalidResponse: "AI servisinden geçersiz derinlik verisi geldi"
@@ -78,7 +78,7 @@ final class AIEnhancementClient {
 
     var isBusy: Bool { activeTask != nil }
 
-    static func serverURL(from text: String) -> URL? {
+    nonisolated static func serverURL(from text: String) -> URL? {
         var value = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return nil }
         if !value.contains("://") { value = "http://" + value }

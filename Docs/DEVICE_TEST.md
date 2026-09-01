@@ -44,7 +44,8 @@
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
    dogru yuzeyi buldugunu; RoomPlan kaydindan sonra uzak zemin ve tavan noktalarinda
-   kayitli duzlem yedeginin calistigini dogrula. Zemin nesnesi seciliyken masa
+   kayitli duzlem yedeginin calistigini dogrula. Beyaz Hatlar kapaliyken de kayitli
+   sonlu duvara ve kalibre edilmis tavana yerlestirme yapilabilmeli. Zemin nesnesi seciliyken masa
    tablasina dokun; nesne masaya yerlestirilmemeli. Ayni noktada `yatay yuzey`
    nesnesi secildiginde masa bilincli olarak kabul edilmeli.
 8. Tavan veya duvar isigini sec. `Sanal Isik` panelinde ac/kapat, 0-12000 lumen,
@@ -85,10 +86,14 @@
    RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
-15. PC'de `AIService/run_server.ps1` calistir. `AI Derinlik` ekraninda yerel IP'yi
-    kontrol et; alan ilk kurulumda gercek deger olarak `http://192.168.1.12:8765` icermeli
-    ve ekran baglantiyi otomatik test etmeli. Basarili test AI anahtarini otomatik
-    acmali. Durumun
+15. PC'de `AIService/run_server.ps1` calistir. Terminalde `CineAR Bonjour: advertising`
+    satirinin guncel yerel IP'yi gosterdigini dogrula. `AI Derinlik` ekranini ac;
+    `Adres kaynagi` once `PC araniyor`, ardindan `Otomatik bulundu` olmali ve terminaldeki
+    IP elle yazilmadan etkin adrese gelmeli. Basarili test AI anahtarini otomatik acmali.
+    PC servisi acikken farkli Wi-Fi/hotspot'a gec; terminalde Bonjour yayininin en gec
+    5 saniye icinde yeni IP ile tekrarlandigini ve uygulamadaki `PC'yi otomatik bul`
+    ile yeni DHCP adresinin alindigini dogrula. Bonjour engellenmis
+    bir agda elle adres girisinin yedek olarak calistigini da kontrol et. Durumun
     once `Aktif` veya `PC bagli - LiDAR karesi bekleniyor`, scene depth geldiginde
     `Aktif` oldugunu; gecikmenin ve SAM maske
     sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini
@@ -124,9 +129,14 @@
     aciksa takip duzelince hatlar tekrar gorunmeli.
 21. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
 22. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
-23. PC AI kapaliyken `Zemin` olcerini ac. 25 cm grid'in zemine sabit kaldigini,
-    X/Y/Z degerlerinin `Sifiri Yenile` sonrasinda sifira yaklastigini ve metreyle
-    kontrol edilen 1 m referans uzunlugunda hatanin 2 cm'den az oldugunu dogrula.
+23. PC AI kapaliyken `Koordinat` panelini ac. `Telefonla Zemin Y97`ye bas, telefonu
+    ekrani zemine ve arka kamerasi tavana bakacak sekilde bir saniye sabit birak.
+    Zemin `Y 97.00` olmali; telefonu kaldirinca kamera katmani fiziksel yukseklik kadar
+    artmali. `Tavani Olc` ile merkez artiyi bos tavana tut; tavan katmani eksi 97 ile
+    gosterilen oda yuksekligi metre olcumuyle 3 cm icinde uyusmali. Uygulamayi kaydet,
+    kapat ve dunya haritasini yukle; zemin/tavan katmanlari ayni kalmali. 25 cm grid'in
+    zemine sabit kaldigini, X/Z degerlerinin `X/Z Sifirla` sonrasinda sifira yaklastigini
+    ve metreyle kontrol edilen 1 m referans uzunlugunda hatanin 2 cm'den az oldugunu dogrula.
     Merkez noktayi masa uzerine getirince durum kirmizi olup `ondeki nesne zemini
     kapatiyor` demeli; zemin karari PC baglantisindan etkilenmemeli.
 24. PC AI acikken `Kasa` sec. Yerlesim boyunca AI durumu beklemede olmali; zemine
@@ -142,7 +152,13 @@
     taranmis duvara yerlestir. Kamerayla 1-4 metre arasinda yana yururken arka yuzun
     duvardan ayrilmadigini, fiziksel olcegin degismedigini ve temas golgesinin duvar
     uzerinde kaldigini dogrula. Sonsuz duzlem veya farkli derinlikteki duvar kabul
-    edilmemeli; hedef ancak LiDAR derinligiyle sonlu duvar uyustugunda yesil olmali.
+    edilmemeli. LiDAR pikseli varsa sonlu duvarla uyusmali; gecici derinlik karesi
+    yokken kayitli RoomPlan/ARKit duvari yine yesil olup dokunulabilmeli.
+27. Sahne listesindeki katalog modellerinin `genislik x yukseklik x derinlik` metre
+    degerlerini fiziksel referansla karsilastir. Pinch hareketi olculmus katalog
+    modellerini buyutup kucultmemeli. Zemin ve duvar temas golgelerinde sert tek bir
+    leke yerine yumusak ic/dis katman gorulmeli; ortam aydinligi degistiginde golge
+    yogunlugu ani sicrama yapmadan uyarlanmali.
 
 ## Baslangic kabul esikleri
 

@@ -32,6 +32,10 @@
 	<string>Elma ve kan selalesi gibi canli CGI efektlerini Turkce sesli komutlarla yonetmek icin konusma tanima kullanilir.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>SAM 2 ve Depth Anything derinlik servisine ayni Wi-Fi agindaki bilgisayardan baglanmak icin yerel ag kullanilir.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_cinear-ai._tcp</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

@@ -7,3 +7,4 @@ python-multipart>=0.0.9,<1
 safetensors>=0.4,<1
 transformers>=4.45,<6
 uvicorn[standard]>=0.30,<1
+zeroconf>=0.136,<1

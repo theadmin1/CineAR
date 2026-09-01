@@ -3,6 +3,7 @@ import AVFoundation
 import Combine
 import Foundation
 import ImageIO
+import Network
 import RealityKit
 import RoomPlan
 import Speech
@@ -26,6 +27,10 @@ struct FloorMeterReading: Equatable {
     let xMeters: Float
     let zMeters: Float
     let floorLevelMeters: Float
+    let floorLayer: Float
+    let cameraLayer: Float
+    let ceilingLayer: Float?
+    let roomHeightMeters: Float?
     let tiltDegrees: Float?
     let sourceTitle: String
     let isVisibleFloor: Bool
@@ -35,6 +40,57 @@ struct FloorMeterReading: Equatable {
 /// This wrapper makes that cross-queue lifetime guarantee explicit to Swift concurrency.
 private struct SendablePixelBuffer: @unchecked Sendable {
     let value: CVPixelBuffer
+}
+
+private enum SpatialCalibrationMode: Equatable {
+    case deviceFloor
+    case ceiling
+}
+
+private final class AILocalServiceDiscovery {
+    enum Event {
+        case searching
+        case candidate(URL)
+        case failed(String)
+    }
+
+    private let queue = DispatchQueue(label: "com.cinear.ai-service-discovery")
+    private var browser: NWBrowser?
+
+    func start(eventHandler: @escaping (Event) -> Void) {
+        stop()
+        let parameters = NWParameters.tcp
+        parameters.includePeerToPeer = true
+        let browser = NWBrowser(
+            for: .bonjourWithTXTRecord(type: "_cinear-ai._tcp", domain: "local."),
+            using: parameters
+        )
+        browser.stateUpdateHandler = { state in
+            switch state {
+            case .ready:
+                eventHandler(.searching)
+            case .failed(let error):
+                eventHandler(.failed(error.localizedDescription))
+            default:
+                break
+            }
+        }
+        browser.browseResultsChangedHandler = { results, _ in
+            for result in results {
+                guard case .bonjour(let record) = result.metadata,
+                      let address = record["url"],
+                      let url = AIEnhancementClient.serverURL(from: address) else { continue }
+                eventHandler(.candidate(url))
+            }
+        }
+        self.browser = browser
+        browser.start(queue: queue)
+    }
+
+    func stop() {
+        browser?.cancel()
+        browser = nil
+    }
 }
 
 @MainActor
@@ -62,8 +118,15 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var floorMeterReading: FloorMeterReading?
     @Published private(set) var floorMeterStatus = "Zemin Ölçer kapalı"
     @Published private(set) var floorMeterColor: Color = .yellow
+    @Published private(set) var calibratedFloorY: Float?
+    @Published private(set) var calibratedCeilingY: Float?
+    @Published private(set) var spatialCalibrationStatus = "Zemin ve tavan henüz kalibre edilmedi"
+    @Published private(set) var spatialCalibrationColor: Color = .secondary
+    @Published private(set) var isSpatialCalibrationActive = false
     @Published private(set) var aiEnhancementEnabled = false
     @Published private(set) var aiServerAddress = ""
+    @Published private(set) var aiServerAddressSource = "Kayıtlı yedek"
+    @Published private(set) var isSearchingForAIServer = false
     @Published private(set) var aiEnhancementStatus: AIEnhancementStatus = .disabled
     @Published private(set) var sceneObjects: [SceneObjectSummary] = []
     @Published private(set) var savedPlaces: [SavedPlaceSummary] = []
@@ -79,7 +142,12 @@ final class ARSessionController: NSObject, ObservableObject {
     )
     private let manualAssetProvider = BundledRoomRealityAssetProvider()
     private let aiEnhancementClient = AIEnhancementClient()
+    private let aiServiceDiscovery = AILocalServiceDiscovery()
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
+    private var aiDiscoveryHealthCheckURL: URL?
+    private var aiDiscoveryPendingURLs: [URL] = []
+    private var aiDiscoveryGeneration: UInt64 = 0
+    private var shouldEnableAIWhenDiscovered = false
     private var renderedAnchorIDs = Set<UUID>()
     private var renderedAnchorIDByPlacementID: [UUID: UUID] = [:]
     private var knownPropAnchorIDs = Set<UUID>()
@@ -114,7 +182,13 @@ final class ARSessionController: NSObject, ObservableObject {
     private var lastFloorMeterUpdateTimestamp: TimeInterval = 0
     private var floorMeterOrigin: SIMD3<Float>?
     private var floorMeterAnchor: AnchorEntity?
+    private var spatialCalibrationMode: SpatialCalibrationMode?
+    private var spatialCalibrationSamples: [SIMD3<Float>] = []
+    private var spatialCalibrationStartedAt: TimeInterval?
+    private var lastSpatialCalibrationSampleTimestamp: TimeInterval = 0
     private var lastProjectorRefreshTimestamp: TimeInterval = 0
+    private var lastShadowLightingUpdateTimestamp: TimeInterval = 0
+    private var ambientLightIntensity: Float = 1_000
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
@@ -143,13 +217,10 @@ final class ARSessionController: NSObject, ObservableObject {
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
     private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
     private static let aiServerDefaultsKey = "cinear.aiDepth.server"
-    // The user's verified RTX server on the current LAN. This is a real initial
-    // value, not a TextField placeholder; it remains editable if DHCP changes it.
+    private static let coordinateFloorLayer: Float = 97
+    private static let deviceCameraFloorOffset: Float = 0.010
+    // Last-known fallback while Bonjour searches for the PC's current DHCP address.
     private static let defaultAIServerAddress = "http://192.168.1.12:8765"
-    private static let obsoleteAIServerAddresses: Set<String> = [
-        "http://192.168.1.9:8765",
-        "http://192.168.1.20:8765"
-    ]
     private static let liveAppleSceneID = UUID(
         uuidString: "C1EA0000-0000-4000-8000-000000000001"
     )!
@@ -164,6 +235,19 @@ final class ARSessionController: NSObject, ObservableObject {
     var roomModelURL: URL { projectStore.roomModelURL }
     var roomDataURL: URL { projectStore.roomDataURL }
     var sharedARSession: ARSession? { arView?.session }
+    var displayedFloorLayer: Float? {
+        calibratedFloorY.map { _ in Self.coordinateFloorLayer }
+    }
+    var displayedCeilingLayer: Float? {
+        guard let floorY = calibratedFloorY,
+              let ceilingY = calibratedCeilingY else { return nil }
+        return Self.coordinateFloorLayer + ceilingY - floorY
+    }
+    var calibratedRoomHeightMeters: Float? {
+        guard let floorY = calibratedFloorY,
+              let ceilingY = calibratedCeilingY else { return nil }
+        return ceilingY - floorY
+    }
 
     override init() {
         super.init()
@@ -171,11 +255,12 @@ final class ARSessionController: NSObject, ObservableObject {
         let storedAIAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if let storedAIAddress,
-           !Self.obsoleteAIServerAddresses.contains(storedAIAddress),
            AIEnhancementClient.serverURL(from: storedAIAddress) != nil {
             aiServerAddress = storedAIAddress
+            aiServerAddressSource = "Kayıtlı yedek"
         } else {
             aiServerAddress = Self.defaultAIServerAddress
+            aiServerAddressSource = "Varsayılan yedek"
         }
         UserDefaults.standard.set(aiServerAddress, forKey: Self.aiServerDefaultsKey)
         aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
@@ -225,6 +310,7 @@ final class ARSessionController: NSObject, ObservableObject {
         addCoachingOverlay(to: view)
 
         arView = view
+        refreshAIServerDiscovery()
         if aiEnhancementEnabled {
             aiDepthRenderer.install(in: view)
         }
@@ -317,9 +403,18 @@ final class ARSessionController: NSObject, ObservableObject {
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
         lastKnownCeilingY = nil
+        calibratedFloorY = nil
+        calibratedCeilingY = nil
+        spatialCalibrationMode = nil
+        spatialCalibrationSamples.removeAll()
+        spatialCalibrationStartedAt = nil
+        isSpatialCalibrationActive = false
+        spatialCalibrationStatus = "Zemin ve tavan henüz kalibre edilmedi"
+        spatialCalibrationColor = .secondary
         floorSurfaceTracker.reset()
         if roomCoordinateSpaceIsActive {
             updateKnownFloorFromRoomData()
+            applyStoredSpatialCalibration()
         }
         arView.session.delegateQueue = .main
         arView.session.delegate = self
@@ -376,6 +471,7 @@ final class ARSessionController: NSObject, ObservableObject {
         aiEnhancementEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: Self.aiEnabledDefaultsKey)
         guard enabled else {
+            shouldEnableAIWhenDiscovered = false
             aiEnhancementClient.cancel()
             aiDepthRenderer.clear()
             aiEnhancementStatus = .disabled
@@ -394,6 +490,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func setAIServerAddress(_ address: String) {
         aiServerAddress = address
+        aiServerAddressSource = "Elle girildi"
         UserDefaults.standard.set(address, forKey: Self.aiServerDefaultsKey)
         if aiEnhancementEnabled {
             aiEnhancementClient.cancel()
@@ -402,6 +499,90 @@ final class ARSessionController: NSObject, ObservableObject {
             aiEnhancementStatus = AIEnhancementClient.serverURL(from: address) == nil
                 ? .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
                 : .waiting
+        }
+    }
+
+    func refreshAIServerDiscovery() {
+        aiDiscoveryGeneration &+= 1
+        let generation = aiDiscoveryGeneration
+        isSearchingForAIServer = true
+        aiDiscoveryHealthCheckURL = nil
+        aiDiscoveryPendingURLs.removeAll()
+        aiServiceDiscovery.start { [weak self] event in
+            Task { @MainActor [weak self] in
+                guard let self, self.aiDiscoveryGeneration == generation else { return }
+                self.handleAIServiceDiscovery(event)
+            }
+        }
+    }
+
+    func discoverAndConnectAIServer() {
+        shouldEnableAIWhenDiscovered = true
+        refreshAIServerDiscovery()
+    }
+
+    private func handleAIServiceDiscovery(_ event: AILocalServiceDiscovery.Event) {
+        switch event {
+        case .searching:
+            isSearchingForAIServer = true
+        case .failed(let message):
+            isSearchingForAIServer = false
+            if aiEnhancementEnabled {
+                aiEnhancementStatus = .failed("PC otomatik bulunamadı: \(message)")
+            }
+        case .candidate(let url):
+            guard aiDiscoveryHealthCheckURL != url,
+                  !aiDiscoveryPendingURLs.contains(url) else { return }
+            aiDiscoveryPendingURLs.append(url)
+            validateNextDiscoveredAIServer()
+        }
+    }
+
+    private func validateNextDiscoveredAIServer() {
+        guard aiDiscoveryHealthCheckURL == nil,
+              !aiDiscoveryPendingURLs.isEmpty else { return }
+        let url = aiDiscoveryPendingURLs.removeFirst()
+        let generation = aiDiscoveryGeneration
+        aiDiscoveryHealthCheckURL = url
+        aiEnhancementClient.testHealth(serverURL: url) { [weak self] result in
+            guard let self, self.aiDiscoveryGeneration == generation else { return }
+            self.aiDiscoveryHealthCheckURL = nil
+            switch result {
+            case .success(let device):
+                let shouldEnableAI = self.shouldEnableAIWhenDiscovered
+                self.shouldEnableAIWhenDiscovered = false
+                self.aiDiscoveryPendingURLs.removeAll()
+                let normalizedAddress = url.absoluteString.trimmingCharacters(
+                    in: CharacterSet(charactersIn: "/")
+                )
+                let addressChanged = self.aiServerAddress != normalizedAddress
+                self.aiServerAddress = normalizedAddress
+                self.aiServerAddressSource = "Otomatik bulundu"
+                self.isSearchingForAIServer = false
+                UserDefaults.standard.set(normalizedAddress, forKey: Self.aiServerDefaultsKey)
+                if addressChanged, self.aiEnhancementEnabled {
+                    self.aiEnhancementClient.cancel()
+                    self.aiDepthRenderer.clear()
+                }
+                if shouldEnableAI {
+                    self.setAIEnhancementEnabled(true)
+                }
+                if self.aiEnhancementEnabled {
+                    self.aiEnhancementStatus = .active(
+                        latencyMilliseconds: 0,
+                        samMaskCount: 0
+                    )
+                }
+                self.publishStatus(
+                    "PC AI otomatik bulundu: \(device) · \(normalizedAddress)",
+                    color: .green
+                )
+            case .failure:
+                // A stale mDNS record must never replace a working manual address.
+                // Try any other advertised PC before continuing to browse.
+                self.isSearchingForAIServer = true
+                self.validateNextDiscoveredAIServer()
+            }
         }
     }
 
@@ -798,6 +979,7 @@ final class ARSessionController: NSObject, ObservableObject {
             clearFloorMeterVisualization()
             publishStatus("Zemin Ölçer açık — merkezdeki noktayı zemine tut", color: .blue)
         } else {
+            if isSpatialCalibrationActive { cancelSpatialCalibration() }
             floorMeterStatus = "Zemin Ölçer kapalı"
             floorMeterColor = .yellow
             floorMeterReading = nil
@@ -814,6 +996,246 @@ final class ARSessionController: NSObject, ObservableObject {
         floorMeterStatus = "Yeni koordinat sıfırı için zemine yönelt"
         floorMeterColor = .yellow
         clearFloorMeterVisualization()
+    }
+
+    func beginDeviceFloorCalibration() {
+        guard let frame = arView?.session.currentFrame else {
+            spatialCalibrationStatus = "AR kamerası henüz hazır değil"
+            spatialCalibrationColor = .red
+            return
+        }
+        guard case .normal = frame.camera.trackingState else {
+            spatialCalibrationStatus = "Önce dünya takibinin yeşile dönmesini bekle"
+            spatialCalibrationColor = .yellow
+            return
+        }
+        if !isFloorMeterEnabled { setFloorMeterEnabled(true) }
+        spatialCalibrationMode = .deviceFloor
+        spatialCalibrationSamples.removeAll()
+        spatialCalibrationStartedAt = nil
+        lastSpatialCalibrationSampleTimestamp = 0
+        isSpatialCalibrationActive = true
+        spatialCalibrationStatus = "Telefonu ekranı zemine bakacak, arka kamera tavana bakacak şekilde sabit bırak"
+        spatialCalibrationColor = .blue
+        publishStatus("Zemin kalibrasyonu başladı — telefonu 1 saniye kıpırdatma", color: .blue)
+    }
+
+    func beginCeilingCalibration() {
+        guard let frame = arView?.session.currentFrame else {
+            spatialCalibrationStatus = "AR kamerası henüz hazır değil"
+            spatialCalibrationColor = .red
+            return
+        }
+        guard case .normal = frame.camera.trackingState else {
+            spatialCalibrationStatus = "Önce dünya takibinin yeşile dönmesini bekle"
+            spatialCalibrationColor = .yellow
+            return
+        }
+        if !isFloorMeterEnabled { setFloorMeterEnabled(true) }
+        spatialCalibrationMode = .ceiling
+        spatialCalibrationSamples.removeAll()
+        spatialCalibrationStartedAt = nil
+        lastSpatialCalibrationSampleTimestamp = 0
+        isSpatialCalibrationActive = true
+        spatialCalibrationStatus = "Merkez artıyı tavana tut ve 1 saniye sabit kal"
+        spatialCalibrationColor = .blue
+        publishStatus("Tavan ölçümü başladı — merkez artıyı boş tavana tut", color: .blue)
+    }
+
+    func cancelSpatialCalibration() {
+        spatialCalibrationMode = nil
+        spatialCalibrationSamples.removeAll()
+        spatialCalibrationStartedAt = nil
+        isSpatialCalibrationActive = false
+        updateSpatialCalibrationSummary()
+    }
+
+    private func updateSpatialCalibration(using frame: ARFrame) {
+        guard let mode = spatialCalibrationMode,
+              frame.timestamp - lastSpatialCalibrationSampleTimestamp >= 0.08 else { return }
+        lastSpatialCalibrationSampleTimestamp = frame.timestamp
+        guard case .normal = frame.camera.trackingState else {
+            spatialCalibrationSamples.removeAll()
+            spatialCalibrationStartedAt = nil
+            spatialCalibrationStatus = "Takip kararlı değil — telefonu sabit tut"
+            spatialCalibrationColor = .yellow
+            return
+        }
+
+        let cameraTransform = frame.camera.transform
+        let cameraPosition = SIMD3<Float>(
+            cameraTransform.columns.3.x,
+            cameraTransform.columns.3.y,
+            cameraTransform.columns.3.z
+        )
+        let forward = simd_normalize(SIMD3<Float>(
+            -cameraTransform.columns.2.x,
+            -cameraTransform.columns.2.y,
+            -cameraTransform.columns.2.z
+        ))
+
+        let sample: SIMD3<Float>
+        switch mode {
+        case .deviceFloor:
+            guard forward.y >= 0.90 else {
+                spatialCalibrationSamples.removeAll()
+                spatialCalibrationStartedAt = nil
+                spatialCalibrationStatus = "Telefon yatay değil — arka kamera doğrudan tavana bakmalı"
+                spatialCalibrationColor = .yellow
+                return
+            }
+            sample = cameraPosition
+        case .ceiling:
+            guard forward.y >= 0.18,
+                  let arView, arView.bounds.width > 1, arView.bounds.height > 1 else {
+                spatialCalibrationSamples.removeAll()
+                spatialCalibrationStartedAt = nil
+                spatialCalibrationStatus = "Kamerayı tavana doğru çevir"
+                spatialCalibrationColor = .yellow
+                return
+            }
+            let point = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+            guard let depth = sceneDepthSample(frame: frame, in: arView, at: point),
+                  depth.worldPoint.y > cameraPosition.y + 0.30,
+                  depth.worldNormal.map({ abs($0.y) >= 0.70 }) ?? true else {
+                spatialCalibrationSamples.removeAll()
+                spatialCalibrationStartedAt = nil
+                spatialCalibrationStatus = "Merkezde düz ve boş bir tavan yüzeyi bulunamadı"
+                spatialCalibrationColor = .yellow
+                return
+            }
+            sample = depth.worldPoint
+        }
+
+        if let first = spatialCalibrationSamples.first {
+            let movement: Float
+            switch mode {
+            case .deviceFloor:
+                movement = simd_distance(first, sample)
+            case .ceiling:
+                movement = abs(first.y - sample.y)
+            }
+            if movement > (mode == .deviceFloor ? 0.025 : 0.060) {
+                spatialCalibrationSamples.removeAll()
+                spatialCalibrationStartedAt = frame.timestamp
+                spatialCalibrationStatus = "Ölçüm hareket etti — 1 saniye sabit kal"
+                spatialCalibrationColor = .yellow
+            }
+        }
+        if spatialCalibrationStartedAt == nil {
+            spatialCalibrationStartedAt = frame.timestamp
+        }
+        spatialCalibrationSamples.append(sample)
+        if spatialCalibrationSamples.count > 18 {
+            spatialCalibrationSamples.removeFirst(spatialCalibrationSamples.count - 18)
+        }
+
+        let elapsed = frame.timestamp - (spatialCalibrationStartedAt ?? frame.timestamp)
+        guard elapsed >= 0.80, spatialCalibrationSamples.count >= 8 else {
+            let progress = min(max(elapsed / 0.80, 0), 1)
+            spatialCalibrationStatus = String(
+                format: "Ölçüm sabitleniyor • %d%%",
+                Int(progress * 100)
+            )
+            spatialCalibrationColor = .blue
+            return
+        }
+
+        let yValues = spatialCalibrationSamples.map(\.y).sorted()
+        let medianY = yValues[yValues.count / 2]
+        switch mode {
+        case .deviceFloor:
+            finishDeviceFloorCalibration(
+                floorY: medianY - Self.deviceCameraFloorOffset,
+                cameraPosition: cameraPosition
+            )
+        case .ceiling:
+            finishCeilingCalibration(ceilingY: medianY)
+        }
+    }
+
+    private func finishDeviceFloorCalibration(
+        floorY: Float,
+        cameraPosition: SIMD3<Float>
+    ) {
+        guard floorY.isFinite else { return }
+        if let detectedFloorY = lastKnownFloorY,
+           abs(detectedFloorY - floorY) > 0.18 {
+            spatialCalibrationSamples.removeAll()
+            spatialCalibrationStartedAt = nil
+            spatialCalibrationStatus = "Telefon seviyesi LiDAR zemininden farklı — gerçekten zeminde olduğunu kontrol et"
+            spatialCalibrationColor = .red
+            return
+        }
+        do {
+            try projectStore.setCalibratedFloorY(floorY)
+            calibratedFloorY = floorY
+            calibratedCeilingY = projectStore.project.calibratedCeilingY
+            lastKnownFloorY = floorY
+            lastKnownCeilingY = calibratedCeilingY
+            floorSurfaceTracker.setCalibratedFloor(floorY)
+            if roomCoordinateSpaceIsActive, calibratedCeilingY == nil {
+                updateKnownFloorFromRoomData()
+            }
+            floorMeterOrigin = SIMD3(cameraPosition.x, floorY, cameraPosition.z)
+            if let arView, let floorMeterOrigin {
+                installFloorMeterGrid(origin: floorMeterOrigin, in: arView)
+            }
+            finishSpatialCalibration()
+            shouldSaveWorldMapWhenReady = true
+            scheduleReadinessRecovery()
+            publishStatus("Zemin Y 97.00 olarak kilitlendi", color: .green)
+        } catch {
+            spatialCalibrationStatus = error.localizedDescription
+            spatialCalibrationColor = .red
+        }
+    }
+
+    private func finishCeilingCalibration(ceilingY: Float) {
+        guard ceilingY.isFinite else { return }
+        do {
+            try projectStore.setCalibratedCeilingY(ceilingY)
+            calibratedCeilingY = ceilingY
+            lastKnownCeilingY = ceilingY
+            finishSpatialCalibration()
+            shouldSaveWorldMapWhenReady = true
+            scheduleReadinessRecovery()
+            let layer = displayedCeilingLayer.map { String(format: "%.2f", Double($0)) }
+                ?? "ölçüldü"
+            publishStatus("Tavan Y \(layer) olarak kilitlendi", color: .green)
+        } catch {
+            spatialCalibrationStatus = error.localizedDescription
+            spatialCalibrationColor = .red
+        }
+    }
+
+    private func finishSpatialCalibration() {
+        spatialCalibrationMode = nil
+        spatialCalibrationSamples.removeAll()
+        spatialCalibrationStartedAt = nil
+        isSpatialCalibrationActive = false
+        updateSpatialCalibrationSummary()
+    }
+
+    private func updateSpatialCalibrationSummary() {
+        if let height = calibratedRoomHeightMeters,
+           let ceilingLayer = displayedCeilingLayer {
+            spatialCalibrationStatus = String(
+                format: "Zemin Y 97.00 • Tavan Y %.2f • Oda %.2f m",
+                Double(ceilingLayer),
+                Double(height)
+            )
+            spatialCalibrationColor = .green
+        } else if calibratedFloorY != nil {
+            spatialCalibrationStatus = "Zemin Y 97.00 kilitli • tavan henüz ölçülmedi"
+            spatialCalibrationColor = .green
+        } else if calibratedCeilingY != nil {
+            spatialCalibrationStatus = "Tavan ölçüldü • önce zemini Y 97.00 olarak kalibre et"
+            spatialCalibrationColor = .yellow
+        } else {
+            spatialCalibrationStatus = "Zemin ve tavan henüz kalibre edilmedi"
+            spatialCalibrationColor = .secondary
+        }
     }
 
     private func clearFloorMeterVisualization() {
@@ -890,6 +1312,12 @@ final class ARSessionController: NSObject, ObservableObject {
 
         let relative = floorPoint - origin
         let floorDistance = simd_distance(cameraPosition, floorPoint)
+        let coordinateFloorY = calibratedFloorY ?? floor.y
+        let measuredCeilingY = calibratedCeilingY ?? lastKnownCeilingY
+        let ceilingLayer = measuredCeilingY.map {
+            Self.coordinateFloorLayer + $0 - coordinateFloorY
+        }
+        let roomHeight = measuredCeilingY.map { $0 - coordinateFloorY }
         let tiltDegrees: Float? = depth?.worldNormal.flatMap { normal in
             guard simd_length_squared(normal) > 0.000_001 else { return nil }
             let cosine = min(max(abs(simd_normalize(normal).y), 0), 1)
@@ -902,6 +1330,10 @@ final class ARSessionController: NSObject, ObservableObject {
             xMeters: relative.x,
             zMeters: relative.z,
             floorLevelMeters: floor.y,
+            floorLayer: Self.coordinateFloorLayer + floor.y - coordinateFloorY,
+            cameraLayer: Self.coordinateFloorLayer + cameraPosition.y - coordinateFloorY,
+            ceilingLayer: ceilingLayer,
+            roomHeightMeters: roomHeight,
             tiltDegrees: tiltDegrees,
             sourceTitle: floor.source.title,
             isVisibleFloor: isVisibleFloor
@@ -997,7 +1429,7 @@ final class ARSessionController: NSObject, ObservableObject {
             selectedLightSettings = placement.lightSettings ?? .defaultFixture
             publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
         } else if let placement = projectStore.placement(id: id),
-                  placement.kind.photorealDescriptor != nil {
+                  hasLockedPhysicalScale(placement.kind) {
             selectedLightSettings = nil
             publishStatus("Dekor seçildi — gerçek dünya ölçeği kilitli; döndürebilirsin", color: .blue)
         } else {
@@ -1582,7 +2014,7 @@ final class ARSessionController: NSObject, ObservableObject {
         // ray with it keeps ceiling fixtures stable even when ARKit's live ceiling
         // plane is temporarily outside the current camera frame.
         if prop.placementSurface == .ceiling,
-           roomCoordinateSpaceIsActive,
+           (roomCoordinateSpaceIsActive || calibratedCeilingY != nil),
            let ceilingY = lastKnownCeilingY,
            let ray = arView.ray(through: point) {
             let direction = simd_normalize(ray.direction)
@@ -1590,6 +2022,20 @@ final class ARSessionController: NSObject, ObservableObject {
             let distance = (ceilingY - ray.origin.y) / direction.y
             if distance.isFinite, distance >= 0.20, distance <= 8.0 {
                 let position = ray.origin + direction * distance
+                let depth = arView.session.currentFrame.flatMap {
+                    sceneDepthSample(frame: $0, in: arView, at: point)
+                }
+                // A saved RoomPlan/calibrated ceiling is already a persistent metric
+                // surface. Scene depth is intermittent while the phone is moving or
+                // looking at a textureless ceiling, so it may veto a clearly different
+                // foreground hit but must never be a prerequisite for placement.
+                if let depth {
+                    guard abs(depth.worldPoint.y - ceilingY) <= 0.22,
+                          simd_distance(depth.worldPoint, position) <= 0.38,
+                          depth.worldNormal.map({ abs($0.y) >= 0.58 }) ?? true else {
+                        return nil
+                    }
+                }
                 return PlacementSurfaceSolution(
                     transform: placementTransform(
                         position: position,
@@ -1599,8 +2045,8 @@ final class ARSessionController: NSObject, ObservableObject {
                     ),
                     position: position,
                     normal: [0, -1, 0],
-                    source: .roomPlanLevel,
-                    depthMeters: nil
+                    source: calibratedCeilingY != nil ? .deviceCalibration : .roomPlanLevel,
+                    depthMeters: depth?.depthMeters
                 )
             }
         }
@@ -1641,19 +2087,23 @@ final class ARSessionController: NSObject, ObservableObject {
     /// Every wall prop must be attached to the physical wall under the user's finger.
     /// Infinite planes and camera-relative guesses can appear stable for one frame but
     /// slide when the camera moves, so this resolver requires finite wall geometry and
-    /// agreement with the current LiDAR depth pixel.
+    /// agreement with the current LiDAR depth pixel when that pixel is available.
     private func strictWallPlacementSolution(
         in arView: ARView,
         at point: CGPoint,
         for prop: PropKind
     ) -> PlacementSurfaceSolution? {
-        guard let frame = arView.session.currentFrame,
-              let depth = sceneDepthSample(frame: frame, in: arView, at: point),
-              (0.20...5.0).contains(depth.depthMeters) else { return nil }
+        guard let frame = arView.session.currentFrame else { return nil }
+        let depth = sceneDepthSample(frame: frame, in: arView, at: point).flatMap {
+            (0.20...5.0).contains($0.depthMeters) ? $0 : nil
+        }
         let cameraPosition = arView.cameraTransform.translation
 
-        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
-           wallDepthAgrees(depth, position: hit.position, normal: hit.normal) {
+        if roomCoordinateSpaceIsActive,
+           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
+           depth.map({
+               wallDepthAgrees($0, position: hit.position, normal: hit.normal)
+           }) ?? true {
             return wallSolution(
                 position: hit.position,
                 normal: hit.normal,
@@ -1664,11 +2114,27 @@ final class ARSessionController: NSObject, ObservableObject {
             )
         }
 
-        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
-            entityID(from: $0.entity) == nil
-                && !belongsToRoomReality($0.entity)
-                && !belongsToProjectorVisualization($0.entity)
-                && wallDepthAgrees(depth, position: $0.position, normal: $0.normal)
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
+           wallSurfaceAccepts(normal: hit.normal),
+           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .roomPlanGeometry,
+                depth: depth
+            )
+        }
+
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
+            entityID(from: hit.entity) == nil
+                && !belongsToRoomReality(hit.entity)
+                && !belongsToProjectorVisualization(hit.entity)
+                && wallSurfaceAccepts(normal: hit.normal)
+                && (depth.map { sample in
+                    wallDepthAgrees(sample, position: hit.position, normal: hit.normal)
+                } ?? true)
         }) {
             return wallSolution(
                 position: hit.position,
@@ -1698,7 +2164,9 @@ final class ARSessionController: NSObject, ObservableObject {
                 result.worldTransform.columns.1.y,
                 result.worldTransform.columns.1.z
             )
-            guard wallDepthAgrees(depth, position: position, normal: normal) else { continue }
+            guard wallSurfaceAccepts(normal: normal),
+                  depth.map({ wallDepthAgrees($0, position: position, normal: normal) }) ?? true
+            else { continue }
             return wallSolution(
                 position: position,
                 normal: normal,
@@ -1717,7 +2185,7 @@ final class ARSessionController: NSObject, ObservableObject {
         prop: PropKind,
         cameraPosition: SIMD3<Float>,
         source: PlacementSurfaceSource,
-        depth: SceneDepthSurfaceSample
+        depth: SceneDepthSurfaceSample?
     ) -> PlacementSurfaceSolution {
         PlacementSurfaceSolution(
             transform: placementTransform(
@@ -1729,8 +2197,13 @@ final class ARSessionController: NSObject, ObservableObject {
             position: position,
             normal: normal,
             source: source,
-            depthMeters: depth.depthMeters
+            depthMeters: depth?.depthMeters
         )
+    }
+
+    private func wallSurfaceAccepts(normal: SIMD3<Float>) -> Bool {
+        guard simd_length_squared(normal) > 0.000_001 else { return false }
+        return abs(simd_normalize(normal).y) <= 0.45
     }
 
     private func wallDepthAgrees(
@@ -1740,7 +2213,7 @@ final class ARSessionController: NSObject, ObservableObject {
     ) -> Bool {
         guard simd_length_squared(normal) > 0.000_001 else { return false }
         let candidateNormal = simd_normalize(normal)
-        let maximumSeparation = min(max(0.055 + depth.depthMeters * 0.012, 0.07), 0.11)
+        let maximumSeparation = min(max(0.075 + depth.depthMeters * 0.020, 0.10), 0.18)
         guard abs(candidateNormal.y) <= 0.38,
               simd_distance(depth.worldPoint, position) <= maximumSeparation else { return false }
         if let depthNormal = depth.worldNormal {
@@ -1780,6 +2253,10 @@ final class ARSessionController: NSObject, ObservableObject {
                 result.worldTransform.columns.3.y,
                 result.worldTransform.columns.3.z
             )
+            if let calibratedFloorY,
+               abs(position.y - calibratedFloorY) > 0.055 {
+                continue
+            }
             guard depth.map({ floorDepthAgrees($0, position: position, floorY: position.y) })
                     ?? true else { continue }
             return floorSolution(
@@ -1841,8 +2318,15 @@ final class ARSessionController: NSObject, ObservableObject {
         let distance = (floor.y - ray.origin.y) / direction.y
         guard distance.isFinite, (0.20...8.0).contains(distance) else { return nil }
         let position = ray.origin + direction * distance
-        guard let depth,
-              floorDepthAgrees(depth, position: position, floorY: floor.y) else { return nil }
+        if let depth {
+            guard floorDepthAgrees(depth, position: position, floorY: floor.y) else { return nil }
+        } else {
+            // Explicit phone calibration and RoomPlan are persistent metric levels.
+            // They remain usable during short gaps in ARKit's scene-depth stream.
+            guard floor.source == .deviceCalibration || floor.source == .roomPlanLevel else {
+                return nil
+            }
+        }
         return floorSolution(
             position: position,
             normal: [0, 1, 0],
@@ -1978,6 +2462,7 @@ final class ARSessionController: NSObject, ObservableObject {
         floorSurfaceTracker.clearRoomFloor()
         lastKnownFloorY = nil
         guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
+        roomRealityRenderer.cachePlacementSurfaces(from: room)
         let levels = room.floors.compactMap { floor -> Float? in
             let y = floor.transform.columns.3.y
             return y.isFinite ? y : nil
@@ -1996,6 +2481,26 @@ final class ARSessionController: NSObject, ObservableObject {
         } catch {
             lastKnownCeilingY = nil
         }
+        if let calibratedFloorY {
+            floorSurfaceTracker.setCalibratedFloor(calibratedFloorY)
+            lastKnownFloorY = calibratedFloorY
+        }
+        if let calibratedCeilingY {
+            lastKnownCeilingY = calibratedCeilingY
+        }
+    }
+
+    private func applyStoredSpatialCalibration() {
+        calibratedFloorY = projectStore.project.calibratedFloorY
+        calibratedCeilingY = projectStore.project.calibratedCeilingY
+        if let calibratedFloorY {
+            floorSurfaceTracker.setCalibratedFloor(calibratedFloorY)
+            lastKnownFloorY = calibratedFloorY
+        }
+        if let calibratedCeilingY {
+            lastKnownCeilingY = calibratedCeilingY
+        }
+        updateSpatialCalibrationSummary()
     }
 
     private func updateKnownFloor(from anchors: [ARAnchor]) {
@@ -3070,7 +3575,7 @@ final class ARSessionController: NSObject, ObservableObject {
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
-        if prop.photorealDescriptor != nil {
+        if hasLockedPhysicalScale(prop) {
             // Catalog dimensions are measured in metres. Keeping scale at one prevents
             // a distant object from becoming toy-sized or oversized after a stray pinch.
             entity.scale = SIMD3<Float>(repeating: 1)
@@ -3097,7 +3602,7 @@ final class ARSessionController: NSObject, ObservableObject {
         // Translation is deliberately excluded: a placed prop stays bound to its
         // world anchor. Measured catalog props keep their physical scale; unmeasured
         // and imported props retain scale control for art direction.
-        if prop.photorealDescriptor != nil {
+        if hasLockedPhysicalScale(prop) {
             arView.installGestures([.rotation], for: entity)
         } else {
             arView.installGestures([.rotation, .scale], for: entity)
@@ -3171,7 +3676,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         entity.name = id.uuidString
         entity.transform = preservedTransform
-        if prop.photorealDescriptor != nil {
+        if hasLockedPhysicalScale(prop) {
             entity.scale = SIMD3<Float>(repeating: 1)
         }
         if entity.collision == nil {
@@ -3195,7 +3700,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 ?? .defaultFixture
             apply(settings: settings, to: light, prop: prop)
         }
-        if prop.photorealDescriptor != nil {
+        if hasLockedPhysicalScale(prop) {
             arView.installGestures([.rotation], for: entity)
         } else {
             arView.installGestures([.rotation, .scale], for: entity)
@@ -3893,72 +4398,116 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func addContactShadow(to entity: ModelEntity, for prop: PropKind) {
-        if prop.placementSurface == .wall,
-           prop != .bloodWaterfall,
-           let dimensions = prop.photorealDescriptor?.dimensions
-                ?? libraryDescriptor(for: prop)?.dimensions {
-            let material = RealityMaterialRecipe(
-                0.008, 0.010, 0.014,
-                alpha: 0.17,
-                roughness: 1
-            ).makeMaterial()
-            let shadow = ModelEntity(
-                mesh: .generateSphere(radius: 0.5),
-                materials: [material]
-            )
-            shadow.name = "cinear.wall-contact-shadow"
-            shadow.scale = [dimensions.x * 0.88, dimensions.y * 0.88, 0.006]
-            shadow.position = [0, 0, 0.004]
-            entity.addChild(shadow)
-            return
-        }
+        guard prop != .bloodWaterfall, prop != .rug else { return }
+        let bounds = entity.visualBounds(
+            recursive: true,
+            relativeTo: entity,
+            excludeInactive: false
+        )
+        let extents = bounds.extents
+        guard [extents.x, extents.y, extents.z].allSatisfy({
+            $0.isFinite && $0 > 0.015 && $0 < 12
+        }) else { return }
 
-        guard let contact = groundContactDescriptor(for: prop) else { return }
-        let material = RealityMaterialRecipe(
-            0.015, 0.018, 0.022,
-            alpha: 0.20,
-            roughness: 1
-        ).makeMaterial()
+        let baseAlpha = contactShadowAlpha
+        switch prop.placementSurface {
+        case .floor, .horizontal:
+            addContactShadowLayer(
+                to: entity,
+                name: "cinear.contact-shadow.outer",
+                scale: [extents.x * 1.02, 0.003, extents.z * 1.02],
+                position: [bounds.center.x, 0.002, bounds.center.z],
+                alpha: baseAlpha * 0.34
+            )
+            addContactShadowLayer(
+                to: entity,
+                name: "cinear.contact-shadow.inner",
+                scale: [extents.x * 0.78, 0.005, extents.z * 0.78],
+                position: [bounds.center.x, 0.0035, bounds.center.z],
+                alpha: baseAlpha
+            )
+        case .wall:
+            addContactShadowLayer(
+                to: entity,
+                name: "cinear.wall-contact-shadow.outer",
+                scale: [extents.x * 1.01, extents.y * 1.01, 0.003],
+                position: [bounds.center.x, bounds.center.y, 0.002],
+                alpha: baseAlpha * 0.28
+            )
+            addContactShadowLayer(
+                to: entity,
+                name: "cinear.wall-contact-shadow.inner",
+                scale: [extents.x * 0.82, extents.y * 0.82, 0.005],
+                position: [bounds.center.x, bounds.center.y, 0.0035],
+                alpha: baseAlpha * 0.78
+            )
+        case .ceiling:
+            break
+        }
+    }
+
+    private var contactShadowAlpha: Float {
+        let normalized = min(max((ambientLightIntensity - 100) / 1_500, 0), 1)
+        return 0.12 + sqrt(normalized) * 0.09
+    }
+
+    private func addContactShadowLayer(
+        to entity: ModelEntity,
+        name: String,
+        scale: SIMD3<Float>,
+        position: SIMD3<Float>,
+        alpha: Float
+    ) {
         let shadow = ModelEntity(
             mesh: .generateSphere(radius: 0.5),
-            materials: [material]
+            materials: [contactShadowMaterial(alpha: alpha)]
         )
-        shadow.name = "cinear.contact-shadow"
-        shadow.scale = [contact.width, 0.006, contact.depth]
-        shadow.position = [0, contact.localY, 0]
+        shadow.name = name
+        shadow.scale = scale
+        shadow.position = position
         entity.addChild(shadow)
     }
 
-    private func groundContactDescriptor(
-        for prop: PropKind
-    ) -> (width: Float, depth: Float, localY: Float)? {
-        if let descriptor = prop.photorealDescriptor,
-           descriptor.surface == .floor || descriptor.surface == .horizontal {
-            return (
-                descriptor.dimensions.x * 0.82,
-                descriptor.dimensions.z * 0.82,
-                0.004
-            )
-        }
-        if let descriptor = libraryDescriptor(for: prop) {
-            return (
-                descriptor.dimensions.x * 0.82,
-                descriptor.dimensions.z * 0.82,
-                0.004
-            )
-        }
-        switch prop {
-        case .stage: return (1.82, 1.22, 0.004)
-        case .crate: return (0.48, 0.48, 0.004)
-        case .plant: return (0.31, 0.31, 0.004)
-        case .floorLamp: return (0.30, 0.30, 0.004)
-        case .apple: return (0.13, 0.13, 0.004)
-        case .wall, .lightPanel, .rug, .custom, .chair, .table, .sofa,
-             .bed, .bookcase, .television, .refrigerator, .oven, .stove,
-             .sink, .bathtub, .toilet, .washerDryer, .stairs, .bloodWaterfall:
-            return nil
-        default:
-            return nil
+    private func contactShadowMaterial(alpha: Float) -> PhysicallyBasedMaterial {
+        RealityMaterialRecipe(
+            0.010, 0.012, 0.016,
+            alpha: alpha,
+            roughness: 1
+        ).makeMaterial()
+    }
+
+    private func updateAmbientLighting(using frame: ARFrame) {
+        guard frame.timestamp - lastShadowLightingUpdateTimestamp >= 0.45,
+              let estimate = frame.lightEstimate else { return }
+        lastShadowLightingUpdateTimestamp = frame.timestamp
+        let measured = Float(estimate.ambientIntensity)
+        guard measured.isFinite, measured > 0 else { return }
+        let previous = ambientLightIntensity
+        ambientLightIntensity = previous * 0.72 + measured * 0.28
+        guard abs(ambientLightIntensity - previous) / max(previous, 1) >= 0.08 else { return }
+
+        let baseAlpha = contactShadowAlpha
+        for entity in renderedEntities.values {
+            if let outer = entity.findEntity(named: "cinear.contact-shadow.outer") as? ModelEntity,
+               var model = outer.model {
+                model.materials = [contactShadowMaterial(alpha: baseAlpha * 0.34)]
+                outer.model = model
+            }
+            if let inner = entity.findEntity(named: "cinear.contact-shadow.inner") as? ModelEntity,
+               var model = inner.model {
+                model.materials = [contactShadowMaterial(alpha: baseAlpha)]
+                inner.model = model
+            }
+            if let outer = entity.findEntity(named: "cinear.wall-contact-shadow.outer") as? ModelEntity,
+               var model = outer.model {
+                model.materials = [contactShadowMaterial(alpha: baseAlpha * 0.28)]
+                outer.model = model
+            }
+            if let inner = entity.findEntity(named: "cinear.wall-contact-shadow.inner") as? ModelEntity,
+               var model = inner.model {
+                model.materials = [contactShadowMaterial(alpha: baseAlpha * 0.78)]
+                inner.model = model
+            }
         }
     }
 
@@ -3984,6 +4533,29 @@ final class ARSessionController: NSObject, ObservableObject {
              .rug, .backdrop, .custom: nil
         default: nil
         }
+    }
+
+    private func physicalDimensions(for prop: PropKind) -> SIMD3<Float>? {
+        if let dimensions = prop.photorealDescriptor?.dimensions { return dimensions }
+        if let dimensions = libraryDescriptor(for: prop)?.dimensions { return dimensions }
+        switch prop {
+        case .wall: return [2.40, 2.50, 0.05]
+        case .stage: return [2.00, 0.18, 1.40]
+        case .crate: return [0.55, 0.55, 0.55]
+        case .lightPanel: return [0.90, 0.55, 0.035]
+        case .plant: return [0.72, 1.02, 0.72]
+        case .floorLamp: return [0.36, 1.56, 0.36]
+        case .rug: return [1.80, 0.012, 1.20]
+        case .backdrop: return [2.40, 1.80, 0.045]
+        case .bloodWaterfall: return [0.76, 1.54, 0.08]
+        case .apple: return [0.14, 0.17, 0.14]
+        case .custom: return nil
+        default: return nil
+        }
+    }
+
+    private func hasLockedPhysicalScale(_ prop: PropKind) -> Bool {
+        prop.photorealDescriptor != nil || libraryDescriptor(for: prop) != nil
     }
 
     private func makeBuiltInEntity(for prop: PropKind) -> ModelEntity {
@@ -4268,8 +4840,16 @@ final class ARSessionController: NSObject, ObservableObject {
         case .ceiling: surface = "Tavan"
         }
         if placement.kind == .bloodWaterfall { return "Canlı CGI • Duvara sabit" }
-        if placement.kind.emitsVirtualLight { return "Sanal ışık • \(surface)" }
-        return surface
+        var details = placement.kind.emitsVirtualLight ? ["Sanal ışık", surface] : [surface]
+        if let dimensions = physicalDimensions(for: placement.kind) {
+            details.append(String(
+                format: "%.2f × %.2f × %.2f m",
+                Double(dimensions.x),
+                Double(dimensions.y),
+                Double(dimensions.z)
+            ))
+        }
+        return details.joined(separator: " • ")
     }
 
     private func archiveSavedPlaceIfRequested() -> (message: String?, failed: Bool) {
@@ -4429,6 +5009,8 @@ final class ARSessionController: NSObject, ObservableObject {
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        updateSpatialCalibration(using: frame)
+        updateAmbientLighting(using: frame)
         updatePlacementGuidance(using: frame)
         updateFloorMeter(using: frame)
         updateBloodWaterfalls(timestamp: frame.timestamp)
@@ -4738,6 +5320,7 @@ private enum PlacementSurfaceSource: Equatable {
     case arkitPlane
     case roomPlanGeometry
     case roomPlanLevel
+    case deviceCalibration
 
     var title: String {
         switch self {
@@ -4747,6 +5330,7 @@ private enum PlacementSurfaceSource: Equatable {
         case .arkitPlane: "ARKit yüzey"
         case .roomPlanGeometry: "RoomPlan yüzey"
         case .roomPlanLevel: "RoomPlan kotu"
+        case .deviceCalibration: "Telefon kalibrasyonu"
         }
     }
 }
@@ -4762,6 +5346,7 @@ private struct FloorSurfaceEstimate {
 /// admitted: they are commonly desks, shelves or seats.
 private final class FloorSurfaceTracker {
     private var roomFloorY: Float?
+    private var calibratedFloorY: Float?
     private var classifiedPlaneLevels: [UUID: Float] = [:]
     private var classifiedMeshLevels: [UUID: Float] = [:]
     private var liveHistory: [Float] = []
@@ -4769,6 +5354,7 @@ private final class FloorSurfaceTracker {
 
     func reset() {
         roomFloorY = nil
+        calibratedFloorY = nil
         classifiedPlaneLevels.removeAll()
         classifiedMeshLevels.removeAll()
         liveHistory.removeAll()
@@ -4782,6 +5368,11 @@ private final class FloorSurfaceTracker {
 
     func clearRoomFloor() {
         roomFloorY = nil
+    }
+
+    func setCalibratedFloor(_ y: Float) {
+        guard y.isFinite else { return }
+        calibratedFloorY = y
     }
 
     func remove(_ anchors: [ARAnchor]) {
@@ -4840,6 +5431,13 @@ private final class FloorSurfaceTracker {
     }
 
     func estimate(cameraY: Float) -> FloorSurfaceEstimate? {
+        if let calibratedFloorY {
+            return FloorSurfaceEstimate(
+                y: calibratedFloorY,
+                isStable: true,
+                source: .deviceCalibration
+            )
+        }
         let liveMedian = Self.median(liveHistory)
         let liveSpread: Float
         if let liveMedian {

@@ -16,18 +16,30 @@ powershell -ExecutionPolicy Bypass -File .\AIService\run_server.ps1
 
 Ilk kurulum ve ilk servis acilisi PyTorch ile model agirliklarini indirir. Windows
 Guvenlik Duvari sorarsa Python icin yalnizca `Ozel aglar` erisimini acin. Konsolda
-yazilan `http://192.168...:8765` adresini CineAR icindeki `AI Derinlik` ayarina girin.
-iPhone ve PC ayni yerel agda olmalidir.
+yazilan `http://192.168...:8765` adresi Bonjour ile yerel aga yayinlanir; CineAR
+`AI Derinlik` ekrani acildiginda PC'yi bulur, `/health` ile dogrular ve adresi kendi
+gunceller. iPhone ve PC ayni yerel agda olmalidir.
 
 Hotspot veya Wi-Fi degistiginde IP adresi de degisir. `run_server.ps1`, varsayilan ag
 gecidi bulunan etkin Wi-Fi/Ethernet baglantisini secer; VMware/VirtualBox gibi sanal
-adaptorlere ait adresleri iPhone adresi olarak gostermez. Betigi yeniden baslatin ve
-ekranda yazan yeni adresi uygulamadaki `AI Derinlik` alanina girin.
+adaptorlere ait adresleri iPhone adresi olarak gostermez. Sunucu acikken ag degisirse
+varsayilan rota 5 saniyede bir kontrol edilir, Bonjour yeni IP ile yeniden yayinlanir
+ve CineAR yeni adresi otomatik alir. Bonjour engellenirse terminaldeki adres elle
+girilebilir ve kayitli son adres yedek kalir.
+
+Eski `.venv` kurulumunda `zeroconf` yoksa `run_server.ps1` yalniz bu kucuk
+bagimliligi ilk acilista kurar; CUDA, PyTorch ve model dosyalari yeniden indirilmez.
 
 PC'de saglik adresi calisip iPhone baglanamiyorsa iPhone Safari'de konsolda yazan
 adresin sonuna `/health` ekleyerek acin. Safari de acamiyorsa Wi-Fi istemci yalitimi
 ve Windows Guvenlik Duvari kontrol edilmelidir. Safari aciyor fakat CineAR acamiyorsa
 iPhone Ayarlarinda CineAR icin `Yerel Ag` izni etkinlestirilmelidir.
+
+Basarili otomatik yayinda terminalde su satir da gorunur:
+
+```text
+CineAR Bonjour: advertising http://192.168.x.x:8765
+```
 
 Bu bilgisayardaki RTX 3050 Laptop GPU 4 GB icin varsayilan modeller bilerek
 `Depth-Anything-V2-Small` ve `sam2.1-hiera-tiny` secilmistir. Daha buyuk modeller

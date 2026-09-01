@@ -3,6 +3,12 @@ import RealityKit
 import RoomPlan
 import simd
 
+struct RoomPlanPlacementHit {
+    let position: SIMD3<Float>
+    let normal: SIMD3<Float>
+    let distanceMeters: Float
+}
+
 /// Gerçek USDZ kataloğu eklendiğinde prosedürel mobilyaların yerini alacak uzantı noktası.
 /// Sağlanan entity kendi merkezinde olmalı ve `targetDimensions` sınırına sığmalıdır.
 @MainActor
@@ -155,6 +161,70 @@ final class RoomRealityRenderer {
         }
     }
 
+    /// RoomPlan duvarlarını, beyaz çizgi/oda teması görünür olmasa da dokunulabilir
+    /// tutar. Bu test kaydedilmiş sonlu duvar poligonuyla çalışır; sonsuz, kameraya
+    /// göre uydurulmuş bir düzlem üretmez.
+    func scannedWallHit(in arView: ARView, at point: CGPoint) -> RoomPlanPlacementHit? {
+        guard installedARView === arView,
+              let room = lastRoom,
+              let ray = arView.ray(through: point) else { return nil }
+        let direction = simd_normalize(ray.direction)
+        guard simd_length_squared(direction) > 0.000_001 else { return nil }
+
+        var closest: RoomPlanPlacementHit?
+        for wall in room.walls.prefix(Self.maximumWalls) {
+            guard let bounds = Self.surfaceBounds(wall),
+                  Self.isValidAffineTransform(wall.transform) else { continue }
+            let transform = lastAlignmentTransform * wall.transform
+            let planeOrigin = SIMD3<Float>(
+                transform.columns.3.x,
+                transform.columns.3.y,
+                transform.columns.3.z
+            )
+            var normal = SIMD3<Float>(
+                transform.columns.2.x,
+                transform.columns.2.y,
+                transform.columns.2.z
+            )
+            guard simd_length_squared(normal) > 0.000_001 else { continue }
+            normal = simd_normalize(normal)
+            guard abs(normal.y) <= 0.45 else { continue }
+
+            let denominator = simd_dot(direction, normal)
+            guard abs(denominator) >= 0.025 else { continue }
+            let distance = simd_dot(planeOrigin - ray.origin, normal) / denominator
+            guard distance.isFinite, (0.15...8.0).contains(distance),
+                  closest.map({ distance < $0.distanceMeters }) ?? true else { continue }
+
+            let position = ray.origin + direction * distance
+            let local = simd_inverse(transform) * SIMD4<Float>(position, 1)
+            guard local.x.isFinite, local.y.isFinite, local.z.isFinite,
+                  abs(local.z) <= 0.08 else { continue }
+            let polygon = Self.localPolygon(for: wall) ?? Self.rectanglePolygon(bounds)
+            let intervals = Self.verticalIntervals(in: polygon, atX: local.x)
+            guard intervals.contains(where: {
+                local.y >= $0.lower - 0.015 && local.y <= $0.upper + 0.015
+            }) else { continue }
+
+            if simd_dot(normal, direction) > 0 { normal = -normal }
+            closest = RoomPlanPlacementHit(
+                position: position,
+                normal: normal,
+                distanceMeters: distance
+            )
+        }
+        return closest
+    }
+
+    func cachePlacementSurfaces(
+        from room: CapturedRoom,
+        alignmentTransform: simd_float4x4 = matrix_identity_float4x4
+    ) {
+        guard Self.isValidAffineTransform(alignmentTransform) else { return }
+        lastRoom = room
+        lastAlignmentTransform = alignmentTransform
+    }
+
     func clear() {
         contentEntity.removeFromParent()
         contentEntity = Entity()
@@ -185,6 +255,7 @@ final class RoomRealityRenderer {
         guard Self.isValidAffineTransform(alignmentTransform) else {
             throw RoomRealityRendererError.invalidAlignmentTransform
         }
+        cachePlacementSurfaces(from: room, alignmentTransform: alignmentTransform)
 
         let stagingEntity = Entity()
         stagingEntity.name = "cinear.reality.physical-occlusion.content"

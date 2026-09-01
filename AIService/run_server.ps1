@@ -13,6 +13,18 @@ $env:TORCH_HOME = Join-Path $modelCache "torch"
 if (-not $env:CINEAR_SAM_POINTS) { $env:CINEAR_SAM_POINTS = "6" }
 if (-not $env:CINEAR_SAM_MAX_SIDE) { $env:CINEAR_SAM_MAX_SIDE = "448" }
 
+# Older CineAR virtual environments do not contain the lightweight Bonjour
+# dependency. Install only that missing package so an existing CUDA/PyTorch
+# installation is not rebuilt just to gain automatic local-network discovery.
+& $python -c "import zeroconf" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Otomatik PC bulma bileseni kuruluyor (yalnizca ilk acilista)..."
+    & $python -m pip install "zeroconf>=0.136,<1"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Bonjour bileseni kurulamadi. Internet baglantisini kontrol edip yeniden deneyin."
+    }
+}
+
 $activeNetwork = Get-NetIPConfiguration -ErrorAction SilentlyContinue |
     Where-Object {
         $_.NetAdapter.Status -eq "Up" -and
@@ -35,9 +47,11 @@ if (-not $address) {
 }
 
 if ($address) {
+    $env:CINEAR_ADVERTISE_ADDRESS = $address
     Write-Host "iPhone sunucu adresi: http://${address}:8765"
-    Write-Host "CineAR > AI Derinlik alanina bu adresi yazin. iPhone ve PC ayni Wi-Fi'da olmali."
+    Write-Host "CineAR bu adresi otomatik bulacak. iPhone ve PC ayni Wi-Fi'da olmali."
 } else {
+    Remove-Item Env:CINEAR_ADVERTISE_ADDRESS -ErrorAction SilentlyContinue
     Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."
 }
 Write-Host "Ilk acilis model dosyalarini indirecegi icin birkac dakika surebilir."

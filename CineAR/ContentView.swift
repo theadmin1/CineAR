@@ -242,10 +242,10 @@ struct ContentView: View {
                 }
                 utilityButton("AI Derinlik", "cpu.fill") {
                     showingAISettings = true
-                    session.testAIServerConnection()
+                    session.discoverAndConnectAIServer()
                 }
                 utilityButton(
-                    session.isFloorMeterEnabled ? "Ölçeri Kapat" : "Zemin Ölçer",
+                    session.isFloorMeterEnabled ? "Koordinatı Kapat" : "Koordinat",
                     "ruler.fill"
                 ) {
                     session.setFloorMeterEnabled(!session.isFloorMeterEnabled)
@@ -348,6 +348,18 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
 
+                    LabeledContent("Adres kaynağı") {
+                        if session.isSearchingForAIServer {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("PC aranıyor")
+                            }
+                        } else {
+                            Text(session.aiServerAddressSource)
+                        }
+                    }
+
                     LabeledContent("Durum") {
                         Text(session.aiEnhancementStatus.title)
                             .foregroundStyle(aiStatusColor)
@@ -358,6 +370,10 @@ struct ContentView: View {
                         session.testAIServerConnection()
                     }
                     .disabled(AIEnhancementClient.serverURL(from: session.aiServerAddress) == nil)
+
+                    Button("PC'yi otomatik bul") {
+                        session.discoverAndConnectAIServer()
+                    }
 
                     Button("iPhone Yerel Ağ ayarını aç") {
                         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
@@ -381,7 +397,8 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
 
                     Text(
-                        "PC terminalinde gösterilen http://...:8765 adresini eksiksiz gir. "
+                        "PC terminali açıldığında CineAR güncel Wi-Fi adresini otomatik bulur. "
+                            + "Bulamazsa terminaldeki http://...:8765 adresini elle gir ve "
                             + "iPhone Safari'de aynı adresin sonuna /health ekleyerek aç. "
                             + "Safari'de açılmıyorsa iki cihaz aynı Wi-Fi'da değildir; "
                             + "Safari'de açılıp uygulamada açılmıyorsa CineAR için Yerel Ağ iznini etkinleştir."
@@ -727,10 +744,10 @@ struct ContentView: View {
     private var floorMeterPanel: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack {
-                Label("Zemin Ölçer", systemImage: "ruler.fill")
+                Label("Koordinat Sistemi", systemImage: "move.3d")
                     .font(.subheadline.weight(.bold))
                 Spacer()
-                Button("Sıfırı Yenile") { session.resetFloorMeterOrigin() }
+                Button("X/Z Sıfırla") { session.resetFloorMeterOrigin() }
                     .font(.caption.weight(.semibold))
                     .buttonStyle(.bordered)
                 Button {
@@ -745,6 +762,34 @@ struct ContentView: View {
                 .font(.caption)
                 .foregroundStyle(session.floorMeterColor)
 
+            Text(session.spatialCalibrationStatus)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(session.spatialCalibrationColor)
+
+            HStack(spacing: 7) {
+                Button {
+                    session.beginDeviceFloorCalibration()
+                } label: {
+                    Label("Telefonla Zemin Y97", systemImage: "iphone.gen3")
+                }
+                .buttonStyle(.borderedProminent)
+                .font(.caption2.weight(.semibold))
+
+                Button {
+                    session.beginCeilingCalibration()
+                } label: {
+                    Label("Tavanı Ölç", systemImage: "arrow.up.to.line")
+                }
+                .buttonStyle(.bordered)
+                .font(.caption2.weight(.semibold))
+
+                if session.isSpatialCalibrationActive {
+                    Button("İptal") { session.cancelSpatialCalibration() }
+                        .buttonStyle(.bordered)
+                        .font(.caption2.weight(.semibold))
+                }
+            }
+
             if let reading = session.floorMeterReading {
                 HStack(spacing: 12) {
                     floorMeterValue("LiDAR", reading.depthMeters, "m")
@@ -753,10 +798,21 @@ struct ContentView: View {
                 }
                 HStack(spacing: 10) {
                     Text(String(format: "X %+.2f", Double(reading.xMeters)))
-                    Text("Y +0.00")
+                    Text(String(format: "Y %.2f", Double(reading.floorLayer)))
                     Text(String(format: "Z %+.2f", Double(reading.zMeters)))
                 }
                 .font(.caption.monospacedDigit().weight(.semibold))
+                HStack(spacing: 10) {
+                    Text(String(format: "Kamera Y %.2f", Double(reading.cameraLayer)))
+                    if let ceilingLayer = reading.ceilingLayer {
+                        Text(String(format: "Tavan Y %.2f", Double(ceilingLayer)))
+                    }
+                    if let roomHeight = reading.roomHeightMeters {
+                        Text(String(format: "%.2f m", Double(roomHeight)))
+                    }
+                }
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
                 Text(
                     "Kot \(String(format: "%+.2f m", Double(reading.floorLevelMeters))) • "
                         + "\(reading.sourceTitle)"
@@ -764,6 +820,16 @@ struct ContentView: View {
                 )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            } else if let floorLayer = session.displayedFloorLayer {
+                HStack(spacing: 12) {
+                    floorMeterValue("Zemin Y", floorLayer, "katman")
+                    if let ceilingLayer = session.displayedCeilingLayer {
+                        floorMeterValue("Tavan Y", ceilingLayer, "katman")
+                    }
+                    if let height = session.calibratedRoomHeightMeters {
+                        floorMeterValue("Oda", height, "m")
+                    }
+                }
             }
         }
         .padding(12)

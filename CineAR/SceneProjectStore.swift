@@ -5,7 +5,7 @@ import RealityKit
 import simd
 
 struct SceneProject: Codable {
-    static let currentVersion = 4
+    static let currentVersion = 5
 
     var version = currentVersion
     var name = "Ana Set"
@@ -13,6 +13,10 @@ struct SceneProject: Codable {
     var updatedAt = Date()
     var placements: [PlacementRecord] = []
     var worldMapChecksum: String?
+    // Metric levels in the matching ARWorldMap coordinate space. Optional fields
+    // keep scene files from versions 1-4 decodable without a separate JSON schema.
+    var calibratedFloorY: Float?
+    var calibratedCeilingY: Float?
 }
 
 struct PlacementRecord: Codable, Identifiable {
@@ -175,6 +179,7 @@ enum SceneProjectStoreError: LocalizedError {
     case invalidAssetFileName(String)
     case unsupportedAssetType
     case invalidLightSettings(UUID)
+    case invalidSpatialCalibration
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
@@ -197,6 +202,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Yalnızca USDZ dosyaları içe aktarılabilir"
         case .invalidLightSettings(let id):
             "\(id.uuidString) kimlikli ışık ayarları geçersiz"
+        case .invalidSpatialCalibration:
+            "Zemin/tavan kalibrasyonu geçersiz veya oda yüksekliği gerçekçi değil"
         case .worldMapOutOfDate:
             "Sahne son harita kaydından sonra değişmiş; önce yeniden Kaydet'e dokunun"
         case .worldMapChecksumMismatch:
@@ -615,6 +622,32 @@ final class SceneProjectStore {
         }
     }
 
+    func setCalibratedFloorY(_ floorY: Float) throws {
+        try commit(invalidateWorldMap: true) { candidate in
+            guard floorY.isFinite else {
+                throw SceneProjectStoreError.invalidSpatialCalibration
+            }
+            candidate.calibratedFloorY = floorY
+            if let ceilingY = candidate.calibratedCeilingY,
+               !(1.50...6.50).contains(ceilingY - floorY) {
+                candidate.calibratedCeilingY = nil
+            }
+        }
+    }
+
+    func setCalibratedCeilingY(_ ceilingY: Float) throws {
+        try commit(invalidateWorldMap: true) { candidate in
+            guard ceilingY.isFinite else {
+                throw SceneProjectStoreError.invalidSpatialCalibration
+            }
+            if let floorY = candidate.calibratedFloorY,
+               !(1.50...6.50).contains(ceilingY - floorY) {
+                throw SceneProjectStoreError.invalidSpatialCalibration
+            }
+            candidate.calibratedCeilingY = ceilingY
+        }
+    }
+
     func remove(id: UUID) throws {
         try commit(invalidateWorldMap: true) { candidate in
             guard candidate.placements.contains(where: { $0.id == id }) else {
@@ -831,6 +864,10 @@ final class SceneProjectStore {
             project.version = 4
             project.updatedAt = Date()
         }
+        if project.version < 5 {
+            project.version = 5
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }
@@ -838,6 +875,16 @@ final class SceneProjectStore {
     private static func validate(_ project: SceneProject) throws {
         guard project.version > 0, project.version <= SceneProject.currentVersion else {
             throw SceneProjectStoreError.unsupportedProjectVersion(project.version)
+        }
+
+        guard project.calibratedFloorY.map({ $0.isFinite }) ?? true,
+              project.calibratedCeilingY.map({ $0.isFinite }) ?? true else {
+            throw SceneProjectStoreError.invalidSpatialCalibration
+        }
+        if let floorY = project.calibratedFloorY,
+           let ceilingY = project.calibratedCeilingY,
+           !(1.50...6.50).contains(ceilingY - floorY) {
+            throw SceneProjectStoreError.invalidSpatialCalibration
         }
 
         var ids = Set<UUID>()
