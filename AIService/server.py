@@ -25,14 +25,18 @@ DEPTH_MODEL_ID = os.environ.get(
     "depth-anything/Depth-Anything-V2-Small-hf",
 )
 SAM_MODEL_ID = os.environ.get("CINEAR_SAM_MODEL", "facebook/sam2.1-hiera-tiny")
-SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "8"))
-SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "512"))
+SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "6"))
+SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "448"))
 MAX_PIXELS = 640 * 480
 
 
 class InferenceModels:
     def __init__(self) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.device.type == "cuda":
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+            torch.backends.cudnn.benchmark = True
         self.depth_processor = None
         self.depth_model = None
         self.mask_generator = None
@@ -141,6 +145,8 @@ def health() -> dict[str, object]:
         "device": str(models.device),
         "depth_model": DEPTH_MODEL_ID,
         "sam_model": SAM_MODEL_ID,
+        "sam_points_per_side": SAM_POINTS_PER_SIDE,
+        "sam_max_side": SAM_MAX_SIDE,
         "error": models.load_error,
     }
 

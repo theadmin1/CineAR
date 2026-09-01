@@ -9,6 +9,7 @@ enum AIEnhancementStatus: Equatable {
     case disabled
     case waiting
     case waitingForDepth
+    case stabilizing
     case active(latencyMilliseconds: Int, samMaskCount: Int)
     case failed(String)
 
@@ -17,6 +18,7 @@ enum AIEnhancementStatus: Equatable {
         case .disabled: "Kapalı"
         case .waiting: "PC bağlantısı bekleniyor"
         case .waitingForDepth: "PC bağlı · LiDAR karesi bekleniyor"
+        case .stabilizing: "Kamera yavaşlayınca AI derinliği uygulanacak"
         case .active(let latency, let masks): "Aktif · \(latency) ms · \(masks) maske"
         case .failed(let message): "Hata · \(message)"
         }
@@ -72,7 +74,7 @@ final class AIEnhancementClient {
     private let clock = ContinuousClock()
     private var activeTask: URLSessionDataTask?
     private var lastSubmission: ContinuousClock.Instant?
-    private let minimumFrameInterval: Duration = .milliseconds(700)
+    private let minimumFrameInterval: Duration = .milliseconds(500)
 
     var isBusy: Bool { activeTask != nil }
 
@@ -232,7 +234,13 @@ final class AIEnhancementClient {
                     return
                 }
                 let device = object["device"] as? String ?? "bilinmeyen cihaz"
-                completion(.success(device))
+                let samPoints = object["sam_points_per_side"] as? Int
+                let samSide = object["sam_max_side"] as? Int
+                if let samPoints, let samSide {
+                    completion(.success("\(device) • hızlı SAM \(samPoints)/\(samSide) px"))
+                } else {
+                    completion(.success(device))
+                }
             }
         }.resume()
     }
@@ -264,11 +272,11 @@ final class AIEnhancementClient {
 
     private func jpegData(from pixelBuffer: CVPixelBuffer) -> Data? {
         let image = CIImage(cvPixelBuffer: pixelBuffer)
-        let maximumSide: CGFloat = 640
+        let maximumSide: CGFloat = 512
         let scale = min(1, maximumSide / max(image.extent.width, image.extent.height))
         let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
-        return UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.72)
+        return UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.62)
     }
 
     private static func copyFloat32Depth(from pixelBuffer: CVPixelBuffer) -> Data? {
@@ -358,9 +366,10 @@ final class AIDepthOcclusionRenderer {
         let mesh = try Self.makeMesh(from: result)
         let replacement = ModelEntity(mesh: mesh, materials: [OcclusionMaterial()])
         replacement.name = "cinear.ai-depth.occlusion.\(result.frameID.uuidString)"
-        model?.removeFromParent()
         anchor?.addChild(replacement)
+        let previous = model
         model = replacement
+        previous?.removeFromParent()
     }
 
     private static func makeMesh(from result: AIDepthResult) throws -> MeshResource {
@@ -389,17 +398,23 @@ final class AIDepthOcclusionRenderer {
         valid.reserveCapacity(columns * yValues.count)
         for y in yValues {
             for x in xValues {
-                let depth = result.depthMeters[y * width + x]
-                let isValid = depth.isFinite && (0.15...12).contains(depth)
-                sampledDepths.append(depth)
+                let measuredDepth = result.depthMeters[y * width + x]
+                let isValid = measuredDepth.isFinite && (0.15...12).contains(measuredDepth)
+                sampledDepths.append(measuredDepth)
                 valid.append(isValid)
                 guard isValid else {
                     positions.append(.zero)
                     continue
                 }
-                let cameraX = (Float(x) - cx) / fx * depth
-                let cameraY = -(Float(y) - cy) / fy * depth
-                let cameraPoint = SIMD4<Float>(cameraX, cameraY, -depth, 1)
+                // AI/LiDAR calibration noise must not put the invisible occluder in
+                // front of a prop that is touching the same physical surface. Move
+                // it a few centimetres away from the captured camera; foreground
+                // furniture and people still have a much larger depth separation.
+                let safetyBias = min(max(measuredDepth * 0.012, 0.025), 0.060)
+                let renderDepth = measuredDepth + safetyBias
+                let cameraX = (Float(x) - cx) / fx * renderDepth
+                let cameraY = -(Float(y) - cy) / fy * renderDepth
+                let cameraPoint = SIMD4<Float>(cameraX, cameraY, -renderDepth, 1)
                 let worldPoint = result.cameraTransform * cameraPoint
                 positions.append([worldPoint.x, worldPoint.y, worldPoint.z])
             }

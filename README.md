@@ -28,7 +28,17 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   metreye kalibre edilen sonuc RealityKit'te gorunmez occlusion mesh'i olur
 - AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
   cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
+- Yerlesim sirasinda uzak AI occlusion'ini durdurma; AR anchor kesinlesmeden modeli
+  gostermeme, 1200 ms'den eski veya hareketle uyusmayan AI karesini reddetme ve
+  LiDAR/AI derinliklerini ust uste cizmeden nesne kesilmesini engelleme
+- PC dengeli profilinde 512 px JPEG, 448 px/6 nokta SAM 2 ve 500 ms istek araligi;
+  LiDAR metre tamponunun cozunurlugunu dusurmeden daha dusuk gecikme ve VRAM kullanimi
+- PC veya bulut gerektirmeyen `Zemin Olcer`: siniflandirilmis LiDAR/ARKit zemin kotu,
+  merkez piksel derinligi, gorus-cizgisi zemin mesafesi, kamera yuksekligi, egim,
+  X/Y/Z koordinatlari ve 25 cm aralikli 4 x 4 metre saydam dunya grid'i
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
+- Tarama ekraninda canli zemin/duvar/nesne sayaci; en az bir zemin ve bir duvar
+  bulunmadan hatali veya bos taramayi bitirmeyi engelleme
 - RoomPlan acilirken kararlı AR karesini bekleme; `worldTrackingFailure` sonrasinda
   paylasilan oturumu guvenli yeniden calistiran ve Turkce yonlendirme veren tekrar deneme
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
@@ -89,11 +99,17 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   veya aktif sahneyi etkilemeden arsiv kaydini silme
 - Kayitli mekanda relocalization
 - Duvara anchor edilen, uygulama yeniden acildiginda sahne kaydiyla geri gelen
-  hareketli kan selalesi CGI efekti
-- Vision el-eklem takibi ile LiDAR avuc derinligini birlestirip elmayi elde canli
-  izleme; insan/scene-depth occlusion ve zamansal konum yumusatma
+  hareketli kan selalesi CGI efekti; yalniz sonlu, dikey duvar geometrisi ile
+  dokunulan LiDAR derinligi eslestiginde yerlestirme
+- Vision el-eklem takibinin goruntu yonu/aspect-fill koordinatlarini ARKit ekranina
+  donusturup kisi derinligiyle avuc konumunu metre cinsinden olcme; gecikmis kareyi
+  ve 30 cm'den buyuk derinlik sicramasini reddedip elmayi sabit dunya kokunde yumusatma
 - `Elimde elma olsun`, `elmayi kaldir` ve `kan selalesi aksin` Turkce sesli
-  komutlari; ses kullanilamayan ortamlar icin ayni islemlerin dugmeleri
+  komutlari; Turkce baglam ifadeleri, gorunur izin/hata durumu, Ayarlar kisayolu ve
+  cihaz-ici tanima yeterli olmadiginda Apple'in ag destekli tanimasina izin verme
+- Uygulama acilisinda sessiz App Store surum denetimi ve `Kontroller > Guncelleme`
+  uzerinden manuel kontrol; yeni surumde guvenli App Store yonlendirmesi, beta
+  kurulumunda TestFlight acma destegi
 - Arayuzsiz cekim modu; ekrana iki kez dokunarak kaydi bitirme
 - HEVC video ve 48 kHz AAC mikrofon sesini `.mov` dosyasina yazma
 - Son cekimi iOS Share Sheet ile disari aktarma
@@ -106,7 +122,12 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 4. Ana ekranin altindaki her zaman gorunen `Odayi Tara` dugmesiyle tum duvarlari,
    kapi/pencereleri ve odadaki buyuk objeleri tarayin. AR henuz hazir degilse dugme
    uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
-   olarak degisir.
+   olarak degisir. Tarama ekranindaki `Zemin / Duvar / Nesne` sayacinda en az bir
+   zemin ve bir duvar gorulmeden `Taramayi Bitir` etkinlesmez.
+   `Zemin` dugmesiyle olceri acin; beyaz grid zemine sabitlenir, kirmizi X ve mavi Z
+   eksenleri ilk dogrulanan noktayi sifir kabul eder. `Sifiri Yenile` yeni bir yerel
+   koordinat baslangici olusturur. Kirmizi durum, merkez pikselde masa/koltuk gibi bir
+   nesnenin gercek zemini kapattigini belirtir.
 5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
@@ -134,11 +155,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    icinde ayri bir arsiv olusturur; listeden eski tarama ve o taramaya ait nesneler
    birlikte geri yuklenir.
 10. `Sahne` listesinden eklenmis nesneyi secin veya cop kutusuyla tek basina silin.
-    `Canli CGI` ekraninda kan selalesini secip taranmis duvara dokunun; `Avucta Canli
-    Elma`yi acip elinizi kameraya gosterin. Isterseniz ayni islemleri Turkce sesli
-    komutla baslatin.
-11. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
-   ekrana iki kez dokunun.
+    `Canli CGI` ekraninda kan selalesini secip hedef yesile dondugunde gorunur duvara
+    dokunun; `Avucta Canli Elma`yi acip avucunuzu kameraya gosterin. Sesli komut icin
+    mikrofon ve konusma izinlerini verip ayni islemleri Turkce baslatin.
+11. `Kontroller > Guncelleme` ile surumu denetleyin. App Store surumu hazirsa
+    `Guncelle`, TestFlight beta kurulumuysa `TestFlight'i Ac` secenegi gorunur.
+    iOS guvenlik kurali geregi uygulama IPA'yi kendi icinden kurmaz.
+12. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
+    ekrana iki kez dokunun.
 
 ## PC AI derinlik denemesi
 

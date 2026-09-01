@@ -38,7 +38,7 @@ altinda `cinear_config` grubunu olusturun.
 
 | Degisken | Deger |
 | --- | --- |
-| `APP_STORE_APPLE_ID` | App Store Connect'teki CineAR uygulamasinin sayisal Apple ID'si |
+| `APP_STORE_APPLE_ID` | App Store Connect'teki CineAR uygulamasinin sayisal Apple ID'si; build sirasinda guvenli guncelleme baglantisi icin Info.plist'e de eklenir |
 
 Apple ID gizli bir anahtar degildir; `Secret` secilmesi gerekmez. Entegrasyon,
 grup ve degisken adlari buyuk/kucuk harf dahil burada yazildigi gibi olmalidir.

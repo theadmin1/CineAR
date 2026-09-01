@@ -3,6 +3,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
+    @EnvironmentObject private var updateChecker: AppUpdateChecker
     @StateObject private var session = ARSessionController()
     @State private var showingRoomScanner = false
     @State private var showingAssetImporter = false
@@ -28,6 +29,12 @@ struct ContentView: View {
                 placementReticle
             }
 
+            if session.isFloorMeterEnabled,
+               !session.isRecording,
+               !session.isRecordingTransitioning {
+                floorMeterReticle
+            }
+
             if session.isRecording || session.isRecordingTransitioning {
                 Color.clear
                     .contentShape(Rectangle())
@@ -42,6 +49,9 @@ struct ContentView: View {
                 VStack(spacing: 12) {
                     statusBar
                     Spacer()
+                    if session.isFloorMeterEnabled {
+                        floorMeterPanel
+                    }
                     if session.isPlacingProp {
                         placementBar
                     } else {
@@ -60,6 +70,9 @@ struct ContentView: View {
         }
         .statusBarHidden(session.isRecording || session.isRecordingTransitioning)
         .onChange(of: session.isPlacingProp) { oldValue, newValue in
+            if newValue, showingCGIStudio {
+                showingCGIStudio = false
+            }
             if oldValue, !newValue {
                 controlsExpanded = false
             }
@@ -231,12 +244,27 @@ struct ContentView: View {
                     showingAISettings = true
                     session.testAIServerConnection()
                 }
+                utilityButton(
+                    session.isFloorMeterEnabled ? "Ölçeri Kapat" : "Zemin Ölçer",
+                    "ruler.fill"
+                ) {
+                    session.setFloorMeterEnabled(!session.isFloorMeterEnabled)
+                }
                 utilityButton("Sahne Işığı", "lightbulb.max.fill") {
                     session.showSceneLightControls()
                 }
                 utilityButton("Canlı CGI", "wand.and.stars") {
                     showingCGIStudio = true
                 }
+                utilityButton(
+                    updateChecker.isChecking ? "Denetleniyor" : "Güncelleme",
+                    updateChecker.isChecking ? "hourglass" : "arrow.down.circle.fill"
+                ) {
+                    Task {
+                        await updateChecker.checkForUpdates(showCurrentStatus: true)
+                    }
+                }
+                .disabled(updateChecker.isChecking)
 
                 if let url = session.lastRecordingURL {
                     ShareLink(item: url) {
@@ -376,7 +404,7 @@ struct ContentView: View {
         switch session.aiEnhancementStatus {
         case .active: .green
         case .failed: .red
-        case .waiting, .waitingForDepth: .orange
+        case .waiting, .waitingForDepth, .stabilizing: .orange
         case .disabled: .secondary
         }
     }
@@ -438,6 +466,9 @@ struct ContentView: View {
             .accessibilityHint(roomScanAvailabilityText)
 
             HStack(spacing: 8) {
+                compactButton("Zemin", "ruler.fill") {
+                    session.setFloorMeterEnabled(!session.isFloorMeterEnabled)
+                }
                 compactButton("Kontroller", "slider.horizontal.3") {
                     controlsExpanded = true
                 }
@@ -662,6 +693,92 @@ struct ContentView: View {
         .accessibilityHidden(true)
     }
 
+    private var floorMeterReticle: some View {
+        GeometryReader { _ in
+            Canvas { context, size in
+                let center = CGPoint(x: size.width * 0.5, y: size.height * 0.5)
+                var ruler = Path()
+                ruler.move(to: CGPoint(x: center.x - 120, y: center.y))
+                ruler.addLine(to: CGPoint(x: center.x + 120, y: center.y))
+                ruler.move(to: CGPoint(x: center.x, y: center.y - 120))
+                ruler.addLine(to: CGPoint(x: center.x, y: center.y + 120))
+                for offset in stride(from: -100, through: 100, by: 20) {
+                    let length: CGFloat = offset.isMultiple(of: 100) ? 13 : 7
+                    ruler.move(to: CGPoint(x: center.x + CGFloat(offset), y: center.y - length))
+                    ruler.addLine(to: CGPoint(x: center.x + CGFloat(offset), y: center.y + length))
+                    ruler.move(to: CGPoint(x: center.x - length, y: center.y + CGFloat(offset)))
+                    ruler.addLine(to: CGPoint(x: center.x + length, y: center.y + CGFloat(offset)))
+                }
+                context.stroke(
+                    ruler,
+                    with: .color(session.floorMeterColor.opacity(0.88)),
+                    lineWidth: 1.2
+                )
+                context.fill(
+                    Path(ellipseIn: CGRect(x: center.x - 4, y: center.y - 4, width: 8, height: 8)),
+                    with: .color(session.floorMeterColor)
+                )
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var floorMeterPanel: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label("Zemin Ölçer", systemImage: "ruler.fill")
+                    .font(.subheadline.weight(.bold))
+                Spacer()
+                Button("Sıfırı Yenile") { session.resetFloorMeterOrigin() }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.bordered)
+                Button {
+                    session.setFloorMeterEnabled(false)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .accessibilityLabel("Zemin Ölçeri kapat")
+            }
+
+            Text(session.floorMeterStatus)
+                .font(.caption)
+                .foregroundStyle(session.floorMeterColor)
+
+            if let reading = session.floorMeterReading {
+                HStack(spacing: 12) {
+                    floorMeterValue("LiDAR", reading.depthMeters, "m")
+                    floorMeterValue("Zemin", reading.floorDistanceMeters, "m")
+                    floorMeterValue("Kamera", reading.cameraHeightMeters, "m")
+                }
+                HStack(spacing: 10) {
+                    Text(String(format: "X %+.2f", Double(reading.xMeters)))
+                    Text("Y +0.00")
+                    Text(String(format: "Z %+.2f", Double(reading.zMeters)))
+                }
+                .font(.caption.monospacedDigit().weight(.semibold))
+                Text(
+                    "Kot \(String(format: "%+.2f m", Double(reading.floorLevelMeters))) • "
+                        + "\(reading.sourceTitle)"
+                        + (reading.tiltDegrees.map { String(format: " • eğim %.1f°", Double($0)) } ?? "")
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func floorMeterValue(_ title: String, _ value: Float, _ unit: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+            Text(String(format: "%.2f %@", Double(value), unit))
+                .font(.caption.monospacedDigit().weight(.bold))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var sceneContents: some View {
         NavigationStack {
             Group {
@@ -865,7 +982,7 @@ struct ContentView: View {
                             set: { session.setLiveAppleEnabled($0) }
                         )
                     )
-                    Text("Vision el eklemlerini, LiDAR ise avuç derinliğini ölçer. Elma geçici canlı efekttir; sahneye sabitlenmez.")
+                    Text("Vision el eklemlerini, kişi derinliği/LiDAR ise avuç mesafesini ölçer. Elma geçici canlı efekttir; sahneye sabitlenmez.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -882,6 +999,11 @@ struct ContentView: View {
                     Text("“Elimde elma olsun”, “elmayı kaldır” veya “kan şelalesi aksın” diyebilirsin.")
                         .font(.caption)
                     LabeledContent("Durum", value: session.liveCGIStatus)
+                    Button {
+                        session.openAppPermissionSettings()
+                    } label: {
+                        Label("Mikrofon ve Konuşma İzinleri", systemImage: "gear")
+                    }
                 }
             }
             .navigationTitle("Canlı CGI")

@@ -45,6 +45,13 @@ workflows:
             exit 1
           fi
 
+          info_plist="$CM_BUILD_DIR/CineAR/Info.plist"
+          if /usr/libexec/PlistBuddy -c "Print :CineARAppStoreID" "$info_plist" >/dev/null 2>&1; then
+            /usr/libexec/PlistBuddy -c "Set :CineARAppStoreID $APP_STORE_APPLE_ID" "$info_plist"
+          else
+            /usr/libexec/PlistBuddy -c "Add :CineARAppStoreID string $APP_STORE_APPLE_ID" "$info_plist"
+          fi
+
           if [[ ! -d "$CM_BUILD_DIR/$XCODE_PROJECT" ]]; then
             echo "Xcode project not found: $CM_BUILD_DIR/$XCODE_PROJECT" >&2
             exit 1

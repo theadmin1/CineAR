@@ -195,6 +195,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     static var isSupported: Bool { RoomCaptureSession.isSupported }
 
     @Published private(set) var statusText = "Odayı yavaşça tarayın"
+    @Published private(set) var scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+    @Published private(set) var hasUsableRoomGeometry = false
     @Published private(set) var isProcessing = false
     @Published private(set) var exportSucceeded = false
     @Published private(set) var failureMessage: String?
@@ -257,6 +259,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         discardPendingExport()
         exportSucceeded = false
         failureMessage = nil
+        scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+        hasUsableRoomGeometry = false
         statusText = "Dünya takibi hazırlanıyor…"
         isProcessing = true
         if isRetryingAfterFailure,
@@ -268,6 +272,10 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
+        guard hasUsableRoomGeometry else {
+            statusText = "Bitirmeden önce en az bir zemin ve bir duvar tara"
+            return
+        }
 
         shouldExport = true
         isProcessing = true
@@ -320,7 +328,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         if case .normal? = trackingState {
             isProcessing = false
             isSessionRunning = true
-            statusText = "Odayı yavaşça tarayın"
+            statusText = "Önce zemini, sonra duvarları yavaşça tarayın"
             captureView.captureSession.run(configuration: configuration)
             return
         }
@@ -415,6 +423,29 @@ final class RoomScannerController: NSObject, ObservableObject {
 }
 
 extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
+    func captureSession(_ session: RoomCaptureSession, didUpdate room: CapturedRoom) {
+        let floorCount = room.floors.count
+        let wallCount = room.walls.count
+        let objectCount = room.objects.count
+        let generation = scanGeneration
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  self.scanGeneration == generation,
+                  self.shouldExport,
+                  self.isSessionRunning else { return }
+            let wasUsable = self.hasUsableRoomGeometry
+            self.hasUsableRoomGeometry = floorCount > 0 && wallCount > 0
+            self.scanSummaryText = "Zemin \(floorCount) • Duvar \(wallCount) • Nesne \(objectCount)"
+            if floorCount == 0 {
+                self.statusText = "Kamerayı aşağı eğip zemini yavaşça tara"
+            } else if wallCount == 0 {
+                self.statusText = "Zemin bulundu; şimdi duvar ve köşeleri tara"
+            } else if !wasUsable {
+                self.statusText = "Zemin ve duvar bulundu; eksik alanları tamamla"
+            }
+        }
+    }
+
     func captureSession(
         _ session: RoomCaptureSession,
         didEndWith data: CapturedRoomData,
@@ -560,21 +591,31 @@ struct RoomScannerScreen: View {
                 .ignoresSafeArea()
 
             VStack {
-                HStack {
-                    Text(scanner.statusText)
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    if scanner.isProcessing {
-                        ProgressView()
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack {
+                        Text(scanner.statusText)
+                            .font(.subheadline.weight(.medium))
+                        Spacer()
+                        if scanner.isProcessing {
+                            ProgressView()
+                        }
+                        Button {
+                            reportAndDismiss(
+                                scanner.failureMessage.map(RoomScanResult.failure) ?? .cancelled
+                            )
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title2)
+                        }
                     }
-                    Button {
-                        reportAndDismiss(
-                            scanner.failureMessage.map(RoomScanResult.failure) ?? .cancelled
-                        )
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                    }
+                    Label(
+                        scanner.scanSummaryText,
+                        systemImage: scanner.hasUsableRoomGeometry
+                            ? "checkmark.circle.fill"
+                            : "viewfinder.circle"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(scanner.hasUsableRoomGeometry ? .green : .yellow)
                 }
                 .padding(12)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -606,7 +647,11 @@ struct RoomScannerScreen: View {
                     } label: {
                         Label("Taramayı Bitir", systemImage: "checkmark.circle.fill")
                     }
-                    .disabled(scanner.isProcessing || !RoomScannerController.isSupported)
+                    .disabled(
+                        scanner.isProcessing
+                            || !RoomScannerController.isSupported
+                            || !scanner.hasUsableRoomGeometry
+                    )
                     .buttonStyle(CineARPrimaryButtonStyle(color: .blue))
                 }
             }

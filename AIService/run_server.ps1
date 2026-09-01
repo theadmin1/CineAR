@@ -10,6 +10,8 @@ $modelCache = Join-Path $PSScriptRoot ".cache"
 [void](New-Item -ItemType Directory -Path $modelCache -Force)
 $env:HF_HOME = Join-Path $modelCache "huggingface"
 $env:TORCH_HOME = Join-Path $modelCache "torch"
+if (-not $env:CINEAR_SAM_POINTS) { $env:CINEAR_SAM_POINTS = "6" }
+if (-not $env:CINEAR_SAM_MAX_SIDE) { $env:CINEAR_SAM_MAX_SIDE = "448" }
 
 $activeNetwork = Get-NetIPConfiguration -ErrorAction SilentlyContinue |
     Where-Object {
@@ -39,6 +41,7 @@ if ($address) {
     Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."
 }
 Write-Host "Ilk acilis model dosyalarini indirecegi icin birkac dakika surebilir."
+Write-Host "Hizli profil: SAM nokta=${env:CINEAR_SAM_POINTS}, azami kenar=${env:CINEAR_SAM_MAX_SIDE}px"
 
 Push-Location $repoRoot
 try {

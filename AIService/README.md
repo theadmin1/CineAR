@@ -33,11 +33,24 @@ Bu bilgisayardaki RTX 3050 Laptop GPU 4 GB icin varsayilan modeller bilerek
 `Depth-Anything-V2-Small` ve `sam2.1-hiera-tiny` secilmistir. Daha buyuk modeller
 gecikmeyi ve bellek tasmasi riskini ciddi bicimde artirir.
 
+Varsayilan dengeli profil SAM 2 otomatik maske izgara yogunlugunu `6`, giris kenarini
+`448 px` kullanir; iPhone kamera karesi `512 px / JPEG %62` olarak gonderilir. LiDAR
+metreleri tam cozunurlukte kalir. Kalite denemesi icin sunucuyu baslatmadan once
+`CINEAR_SAM_POINTS=8` ve `CINEAR_SAM_MAX_SIDE=512` ayarlanabilir, ancak RTX 3050'de
+gecikme ve VRAM kullanimi belirgin bicimde artar.
+
+1 Eylul 2026'da gonderilen gercek oda karesinde dengeli `6/448` profil ilk
+istegi 1315 ms, isinmis istekleri 320 ve 298 ms'de tamamladi; her karede 6
+gecerli nesne maskesi uretti.
+
+iPhone istemcisi yerlesim modundayken uzak mesh'i durdurur. Toplam gecikmesi
+1200 ms'yi asan veya guncel kameradan 18 cm/12 derece uzaklasmis sonuc ekrana
+cizilmez; uygulama o karelerde cihazdaki LiDAR occlusion'ina geri doner.
+
 27 Agustos 2026 yerel dogrulamasinda RTX 3050 ilk isitma istegini 1847 ms,
 ikinci istegi 682 ms'de tamamladi; SAM 2 dokuz maske uretti ve yapay LiDAR
 boslugunun %100'u metreye kalibre edilmis Depth Anything sonucu ile doldu.
-iPhone istemcisi 1500 ms'yi asan sonucu eski hareketli insan geometrisi
-uretmemek icin reddeder ve ARKit occlusion'a geri doner.
+Bu, onceki yuksek kaliteli `8/512` profilinin karsilastirma sonucudur.
 
 Saglik kontrolu:
 

@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.12.2`
-- Proje build numarası: `21`
+- Uygulama sürümü: `0.14.1`
+- Proje build numarası: `25`
 - Git dalı: `main`
-- Kaynak commit: `5a07b5ff7581804896a49d070e7dac16c5ccf201`
-- Oluşturulma zamanı: `2026-08-31 22:15:51 +03:00`
+- Kaynak commit: `7ff2a4dc766d9437cacf5b41ec68e56c5325c036`
+- Oluşturulma zamanı: `2026-09-01 13:47:37 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -20,7 +20,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - Swift + SwiftUI kullanıcı arayüzü
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
 - Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i
-- RoomPlan ile semantik oda taraması ve `room.json` üretimi
+- RoomPlan ile semantik oda taraması, canlı zemin/duvar/nesne sayacı ve doğrulanmış `room.json` üretimi
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
@@ -31,8 +31,10 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i
 - Manuel dekor sürükleme, döndürme ve ölçekleme
 - ARWorldMap + `scene.json` ile kalıcı anchor/transform saklama ve relocalization
+- LiDAR derinliğiyle doğrulanan duvar-sabit kan şelalesi, Vision/kişi derinliğiyle avuç-sabit canlı elma ve Türkçe sesli CGI komutları
 - ReplayKit/AVFoundation tabanlı HEVC video ve AAC ses kaydı
 - Codemagic ile imzalı IPA üretimi ve TestFlight yüklemesi
+- Açılışta App Store sürüm denetimi; manuel güncelleme kontrolü ve App Store/TestFlight yönlendirmesi
 
 ## Çalışma ve dağıtım gereksinimleri
 
@@ -248,24 +250,24 @@ Yok.
 | --- | ---: | ---: |
 | `.gitignore` | 30 | 559 |
 | `AIService/fusion.py` | 100 | 3952 |
-| `AIService/README.md` | 56 | 2480 |
+| `AIService/README.md` | 69 | 3219 |
 | `AIService/requirements.txt` | 10 | 186 |
-| `AIService/run_server.ps1` | 49 | 1778 |
-| `AIService/server.py` | 197 | 7404 |
+| `AIService/run_server.ps1` | 52 | 2020 |
+| `AIService/server.py` | 203 | 7691 |
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/AIEnhancementClient.swift` | 435 | 17725 |
-| `CineAR/ARSessionController.swift` | 4395 | 182866 |
+| `CineAR/AIEnhancementClient.swift` | 450 | 18702 |
+| `CineAR/ARSessionController.swift` | 4927 | 204907 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
-| `CineAR/CineARApp.swift` | 13 | 185 |
-| `CineAR/ContentView.swift` | 977 | 41036 |
+| `CineAR/CineARApp.swift` | 180 | 6728 |
+| `CineAR/ContentView.swift` | 1099 | 46581 |
 | `CineAR/Info.plist` | 58 | 2069 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 358 | 14201 |
@@ -274,17 +276,17 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2073 | 79050 |
-| `CineAR/RoomScanner.swift` | 677 | 23459 |
+| `CineAR/RoomScanner.swift` | 722 | 25676 |
 | `CineAR/SceneProjectStore.swift` | 887 | 36386 |
-| `codemagic.yaml` | 131 | 4245 |
-| `Docs/CODEMAGIC.md` | 86 | 4640 |
-| `Docs/DEVICE_TEST.md` | 145 | 9822 |
+| `codemagic.yaml` | 138 | 4626 |
+| `Docs/CODEMAGIC.md` | 86 | 4715 |
+| `Docs/DEVICE_TEST.md` | 166 | 11523 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 223 | 13845 |
+| `README.md` | 247 | 15839 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
-| `Tools/generate_all_in_one_markdown.ps1` | 347 | 18202 |
+| `Tools/generate_all_in_one_markdown.ps1` | 349 | 18565 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/validate_usdz_assets.py` | 67 | 2269 |
 
@@ -466,11 +468,24 @@ Bu bilgisayardaki RTX 3050 Laptop GPU 4 GB icin varsayilan modeller bilerek
 `Depth-Anything-V2-Small` ve `sam2.1-hiera-tiny` secilmistir. Daha buyuk modeller
 gecikmeyi ve bellek tasmasi riskini ciddi bicimde artirir.
 
+Varsayilan dengeli profil SAM 2 otomatik maske izgara yogunlugunu `6`, giris kenarini
+`448 px` kullanir; iPhone kamera karesi `512 px / JPEG %62` olarak gonderilir. LiDAR
+metreleri tam cozunurlukte kalir. Kalite denemesi icin sunucuyu baslatmadan once
+`CINEAR_SAM_POINTS=8` ve `CINEAR_SAM_MAX_SIDE=512` ayarlanabilir, ancak RTX 3050'de
+gecikme ve VRAM kullanimi belirgin bicimde artar.
+
+1 Eylul 2026'da gonderilen gercek oda karesinde dengeli `6/448` profil ilk
+istegi 1315 ms, isinmis istekleri 320 ve 298 ms'de tamamladi; her karede 6
+gecerli nesne maskesi uretti.
+
+iPhone istemcisi yerlesim modundayken uzak mesh'i durdurur. Toplam gecikmesi
+1200 ms'yi asan veya guncel kameradan 18 cm/12 derece uzaklasmis sonuc ekrana
+cizilmez; uygulama o karelerde cihazdaki LiDAR occlusion'ina geri doner.
+
 27 Agustos 2026 yerel dogrulamasinda RTX 3050 ilk isitma istegini 1847 ms,
 ikinci istegi 682 ms'de tamamladi; SAM 2 dokuz maske uretti ve yapay LiDAR
 boslugunun %100'u metreye kalibre edilmis Depth Anything sonucu ile doldu.
-iPhone istemcisi 1500 ms'yi asan sonucu eski hareketli insan geometrisi
-uretmemek icin reddeder ve ARKit occlusion'a geri doner.
+Bu, onceki yuksek kaliteli `8/512` profilinin karsilastirma sonucudur.
 
 Saglik kontrolu:
 
@@ -517,6 +532,8 @@ $modelCache = Join-Path $PSScriptRoot ".cache"
 [void](New-Item -ItemType Directory -Path $modelCache -Force)
 $env:HF_HOME = Join-Path $modelCache "huggingface"
 $env:TORCH_HOME = Join-Path $modelCache "torch"
+if (-not $env:CINEAR_SAM_POINTS) { $env:CINEAR_SAM_POINTS = "6" }
+if (-not $env:CINEAR_SAM_MAX_SIDE) { $env:CINEAR_SAM_MAX_SIDE = "448" }
 
 $activeNetwork = Get-NetIPConfiguration -ErrorAction SilentlyContinue |
     Where-Object {
@@ -546,6 +563,7 @@ if ($address) {
     Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."
 }
 Write-Host "Ilk acilis model dosyalarini indirecegi icin birkac dakika surebilir."
+Write-Host "Hizli profil: SAM nokta=${env:CINEAR_SAM_POINTS}, azami kenar=${env:CINEAR_SAM_MAX_SIDE}px"
 
 Push-Location $repoRoot
 try {
@@ -585,14 +603,18 @@ DEPTH_MODEL_ID = os.environ.get(
     "depth-anything/Depth-Anything-V2-Small-hf",
 )
 SAM_MODEL_ID = os.environ.get("CINEAR_SAM_MODEL", "facebook/sam2.1-hiera-tiny")
-SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "8"))
-SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "512"))
+SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "6"))
+SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "448"))
 MAX_PIXELS = 640 * 480
 
 
 class InferenceModels:
     def __init__(self) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.device.type == "cuda":
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+            torch.backends.cudnn.benchmark = True
         self.depth_processor = None
         self.depth_model = None
         self.mask_generator = None
@@ -701,6 +723,8 @@ def health() -> dict[str, object]:
         "device": str(models.device),
         "depth_model": DEPTH_MODEL_ID,
         "sam_model": SAM_MODEL_ID,
+        "sam_points_per_side": SAM_POINTS_PER_SIDE,
+        "sam_max_side": SAM_MAX_SIDE,
         "error": models.load_error,
     }
 
@@ -1072,13 +1096,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.12.2;
+				MARKETING_VERSION = 0.14.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1095,12 +1119,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 21;
+				CURRENT_PROJECT_VERSION = 25;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.12.2;
+				MARKETING_VERSION = 0.14.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1181,6 +1205,7 @@ enum AIEnhancementStatus: Equatable {
     case disabled
     case waiting
     case waitingForDepth
+    case stabilizing
     case active(latencyMilliseconds: Int, samMaskCount: Int)
     case failed(String)
 
@@ -1189,6 +1214,7 @@ enum AIEnhancementStatus: Equatable {
         case .disabled: "Kapalı"
         case .waiting: "PC bağlantısı bekleniyor"
         case .waitingForDepth: "PC bağlı · LiDAR karesi bekleniyor"
+        case .stabilizing: "Kamera yavaşlayınca AI derinliği uygulanacak"
         case .active(let latency, let masks): "Aktif · \(latency) ms · \(masks) maske"
         case .failed(let message): "Hata · \(message)"
         }
@@ -1244,7 +1270,7 @@ final class AIEnhancementClient {
     private let clock = ContinuousClock()
     private var activeTask: URLSessionDataTask?
     private var lastSubmission: ContinuousClock.Instant?
-    private let minimumFrameInterval: Duration = .milliseconds(700)
+    private let minimumFrameInterval: Duration = .milliseconds(500)
 
     var isBusy: Bool { activeTask != nil }
 
@@ -1404,7 +1430,13 @@ final class AIEnhancementClient {
                     return
                 }
                 let device = object["device"] as? String ?? "bilinmeyen cihaz"
-                completion(.success(device))
+                let samPoints = object["sam_points_per_side"] as? Int
+                let samSide = object["sam_max_side"] as? Int
+                if let samPoints, let samSide {
+                    completion(.success("\(device) • hızlı SAM \(samPoints)/\(samSide) px"))
+                } else {
+                    completion(.success(device))
+                }
             }
         }.resume()
     }
@@ -1436,11 +1468,11 @@ final class AIEnhancementClient {
 
     private func jpegData(from pixelBuffer: CVPixelBuffer) -> Data? {
         let image = CIImage(cvPixelBuffer: pixelBuffer)
-        let maximumSide: CGFloat = 640
+        let maximumSide: CGFloat = 512
         let scale = min(1, maximumSide / max(image.extent.width, image.extent.height))
         let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
-        return UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.72)
+        return UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.62)
     }
 
     private static func copyFloat32Depth(from pixelBuffer: CVPixelBuffer) -> Data? {
@@ -1530,9 +1562,10 @@ final class AIDepthOcclusionRenderer {
         let mesh = try Self.makeMesh(from: result)
         let replacement = ModelEntity(mesh: mesh, materials: [OcclusionMaterial()])
         replacement.name = "cinear.ai-depth.occlusion.\(result.frameID.uuidString)"
-        model?.removeFromParent()
         anchor?.addChild(replacement)
+        let previous = model
         model = replacement
+        previous?.removeFromParent()
     }
 
     private static func makeMesh(from result: AIDepthResult) throws -> MeshResource {
@@ -1561,17 +1594,23 @@ final class AIDepthOcclusionRenderer {
         valid.reserveCapacity(columns * yValues.count)
         for y in yValues {
             for x in xValues {
-                let depth = result.depthMeters[y * width + x]
-                let isValid = depth.isFinite && (0.15...12).contains(depth)
-                sampledDepths.append(depth)
+                let measuredDepth = result.depthMeters[y * width + x]
+                let isValid = measuredDepth.isFinite && (0.15...12).contains(measuredDepth)
+                sampledDepths.append(measuredDepth)
                 valid.append(isValid)
                 guard isValid else {
                     positions.append(.zero)
                     continue
                 }
-                let cameraX = (Float(x) - cx) / fx * depth
-                let cameraY = -(Float(y) - cy) / fy * depth
-                let cameraPoint = SIMD4<Float>(cameraX, cameraY, -depth, 1)
+                // AI/LiDAR calibration noise must not put the invisible occluder in
+                // front of a prop that is touching the same physical surface. Move
+                // it a few centimetres away from the captured camera; foreground
+                // furniture and people still have a much larger depth separation.
+                let safetyBias = min(max(measuredDepth * 0.012, 0.025), 0.060)
+                let renderDepth = measuredDepth + safetyBias
+                let cameraX = (Float(x) - cx) / fx * renderDepth
+                let cameraY = -(Float(y) - cy) / fy * renderDepth
+                let cameraPoint = SIMD4<Float>(cameraX, cameraY, -renderDepth, 1)
                 let worldPoint = result.cameraTransform * cameraPoint
                 positions.append([worldPoint.x, worldPoint.y, worldPoint.z])
             }
@@ -1630,6 +1669,18 @@ struct SceneObjectSummary: Identifiable, Equatable {
     let isLiveEffect: Bool
 }
 
+struct FloorMeterReading: Equatable {
+    let depthMeters: Float
+    let floorDistanceMeters: Float
+    let cameraHeightMeters: Float
+    let xMeters: Float
+    let zMeters: Float
+    let floorLevelMeters: Float
+    let tiltDegrees: Float?
+    let sourceTitle: String
+    let isVisibleFloor: Bool
+}
+
 @MainActor
 final class ARSessionController: NSObject, ObservableObject {
     @Published var selectedProp: PropKind = .crate
@@ -1651,6 +1702,10 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var placementSurfaceMessage = "Yüzey ölçülüyor"
     @Published private(set) var placementSurfaceColor: Color = .yellow
     @Published private(set) var placementReticlePoint: CGPoint?
+    @Published private(set) var isFloorMeterEnabled = false
+    @Published private(set) var floorMeterReading: FloorMeterReading?
+    @Published private(set) var floorMeterStatus = "Zemin Ölçer kapalı"
+    @Published private(set) var floorMeterColor: Color = .yellow
     @Published private(set) var aiEnhancementEnabled = false
     @Published private(set) var aiServerAddress = ""
     @Published private(set) var aiEnhancementStatus: AIEnhancementStatus = .disabled
@@ -1700,6 +1755,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private var lastKnownCeilingY: Float?
     private let floorSurfaceTracker = FloorSurfaceTracker()
     private var lastPlacementGuidanceTimestamp: TimeInterval = 0
+    private var lastFloorMeterUpdateTimestamp: TimeInterval = 0
+    private var floorMeterOrigin: SIMD3<Float>?
+    private var floorMeterAnchor: AnchorEntity?
     private var lastProjectorRefreshTimestamp: TimeInterval = 0
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
@@ -1709,6 +1767,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var pendingArchiveName: String?
     private var bloodWaterfallParticles: [UUID: [BloodWaterfallParticle]] = [:]
     private var liveAppleAnchor: AnchorEntity?
+    private var liveAppleEntity: ModelEntity?
     private var filteredLiveApplePosition: SIMD3<Float>?
     private var lastLiveAppleObservationTimestamp: TimeInterval = 0
     private var lastHandDetectionTimestamp: TimeInterval = 0
@@ -1723,6 +1782,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var speechTask: SFSpeechRecognitionTask?
     private var lastProcessedCGITranscript = ""
     private var hasSpeechInputTap = false
+    private var speechGeneration: UInt64 = 0
 
     private static let realityThemeDefaultsKey = "cinear.activeRealityTheme"
     private static let aiEnabledDefaultsKey = "cinear.aiDepth.enabled"
@@ -1894,6 +1954,9 @@ final class ARSessionController: NSObject, ObservableObject {
         guard let arView else { return }
         aiEnhancementClient.cancel()
         aiDepthRenderer.remove()
+        clearFloorMeterVisualization()
+        floorMeterOrigin = nil
+        floorMeterReading = nil
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
@@ -1935,6 +1998,11 @@ final class ARSessionController: NSObject, ObservableObject {
         roomRealityRenderer.isPhysicalOcclusionVisible = false
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
+        clearFloorMeterVisualization()
+        if isFloorMeterEnabled {
+            floorMeterStatus = "Oda taraması bitince ölçüm devam edecek"
+            floorMeterColor = .yellow
+        }
         arView?.isHidden = true
         // Keep the already-stable world-tracking configuration untouched. Re-running
         // the shared ARSession here creates an initializing gap just as RoomPlan starts,
@@ -1955,7 +2023,7 @@ final class ARSessionController: NSObject, ObservableObject {
             aiEnhancementClient.cancel()
             aiDepthRenderer.clear()
             aiEnhancementStatus = .disabled
-            refreshPhysicalRoomOcclusionIfPossible()
+            activateLocalOcclusionFallback()
             return
         }
         // The live LiDAR/AI mesh is more precise than RoomPlan's coarse furniture
@@ -1974,6 +2042,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if aiEnhancementEnabled {
             aiEnhancementClient.cancel()
             aiDepthRenderer.clear()
+            activateLocalOcclusionFallback()
             aiEnhancementStatus = AIEnhancementClient.serverURL(from: address) == nil
                 ? .failed(AIEnhancementError.invalidServerAddress.localizedDescription)
                 : .waiting
@@ -2000,6 +2069,8 @@ final class ARSessionController: NSObject, ObservableObject {
                     color: .green
                 )
             case .failure(let error):
+                self.aiDepthRenderer.clear()
+                self.activateLocalOcclusionFallback()
                 self.aiEnhancementStatus = .failed(error.localizedDescription)
             }
         }
@@ -2007,40 +2078,44 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func submitFrameToAIIfNeeded(_ frame: ARFrame) {
         guard aiEnhancementEnabled,
+              !isPlacingProp,
               !isRoomScanActive,
               !isSessionInterrupted,
               case .normal = frame.camera.trackingState,
               let serverURL = AIEnhancementClient.serverURL(from: aiServerAddress) else { return }
         aiEnhancementClient.submit(frame: frame, serverURL: serverURL) { [weak self] result in
-            guard let self, self.aiEnhancementEnabled else { return }
+            guard let self, self.aiEnhancementEnabled, !self.isPlacingProp else { return }
             switch result {
             case .success(let depth):
-                // RTX 3050-class PCs commonly need 2-3 seconds for Depth Anything
-                // plus SAM 2. The mesh is already expressed in the captured frame's
-                // world transform, so a valid static-scene result remains usable. The
-                // previous 1.5 s cutoff incorrectly reported successful HTTP 200
-                // responses as a broken connection.
-                guard depth.totalLatencyMilliseconds <= 6_000 else {
+                // Old remote depth is worse than the device LiDAR fallback for moving
+                // people and during placement. Never display a multi-second ghost mesh.
+                guard depth.totalLatencyMilliseconds <= 1_200 else {
                     self.aiDepthRenderer.clear()
-                    self.refreshPhysicalRoomOcclusionIfPossible(
-                        allowWhileAIEnabled: true
-                    )
+                    self.activateLocalOcclusionFallback()
                     self.aiEnhancementStatus = .failed(
                         "Gecikme \(depth.totalLatencyMilliseconds) ms; PC veya Wi-Fi yavaş"
                     )
                     return
                 }
+                guard self.aiResultMatchesCurrentCamera(depth) else {
+                    self.aiDepthRenderer.clear()
+                    self.activateLocalOcclusionFallback()
+                    self.aiEnhancementStatus = .stabilizing
+                    return
+                }
                 do {
                     self.roomRealityRenderer.isPhysicalOcclusionVisible = false
+                    // The fused AI mesh already includes LiDAR. Drawing RealityKit's
+                    // scene-understanding occluder at the same time creates two close
+                    // depth surfaces and makes placed models flicker or appear cut.
+                    self.setPhysicalSceneOcclusion(enabled: false)
                     try self.aiDepthRenderer.render(depth)
                     self.aiEnhancementStatus = .active(
                         latencyMilliseconds: depth.totalLatencyMilliseconds,
                         samMaskCount: depth.samMaskCount
                     )
                 } catch {
-                    self.refreshPhysicalRoomOcclusionIfPossible(
-                        allowWhileAIEnabled: true
-                    )
+                    self.activateLocalOcclusionFallback()
                     self.aiEnhancementStatus = .failed(error.localizedDescription)
                 }
             case .failure(let error):
@@ -2048,20 +2123,49 @@ final class ARSessionController: NSObject, ObservableObject {
                    case .missingSceneDepth = aiError {
                     if self.aiEnhancementStatus != .waitingForDepth {
                         self.aiDepthRenderer.clear()
-                        self.refreshPhysicalRoomOcclusionIfPossible(
-                            allowWhileAIEnabled: true
-                        )
+                        self.activateLocalOcclusionFallback()
                     }
                     self.aiEnhancementStatus = .waitingForDepth
                 } else {
                     self.aiDepthRenderer.clear()
-                    self.refreshPhysicalRoomOcclusionIfPossible(
-                        allowWhileAIEnabled: true
-                    )
+                    self.activateLocalOcclusionFallback()
                     self.aiEnhancementStatus = .failed(error.localizedDescription)
                 }
             }
         }
+    }
+
+    private func aiResultMatchesCurrentCamera(_ result: AIDepthResult) -> Bool {
+        guard let current = arView?.session.currentFrame?.camera.transform else { return false }
+        let capturedPosition = SIMD3<Float>(
+            result.cameraTransform.columns.3.x,
+            result.cameraTransform.columns.3.y,
+            result.cameraTransform.columns.3.z
+        )
+        let currentPosition = SIMD3<Float>(
+            current.columns.3.x,
+            current.columns.3.y,
+            current.columns.3.z
+        )
+        guard simd_distance(capturedPosition, currentPosition) <= 0.18 else { return false }
+
+        let capturedForward = simd_normalize(SIMD3<Float>(
+            -result.cameraTransform.columns.2.x,
+            -result.cameraTransform.columns.2.y,
+            -result.cameraTransform.columns.2.z
+        ))
+        let currentForward = simd_normalize(SIMD3<Float>(
+            -current.columns.2.x,
+            -current.columns.2.y,
+            -current.columns.2.z
+        ))
+        let cosine = min(max(simd_dot(capturedForward, currentForward), -1), 1)
+        return acos(cosine) <= Float.pi / 15
+    }
+
+    private func activateLocalOcclusionFallback() {
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
+        setPhysicalSceneOcclusion(enabled: true)
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
@@ -2073,6 +2177,12 @@ final class ARSessionController: NSObject, ObservableObject {
         configurationBeforeInterruption = nil
         arView?.isHidden = false
         setPhysicalSceneOcclusion(enabled: true)
+        floorMeterOrigin = nil
+        floorMeterReading = nil
+        if isFloorMeterEnabled {
+            floorMeterStatus = "LiDAR zemini yeniden doğruluyor"
+            floorMeterColor = .yellow
+        }
 
         var themeToSchedule = realityThemeToRestoreAfterScan
         var completionStatus: (message: String, color: Color)?
@@ -2293,7 +2403,10 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("USDZ seçildi — önce kütüphaneden bir model ekle", color: .yellow)
         } else {
             isPlacingProp = true
-            placementSurfaceMessage = "LiDAR yüzeyi doğrulanıyor"
+            suspendAIForPlacement()
+            placementSurfaceMessage = prop == .bloodWaterfall
+                ? "LiDAR görünür dikey duvarı doğruluyor"
+                : "LiDAR yüzeyi doğrulanıyor"
             placementSurfaceColor = .yellow
             publishStatus(
                 "\(prop.title) seçildi — \(placementInstruction(for: prop))",
@@ -2311,6 +2424,190 @@ final class ARSessionController: NSObject, ObservableObject {
         publishStatus("Yerleştirme iptal edildi", color: .yellow)
     }
 
+    private func suspendAIForPlacement() {
+        guard aiEnhancementEnabled else { return }
+        aiEnhancementClient.cancel()
+        aiDepthRenderer.clear()
+        activateLocalOcclusionFallback()
+        aiEnhancementStatus = .waiting
+    }
+
+    func setFloorMeterEnabled(_ enabled: Bool) {
+        isFloorMeterEnabled = enabled
+        if enabled {
+            floorMeterStatus = "LiDAR zemini ve koordinat başlangıcını arıyor"
+            floorMeterColor = .yellow
+            floorMeterReading = nil
+            floorMeterOrigin = nil
+            clearFloorMeterVisualization()
+            publishStatus("Zemin Ölçer açık — merkezdeki noktayı zemine tut", color: .blue)
+        } else {
+            floorMeterStatus = "Zemin Ölçer kapalı"
+            floorMeterColor = .yellow
+            floorMeterReading = nil
+            floorMeterOrigin = nil
+            clearFloorMeterVisualization()
+            publishStatus("Zemin Ölçer kapatıldı", color: .yellow)
+        }
+    }
+
+    func resetFloorMeterOrigin() {
+        guard isFloorMeterEnabled else { return }
+        floorMeterOrigin = nil
+        floorMeterReading = nil
+        floorMeterStatus = "Yeni koordinat sıfırı için zemine yönelt"
+        floorMeterColor = .yellow
+        clearFloorMeterVisualization()
+    }
+
+    private func clearFloorMeterVisualization() {
+        floorMeterAnchor?.removeFromParent()
+        floorMeterAnchor = nil
+    }
+
+    private func updateFloorMeter(using frame: ARFrame) {
+        guard isFloorMeterEnabled, !isRoomScanActive, !isSessionInterrupted,
+              frame.timestamp - lastFloorMeterUpdateTimestamp >= 0.12,
+              let arView, arView.bounds.width > 1, arView.bounds.height > 1 else { return }
+        lastFloorMeterUpdateTimestamp = frame.timestamp
+
+        guard case .normal = frame.camera.trackingState else {
+            floorMeterReading = nil
+            floorMeterStatus = "Dünya takibi kararlı hâle geliyor"
+            floorMeterColor = .yellow
+            return
+        }
+
+        let cameraPosition = SIMD3<Float>(
+            frame.camera.transform.columns.3.x,
+            frame.camera.transform.columns.3.y,
+            frame.camera.transform.columns.3.z
+        )
+        guard let floor = floorSurfaceTracker.estimate(cameraY: cameraPosition.y),
+              floor.isStable else {
+            floorMeterReading = nil
+            floorMeterStatus = "Sınıflandırılmış LiDAR zemini aranıyor"
+            floorMeterColor = .yellow
+            clearFloorMeterVisualization()
+            return
+        }
+
+        let point = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+        guard let ray = arView.ray(through: point) else {
+            floorMeterReading = nil
+            floorMeterStatus = "Merkez ışını hazırlanıyor"
+            floorMeterColor = .yellow
+            return
+        }
+        let direction = simd_normalize(ray.direction)
+        guard direction.y < -0.025 else {
+            floorMeterReading = nil
+            floorMeterStatus = "Cetveli görmek için kamerayı zemine doğru eğ"
+            floorMeterColor = .yellow
+            return
+        }
+        let distance = (floor.y - ray.origin.y) / direction.y
+        guard distance.isFinite, (0.20...8.0).contains(distance) else {
+            floorMeterReading = nil
+            floorMeterStatus = "Ölçülebilir zemin 0,2–8 metre aralığında olmalı"
+            floorMeterColor = .yellow
+            return
+        }
+
+        let floorPoint = ray.origin + direction * distance
+        let depth = sceneDepthSample(frame: frame, in: arView, at: point)
+        let isVisibleFloor = depth.map {
+            floorDepthAgrees($0, position: floorPoint, floorY: floor.y)
+        } ?? false
+
+        if let origin = floorMeterOrigin, abs(origin.y - floor.y) > 0.12 {
+            floorMeterOrigin = nil
+            clearFloorMeterVisualization()
+        }
+        if floorMeterOrigin == nil {
+            floorMeterOrigin = SIMD3<Float>(floorPoint.x, floor.y, floorPoint.z)
+        }
+        guard let origin = floorMeterOrigin else { return }
+        if floorMeterAnchor == nil {
+            installFloorMeterGrid(origin: origin, in: arView)
+        }
+
+        let relative = floorPoint - origin
+        let floorDistance = simd_distance(cameraPosition, floorPoint)
+        let tiltDegrees: Float? = depth?.worldNormal.flatMap { normal in
+            guard simd_length_squared(normal) > 0.000_001 else { return nil }
+            let cosine = min(max(abs(simd_normalize(normal).y), 0), 1)
+            return acos(cosine) * 180 / .pi
+        }
+        floorMeterReading = FloorMeterReading(
+            depthMeters: depth?.depthMeters ?? floorDistance,
+            floorDistanceMeters: floorDistance,
+            cameraHeightMeters: cameraPosition.y - floor.y,
+            xMeters: relative.x,
+            zMeters: relative.z,
+            floorLevelMeters: floor.y,
+            tiltDegrees: tiltDegrees,
+            sourceTitle: floor.source.title,
+            isVisibleFloor: isVisibleFloor
+        )
+
+        if depth == nil {
+            floorMeterStatus = "Zemin kotu bulundu • LiDAR pikseli netleşiyor"
+            floorMeterColor = .yellow
+        } else if isVisibleFloor {
+            floorMeterStatus = "Zemin doğrulandı • koordinatlar metre cinsinden"
+            floorMeterColor = .green
+        } else {
+            floorMeterStatus = "Öndeki nesne zemini kapatıyor • merkez noktasını değiştir"
+            floorMeterColor = .red
+        }
+    }
+
+    private func installFloorMeterGrid(origin: SIMD3<Float>, in arView: ARView) {
+        clearFloorMeterVisualization()
+        let anchor = AnchorEntity(world: origin + SIMD3<Float>(0, 0.008, 0))
+        anchor.name = "cinear.floor-meter.grid"
+        let gridSize: Float = 4
+        let spacing: Float = 0.25
+        for index in -8...8 {
+            let offset = Float(index) * spacing
+            let isAxis = index == 0
+            let isMajor = index.isMultiple(of: 4)
+            let width: Float = isAxis ? 0.014 : (isMajor ? 0.009 : 0.004)
+            let alpha: CGFloat = isAxis ? 0.62 : (isMajor ? 0.30 : 0.14)
+            let xColor = isAxis ? UIColor.systemRed : UIColor.white
+            let zColor = isAxis ? UIColor.systemBlue : UIColor.white
+
+            let xLine = makeFloorMeterGridLine(
+                size: [gridSize, 0.002, width],
+                color: xColor.withAlphaComponent(alpha)
+            )
+            xLine.position = [0, 0, offset]
+            anchor.addChild(xLine)
+
+            let zLine = makeFloorMeterGridLine(
+                size: [width, 0.002, gridSize],
+                color: zColor.withAlphaComponent(alpha)
+            )
+            zLine.position = [offset, 0.0003, 0]
+            anchor.addChild(zLine)
+        }
+        let originMarker = ModelEntity(
+            mesh: .generateSphere(radius: 0.035),
+            materials: [SimpleMaterial(color: .white, roughness: 0.3, isMetallic: false)]
+        )
+        originMarker.position.y = 0.018
+        anchor.addChild(originMarker)
+        arView.scene.addAnchor(anchor)
+        floorMeterAnchor = anchor
+    }
+
+    private func makeFloorMeterGridLine(size: SIMD3<Float>, color: UIColor) -> ModelEntity {
+        var material = UnlitMaterial()
+        material.color = .init(tint: color)
+        return ModelEntity(mesh: .generateBox(size: size), materials: [material])
+    }
+
     private func placementInstruction(for prop: PropKind) -> String {
         switch prop.placementSurface {
         case .floor: "taranmış zemine dokun"
@@ -2321,6 +2618,9 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func placementFailureMessage(for prop: PropKind) -> String {
+        if prop == .bloodWaterfall {
+            return "Kan şelalesi için görünür duvar doğrulanamadı — duvarı yavaşça tara ve doğrudan duvara dokun"
+        }
         switch prop.placementSurface {
         case .floor:
             "Kararlı zemin bulunamadı — zemini yavaşça tara, sonra tekrar dokun"
@@ -2373,6 +2673,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 anchor.scene?.removeAnchor(anchor)
             }
             liveAppleAnchor = nil
+            liveAppleEntity = nil
             liveCGIStatus = "Canlı elma kapalı"
         }
         refreshSceneCatalogs()
@@ -2387,6 +2688,8 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func stopCGIVoiceCommands() {
+        speechGeneration &+= 1
+        isListeningForCGICommands = false
         speechTask?.cancel()
         speechTask = nil
         speechRequest?.endAudio()
@@ -2397,7 +2700,6 @@ final class ARSessionController: NSObject, ObservableObject {
             hasSpeechInputTap = false
         }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        isListeningForCGICommands = false
         if liveCGIStatus == "Dinliyorum…" {
             liveCGIStatus = "Sesli komut kapalı"
         }
@@ -2458,26 +2760,36 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         stopCGIVoiceCommands()
+        speechGeneration &+= 1
+        let generation = speechGeneration
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(
-                .playAndRecord,
+                .record,
                 mode: .measurement,
-                options: [.duckOthers, .defaultToSpeaker]
+                options: []
             )
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
 
             let request = SFSpeechAudioBufferRecognitionRequest()
             request.shouldReportPartialResults = true
             request.taskHint = .confirmation
-            if speechRecognizer.supportsOnDeviceRecognition {
-                request.requiresOnDeviceRecognition = true
-            }
+            request.contextualStrings = [
+                "kan şelalesi", "kan şelalesi aksın", "kan akışı",
+                "elimde elma olsun", "elma", "elmayı kaldır"
+            ]
             speechRequest = request
             lastProcessedCGITranscript = ""
 
             let inputNode = speechAudioEngine.inputNode
             let format = inputNode.outputFormat(forBus: 0)
+            guard format.sampleRate > 0, format.channelCount > 0 else {
+                throw NSError(
+                    domain: "CineAR.Speech",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Mikrofon ses biçimi hazır değil"]
+                )
+            }
             inputNode.installTap(onBus: 0, bufferSize: 1_024, format: format) {
                 [weak request] buffer, _ in
                 request?.append(buffer)
@@ -2487,18 +2799,21 @@ final class ARSessionController: NSObject, ObservableObject {
             try speechAudioEngine.start()
             isListeningForCGICommands = true
             liveCGIStatus = "Dinliyorum…"
+            publishStatus("Türkçe CGI komutu dinleniyor", color: .green)
 
             speechTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
                 DispatchQueue.main.async {
-                    guard let self else { return }
+                    guard let self, self.speechGeneration == generation else { return }
                     if let result {
                         self.handleCGITranscript(
                             result.bestTranscription.formattedString,
                             isFinal: result.isFinal
                         )
                     }
-                    if error != nil {
+                    if let error, self.isListeningForCGICommands {
                         self.stopCGIVoiceCommands()
+                        self.liveCGIStatus = "Ses tanıma durdu: \(error.localizedDescription)"
+                        self.publishStatus(self.liveCGIStatus, color: .red)
                     }
                 }
             }
@@ -2516,11 +2831,12 @@ final class ARSessionController: NSObject, ObservableObject {
         ).lowercased()
         guard command != lastProcessedCGITranscript else { return }
 
-        if command.contains("kan selalesi") || command.contains("kan ak") {
+        if command.contains("kan")
+            && (command.contains("selale") || command.contains("ak")) {
             lastProcessedCGITranscript = command
             selectProp(.bloodWaterfall)
             liveCGIStatus = "Kan şelalesi seçildi; başlangıç için duvara dokun"
-            if isFinal { stopCGIVoiceCommands() }
+            stopCGIVoiceCommands()
             return
         }
         if command.contains("elma") {
@@ -2532,11 +2848,19 @@ final class ARSessionController: NSObject, ObservableObject {
             liveCGIStatus = shouldRemove
                 ? "Elma efekti kaldırıldı"
                 : "Elma etkin; elini kameraya göster"
-            if isFinal { stopCGIVoiceCommands() }
+            stopCGIVoiceCommands()
             return
         }
         liveCGIStatus = transcript.isEmpty ? "Dinliyorum…" : "Duyulan: \(transcript)"
-        if isFinal { stopCGIVoiceCommands() }
+        if isFinal {
+            liveCGIStatus = "Komut anlaşılmadı; 'kan şelalesi aksın' veya 'elimde elma olsun' de"
+            stopCGIVoiceCommands()
+        }
+    }
+
+    func openAppPermissionSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     private func updateLiveAppleTracking(using frame: ARFrame) {
@@ -2552,11 +2876,12 @@ final class ARSessionController: NSObject, ObservableObject {
         handDetectionInFlight = true
         let pixelBuffer = frame.capturedImage
         let viewportSize = arView.bounds.size
+        let interfaceOrientation = arView.window?.windowScene?.interfaceOrientation ?? .portrait
         let imageOrientation: CGImagePropertyOrientation
-        switch arView.window?.windowScene?.interfaceOrientation {
-        case .some(.landscapeLeft): imageOrientation = .up
-        case .some(.landscapeRight): imageOrientation = .down
-        case .some(.portraitUpsideDown): imageOrientation = .left
+        switch interfaceOrientation {
+        case .landscapeLeft: imageOrientation = .up
+        case .landscapeRight: imageOrientation = .down
+        case .portraitUpsideDown: imageOrientation = .left
         default: imageOrientation = .right
         }
         handDetectionQueue.async { [weak self, weak arView] in
@@ -2576,10 +2901,10 @@ final class ARSessionController: NSObject, ObservableObject {
                         .wrist, .indexMCP, .middleMCP, .littleMCP
                     ]
                     let valid = jointNames.compactMap { name -> VNRecognizedPoint? in
-                        guard let point = points[name], point.confidence >= 0.30 else { return nil }
+                        guard let point = points[name], point.confidence >= 0.55 else { return nil }
                         return point
                     }
-                    if valid.count >= 3 {
+                    if valid.count == jointNames.count {
                         let count = CGFloat(valid.count)
                         normalizedPalm = CGPoint(
                             x: valid.reduce(CGFloat.zero) { $0 + $1.location.x } / count,
@@ -2597,18 +2922,60 @@ final class ARSessionController: NSObject, ObservableObject {
                       let arView,
                       let normalizedPalm,
                       viewportSize.width > 0,
-                      viewportSize.height > 0 else { return }
-                let point = CGPoint(
-                    x: normalizedPalm.x * viewportSize.width,
-                    y: (1 - normalizedPalm.y) * viewportSize.height
-                )
+                      viewportSize.height > 0,
+                      let currentFrame = arView.session.currentFrame,
+                      currentFrame.timestamp - frame.timestamp <= 0.25,
+                      let point = self.viewPointForVisionHand(
+                        normalizedPalm,
+                        frame: frame,
+                        in: arView,
+                        interfaceOrientation: interfaceOrientation,
+                        imageOrientation: imageOrientation
+                      ) else { return }
                 self.placeLiveApple(using: frame, in: arView, at: point)
             }
         }
     }
 
+    private func viewPointForVisionHand(
+        _ visionPoint: CGPoint,
+        frame: ARFrame,
+        in arView: ARView,
+        interfaceOrientation: UIInterfaceOrientation,
+        imageOrientation: CGImagePropertyOrientation
+    ) -> CGPoint? {
+        // Vision uses a bottom-left origin in the orientation-corrected image,
+        // whereas ARFrame.displayTransform expects the raw captured image with a
+        // top-left origin. Undo the EXIF orientation, then apply ARKit's exact
+        // rotation and aspect-fill crop for the current viewport.
+        let oriented = CGPoint(x: visionPoint.x, y: 1 - visionPoint.y)
+        let raw: CGPoint
+        switch imageOrientation {
+        case .up: raw = oriented
+        case .down: raw = CGPoint(x: 1 - oriented.x, y: 1 - oriented.y)
+        case .right: raw = CGPoint(x: oriented.y, y: 1 - oriented.x)
+        case .left: raw = CGPoint(x: 1 - oriented.y, y: oriented.x)
+        default: return nil
+        }
+        let normalizedView = raw.applying(
+            frame.displayTransform(
+                for: interfaceOrientation,
+                viewportSize: arView.bounds.size
+            )
+        )
+        guard normalizedView.x.isFinite, normalizedView.y.isFinite,
+              (-0.02...1.02).contains(normalizedView.x),
+              (-0.02...1.02).contains(normalizedView.y) else { return nil }
+        return CGPoint(
+            x: min(max(normalizedView.x, 0), 1) * arView.bounds.width,
+            y: min(max(normalizedView.y, 0), 1) * arView.bounds.height
+        )
+    }
+
     private func placeLiveApple(using frame: ARFrame, in arView: ARView, at point: CGPoint) {
-        guard let depth = sceneDepthSample(frame: frame, in: arView, at: point) else {
+        guard let depth = personDepthSample(frame: frame, in: arView, at: point)
+                ?? sceneDepthSample(frame: frame, in: arView, at: point),
+              (0.18...1.60).contains(depth.depthMeters) else {
             liveCGIStatus = "El görüldü; avuç derinliği ölçülüyor"
             return
         }
@@ -2623,11 +2990,16 @@ final class ARSessionController: NSObject, ObservableObject {
         } else {
             towardCamera = [0, 0, 1]
         }
-        let measured = depth.worldPoint + towardCamera * 0.045 + SIMD3<Float>(0, 0.055, 0)
+        let measured = depth.worldPoint + towardCamera * 0.075 + SIMD3<Float>(0, 0.035, 0)
         let filtered: SIMD3<Float>
-        if let previous = filteredLiveApplePosition,
-           simd_distance(previous, measured) < 0.45 {
-            filtered = previous + (measured - previous) * 0.24
+        if let previous = filteredLiveApplePosition {
+            let movement = simd_distance(previous, measured)
+            guard movement <= 0.30 else {
+                liveCGIStatus = "El bulundu; derinlik sıçraması doğrulanıyor"
+                return
+            }
+            let response = min(max(0.18 + movement * 0.55, 0.18), 0.34)
+            filtered = previous + (measured - previous) * response
         } else {
             filtered = measured
         }
@@ -2635,18 +3007,22 @@ final class ARSessionController: NSObject, ObservableObject {
         lastLiveAppleObservationTimestamp = frame.timestamp
 
         let anchor: AnchorEntity
-        if let existing = liveAppleAnchor, existing.scene != nil {
-            anchor = existing
+        let apple: ModelEntity
+        if let existingAnchor = liveAppleAnchor,
+           existingAnchor.scene != nil,
+           let existingApple = liveAppleEntity {
+            anchor = existingAnchor
+            apple = existingApple
         } else {
-            anchor = AnchorEntity(world: filtered)
+            anchor = AnchorEntity(world: SIMD3<Float>.zero)
             anchor.name = "cinear.cgi.live-apple"
-            let apple = makeAppleEntity()
-            apple.position.y = -0.065
+            apple = makeAppleEntity()
             anchor.addChild(apple)
             arView.scene.addAnchor(anchor)
             liveAppleAnchor = anchor
+            liveAppleEntity = apple
         }
-        anchor.position = filtered
+        apple.position = filtered + SIMD3<Float>(0, -0.065, 0)
         anchor.isEnabled = true
         liveCGIStatus = String(format: "Elma avuçta • %.2f m", depth.depthMeters)
     }
@@ -2709,7 +3085,6 @@ final class ARSessionController: NSObject, ObservableObject {
                 name: selectedProp.anchorName(id: id),
                 transform: placementTransform
             )
-            knownPropAnchorIDs.insert(anchor.identifier)
             managedPropAnchorsByPlacementID[id] = anchor
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
@@ -2717,7 +3092,6 @@ final class ARSessionController: NSObject, ObservableObject {
             selectedLightSettings = placement.lightSettings
             isPlacingProp = false
             placementReticlePoint = nil
-            render(prop: selectedProp, id: id, for: anchor)
             refreshSceneCatalogs()
             if selectedProp == .custom {
                 publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
@@ -2750,6 +3124,9 @@ final class ARSessionController: NSObject, ObservableObject {
     ) -> PlacementSurfaceSolution? {
         if prop.placementSurface == .floor {
             return strictFloorPlacementSolution(in: arView, at: point, for: prop)
+        }
+        if prop == .bloodWaterfall {
+            return strictWallPlacementSolution(in: arView, at: point, for: prop)
         }
 
         // When a room theme is visible, use the geometry the user actually sees. The
@@ -2900,6 +3277,115 @@ final class ARSessionController: NSObject, ObservableObject {
         // for a single frame but visibly swims once the camera moves. The user keeps
         // placement mode active until ARKit has a persistent plane/RoomPlan surface.
         return nil
+    }
+
+    /// The waterfall must be attached to the physical wall under the user's finger.
+    /// Infinite planes and camera-relative guesses can appear stable for one frame but
+    /// slide when the camera moves, so this resolver requires finite wall geometry and
+    /// agreement with the current LiDAR depth pixel.
+    private func strictWallPlacementSolution(
+        in arView: ARView,
+        at point: CGPoint,
+        for prop: PropKind
+    ) -> PlacementSurfaceSolution? {
+        guard let frame = arView.session.currentFrame,
+              let depth = sceneDepthSample(frame: frame, in: arView, at: point) else { return nil }
+        let cameraPosition = arView.cameraTransform.translation
+
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
+           wallDepthAgrees(depth, position: hit.position, normal: hit.normal) {
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .roomPlanGeometry,
+                depth: depth
+            )
+        }
+
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
+            entityID(from: $0.entity) == nil
+                && !belongsToRoomReality($0.entity)
+                && !belongsToProjectorVisualization($0.entity)
+                && wallDepthAgrees(depth, position: $0.position, normal: $0.normal)
+        }) {
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .lidarMesh,
+                depth: depth
+            )
+        }
+
+        let results = arView.raycast(
+            from: point,
+            allowing: .existingPlaneGeometry,
+            alignment: .vertical
+        )
+        for result in results {
+            guard let plane = result.anchor as? ARPlaneAnchor,
+                  plane.classification == .wall else { continue }
+            let position = SIMD3<Float>(
+                result.worldTransform.columns.3.x,
+                result.worldTransform.columns.3.y,
+                result.worldTransform.columns.3.z
+            )
+            let normal = SIMD3<Float>(
+                result.worldTransform.columns.1.x,
+                result.worldTransform.columns.1.y,
+                result.worldTransform.columns.1.z
+            )
+            guard wallDepthAgrees(depth, position: position, normal: normal) else { continue }
+            return wallSolution(
+                position: position,
+                normal: normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .arkitPlane,
+                depth: depth
+            )
+        }
+        return nil
+    }
+
+    private func wallSolution(
+        position: SIMD3<Float>,
+        normal: SIMD3<Float>,
+        prop: PropKind,
+        cameraPosition: SIMD3<Float>,
+        source: PlacementSurfaceSource,
+        depth: SceneDepthSurfaceSample
+    ) -> PlacementSurfaceSolution {
+        PlacementSurfaceSolution(
+            transform: placementTransform(
+                position: position,
+                normal: normal,
+                prop: prop,
+                cameraPosition: cameraPosition
+            ),
+            position: position,
+            normal: normal,
+            source: source,
+            depthMeters: depth.depthMeters
+        )
+    }
+
+    private func wallDepthAgrees(
+        _ depth: SceneDepthSurfaceSample,
+        position: SIMD3<Float>,
+        normal: SIMD3<Float>
+    ) -> Bool {
+        guard simd_length_squared(normal) > 0.000_001,
+              abs(simd_normalize(normal).y) <= 0.42,
+              simd_distance(depth.worldPoint, position) <= 0.22 else { return false }
+        if let depthNormal = depth.worldNormal {
+            guard simd_length_squared(depthNormal) > 0.000_001 else { return false }
+            return abs(simd_normalize(depthNormal).y) <= 0.58
+        }
+        return true
     }
 
     /// Floor props use a deliberately stricter resolver than generic horizontal
@@ -3071,6 +3557,14 @@ final class ARSessionController: NSObject, ObservableObject {
                 placementSurfaceMessage = "Sarı: LiDAR zemini ölçüyor"
                 placementSurfaceColor = .yellow
             }
+        } else if selectedProp == .bloodWaterfall {
+            if sceneDepthSample(frame: frame, in: arView, at: point) != nil {
+                placementSurfaceMessage = "Kırmızı: görünen nokta doğrulanmış dikey duvar değil"
+                placementSurfaceColor = .red
+            } else {
+                placementSurfaceMessage = "Sarı: LiDAR duvar derinliğini ölçüyor"
+                placementSurfaceColor = .yellow
+            }
         } else {
             placementSurfaceMessage = "Sarı: uygun yüzeyi yavaşça tara"
             placementSurfaceColor = .yellow
@@ -3146,6 +3640,78 @@ final class ARSessionController: NSObject, ObservableObject {
         if let estimate = floorSurfaceTracker.estimate(cameraY: cameraY), estimate.isStable {
             lastKnownFloorY = estimate.y
         }
+    }
+
+    private func personDepthSample(
+        frame: ARFrame,
+        in arView: ARView,
+        at viewPoint: CGPoint
+    ) -> SceneDepthSurfaceSample? {
+        guard arView.bounds.width > 1, arView.bounds.height > 1,
+              let depthMap = frame.estimatedDepthData,
+              CVPixelBufferGetPixelFormatType(depthMap) == kCVPixelFormatType_DepthFloat32
+        else { return nil }
+
+        let orientation = arView.window?.windowScene?.interfaceOrientation ?? .portrait
+        let normalizedViewPoint = CGPoint(
+            x: viewPoint.x / arView.bounds.width,
+            y: viewPoint.y / arView.bounds.height
+        )
+        let imagePoint = normalizedViewPoint.applying(
+            frame.displayTransform(
+                for: orientation,
+                viewportSize: arView.bounds.size
+            ).inverted()
+        )
+        guard imagePoint.x.isFinite, imagePoint.y.isFinite,
+              (0...1).contains(imagePoint.x), (0...1).contains(imagePoint.y) else { return nil }
+
+        let width = CVPixelBufferGetWidth(depthMap)
+        let height = CVPixelBufferGetHeight(depthMap)
+        guard width > 6, height > 6 else { return nil }
+        let centerX = min(max(Int(imagePoint.x * CGFloat(width - 1)), 3), width - 4)
+        let centerY = min(max(Int(imagePoint.y * CGFloat(height - 1)), 3), height - 4)
+
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+        var samples: [Float] = []
+        samples.reserveCapacity(49)
+        for y in (centerY - 3)...(centerY + 3) {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: Float32.self)
+            for x in (centerX - 3)...(centerX + 3) {
+                let value = row[x]
+                if value.isFinite, (0.18...1.60).contains(value) {
+                    samples.append(value)
+                }
+            }
+        }
+        guard samples.count >= 5 else { return nil }
+        samples.sort()
+        let depth = samples[samples.count / 2]
+
+        let imageResolution = frame.camera.imageResolution
+        let scaleX = Float(width) / Float(imageResolution.width)
+        let scaleY = Float(height) / Float(imageResolution.height)
+        let intrinsics = frame.camera.intrinsics
+        let fx = intrinsics.columns.0.x * scaleX
+        let fy = intrinsics.columns.1.y * scaleY
+        let cx = intrinsics.columns.2.x * scaleX
+        let cy = intrinsics.columns.2.y * scaleY
+        guard fx.isFinite, fy.isFinite, fx > 0, fy > 0 else { return nil }
+        let cameraPoint = SIMD4<Float>(
+            (Float(centerX) - cx) / fx * depth,
+            -(Float(centerY) - cy) / fy * depth,
+            -depth,
+            1
+        )
+        let worldPoint = frame.camera.transform * cameraPoint
+        return SceneDepthSurfaceSample(
+            worldPoint: SIMD3(worldPoint.x, worldPoint.y, worldPoint.z),
+            worldNormal: nil,
+            depthMeters: depth
+        )
     }
 
     private func sceneDepthSample(
@@ -3376,6 +3942,7 @@ final class ARSessionController: NSObject, ObservableObject {
             selectedProp = .custom
             selectedLightSettings = nil
             isPlacingProp = true
+            suspendAIForPlacement()
             publishStatus("\(importedURL.lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .green)
         } catch {
             publishStatus("USDZ içe aktarılamadı: \(error.localizedDescription)", color: .red)
@@ -3393,6 +3960,7 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedEntityID = nil
         selectedLightSettings = nil
         isPlacingProp = true
+        suspendAIForPlacement()
         publishStatus("\(url.deletingPathExtension().lastPathComponent) seçildi — kararlı yüzey görünce dokun", color: .blue)
     }
 
@@ -3425,6 +3993,7 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedEntityID = nil
         selectedLightSettings = nil
         isPlacingProp = true
+        suspendAIForPlacement()
         placementSurfaceMessage = "Sarı: LiDAR tavanı ölçüyor"
         placementSurfaceColor = .yellow
         publishStatus(
@@ -3880,6 +4449,7 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         if isListeningForCGICommands { stopCGIVoiceCommands() }
+        if isFloorMeterEnabled { setFloorMeterEnabled(false) }
         recordingPhase = .starting
         isRecordingTransitioning = true
         coachingOverlay?.isHidden = true
@@ -5459,6 +6029,7 @@ final class ARSessionController: NSObject, ObservableObject {
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         updatePlacementGuidance(using: frame)
+        updateFloorMeter(using: frame)
         updateBloodWaterfalls(timestamp: frame.timestamp)
         updateLiveAppleTracking(using: frame)
         if frame.timestamp - lastProjectorRefreshTimestamp >= 0.16 {
@@ -6447,18 +7018,185 @@ private extension BundledRoomRealityAssetProvider {
 ## `CineAR/CineARApp.swift`
 
 ````swift
+import Foundation
 import SwiftUI
+import UIKit
 
 @main
 struct CineARApp: App {
+    @StateObject private var updateChecker = AppUpdateChecker()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
+                .environmentObject(updateChecker)
+                .task {
+                    await updateChecker.checkForUpdates(showCurrentStatus: false)
+                }
+                .alert(item: $updateChecker.notice) { notice in
+                    if let actionTitle = notice.actionTitle,
+                       notice.actionURL != nil {
+                        return Alert(
+                            title: Text(notice.title),
+                            message: Text(notice.message),
+                            primaryButton: .default(Text(actionTitle)) {
+                                updateChecker.openUpdate(from: notice)
+                            },
+                            secondaryButton: .cancel(Text("Daha Sonra"))
+                        )
+                    }
+                    return Alert(
+                        title: Text(notice.title),
+                        message: Text(notice.message),
+                        dismissButton: .default(Text("Tamam"))
+                    )
+                }
         }
     }
 }
 
+@MainActor
+final class AppUpdateChecker: ObservableObject {
+    struct Notice: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+        let actionTitle: String?
+        let actionURL: URL?
+    }
+
+    @Published private(set) var isChecking = false
+    @Published var notice: Notice?
+
+    private struct LookupResponse: Decodable {
+        let results: [LookupResult]
+    }
+
+    private struct LookupResult: Decodable {
+        let version: String
+        let trackViewUrl: URL?
+    }
+
+    private var lastAutomaticCheck: Date?
+    private static let automaticCheckInterval: TimeInterval = 6 * 60 * 60
+    private static let testFlightURL = URL(
+        string: "https://apps.apple.com/app/testflight/id899247664"
+    )!
+
+    func checkForUpdates(showCurrentStatus: Bool) async {
+        guard !isChecking else { return }
+        if !showCurrentStatus,
+           let lastAutomaticCheck,
+           Date().timeIntervalSince(lastAutomaticCheck) < Self.automaticCheckInterval {
+            return
+        }
+
+        guard let bundleID = Bundle.main.bundleIdentifier,
+              let currentVersion = Bundle.main.object(
+                forInfoDictionaryKey: "CFBundleShortVersionString"
+              ) as? String,
+              var components = URLComponents(string: "https://itunes.apple.com/lookup") else {
+            if showCurrentStatus {
+                notice = Notice(
+                    title: "Sürüm okunamadı",
+                    message: "Uygulamanın sürüm bilgisi bulunamadı.",
+                    actionTitle: nil,
+                    actionURL: nil
+                )
+            }
+            return
+        }
+
+        let appStoreID = Bundle.main.object(forInfoDictionaryKey: "CineARAppStoreID") as? String
+        components.queryItems = [
+            URLQueryItem(
+                name: appStoreID?.isEmpty == false ? "id" : "bundleId",
+                value: appStoreID?.isEmpty == false ? appStoreID : bundleID
+            ),
+            URLQueryItem(name: "country", value: "tr")
+        ]
+        guard let url = components.url else { return }
+
+        isChecking = true
+        defer { isChecking = false }
+        if !showCurrentStatus { lastAutomaticCheck = Date() }
+
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 8
+            request.cachePolicy = .reloadRevalidatingCacheData
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                throw URLError(.badServerResponse)
+            }
+            let lookup = try JSONDecoder().decode(LookupResponse.self, from: data)
+            guard let storeResult = lookup.results.first else {
+                if showCurrentStatus { publishTestFlightOrUnavailableNotice() }
+                return
+            }
+
+            if storeResult.version.compare(currentVersion, options: .numeric) == .orderedDescending {
+                let fallbackStoreURL = appStoreID.flatMap {
+                    URL(string: "https://apps.apple.com/app/id\($0)")
+                }
+                notice = Notice(
+                    title: "Yeni CineAR sürümü hazır",
+                    message: "Yüklü sürüm \(currentVersion), yeni sürüm \(storeResult.version). Güncelleme App Store üzerinden güvenli biçimde kurulacak.",
+                    actionTitle: "Güncelle",
+                    actionURL: storeResult.trackViewUrl ?? fallbackStoreURL
+                )
+            } else if showCurrentStatus {
+                notice = Notice(
+                    title: "CineAR güncel",
+                    message: "En yeni sürümü kullanıyorsun: \(currentVersion).",
+                    actionTitle: nil,
+                    actionURL: nil
+                )
+            }
+        } catch {
+            guard showCurrentStatus else { return }
+            if isTestFlightBuild {
+                publishTestFlightOrUnavailableNotice()
+            } else {
+                notice = Notice(
+                    title: "Güncelleme denetlenemedi",
+                    message: "İnternet bağlantısını kontrol edip tekrar dene: \(error.localizedDescription)",
+                    actionTitle: nil,
+                    actionURL: nil
+                )
+            }
+        }
+    }
+
+    func openUpdate(from notice: Notice) {
+        guard let url = notice.actionURL else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private var isTestFlightBuild: Bool {
+        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+    }
+
+    private func publishTestFlightOrUnavailableNotice() {
+        if isTestFlightBuild {
+            notice = Notice(
+                title: "TestFlight sürümü",
+                message: "Beta güncellemeleri TestFlight tarafından kurulur. TestFlight'ı açıp CineAR için Güncelle düğmesini kullan.",
+                actionTitle: "TestFlight'ı Aç",
+                actionURL: Self.testFlightURL
+            )
+        } else {
+            notice = Notice(
+                title: "App Store kaydı bulunamadı",
+                message: "CineAR henüz bu App Store bölgesinde yayınlanmamış olabilir.",
+                actionTitle: nil,
+                actionURL: nil
+            )
+        }
+    }
+}
 ````
 
 ## `CineAR/ContentView.swift`
@@ -6469,6 +7207,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
+    @EnvironmentObject private var updateChecker: AppUpdateChecker
     @StateObject private var session = ARSessionController()
     @State private var showingRoomScanner = false
     @State private var showingAssetImporter = false
@@ -6494,6 +7233,12 @@ struct ContentView: View {
                 placementReticle
             }
 
+            if session.isFloorMeterEnabled,
+               !session.isRecording,
+               !session.isRecordingTransitioning {
+                floorMeterReticle
+            }
+
             if session.isRecording || session.isRecordingTransitioning {
                 Color.clear
                     .contentShape(Rectangle())
@@ -6508,6 +7253,9 @@ struct ContentView: View {
                 VStack(spacing: 12) {
                     statusBar
                     Spacer()
+                    if session.isFloorMeterEnabled {
+                        floorMeterPanel
+                    }
                     if session.isPlacingProp {
                         placementBar
                     } else {
@@ -6526,6 +7274,9 @@ struct ContentView: View {
         }
         .statusBarHidden(session.isRecording || session.isRecordingTransitioning)
         .onChange(of: session.isPlacingProp) { oldValue, newValue in
+            if newValue, showingCGIStudio {
+                showingCGIStudio = false
+            }
             if oldValue, !newValue {
                 controlsExpanded = false
             }
@@ -6697,12 +7448,27 @@ struct ContentView: View {
                     showingAISettings = true
                     session.testAIServerConnection()
                 }
+                utilityButton(
+                    session.isFloorMeterEnabled ? "Ölçeri Kapat" : "Zemin Ölçer",
+                    "ruler.fill"
+                ) {
+                    session.setFloorMeterEnabled(!session.isFloorMeterEnabled)
+                }
                 utilityButton("Sahne Işığı", "lightbulb.max.fill") {
                     session.showSceneLightControls()
                 }
                 utilityButton("Canlı CGI", "wand.and.stars") {
                     showingCGIStudio = true
                 }
+                utilityButton(
+                    updateChecker.isChecking ? "Denetleniyor" : "Güncelleme",
+                    updateChecker.isChecking ? "hourglass" : "arrow.down.circle.fill"
+                ) {
+                    Task {
+                        await updateChecker.checkForUpdates(showCurrentStatus: true)
+                    }
+                }
+                .disabled(updateChecker.isChecking)
 
                 if let url = session.lastRecordingURL {
                     ShareLink(item: url) {
@@ -6842,7 +7608,7 @@ struct ContentView: View {
         switch session.aiEnhancementStatus {
         case .active: .green
         case .failed: .red
-        case .waiting, .waitingForDepth: .orange
+        case .waiting, .waitingForDepth, .stabilizing: .orange
         case .disabled: .secondary
         }
     }
@@ -6904,6 +7670,9 @@ struct ContentView: View {
             .accessibilityHint(roomScanAvailabilityText)
 
             HStack(spacing: 8) {
+                compactButton("Zemin", "ruler.fill") {
+                    session.setFloorMeterEnabled(!session.isFloorMeterEnabled)
+                }
                 compactButton("Kontroller", "slider.horizontal.3") {
                     controlsExpanded = true
                 }
@@ -7128,6 +7897,92 @@ struct ContentView: View {
         .accessibilityHidden(true)
     }
 
+    private var floorMeterReticle: some View {
+        GeometryReader { _ in
+            Canvas { context, size in
+                let center = CGPoint(x: size.width * 0.5, y: size.height * 0.5)
+                var ruler = Path()
+                ruler.move(to: CGPoint(x: center.x - 120, y: center.y))
+                ruler.addLine(to: CGPoint(x: center.x + 120, y: center.y))
+                ruler.move(to: CGPoint(x: center.x, y: center.y - 120))
+                ruler.addLine(to: CGPoint(x: center.x, y: center.y + 120))
+                for offset in stride(from: -100, through: 100, by: 20) {
+                    let length: CGFloat = offset.isMultiple(of: 100) ? 13 : 7
+                    ruler.move(to: CGPoint(x: center.x + CGFloat(offset), y: center.y - length))
+                    ruler.addLine(to: CGPoint(x: center.x + CGFloat(offset), y: center.y + length))
+                    ruler.move(to: CGPoint(x: center.x - length, y: center.y + CGFloat(offset)))
+                    ruler.addLine(to: CGPoint(x: center.x + length, y: center.y + CGFloat(offset)))
+                }
+                context.stroke(
+                    ruler,
+                    with: .color(session.floorMeterColor.opacity(0.88)),
+                    lineWidth: 1.2
+                )
+                context.fill(
+                    Path(ellipseIn: CGRect(x: center.x - 4, y: center.y - 4, width: 8, height: 8)),
+                    with: .color(session.floorMeterColor)
+                )
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var floorMeterPanel: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label("Zemin Ölçer", systemImage: "ruler.fill")
+                    .font(.subheadline.weight(.bold))
+                Spacer()
+                Button("Sıfırı Yenile") { session.resetFloorMeterOrigin() }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.bordered)
+                Button {
+                    session.setFloorMeterEnabled(false)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .accessibilityLabel("Zemin Ölçeri kapat")
+            }
+
+            Text(session.floorMeterStatus)
+                .font(.caption)
+                .foregroundStyle(session.floorMeterColor)
+
+            if let reading = session.floorMeterReading {
+                HStack(spacing: 12) {
+                    floorMeterValue("LiDAR", reading.depthMeters, "m")
+                    floorMeterValue("Zemin", reading.floorDistanceMeters, "m")
+                    floorMeterValue("Kamera", reading.cameraHeightMeters, "m")
+                }
+                HStack(spacing: 10) {
+                    Text(String(format: "X %+.2f", Double(reading.xMeters)))
+                    Text("Y +0.00")
+                    Text(String(format: "Z %+.2f", Double(reading.zMeters)))
+                }
+                .font(.caption.monospacedDigit().weight(.semibold))
+                Text(
+                    "Kot \(String(format: "%+.2f m", Double(reading.floorLevelMeters))) • "
+                        + "\(reading.sourceTitle)"
+                        + (reading.tiltDegrees.map { String(format: " • eğim %.1f°", Double($0)) } ?? "")
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func floorMeterValue(_ title: String, _ value: Float, _ unit: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+            Text(String(format: "%.2f %@", Double(value), unit))
+                .font(.caption.monospacedDigit().weight(.bold))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var sceneContents: some View {
         NavigationStack {
             Group {
@@ -7331,7 +8186,7 @@ struct ContentView: View {
                             set: { session.setLiveAppleEnabled($0) }
                         )
                     )
-                    Text("Vision el eklemlerini, LiDAR ise avuç derinliğini ölçer. Elma geçici canlı efekttir; sahneye sabitlenmez.")
+                    Text("Vision el eklemlerini, kişi derinliği/LiDAR ise avuç mesafesini ölçer. Elma geçici canlı efekttir; sahneye sabitlenmez.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -7348,6 +8203,11 @@ struct ContentView: View {
                     Text("“Elimde elma olsun”, “elmayı kaldır” veya “kan şelalesi aksın” diyebilirsin.")
                         .font(.caption)
                     LabeledContent("Durum", value: session.liveCGIStatus)
+                    Button {
+                        session.openAppPermissionSettings()
+                    } label: {
+                        Label("Mikrofon ve Konuşma İzinleri", systemImage: "gear")
+                    }
                 }
             }
             .navigationTitle("Canlı CGI")
@@ -10921,6 +11781,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     static var isSupported: Bool { RoomCaptureSession.isSupported }
 
     @Published private(set) var statusText = "Odayı yavaşça tarayın"
+    @Published private(set) var scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+    @Published private(set) var hasUsableRoomGeometry = false
     @Published private(set) var isProcessing = false
     @Published private(set) var exportSucceeded = false
     @Published private(set) var failureMessage: String?
@@ -10983,6 +11845,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         discardPendingExport()
         exportSucceeded = false
         failureMessage = nil
+        scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+        hasUsableRoomGeometry = false
         statusText = "Dünya takibi hazırlanıyor…"
         isProcessing = true
         if isRetryingAfterFailure,
@@ -10994,6 +11858,10 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
+        guard hasUsableRoomGeometry else {
+            statusText = "Bitirmeden önce en az bir zemin ve bir duvar tara"
+            return
+        }
 
         shouldExport = true
         isProcessing = true
@@ -11046,7 +11914,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         if case .normal? = trackingState {
             isProcessing = false
             isSessionRunning = true
-            statusText = "Odayı yavaşça tarayın"
+            statusText = "Önce zemini, sonra duvarları yavaşça tarayın"
             captureView.captureSession.run(configuration: configuration)
             return
         }
@@ -11141,6 +12009,29 @@ final class RoomScannerController: NSObject, ObservableObject {
 }
 
 extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
+    func captureSession(_ session: RoomCaptureSession, didUpdate room: CapturedRoom) {
+        let floorCount = room.floors.count
+        let wallCount = room.walls.count
+        let objectCount = room.objects.count
+        let generation = scanGeneration
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  self.scanGeneration == generation,
+                  self.shouldExport,
+                  self.isSessionRunning else { return }
+            let wasUsable = self.hasUsableRoomGeometry
+            self.hasUsableRoomGeometry = floorCount > 0 && wallCount > 0
+            self.scanSummaryText = "Zemin \(floorCount) • Duvar \(wallCount) • Nesne \(objectCount)"
+            if floorCount == 0 {
+                self.statusText = "Kamerayı aşağı eğip zemini yavaşça tara"
+            } else if wallCount == 0 {
+                self.statusText = "Zemin bulundu; şimdi duvar ve köşeleri tara"
+            } else if !wasUsable {
+                self.statusText = "Zemin ve duvar bulundu; eksik alanları tamamla"
+            }
+        }
+    }
+
     func captureSession(
         _ session: RoomCaptureSession,
         didEndWith data: CapturedRoomData,
@@ -11286,21 +12177,31 @@ struct RoomScannerScreen: View {
                 .ignoresSafeArea()
 
             VStack {
-                HStack {
-                    Text(scanner.statusText)
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    if scanner.isProcessing {
-                        ProgressView()
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack {
+                        Text(scanner.statusText)
+                            .font(.subheadline.weight(.medium))
+                        Spacer()
+                        if scanner.isProcessing {
+                            ProgressView()
+                        }
+                        Button {
+                            reportAndDismiss(
+                                scanner.failureMessage.map(RoomScanResult.failure) ?? .cancelled
+                            )
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title2)
+                        }
                     }
-                    Button {
-                        reportAndDismiss(
-                            scanner.failureMessage.map(RoomScanResult.failure) ?? .cancelled
-                        )
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                    }
+                    Label(
+                        scanner.scanSummaryText,
+                        systemImage: scanner.hasUsableRoomGeometry
+                            ? "checkmark.circle.fill"
+                            : "viewfinder.circle"
+                    )
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(scanner.hasUsableRoomGeometry ? .green : .yellow)
                 }
                 .padding(12)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -11332,7 +12233,11 @@ struct RoomScannerScreen: View {
                     } label: {
                         Label("Taramayı Bitir", systemImage: "checkmark.circle.fill")
                     }
-                    .disabled(scanner.isProcessing || !RoomScannerController.isSupported)
+                    .disabled(
+                        scanner.isProcessing
+                            || !RoomScannerController.isSupported
+                            || !scanner.hasUsableRoomGeometry
+                    )
                     .buttonStyle(CineARPrimaryButtonStyle(color: .blue))
                 }
             }
@@ -12343,6 +13248,13 @@ workflows:
             exit 1
           fi
 
+          info_plist="$CM_BUILD_DIR/CineAR/Info.plist"
+          if /usr/libexec/PlistBuddy -c "Print :CineARAppStoreID" "$info_plist" >/dev/null 2>&1; then
+            /usr/libexec/PlistBuddy -c "Set :CineARAppStoreID $APP_STORE_APPLE_ID" "$info_plist"
+          else
+            /usr/libexec/PlistBuddy -c "Add :CineARAppStoreID string $APP_STORE_APPLE_ID" "$info_plist"
+          fi
+
           if [[ ! -d "$CM_BUILD_DIR/$XCODE_PROJECT" ]]; then
             echo "Xcode project not found: $CM_BUILD_DIR/$XCODE_PROJECT" >&2
             exit 1
@@ -12471,7 +13383,7 @@ altinda `cinear_config` grubunu olusturun.
 
 | Degisken | Deger |
 | --- | --- |
-| `APP_STORE_APPLE_ID` | App Store Connect'teki CineAR uygulamasinin sayisal Apple ID'si |
+| `APP_STORE_APPLE_ID` | App Store Connect'teki CineAR uygulamasinin sayisal Apple ID'si; build sirasinda guvenli guncelleme baglantisi icin Info.plist'e de eklenir |
 
 Apple ID gizli bir anahtar degildir; `Secret` secilmesi gerekmez. Entegrasyon,
 grup ve degisken adlari buyuk/kucuk harf dahil burada yazildigi gibi olmalidir.
@@ -12535,6 +13447,8 @@ incelemesine uygulama gondermesi mumkun degildir.
 1. Uygulama acilir acilmaz alt panelde `Odayi Tara` dugmesinin gorundugunu dogrula.
    Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
+   Canli sayacta zemin, duvar ve nesne adetleri artmali; zemin veya duvar sifirken
+   `Taramayi Bitir` pasif kalmali ve her ikisi de bulundugunda etkinlesmeli.
    Tarama acilirken RoomPlan baslamadan once dunya takibinin hazirlanmasini bekledigini
    ve `World tracking failure` ham hata metninin gorunmedigini kontrol et. Takibi
    bilerek zayiflatip `Tekrar Tara`ya basinca paylasilan AR oturumu yeniden calismali.
@@ -12627,11 +13541,16 @@ incelemesine uygulama gondermesi mumkun degildir.
 18. `Canli CGI` icinden kan selalesini secip taranmis duvara dokun. Akis duvarin
     baslangic noktasinda kalmali, damlalar hareket etmeli, gercek bir kisi/nesne onune
     girdiginde derinlik occlusion calismali. Kaydet-yukle sonrasinda efekt ayni dunya
-    konumunda yeniden baslamali.
+    konumunda yeniden baslamali. Duvarin onundeki mobilyaya veya henüz taranmamis bos
+    alana dokunuldugunda efekt yerlestirilmemeli; hedef ancak sonlu duvar ile LiDAR
+    derinligi ayni noktayi gosterdiginde yesile donmeli.
 19. `Avucta Canli Elma`yi ac; acik avucu kameraya goster ve eli on/arka/yana hareket
     ettir. Elma LiDAR derinliginde avucu izlemeli, ani olcumlerde sicrama yapmamali ve
-    el 0.42 saniyeden uzun kaybolursa gizlenmeli. `Elimde elma olsun`, `elmayi kaldir`
-    ve `kan selalesi aksin` komutlarini Turkce test et; dugme yedegi de calismali.
+    el 0.42 saniyeden uzun kaybolursa gizlenmeli. Portre ve yatay yonlerde avuc yerine
+    ekranin baska bolgesine gitmemeli; 30 cm'den buyuk tek karelik derinlik sicramasi
+    elmayi tasimamali. `Elimde elma olsun`, `elmayi kaldir` ve `kan selalesi aksin`
+    komutlarini Turkce test et; ilk kullanimda iki izin istemi gorunmeli, reddedilen
+    izin icin Ayarlar kisayolu ve anlasilir hata metni cikmali, dugme yedegi de calismali.
 20. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
@@ -12640,6 +13559,20 @@ incelemesine uygulama gondermesi mumkun degildir.
     aciksa takip duzelince hatlar tekrar gorunmeli.
 21. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
 22. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+23. PC AI kapaliyken `Zemin` olcerini ac. 25 cm grid'in zemine sabit kaldigini,
+    X/Y/Z degerlerinin `Sifiri Yenile` sonrasinda sifira yaklastigini ve metreyle
+    kontrol edilen 1 m referans uzunlugunda hatanin 2 cm'den az oldugunu dogrula.
+    Merkez noktayi masa uzerine getirince durum kirmizi olup `ondeki nesne zemini
+    kapatiyor` demeli; zemin karari PC baglantisindan etkilenmemeli.
+24. PC AI acikken `Kasa` sec. Yerlesim boyunca AI durumu beklemede olmali; zemine
+    dokununca kasa dunya sifirindan veya kameradan kayarak gelmemeli, yalnizca AR
+    anchor kesinlestigi nihai noktada gorunmeli. PC yaniti 1200 ms'yi asarsa yerel
+    LiDAR'a donmeli; kasa titrememeli, kaybolmamali ve alt/ust yarisi kesilmemeli.
+25. `Kontroller > Guncelleme`ye bas. Internet varken denetim sekiz saniye icinde
+    sonuc vermeli. TestFlight yapisinda `TestFlight'i Ac`, yayindaki App Store
+    surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
+    gorunmeli. Internet kapaliyken uygulama acilmaya devam etmeli ve manuel kontrolde
+    anlasilir hata mesaji cikmali.
 
 ## Baslangic kabul esikleri
 
@@ -12729,7 +13662,17 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   metreye kalibre edilen sonuc RealityKit'te gorunmez occlusion mesh'i olur
 - AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
   cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
+- Yerlesim sirasinda uzak AI occlusion'ini durdurma; AR anchor kesinlesmeden modeli
+  gostermeme, 1200 ms'den eski veya hareketle uyusmayan AI karesini reddetme ve
+  LiDAR/AI derinliklerini ust uste cizmeden nesne kesilmesini engelleme
+- PC dengeli profilinde 512 px JPEG, 448 px/6 nokta SAM 2 ve 500 ms istek araligi;
+  LiDAR metre tamponunun cozunurlugunu dusurmeden daha dusuk gecikme ve VRAM kullanimi
+- PC veya bulut gerektirmeyen `Zemin Olcer`: siniflandirilmis LiDAR/ARKit zemin kotu,
+  merkez piksel derinligi, gorus-cizgisi zemin mesafesi, kamera yuksekligi, egim,
+  X/Y/Z koordinatlari ve 25 cm aralikli 4 x 4 metre saydam dunya grid'i
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
+- Tarama ekraninda canli zemin/duvar/nesne sayaci; en az bir zemin ve bir duvar
+  bulunmadan hatali veya bos taramayi bitirmeyi engelleme
 - RoomPlan acilirken kararlı AR karesini bekleme; `worldTrackingFailure` sonrasinda
   paylasilan oturumu guvenli yeniden calistiran ve Turkce yonlendirme veren tekrar deneme
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
@@ -12790,11 +13733,17 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   veya aktif sahneyi etkilemeden arsiv kaydini silme
 - Kayitli mekanda relocalization
 - Duvara anchor edilen, uygulama yeniden acildiginda sahne kaydiyla geri gelen
-  hareketli kan selalesi CGI efekti
-- Vision el-eklem takibi ile LiDAR avuc derinligini birlestirip elmayi elde canli
-  izleme; insan/scene-depth occlusion ve zamansal konum yumusatma
+  hareketli kan selalesi CGI efekti; yalniz sonlu, dikey duvar geometrisi ile
+  dokunulan LiDAR derinligi eslestiginde yerlestirme
+- Vision el-eklem takibinin goruntu yonu/aspect-fill koordinatlarini ARKit ekranina
+  donusturup kisi derinligiyle avuc konumunu metre cinsinden olcme; gecikmis kareyi
+  ve 30 cm'den buyuk derinlik sicramasini reddedip elmayi sabit dunya kokunde yumusatma
 - `Elimde elma olsun`, `elmayi kaldir` ve `kan selalesi aksin` Turkce sesli
-  komutlari; ses kullanilamayan ortamlar icin ayni islemlerin dugmeleri
+  komutlari; Turkce baglam ifadeleri, gorunur izin/hata durumu, Ayarlar kisayolu ve
+  cihaz-ici tanima yeterli olmadiginda Apple'in ag destekli tanimasina izin verme
+- Uygulama acilisinda sessiz App Store surum denetimi ve `Kontroller > Guncelleme`
+  uzerinden manuel kontrol; yeni surumde guvenli App Store yonlendirmesi, beta
+  kurulumunda TestFlight acma destegi
 - Arayuzsiz cekim modu; ekrana iki kez dokunarak kaydi bitirme
 - HEVC video ve 48 kHz AAC mikrofon sesini `.mov` dosyasina yazma
 - Son cekimi iOS Share Sheet ile disari aktarma
@@ -12807,7 +13756,12 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 4. Ana ekranin altindaki her zaman gorunen `Odayi Tara` dugmesiyle tum duvarlari,
    kapi/pencereleri ve odadaki buyuk objeleri tarayin. AR henuz hazir degilse dugme
    uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
-   olarak degisir.
+   olarak degisir. Tarama ekranindaki `Zemin / Duvar / Nesne` sayacinda en az bir
+   zemin ve bir duvar gorulmeden `Taramayi Bitir` etkinlesmez.
+   `Zemin` dugmesiyle olceri acin; beyaz grid zemine sabitlenir, kirmizi X ve mavi Z
+   eksenleri ilk dogrulanan noktayi sifir kabul eder. `Sifiri Yenile` yeni bir yerel
+   koordinat baslangici olusturur. Kirmizi durum, merkez pikselde masa/koltuk gibi bir
+   nesnenin gercek zemini kapattigini belirtir.
 5. Tarama onaylandiginda gercek kamera goruntusune donulur; taranan yuzeylerin
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
@@ -12835,11 +13789,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    icinde ayri bir arsiv olusturur; listeden eski tarama ve o taramaya ait nesneler
    birlikte geri yuklenir.
 10. `Sahne` listesinden eklenmis nesneyi secin veya cop kutusuyla tek basina silin.
-    `Canli CGI` ekraninda kan selalesini secip taranmis duvara dokunun; `Avucta Canli
-    Elma`yi acip elinizi kameraya gosterin. Isterseniz ayni islemleri Turkce sesli
-    komutla baslatin.
-11. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
-   ekrana iki kez dokunun.
+    `Canli CGI` ekraninda kan selalesini secip hedef yesile dondugunde gorunur duvara
+    dokunun; `Avucta Canli Elma`yi acip avucunuzu kameraya gosterin. Sesli komut icin
+    mikrofon ve konusma izinlerini verip ayni islemleri Turkce baslatin.
+11. `Kontroller > Guncelleme` ile surumu denetleyin. App Store surumu hazirsa
+    `Guncelle`, TestFlight beta kurulumuysa `TestFlight'i Ac` secenegi gorunur.
+    iOS guvenlik kurali geregi uygulama IPA'yi kendi icinden kurmaz.
+12. `HEVC Cekim` tusuna basin. Kayit sirasinda arayuz gizlenir; bitirmek icin
+    ekrana iki kez dokunun.
 
 ## PC AI derinlik denemesi
 
@@ -13483,7 +14440,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- Swift + SwiftUI kullanıcı arayüzü")
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
 [void]$builder.AppendLine("- Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i")
-[void]$builder.AppendLine("- RoomPlan ile semantik oda taraması ve ``room.json`` üretimi")
+[void]$builder.AppendLine("- RoomPlan ile semantik oda taraması, canlı zemin/duvar/nesne sayacı ve doğrulanmış ``room.json`` üretimi")
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
@@ -13494,8 +14451,10 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i")
 [void]$builder.AppendLine("- Manuel dekor sürükleme, döndürme ve ölçekleme")
 [void]$builder.AppendLine("- ARWorldMap + ``scene.json`` ile kalıcı anchor/transform saklama ve relocalization")
+[void]$builder.AppendLine("- LiDAR derinliğiyle doğrulanan duvar-sabit kan şelalesi, Vision/kişi derinliğiyle avuç-sabit canlı elma ve Türkçe sesli CGI komutları")
 [void]$builder.AppendLine("- ReplayKit/AVFoundation tabanlı HEVC video ve AAC ses kaydı")
 [void]$builder.AppendLine("- Codemagic ile imzalı IPA üretimi ve TestFlight yüklemesi")
+[void]$builder.AppendLine("- Açılışta App Store sürüm denetimi; manuel güncelleme kontrolü ve App Store/TestFlight yönlendirmesi")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Çalışma ve dağıtım gereksinimleri")
 [void]$builder.AppendLine()

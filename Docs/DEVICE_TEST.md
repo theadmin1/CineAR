@@ -12,6 +12,8 @@
 1. Uygulama acilir acilmaz alt panelde `Odayi Tara` dugmesinin gorundugunu dogrula.
    Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
+   Canli sayacta zemin, duvar ve nesne adetleri artmali; zemin veya duvar sifirken
+   `Taramayi Bitir` pasif kalmali ve her ikisi de bulundugunda etkinlesmeli.
    Tarama acilirken RoomPlan baslamadan once dunya takibinin hazirlanmasini bekledigini
    ve `World tracking failure` ham hata metninin gorunmedigini kontrol et. Takibi
    bilerek zayiflatip `Tekrar Tara`ya basinca paylasilan AR oturumu yeniden calismali.
@@ -104,11 +106,16 @@
 18. `Canli CGI` icinden kan selalesini secip taranmis duvara dokun. Akis duvarin
     baslangic noktasinda kalmali, damlalar hareket etmeli, gercek bir kisi/nesne onune
     girdiginde derinlik occlusion calismali. Kaydet-yukle sonrasinda efekt ayni dunya
-    konumunda yeniden baslamali.
+    konumunda yeniden baslamali. Duvarin onundeki mobilyaya veya henüz taranmamis bos
+    alana dokunuldugunda efekt yerlestirilmemeli; hedef ancak sonlu duvar ile LiDAR
+    derinligi ayni noktayi gosterdiginde yesile donmeli.
 19. `Avucta Canli Elma`yi ac; acik avucu kameraya goster ve eli on/arka/yana hareket
     ettir. Elma LiDAR derinliginde avucu izlemeli, ani olcumlerde sicrama yapmamali ve
-    el 0.42 saniyeden uzun kaybolursa gizlenmeli. `Elimde elma olsun`, `elmayi kaldir`
-    ve `kan selalesi aksin` komutlarini Turkce test et; dugme yedegi de calismali.
+    el 0.42 saniyeden uzun kaybolursa gizlenmeli. Portre ve yatay yonlerde avuc yerine
+    ekranin baska bolgesine gitmemeli; 30 cm'den buyuk tek karelik derinlik sicramasi
+    elmayi tasimamali. `Elimde elma olsun`, `elmayi kaldir` ve `kan selalesi aksin`
+    komutlarini Turkce test et; ilk kullanimda iki izin istemi gorunmeli, reddedilen
+    izin icin Ayarlar kisayolu ve anlasilir hata metni cikmali, dugme yedegi de calismali.
 20. Uygulamayi arka plana alip geri getir; AR takibi normale donmeli ve manuel
     objeler yerinde kalmali. Gecici AR hatasinda otomatik yeniden baslatma mesaji
     gorulmeli ve `Oda Tara` yalniz takip yeniden hazir oldugunda etkinlesmeli.
@@ -117,6 +124,20 @@
     aciksa takip duzelince hatlar tekrar gorunmeli.
 21. Tripodda 10 dakika, elde 5 dakika kesintisiz HEVC kayit al.
 22. MOV dosyasinda kare dusmesi, ses senkronu ve cihaz isinmasini kontrol et.
+23. PC AI kapaliyken `Zemin` olcerini ac. 25 cm grid'in zemine sabit kaldigini,
+    X/Y/Z degerlerinin `Sifiri Yenile` sonrasinda sifira yaklastigini ve metreyle
+    kontrol edilen 1 m referans uzunlugunda hatanin 2 cm'den az oldugunu dogrula.
+    Merkez noktayi masa uzerine getirince durum kirmizi olup `ondeki nesne zemini
+    kapatiyor` demeli; zemin karari PC baglantisindan etkilenmemeli.
+24. PC AI acikken `Kasa` sec. Yerlesim boyunca AI durumu beklemede olmali; zemine
+    dokununca kasa dunya sifirindan veya kameradan kayarak gelmemeli, yalnizca AR
+    anchor kesinlestigi nihai noktada gorunmeli. PC yaniti 1200 ms'yi asarsa yerel
+    LiDAR'a donmeli; kasa titrememeli, kaybolmamali ve alt/ust yarisi kesilmemeli.
+25. `Kontroller > Guncelleme`ye bas. Internet varken denetim sekiz saniye icinde
+    sonuc vermeli. TestFlight yapisinda `TestFlight'i Ac`, yayindaki App Store
+    surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
+    gorunmeli. Internet kapaliyken uygulama acilmaya devam etmeli ve manuel kontrolde
+    anlasilir hata mesaji cikmali.
 
 ## Baslangic kabul esikleri
 
