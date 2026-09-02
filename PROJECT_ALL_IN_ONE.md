@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.15.1`
-- Proje build numarası: `30`
+- Uygulama sürümü: `0.17.0`
+- Proje build numarası: `34`
 - Git dalı: `main`
-- Kaynak commit: `e674e140af7f8c8aa2ac720d8b2ba27bc8b02ee4`
-- Oluşturulma zamanı: `2026-09-01 20:54:55 +03:00`
+- Kaynak commit: `a2f0166d1fe72bebf8041064202b5e657c03aa6f`
+- Oluşturulma zamanı: `2026-09-02 11:51:10 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -103,6 +103,7 @@ Belgenin kendisi sonsuz iç içe geçmeyi önlemek için kaynak listesine alınm
 
 ````text
 .gitignore
+AIService/benchmark_server.py
 AIService/fusion.py
 AIService/README.md
 AIService/requirements.txt
@@ -249,25 +250,26 @@ Yok.
 | Dosya | Satır | Boyut (byte) |
 | --- | ---: | ---: |
 | `.gitignore` | 30 | 559 |
+| `AIService/benchmark_server.py` | 118 | 4158 |
 | `AIService/fusion.py` | 100 | 3952 |
-| `AIService/README.md` | 81 | 3741 |
+| `AIService/README.md` | 105 | 5042 |
 | `AIService/requirements.txt` | 11 | 205 |
-| `AIService/run_server.ps1` | 66 | 2692 |
-| `AIService/server.py` | 319 | 12094 |
+| `AIService/run_server.ps1` | 94 | 3936 |
+| `AIService/server.py` | 375 | 14771 |
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
-| `CineAR/AIEnhancementClient.swift` | 450 | 18722 |
-| `CineAR/ARSessionController.swift` | 5576 | 232688 |
+| `CineAR/AIEnhancementClient.swift` | 462 | 19491 |
+| `CineAR/ARSessionController.swift` | 6045 | 252625 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 180 | 6728 |
-| `CineAR/ContentView.swift` | 1165 | 49524 |
+| `CineAR/ContentView.swift` | 1395 | 58952 |
 | `CineAR/Info.plist` | 62 | 2153 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 358 | 14201 |
@@ -277,12 +279,12 @@ Yok.
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
 | `CineAR/RoomRealityRenderer.swift` | 2144 | 82215 |
 | `CineAR/RoomScanner.swift` | 725 | 25857 |
-| `CineAR/SceneProjectStore.swift` | 934 | 38368 |
+| `CineAR/SceneProjectStore.swift` | 1081 | 42848 |
 | `codemagic.yaml` | 138 | 4626 |
 | `Docs/CODEMAGIC.md` | 86 | 4715 |
-| `Docs/DEVICE_TEST.md` | 188 | 13430 |
+| `Docs/DEVICE_TEST.md` | 208 | 14968 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 258 | 16777 |
+| `README.md` | 279 | 18400 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -324,6 +326,128 @@ AIService/.cache/
 
 # Generated handoff archives are release artifacts, not source files
 CineAR-Codemagic-Handoff-*.zip
+````
+
+## `AIService/benchmark_server.py`
+
+````python
+"""Measure CineAR's real HTTP depth path, including upload and response time."""
+
+from __future__ import annotations
+
+import argparse
+from io import BytesIO
+import json
+import time
+from urllib.request import Request, urlopen
+from uuid import uuid4
+
+import numpy as np
+from PIL import Image
+
+
+def multipart_body(
+    fields: dict[str, str],
+    files: dict[str, tuple[str, bytes, str]],
+) -> tuple[bytes, str]:
+    boundary = f"cinear-{uuid4().hex}"
+    chunks: list[bytes] = []
+    for name, value in fields.items():
+        chunks.extend(
+            [
+                f"--{boundary}\r\n".encode(),
+                f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(),
+                value.encode(),
+                b"\r\n",
+            ]
+        )
+    for name, (filename, content, content_type) in files.items():
+        chunks.extend(
+            [
+                f"--{boundary}\r\n".encode(),
+                (
+                    f'Content-Disposition: form-data; name="{name}"; '
+                    f'filename="{filename}"\r\n'
+                ).encode(),
+                f"Content-Type: {content_type}\r\n\r\n".encode(),
+                content,
+                b"\r\n",
+            ]
+        )
+    chunks.append(f"--{boundary}--\r\n".encode())
+    return b"".join(chunks), boundary
+
+
+def phone_like_payload() -> tuple[bytes, bytes]:
+    width, height = 512, 384
+    horizontal = np.linspace(0, 255, width, dtype=np.uint8)
+    vertical = np.linspace(0, 255, height, dtype=np.uint8)
+    pixels = np.empty((height, width, 3), dtype=np.uint8)
+    pixels[..., 0] = horizontal[None, :]
+    pixels[..., 1] = vertical[:, None]
+    pixels[..., 2] = (
+        (pixels[..., 0].astype(np.uint16) + pixels[..., 1].astype(np.uint16)) // 2
+    ).astype(np.uint8)
+    image_bytes = BytesIO()
+    Image.fromarray(pixels, mode="RGB").save(image_bytes, format="JPEG", quality=90)
+    lidar_bytes = np.full((192, 256), 2.0, dtype="<f4").tobytes()
+    return image_bytes.getvalue(), lidar_bytes
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--url", default="http://127.0.0.1:8765")
+    parser.add_argument("--requests", type=int, default=3)
+    parser.add_argument("--deadline-ms", type=float, default=350.0)
+    args = parser.parse_args()
+
+    with urlopen(f"{args.url}/health", timeout=10) as response:
+        health = json.load(response)
+    print("health:", json.dumps(health, ensure_ascii=False))
+    if not health.get("ready"):
+        raise RuntimeError(f"Server is not ready: {health.get('error')}")
+
+    image_bytes, lidar_bytes = phone_like_payload()
+    http_times: list[float] = []
+    inference_times: list[float] = []
+    expected_response_bytes = 192 * 256 * np.dtype("<f4").itemsize
+    for index in range(args.requests):
+        body, boundary = multipart_body(
+            {
+                "frame_id": str(index),
+                "depth_width": "256",
+                "depth_height": "192",
+            },
+            {
+                "image": ("frame.jpg", image_bytes, "image/jpeg"),
+                "lidar": ("depth.bin", lidar_bytes, "application/octet-stream"),
+            },
+        )
+        request = Request(
+            f"{args.url}/v1/depth",
+            data=body,
+            headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+            method="POST",
+        )
+        started = time.perf_counter()
+        with urlopen(request, timeout=15) as response:
+            result = response.read()
+            inference_times.append(float(response.headers["X-CineAR-Inference-MS"]))
+        http_times.append((time.perf_counter() - started) * 1_000)
+        if len(result) != expected_response_bytes:
+            raise RuntimeError(
+                f"Depth response is {len(result)} bytes; expected {expected_response_bytes}"
+            )
+
+    print("http_ms:", [round(value, 1) for value in http_times])
+    print("inference_ms:", inference_times)
+    passed = max(http_times) < args.deadline_ms
+    print(f"deadline_{args.deadline_ms:g}_ms:", "PASS" if passed else "FAIL")
+    return 0 if passed else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 ````
 
 ## `AIService/fusion.py`
@@ -436,9 +560,10 @@ def fuse_depth(relative: np.ndarray, lidar: np.ndarray, masks: list[np.ndarray])
 # CineAR PC AI Derinlik Servisi
 
 Bu servis iPhone'un kamera karesini ve ARKit LiDAR derinligini ayni Wi-Fi uzerinden
-alir. Depth Anything V2 Small ile yogun derinlik uretir, SAM 2.1 Tiny maskelerini
-nesne siniri olarak kullanir ve sonucu LiDAR metreleriyle kalibre ederek telefona
-geri yollar. RealityKit dunya takibi ve anchor'lar telefonda kalir.
+alir. Depth Anything V2 Small ile yogun derinlik uretir ve sonucu LiDAR metreleriyle
+kalibre ederek telefona geri yollar. RealityKit dunya takibi ve anchor'lar telefonda
+kalir. RTX 3050 icin varsayilan hizli modda SAM kapali; SAM 2.1 Tiny kalite denemesi
+istege bagli olarak acilir.
 
 ## Windows kurulumu
 
@@ -454,6 +579,10 @@ Guvenlik Duvari sorarsa Python icin yalnizca `Ozel aglar` erisimini acin. Konsol
 yazilan `http://192.168...:8765` adresi Bonjour ile yerel aga yayinlanir; CineAR
 `AI Derinlik` ekrani acildiginda PC'yi bulur, `/health` ile dogrular ve adresi kendi
 gunceller. iPhone ve PC ayni yerel agda olmalidir.
+
+Baslangicta terminal fiziksel Wi-Fi adaptoru adini, `Mevcut Wi-Fi IPv4 adresi`ni ve
+iPhone'un kullanacagi tam `http://IP:8765` adresini ayri satirlarda gosterir. Wi-Fi
+yoksa etkin fiziksel Ethernet/yerel ag adresi ayni bicimde belirtilir.
 
 Hotspot veya Wi-Fi degistiginde IP adresi de degisir. `run_server.ps1`, varsayilan ag
 gecidi bulunan etkin Wi-Fi/Ethernet baglantisini secer; VMware/VirtualBox gibi sanal
@@ -480,19 +609,38 @@ Bu bilgisayardaki RTX 3050 Laptop GPU 4 GB icin varsayilan modeller bilerek
 `Depth-Anything-V2-Small` ve `sam2.1-hiera-tiny` secilmistir. Daha buyuk modeller
 gecikmeyi ve bellek tasmasi riskini ciddi bicimde artirir.
 
-Varsayilan dengeli profil SAM 2 otomatik maske izgara yogunlugunu `6`, giris kenarini
-`448 px` kullanir; iPhone kamera karesi `512 px / JPEG %62` olarak gonderilir. LiDAR
-metreleri tam cozunurlukte kalir. Kalite denemesi icin sunucuyu baslatmadan once
-`CINEAR_SAM_POINTS=8` ve `CINEAR_SAM_MAX_SIDE=512` ayarlanabilir, ancak RTX 3050'de
-gecikme ve VRAM kullanimi belirgin bicimde artar.
+Varsayilan hizli profil Depth Anything girisini `322 x 322` kullanir ve her karedeki
+pahali SAM otomatik maske taramasini kapatir. iPhone kamera karesi `512 px / JPEG %62`
+olarak gonderilir; LiDAR metreleri tam cozunurlukte kalir. Kalite denemesi icin sunucuyu
+baslatmadan once `$env:CINEAR_SAM_ENABLED="1"` verilebilir. Ardindan
+`CINEAR_SAM_POINTS=8` ve `CINEAR_SAM_MAX_SIDE=512` da ayarlanabilir; bu kalite modu
+RTX 3050'de gercek zamanli degildir ve gecikmeyi belirgin bicimde artirir.
 
-1 Eylul 2026'da gonderilen gercek oda karesinde dengeli `6/448` profil ilk
-istegi 1315 ms, isinmis istekleri 320 ve 298 ms'de tamamladi; her karede 6
-gecerli nesne maskesi uretti.
+Sunucu `/health` icin `ready:true` vermeden once CUDA cekirdeklerini bir deneme karesiyle
+isitir. Boylece yaklasik bir saniyelik ilk-kare maliyeti telefondaki ilk gercek istege
+kalmaz; `warmup_milliseconds` saglik cevabinda gorulebilir.
 
-iPhone istemcisi yerlesim modundayken uzak mesh'i durdurur. Toplam gecikmesi
-1200 ms'yi asan veya guncel kameradan 18 cm/12 derece uzaklasmis sonuc ekrana
-cizilmez; uygulama o karelerde cihazdaki LiDAR occlusion'ina geri doner.
+2 Eylul 2026 yerel RTX 3050 testinde gercek telefon boyutlariyla iki turlu CUDA
+isitmasi 524 ms surdu. Ardindan `512 x 384` JPEG kamera ve `256 x 192` LiDAR verisini
+gercek `/v1/depth` HTTP yolundan geciren uc istegin toplam sureleri 229, 60 ve 38 ms;
+sunucu cikarim sureleri 208, 46 ve 28 ms olculdu. Ilk istek dahil iPhone'un 350 ms
+kabul esigini gecti.
+
+Ayni testi sunucu acikken yeniden calistirmak icin:
+
+```powershell
+.\AIService\.venv\Scripts\python.exe .\AIService\benchmark_server.py
+```
+
+Hizli mod, SAM olmadan metreye kalibre edilmis Depth Anything + LiDAR sonucunu
+hedefler. `CINEAR_SAM_ENABLED=1` olan eski kalite profili gercek oda karesinde ilk
+istegi 1315 ms, isinmis istekleri 320 ve 298 ms'de tamamladi; her karede 6 maske
+uretti ancak hareketli kamera icin kararlı bir gecikme sunmadi.
+
+iPhone istemcisi yerlesim modundayken ve karede kisi goruldugunde uzak mesh'i
+durdurur. Toplam gecikmesi 350 ms'yi asan veya guncel kameradan 5,5 cm/6 derece
+uzaklasmis sonuc ekrana cizilmez; uygulama o karelerde cihazdaki LiDAR ve
+person-depth occlusion'ina geri doner.
 
 27 Agustos 2026 yerel dogrulamasinda RTX 3050 ilk isitma istegini 1847 ms,
 ikinci istegi 682 ms'de tamamladi; SAM 2 dokuz maske uretti ve yapay LiDAR
@@ -547,6 +695,8 @@ $env:HF_HOME = Join-Path $modelCache "huggingface"
 $env:TORCH_HOME = Join-Path $modelCache "torch"
 if (-not $env:CINEAR_SAM_POINTS) { $env:CINEAR_SAM_POINTS = "6" }
 if (-not $env:CINEAR_SAM_MAX_SIDE) { $env:CINEAR_SAM_MAX_SIDE = "448" }
+if (-not $env:CINEAR_SAM_ENABLED) { $env:CINEAR_SAM_ENABLED = "0" }
+if (-not $env:CINEAR_DEPTH_INPUT_SIZE) { $env:CINEAR_DEPTH_INPUT_SIZE = "322" }
 
 # Older CineAR virtual environments do not contain the lightweight Bonjour
 # dependency. Install only that missing package so an existing CUDA/PyTorch
@@ -560,16 +710,35 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
-$activeNetwork = Get-NetIPConfiguration -ErrorAction SilentlyContinue |
+$networkCandidates = @(Get-NetIPConfiguration -ErrorAction SilentlyContinue |
     Where-Object {
         $_.NetAdapter.Status -eq "Up" -and
         $_.IPv4DefaultGateway -and
-        $_.IPv4Address
+        $_.IPv4Address -and
+        $_.InterfaceAlias -notmatch "Loopback|vEthernet|VMware|VirtualBox|Hyper-V"
     } |
-    Sort-Object { $_.NetIPInterface.InterfaceMetric } |
+    Sort-Object { $_.NetIPInterface.InterfaceMetric })
+
+# Telefonun erisecegi fiziksel Wi-Fi adresini Ethernet ve sanal adaptorlere tercih et.
+# Windows dili Turkce veya Ingilizce olabilecegi icin hem media type hem ad/aciklama
+# denetlenir.
+$wifiNetwork = $networkCandidates |
+    Where-Object {
+        $_.NetAdapter.MediaType -eq "Native 802.11" -or
+        $_.InterfaceAlias -match "Wi-?Fi|Wireless|WLAN|Kablosuz" -or
+        $_.NetAdapter.InterfaceDescription -match "Wi-?Fi|Wireless|WLAN|802\.11|Kablosuz"
+    } |
     Select-Object -First 1
 
+$activeNetwork = if ($wifiNetwork) {
+    $wifiNetwork
+} else {
+    $networkCandidates | Select-Object -First 1
+}
+
 $address = $activeNetwork.IPv4Address.IPAddress | Select-Object -First 1
+$addressLabel = if ($wifiNetwork) { "Mevcut Wi-Fi IPv4 adresi" } else { "Etkin ag IPv4 adresi" }
+$adapterName = $activeNetwork.InterfaceAlias
 if (-not $address) {
     $address = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
         Where-Object {
@@ -579,10 +748,16 @@ if (-not $address) {
         } |
         Sort-Object InterfaceMetric |
         Select-Object -First 1 -ExpandProperty IPAddress
+    $addressLabel = "Bulunan yerel IPv4 adresi"
+    $adapterName = $null
 }
 
 if ($address) {
     $env:CINEAR_ADVERTISE_ADDRESS = $address
+    if ($adapterName) {
+        Write-Host "Aktif ag adaptoru: $adapterName"
+    }
+    Write-Host "${addressLabel}: $address" -ForegroundColor Cyan
     Write-Host "iPhone sunucu adresi: http://${address}:8765"
     Write-Host "CineAR bu adresi otomatik bulacak. iPhone ve PC ayni Wi-Fi'da olmali."
 } else {
@@ -590,7 +765,8 @@ if ($address) {
     Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."
 }
 Write-Host "Ilk acilis model dosyalarini indirecegi icin birkac dakika surebilir."
-Write-Host "Hizli profil: SAM nokta=${env:CINEAR_SAM_POINTS}, azami kenar=${env:CINEAR_SAM_MAX_SIDE}px"
+$samMode = if ($env:CINEAR_SAM_ENABLED -eq "1") { "acik" } else { "kapali (hizli)" }
+Write-Host "Hizli profil: Depth=${env:CINEAR_DEPTH_INPUT_SIZE}px, SAM=$samMode"
 
 Push-Location $repoRoot
 try {
@@ -632,8 +808,15 @@ DEPTH_MODEL_ID = os.environ.get(
     "depth-anything/Depth-Anything-V2-Small-hf",
 )
 SAM_MODEL_ID = os.environ.get("CINEAR_SAM_MODEL", "facebook/sam2.1-hiera-tiny")
+SAM_ENABLED = os.environ.get("CINEAR_SAM_ENABLED", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "6"))
 SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "448"))
+DEPTH_INPUT_SIZE = min(max(int(os.environ.get("CINEAR_DEPTH_INPUT_SIZE", "322")), 224), 518)
 MAX_PIXELS = 640 * 480
 SERVICE_PORT = 8765
 BONJOUR_SERVICE_TYPE = "_cinear-ai._tcp.local."
@@ -683,6 +866,8 @@ def register_bonjour_service(address: str | None = None) -> tuple[Zeroconf, Serv
         zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
         zeroconf.register_service(info, allow_name_change=True)
         bonjour_url = f"http://{address}:{SERVICE_PORT}"
+        print(f"Mevcut ag IPv4 adresi: {address}")
+        print(f"iPhone sunucu adresi: {bonjour_url}")
         print(f"CineAR Bonjour: advertising {bonjour_url}")
         return zeroconf, info
     except Exception as error:
@@ -749,6 +934,7 @@ class InferenceModels:
         self.mask_generator = None
         self.ready = False
         self.load_error: str | None = None
+        self.warmup_milliseconds = 0.0
         self.lock = Lock()
 
     def load(self) -> None:
@@ -757,24 +943,61 @@ class InferenceModels:
             self.depth_model = AutoModelForDepthEstimation.from_pretrained(DEPTH_MODEL_ID)
             self.depth_model = self.depth_model.to(self.device).eval()
 
-            from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
-            from sam2.build_sam import build_sam2_hf
+            if SAM_ENABLED:
+                from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
+                from sam2.build_sam import build_sam2_hf
 
-            sam_model = build_sam2_hf(
-                SAM_MODEL_ID,
-                device=str(self.device),
-                apply_postprocessing=False,
+                sam_model = build_sam2_hf(
+                    SAM_MODEL_ID,
+                    device=str(self.device),
+                    apply_postprocessing=False,
+                )
+                self.mask_generator = SAM2AutomaticMaskGenerator(
+                    model=sam_model,
+                    points_per_side=SAM_POINTS_PER_SIDE,
+                    points_per_batch=16,
+                    pred_iou_thresh=0.88,
+                    stability_score_thresh=0.92,
+                    crop_n_layers=0,
+                    min_mask_region_area=0,
+                    output_mode="binary_mask",
+                )
+            # Pay the CUDA graph/kernel startup cost before /health reports ready.
+            # Without this warm-up the first phone frame takes about one second on an
+            # RTX 3050 and is correctly rejected by the iPhone as stale.
+            warmup_started = time.perf_counter()
+            # Match the phone request geometry and exercise interpolation/fusion too.
+            # A tiny, flat image did not initialise every CUDA kernel: the first real
+            # 512x384 frame could still miss the iPhone's 350 ms freshness deadline.
+            warmup_width, warmup_height = 512, 384
+            warmup_depth_width, warmup_depth_height = 256, 192
+            horizontal = np.linspace(0, 255, warmup_width, dtype=np.uint8)
+            vertical = np.linspace(0, 255, warmup_height, dtype=np.uint8)
+            warmup_pixels = np.empty((warmup_height, warmup_width, 3), dtype=np.uint8)
+            warmup_pixels[..., 0] = horizontal[None, :]
+            warmup_pixels[..., 1] = vertical[:, None]
+            warmup_pixels[..., 2] = 127
+            warmup_image = Image.fromarray(warmup_pixels, mode="RGB")
+            warmup_lidar = np.full(
+                (warmup_depth_height, warmup_depth_width),
+                2.0,
+                dtype=np.float32,
             )
-            self.mask_generator = SAM2AutomaticMaskGenerator(
-                model=sam_model,
-                points_per_side=SAM_POINTS_PER_SIDE,
-                points_per_batch=16,
-                pred_iou_thresh=0.88,
-                stability_score_thresh=0.92,
-                crop_n_layers=0,
-                min_mask_region_area=0,
-                output_mode="binary_mask",
-            )
+            for _ in range(2):
+                relative = self._relative_depth(
+                    warmup_image,
+                    warmup_depth_height,
+                    warmup_depth_width,
+                )
+                masks = self._sam_masks(
+                    warmup_image,
+                    warmup_depth_height,
+                    warmup_depth_width,
+                )
+                _ = fuse_depth(relative, warmup_lidar, masks)
+            if self.device.type == "cuda":
+                torch.cuda.synchronize()
+            self.warmup_milliseconds = (time.perf_counter() - warmup_started) * 1_000
             self.ready = True
         except Exception as error:  # surfaced by /health and startup log
             self.load_error = f"{type(error).__name__}: {error}"
@@ -786,7 +1009,11 @@ class InferenceModels:
         return nullcontext()
 
     def _relative_depth(self, image: Image.Image, height: int, width: int) -> np.ndarray:
-        inputs = self.depth_processor(images=image, return_tensors="pt")
+        inputs = self.depth_processor(
+            images=image,
+            return_tensors="pt",
+            size={"height": DEPTH_INPUT_SIZE, "width": DEPTH_INPUT_SIZE},
+        )
         pixel_values = inputs["pixel_values"].to(self.device)
         with torch.inference_mode(), self._autocast():
             prediction = self.depth_model(pixel_values=pixel_values).predicted_depth
@@ -799,6 +1026,8 @@ class InferenceModels:
         return prediction.float().cpu().numpy().astype(np.float32, copy=False)
 
     def _sam_masks(self, image: Image.Image, height: int, width: int) -> list[np.ndarray]:
+        if self.mask_generator is None:
+            return []
         scale = min(1.0, SAM_MAX_SIDE / max(image.size))
         sam_size = (
             max(32, round(image.width * scale)),
@@ -865,8 +1094,11 @@ def health() -> dict[str, object]:
         "device": str(models.device),
         "depth_model": DEPTH_MODEL_ID,
         "sam_model": SAM_MODEL_ID,
+        "sam_enabled": SAM_ENABLED,
         "sam_points_per_side": SAM_POINTS_PER_SIDE,
         "sam_max_side": SAM_MAX_SIDE,
+        "depth_input_size": DEPTH_INPUT_SIZE,
+        "warmup_milliseconds": round(models.warmup_milliseconds, 1),
         "bonjour_url": bonjour_url,
         "error": models.load_error,
     }
@@ -1239,13 +1471,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 34;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.15.1;
+				MARKETING_VERSION = 0.17.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1262,12 +1494,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 34;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.15.1;
+				MARKETING_VERSION = 0.17.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1573,9 +1805,21 @@ final class AIEnhancementClient {
                     return
                 }
                 let device = object["device"] as? String ?? "bilinmeyen cihaz"
+                let samEnabled = object["sam_enabled"] as? Bool ?? true
                 let samPoints = object["sam_points_per_side"] as? Int
                 let samSide = object["sam_max_side"] as? Int
-                if let samPoints, let samSide {
+                let depthSize = object["depth_input_size"] as? Int
+                let warmup = object["warmup_milliseconds"] as? Double
+                let warmupText = warmup.map { String(format: " • ısınma %.0f ms", $0) } ?? ""
+                if let depthSize, !samEnabled {
+                    completion(.success(
+                        "\(device) • hızlı Depth \(depthSize) px • SAM kapalı\(warmupText)"
+                    ))
+                } else if let depthSize, let samPoints, let samSide {
+                    completion(.success(
+                        "\(device) • Depth \(depthSize) px • SAM \(samPoints)/\(samSide) px\(warmupText)"
+                    ))
+                } else if let samPoints, let samSide {
                     completion(.success("\(device) • hızlı SAM \(samPoints)/\(samSide) px"))
                 } else {
                     completion(.success(device))
@@ -1903,6 +2147,10 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isPlacingProp = false
     @Published private(set) var isRoomOutlineVisible = false
     @Published private(set) var selectedLightSettings: VirtualLightSettings?
+    @Published private(set) var selectedObjectScale: Float = 1
+    @Published private(set) var selectedObjectTitle = ""
+    @Published private(set) var activeFilmLook: FilmLookID = .natural
+    @Published private(set) var contactShadowStrength: Float = 1
     @Published private(set) var isAimingLight = false
     @Published private(set) var placementSurfaceMessage = "Yüzey ölçülüyor"
     @Published private(set) var placementSurfaceColor: Color = .yellow
@@ -1952,6 +2200,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private var renderedLightFootprints: [UUID: AnchorEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
+    private var assetLoadTokens: [UUID: UUID] = [:]
+    private var photorealEntityCache: [String: ModelEntity] = [:]
+    private var customEntityCache: [String: ModelEntity] = [:]
     private var renderGeneration: UInt64 = 0
     private weak var coachingOverlay: ARCoachingOverlayView?
     private var isSavingWorldMap = false
@@ -1970,8 +2221,14 @@ final class ARSessionController: NSObject, ObservableObject {
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
     private var lastKnownCeilingY: Float?
+    private var roomPlanFloorY: Float?
+    private var roomPlanCeilingY: Float?
     private let floorSurfaceTracker = FloorSurfaceTracker()
     private var lastPlacementGuidanceTimestamp: TimeInterval = 0
+    private var lastPlacementCameraTransform: simd_float4x4?
+    private var lastPlacementCameraTimestamp: TimeInterval?
+    private var placementPoseStableSince: TimeInterval?
+    private var isPlacementPoseStable = false
     private var lastFloorMeterUpdateTimestamp: TimeInterval = 0
     private var floorMeterOrigin: SIMD3<Float>?
     private var floorMeterAnchor: AnchorEntity?
@@ -1982,6 +2239,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var lastProjectorRefreshTimestamp: TimeInterval = 0
     private var lastShadowLightingUpdateTimestamp: TimeInterval = 0
     private var ambientLightIntensity: Float = 1_000
+    private var lastPersonObservationTimestamp: TimeInterval = -Double.greatestFiniteMagnitude
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
@@ -2044,6 +2302,11 @@ final class ARSessionController: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        activeFilmLook = projectStore.project.filmLook ?? .natural
+        contactShadowStrength = min(
+            max(projectStore.project.contactShadowStrength ?? 1, 0),
+            2
+        )
         aiEnhancementEnabled = UserDefaults.standard.bool(forKey: Self.aiEnabledDefaultsKey)
         let storedAIAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2127,20 +2390,29 @@ final class ARSessionController: NSObject, ObservableObject {
            ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
             configuration.sceneReconstruction = .meshWithClassification
         }
-        if enableAdvancedOcclusion,
-           ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
-            configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        }
-        // Keep scene depth alongside person depth when the device supports both.
-        // Person segmentation handles people; scene depth/mesh handles furniture
-        // crossing in front of a virtual prop.
-        if enableAdvancedOcclusion,
-           ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            configuration.frameSemantics.insert(.sceneDepth)
-        }
-        if enableAdvancedOcclusion,
-           ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        if enableAdvancedOcclusion {
+            var semantics: ARConfiguration.FrameSemantics = []
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+                semantics.insert(.personSegmentationWithDepth)
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentation) {
+                semantics.insert(.personSegmentation)
+            }
+
+            // Request only one scene-depth stream and validate the complete option set.
+            // Individual flags can be supported while their combination is not; passing
+            // such a combination makes ARSession reject the whole configuration.
+            let smoothedCandidate = semantics.union(.smoothedSceneDepth)
+            let rawCandidate = semantics.union(.sceneDepth)
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(smoothedCandidate) {
+                semantics = smoothedCandidate
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(rawCandidate) {
+                semantics = rawCandidate
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+                semantics = [.smoothedSceneDepth]
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+                semantics = [.sceneDepth]
+            }
+            configuration.frameSemantics = semantics
         }
         return configuration
     }
@@ -2179,6 +2451,12 @@ final class ARSessionController: NSObject, ObservableObject {
         bloodWaterfallParticles.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
+        assetLoadTokens.removeAll()
+        lastPlacementCameraTransform = nil
+        lastPlacementCameraTimestamp = nil
+        placementPoseStableSince = nil
+        isPlacementPoseStable = false
+        lastPersonObservationTimestamp = -Double.greatestFiniteMagnitude
         selectedEntityID = nil
         selectedLightSettings = nil
         isAimingLight = false
@@ -2196,6 +2474,8 @@ final class ARSessionController: NSObject, ObservableObject {
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
         lastKnownCeilingY = nil
+        roomPlanFloorY = nil
+        roomPlanCeilingY = nil
         calibratedFloorY = nil
         calibratedCeilingY = nil
         spatialCalibrationMode = nil
@@ -2206,11 +2486,12 @@ final class ARSessionController: NSObject, ObservableObject {
         spatialCalibrationColor = .secondary
         floorSurfaceTracker.reset()
         if roomCoordinateSpaceIsActive {
-            updateKnownFloorFromRoomData()
             applyStoredSpatialCalibration()
+            updateKnownFloorFromRoomData()
         }
         arView.session.delegateQueue = .main
         arView.session.delegate = self
+        arView.renderOptions.remove(.disablePersonOcclusion)
         arView.session.run(
             configuration(initialWorldMap: initialWorldMap),
             options: [.resetTracking, .removeExistingAnchors]
@@ -2413,13 +2694,30 @@ final class ARSessionController: NSObject, ObservableObject {
               !isSessionInterrupted,
               case .normal = frame.camera.trackingState,
               let serverURL = AIEnhancementClient.serverURL(from: aiServerAddress) else { return }
+        if frameContainsPerson(frame) {
+            lastPersonObservationTimestamp = frame.timestamp
+            aiDepthRenderer.clear()
+            activateLocalOcclusionFallback()
+            aiEnhancementStatus = .stabilizing
+            return
+        }
         aiEnhancementClient.submit(frame: frame, serverURL: serverURL) { [weak self] result in
             guard let self, self.aiEnhancementEnabled, !self.isPlacingProp else { return }
             switch result {
             case .success(let depth):
+                if let timestamp = self.arView?.session.currentFrame?.timestamp,
+                   timestamp - self.lastPersonObservationTimestamp < 0.75 {
+                    self.aiDepthRenderer.clear()
+                    self.activateLocalOcclusionFallback()
+                    self.aiEnhancementStatus = .stabilizing
+                    return
+                }
                 // Old remote depth is worse than the device LiDAR fallback for moving
                 // people and during placement. Never display a multi-second ghost mesh.
-                guard depth.totalLatencyMilliseconds <= 1_200 else {
+                // Remote depth is useful for static geometry only while it is close to
+                // real time. A late mesh makes a walking person appear behind virtual
+                // content, so immediately fall back to ARKit person/LiDAR occlusion.
+                guard depth.totalLatencyMilliseconds <= 350 else {
                     self.aiDepthRenderer.clear()
                     self.activateLocalOcclusionFallback()
                     self.aiEnhancementStatus = .failed(
@@ -2465,6 +2763,28 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    private func frameContainsPerson(_ frame: ARFrame) -> Bool {
+        guard let mask = frame.segmentationBuffer,
+              CVPixelBufferGetPixelFormatType(mask) == kCVPixelFormatType_OneComponent8,
+              CVPixelBufferGetWidth(mask) > 0,
+              CVPixelBufferGetHeight(mask) > 0 else { return false }
+        CVPixelBufferLockBaseAddress(mask, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(mask, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(mask) else { return false }
+        let width = CVPixelBufferGetWidth(mask)
+        let height = CVPixelBufferGetHeight(mask)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(mask)
+        let stepX = max(1, width / 24)
+        let stepY = max(1, height / 18)
+        for y in stride(from: stepY / 2, to: height, by: stepY) {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in stride(from: stepX / 2, to: width, by: stepX) where row[x] >= 24 {
+                return true
+            }
+        }
+        return false
+    }
+
     private func aiResultMatchesCurrentCamera(_ result: AIDepthResult) -> Bool {
         guard let current = arView?.session.currentFrame?.camera.transform else { return false }
         let capturedPosition = SIMD3<Float>(
@@ -2477,7 +2797,7 @@ final class ARSessionController: NSObject, ObservableObject {
             current.columns.3.y,
             current.columns.3.z
         )
-        guard simd_distance(capturedPosition, currentPosition) <= 0.18 else { return false }
+        guard simd_distance(capturedPosition, currentPosition) <= 0.055 else { return false }
 
         let capturedForward = simd_normalize(SIMD3<Float>(
             -result.cameraTransform.columns.2.x,
@@ -2490,7 +2810,7 @@ final class ARSessionController: NSObject, ObservableObject {
             -current.columns.2.z
         ))
         let cosine = min(max(simd_dot(capturedForward, currentForward), -1), 1)
-        return acos(cosine) <= Float.pi / 15
+        return acos(cosine) <= Float.pi / 30
     }
 
     private func activateLocalOcclusionFallback() {
@@ -2562,6 +2882,7 @@ final class ARSessionController: NSObject, ObservableObject {
         pendingRealityThemeAfterScan = themeToSchedule
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
+        arView?.renderOptions.remove(.disablePersonOcclusion)
         arView?.session.run(configuration(), options: [])
         refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
@@ -2952,32 +3273,26 @@ final class ARSessionController: NSObject, ObservableObject {
         cameraPosition: SIMD3<Float>
     ) {
         guard floorY.isFinite else { return }
-        if let detectedFloorY = lastKnownFloorY,
-           abs(detectedFloorY - floorY) > 0.18 {
-            spatialCalibrationSamples.removeAll()
-            spatialCalibrationStartedAt = nil
-            spatialCalibrationStatus = "Telefon seviyesi LiDAR zemininden farklı — gerçekten zeminde olduğunu kontrol et"
-            spatialCalibrationColor = .red
-            return
-        }
+        let resolvedFloorY = roomPlanFloorY ?? floorY
         do {
-            try projectStore.setCalibratedFloorY(floorY)
-            calibratedFloorY = floorY
+            try projectStore.setCalibratedFloorY(resolvedFloorY)
+            calibratedFloorY = resolvedFloorY
             calibratedCeilingY = projectStore.project.calibratedCeilingY
-            lastKnownFloorY = floorY
+            lastKnownFloorY = resolvedFloorY
             lastKnownCeilingY = calibratedCeilingY
-            floorSurfaceTracker.setCalibratedFloor(floorY)
+            floorSurfaceTracker.setCalibratedFloor(resolvedFloorY)
             if roomCoordinateSpaceIsActive, calibratedCeilingY == nil {
                 updateKnownFloorFromRoomData()
             }
-            floorMeterOrigin = SIMD3(cameraPosition.x, floorY, cameraPosition.z)
+            floorMeterOrigin = SIMD3(cameraPosition.x, resolvedFloorY, cameraPosition.z)
             if let arView, let floorMeterOrigin {
                 installFloorMeterGrid(origin: floorMeterOrigin, in: arView)
             }
             finishSpatialCalibration()
             shouldSaveWorldMapWhenReady = true
             scheduleReadinessRecovery()
-            publishStatus("Zemin Y 97.00 olarak kilitlendi", color: .green)
+            let source = roomPlanFloorY == nil ? "telefon ölçümü" : "RoomPlan doğrulaması"
+            publishStatus("Zemin Y 97.00 olarak kilitlendi — \(source)", color: .green)
         } catch {
             spatialCalibrationStatus = error.localizedDescription
             spatialCalibrationColor = .red
@@ -2986,10 +3301,11 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func finishCeilingCalibration(ceilingY: Float) {
         guard ceilingY.isFinite else { return }
+        let resolvedCeilingY = roomPlanCeilingY ?? ceilingY
         do {
-            try projectStore.setCalibratedCeilingY(ceilingY)
-            calibratedCeilingY = ceilingY
-            lastKnownCeilingY = ceilingY
+            try projectStore.setCalibratedCeilingY(resolvedCeilingY)
+            calibratedCeilingY = resolvedCeilingY
+            lastKnownCeilingY = resolvedCeilingY
             finishSpatialCalibration()
             shouldSaveWorldMapWhenReady = true
             scheduleReadinessRecovery()
@@ -3218,17 +3534,116 @@ final class ARSessionController: NSObject, ObservableObject {
         persistSelectedLightSettings()
         isAimingLight = false
         selectedEntityID = id
-        if let placement = projectStore.placement(id: id), placement.kind.emitsVirtualLight {
+        guard let placement = projectStore.placement(id: id) else {
+            selectedObjectTitle = ""
+            selectedObjectScale = 1
+            return
+        }
+        selectedObjectTitle = placement.kind.title
+        let storedScale = placement.transform.scale.first ?? 1
+        selectedObjectScale = min(max(renderedEntities[id]?.scale.x ?? storedScale, 0.25), 3)
+        if placement.kind.emitsVirtualLight {
             selectedLightSettings = placement.lightSettings ?? .defaultFixture
             publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
-        } else if let placement = projectStore.placement(id: id),
-                  hasLockedPhysicalScale(placement.kind) {
-            selectedLightSettings = nil
-            publishStatus("Dekor seçildi — gerçek dünya ölçeği kilitli; döndürebilirsin", color: .blue)
         } else {
             selectedLightSettings = nil
-            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
+            publishStatus("Dekor seçildi — boyut panelinden ölçekle veya döndür", color: .blue)
         }
+    }
+
+    func clearSelectedObject() {
+        persistSelectedLightSettings()
+        selectedEntityID = nil
+        selectedLightSettings = nil
+        selectedObjectTitle = ""
+        selectedObjectScale = 1
+        isAimingLight = false
+    }
+
+    func previewSelectedObjectScale(_ requestedScale: Float) {
+        guard selectedEntityID != nil else { return }
+        let scale = min(max(requestedScale, 0.25), 3)
+        selectedObjectScale = scale
+        if let id = selectedEntityID {
+            renderedEntities[id]?.scale = SIMD3<Float>(repeating: scale)
+        }
+    }
+
+    func persistSelectedObjectScale() {
+        guard let id = selectedEntityID,
+              let placement = projectStore.placement(id: id) else { return }
+        let scale = min(max(selectedObjectScale, 0.25), 3)
+        var transform = renderedEntities[id]?.transform ?? placement.transform.realityKitTransform
+        let previousScale = placement.transform.realityKitTransform.scale
+        transform.scale = SIMD3<Float>(repeating: scale)
+        renderedEntities[id]?.scale = transform.scale
+        do {
+            try projectStore.updateTransforms([id: transform])
+            selectedObjectScale = scale
+            refreshSceneCatalogs()
+        } catch {
+            renderedEntities[id]?.scale = previousScale
+            selectedObjectScale = previousScale.x
+            publishStatus("Nesne boyutu kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func adjustSelectedObjectScale(by factor: Float) {
+        previewSelectedObjectScale(selectedObjectScale * factor)
+        persistSelectedObjectScale()
+    }
+
+    func resetSelectedObjectScale() {
+        previewSelectedObjectScale(1)
+        persistSelectedObjectScale()
+    }
+
+    func selectFilmLook(_ look: FilmLookID) {
+        let previous = activeFilmLook
+        activeFilmLook = look
+        do {
+            try projectStore.updateVisualStyle(
+                filmLook: look,
+                contactShadowStrength: contactShadowStrength
+            )
+            publishStatus("\(look.title) film filtresi etkin", color: .green)
+        } catch {
+            activeFilmLook = previous
+            publishStatus("Film filtresi kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func setContactShadowStrength(_ requestedStrength: Float) {
+        contactShadowStrength = min(max(requestedStrength, 0), 2)
+        refreshContactShadowMaterials()
+    }
+
+    func persistVisualStyle() {
+        do {
+            try projectStore.updateVisualStyle(
+                filmLook: activeFilmLook,
+                contactShadowStrength: contactShadowStrength
+            )
+        } catch {
+            publishStatus("Gölge ayarı kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func resetVisualStyle() {
+        activeFilmLook = .natural
+        contactShadowStrength = 1
+        refreshContactShadowMaterials()
+        persistVisualStyle()
+        publishStatus("Film görünümü ve gölgeler doğal ayara döndü", color: .green)
+    }
+
+    private func applyStoredVisualStyle() {
+        activeFilmLook = projectStore.project.filmLook ?? .natural
+        contactShadowStrength = min(
+            max(projectStore.project.contactShadowStrength ?? 1, 0),
+            2
+        )
+        refreshContactShadowMaterials()
     }
 
     func selectSceneObject(id: UUID) {
@@ -3632,9 +4047,14 @@ final class ARSessionController: NSObject, ObservableObject {
         guard !isRoomScanActive,
               !isSessionInterrupted,
               isARReady,
-              let trackingState = arView.session.currentFrame?.camera.trackingState,
-              case .normal = trackingState else {
-            publishStatus("Kararlı yerleştirme için telefonu yavaşlat ve yeşil takibi bekle", color: .yellow)
+              let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped),
+              isPlacementPoseStable else {
+            publishStatus(
+                "Anchor sabitleniyor — telefonu hedefte kısa süre hareketsiz tut",
+                color: .yellow
+            )
             return
         }
 
@@ -3673,6 +4093,8 @@ final class ARSessionController: NSObject, ObservableObject {
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
+            selectedObjectTitle = selectedProp.title
+            selectedObjectScale = 1
             selectedLightSettings = placement.lightSettings
             isPlacingProp = false
             placementReticlePoint = nil
@@ -3711,6 +4133,9 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         if prop.placementSurface == .wall {
             return strictWallPlacementSolution(in: arView, at: point, for: prop)
+        }
+        if prop.placementSurface == .ceiling {
+            return strictCeilingPlacementSolution(in: arView, at: point, for: prop)
         }
 
         // When a room theme is visible, use the geometry the user actually sees. The
@@ -4018,6 +4443,105 @@ final class ARSessionController: NSObject, ObservableObject {
         return true
     }
 
+    /// Ceiling props must resolve to a classified ceiling or to the persistent metric
+    /// ceiling captured by RoomPlan/manual calibration. Merely being above the camera
+    /// is not enough: the top of a cupboard used to satisfy that test and moved a light
+    /// visibly downward when ARKit refined the plane later.
+    private func strictCeilingPlacementSolution(
+        in arView: ARView,
+        at point: CGPoint,
+        for prop: PropKind
+    ) -> PlacementSurfaceSolution? {
+        guard let frame = arView.session.currentFrame else { return nil }
+        let depth = sceneDepthSample(frame: frame, in: arView, at: point)
+        let cameraPosition = arView.cameraTransform.translation
+
+        let classifiedResults = arView.raycast(
+            from: point,
+            allowing: .existingPlaneGeometry,
+            alignment: .horizontal
+        )
+        for result in classifiedResults {
+            guard let plane = result.anchor as? ARPlaneAnchor,
+                  plane.classification == .ceiling else { continue }
+            let position = SIMD3<Float>(
+                result.worldTransform.columns.3.x,
+                result.worldTransform.columns.3.y,
+                result.worldTransform.columns.3.z
+            )
+            if let ceilingY = lastKnownCeilingY, abs(position.y - ceilingY) > 0.10 {
+                continue
+            }
+            guard depth.map({ ceilingDepthAgrees($0, position: position, ceilingY: position.y) })
+                    ?? true else { continue }
+            return ceilingSolution(
+                position: position,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .arkitPlane,
+                depth: depth
+            )
+        }
+
+        guard let ceilingY = lastKnownCeilingY,
+              ceilingY > cameraPosition.y + 0.30,
+              let ray = arView.ray(through: point) else { return nil }
+        let direction = simd_normalize(ray.direction)
+        guard direction.y > 0.025 else { return nil }
+        let distance = (ceilingY - ray.origin.y) / direction.y
+        guard distance.isFinite, (0.20...8.0).contains(distance) else { return nil }
+        let position = ray.origin + direction * distance
+
+        // A current depth pixel may veto a cupboard or beam in front of the stored
+        // ceiling. Short depth gaps are allowed because the RoomPlan level persists.
+        if let depth {
+            guard ceilingDepthAgrees(depth, position: position, ceilingY: ceilingY) else {
+                return nil
+            }
+        }
+        return ceilingSolution(
+            position: position,
+            prop: prop,
+            cameraPosition: cameraPosition,
+            source: roomPlanCeilingY != nil ? .roomPlanLevel : .deviceCalibration,
+            depth: depth
+        )
+    }
+
+    private func ceilingSolution(
+        position: SIMD3<Float>,
+        prop: PropKind,
+        cameraPosition: SIMD3<Float>,
+        source: PlacementSurfaceSource,
+        depth: SceneDepthSurfaceSample?
+    ) -> PlacementSurfaceSolution {
+        PlacementSurfaceSolution(
+            transform: placementTransform(
+                position: position,
+                normal: [0, -1, 0],
+                prop: prop,
+                cameraPosition: cameraPosition
+            ),
+            position: position,
+            normal: [0, -1, 0],
+            source: source,
+            depthMeters: depth?.depthMeters
+        )
+    }
+
+    private func ceilingDepthAgrees(
+        _ depth: SceneDepthSurfaceSample,
+        position: SIMD3<Float>,
+        ceilingY: Float
+    ) -> Bool {
+        guard abs(depth.worldPoint.y - ceilingY) <= 0.14,
+              simd_distance(depth.worldPoint, position) <= 0.28 else { return false }
+        if let normal = depth.worldNormal {
+            return abs(normal.y) >= 0.64
+        }
+        return true
+    }
+
     /// Floor props use a deliberately stricter resolver than generic horizontal
     /// props. A table is horizontal and often sits more than 25 cm below the camera;
     /// height alone can therefore never prove that a hit is the floor.
@@ -4047,7 +4571,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 result.worldTransform.columns.3.z
             )
             if let calibratedFloorY,
-               abs(position.y - calibratedFloorY) > 0.055 {
+               abs(position.y - calibratedFloorY) > 0.085 {
                 continue
             }
             guard depth.map({ floorDepthAgrees($0, position: position, floorY: position.y) })
@@ -4074,7 +4598,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 && !belongsToRoomReality($0.entity)
                 && !belongsToProjectorVisualization($0.entity)
                 && abs(simd_normalize($0.normal).y) >= 0.78
-                && abs($0.position.y - floor.y) <= 0.055
+                && abs($0.position.y - floor.y) <= 0.085
         }), let depth,
            floorDepthAgrees(depth, position: hit.position, floorY: floor.y) {
             return floorSolution(
@@ -4089,7 +4613,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
            abs(simd_normalize(hit.normal).y) >= 0.78,
-           abs(hit.position.y - floor.y) <= 0.055,
+           abs(hit.position.y - floor.y) <= 0.085,
            let depth,
            floorDepthAgrees(depth, position: hit.position, floorY: floor.y) {
             return floorSolution(
@@ -4178,6 +4702,16 @@ final class ARSessionController: NSObject, ObservableObject {
             placementSurfaceColor = .yellow
             return
         }
+        guard frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped else {
+            placementSurfaceMessage = "Sarı: oda koordinatları haritalanıyor"
+            placementSurfaceColor = .yellow
+            return
+        }
+        guard isPlacementPoseStable else {
+            placementSurfaceMessage = "Sarı: telefonu hedefte kısa süre sabit tut"
+            placementSurfaceColor = .yellow
+            return
+        }
         let point = requestedPoint
             ?? placementReticlePoint
             ?? CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
@@ -4209,6 +4743,63 @@ final class ARSessionController: NSObject, ObservableObject {
         } else {
             placementSurfaceMessage = "Sarı: uygun yüzeyi yavaşça tara"
             placementSurfaceColor = .yellow
+        }
+    }
+
+    /// ARKit can report `.normal` during a fast camera sweep, but an anchor created in
+    /// that frame often corrects itself visibly a moment later. Require a short period
+    /// of low translational and angular velocity before accepting a placement tap.
+    private func updatePlacementTrackingStability(using frame: ARFrame) {
+        defer {
+            lastPlacementCameraTransform = frame.camera.transform
+            lastPlacementCameraTimestamp = frame.timestamp
+        }
+        guard case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped),
+              let previousTransform = lastPlacementCameraTransform,
+              let previousTimestamp = lastPlacementCameraTimestamp else {
+            placementPoseStableSince = nil
+            isPlacementPoseStable = false
+            return
+        }
+
+        let elapsed = frame.timestamp - previousTimestamp
+        guard elapsed.isFinite, (0.005...0.40).contains(elapsed) else {
+            placementPoseStableSince = nil
+            isPlacementPoseStable = false
+            return
+        }
+        let currentPosition = SIMD3<Float>(
+            frame.camera.transform.columns.3.x,
+            frame.camera.transform.columns.3.y,
+            frame.camera.transform.columns.3.z
+        )
+        let previousPosition = SIMD3<Float>(
+            previousTransform.columns.3.x,
+            previousTransform.columns.3.y,
+            previousTransform.columns.3.z
+        )
+        let linearSpeed = simd_distance(currentPosition, previousPosition) / Float(elapsed)
+        let currentForward = simd_normalize(SIMD3<Float>(
+            -frame.camera.transform.columns.2.x,
+            -frame.camera.transform.columns.2.y,
+            -frame.camera.transform.columns.2.z
+        ))
+        let previousForward = simd_normalize(SIMD3<Float>(
+            -previousTransform.columns.2.x,
+            -previousTransform.columns.2.y,
+            -previousTransform.columns.2.z
+        ))
+        let cosine = min(max(simd_dot(currentForward, previousForward), -1), 1)
+        let angularSpeed = acos(cosine) / Float(elapsed)
+        let poseIsQuiet = linearSpeed <= 0.22 && angularSpeed <= 0.55
+
+        if poseIsQuiet {
+            if placementPoseStableSince == nil { placementPoseStableSince = frame.timestamp }
+            isPlacementPoseStable = frame.timestamp - (placementPoseStableSince ?? frame.timestamp) >= 0.24
+        } else {
+            placementPoseStableSince = nil
+            isPlacementPoseStable = false
         }
     }
 
@@ -4254,33 +4845,79 @@ final class ARSessionController: NSObject, ObservableObject {
     private func updateKnownFloorFromRoomData() {
         floorSurfaceTracker.clearRoomFloor()
         lastKnownFloorY = nil
+        lastKnownCeilingY = nil
+        roomPlanFloorY = nil
+        roomPlanCeilingY = nil
         guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
         roomRealityRenderer.cachePlacementSurfaces(from: room)
         let levels = room.floors.compactMap { floor -> Float? in
             let y = floor.transform.columns.3.y
             return y.isFinite ? y : nil
         }.sorted()
-        if !levels.isEmpty {
-            let roomFloorY = levels[levels.count / 2]
+        let roomFloorY = levels.isEmpty ? nil : levels[levels.count / 2]
+        roomPlanFloorY = roomFloorY
+        if let roomFloorY {
             floorSurfaceTracker.setRoomFloor(roomFloorY)
-            lastKnownFloorY = roomFloorY
         }
+
+        let roomCeilingY: Float?
         do {
-            if let ceilingY = try roomRealityRenderer.inferredCeilingLevel(
+            let inferred = try roomRealityRenderer.inferredCeilingLevel(
                 roomJSONURL: roomDataURL
-            ), ceilingY.isFinite {
-                lastKnownCeilingY = ceilingY
-            }
+            )
+            roomCeilingY = inferred.flatMap { $0.isFinite ? $0 : nil }
         } catch {
-            lastKnownCeilingY = nil
+            roomCeilingY = nil
         }
-        if let calibratedFloorY {
-            floorSurfaceTracker.setCalibratedFloor(calibratedFloorY)
-            lastKnownFloorY = calibratedFloorY
+        roomPlanCeilingY = roomCeilingY
+
+        // A completed RoomPlan scan observes many floor/wall samples and is more
+        // reliable than a one-second phone pose. Stale manual calibration previously
+        // overrode the scan and made every later object appear too high or too low.
+        let resolvedFloorY = roomFloorY ?? calibratedFloorY
+        let resolvedCeilingY: Float?
+        if let roomCeilingY,
+           let resolvedFloorY,
+           (1.50...6.50).contains(roomCeilingY - resolvedFloorY) {
+            resolvedCeilingY = roomCeilingY
+        } else if let calibratedCeilingY,
+                  let resolvedFloorY,
+                  (1.50...6.50).contains(calibratedCeilingY - resolvedFloorY) {
+            resolvedCeilingY = calibratedCeilingY
+        } else {
+            resolvedCeilingY = nil
         }
-        if let calibratedCeilingY {
-            lastKnownCeilingY = calibratedCeilingY
+
+        calibratedFloorY = resolvedFloorY
+        calibratedCeilingY = resolvedCeilingY
+        if let resolvedFloorY {
+            floorSurfaceTracker.setCalibratedFloor(resolvedFloorY)
+            lastKnownFloorY = resolvedFloorY
         }
+        lastKnownCeilingY = resolvedCeilingY
+
+        let storedFloorY = projectStore.project.calibratedFloorY
+        let storedCeilingY = projectStore.project.calibratedCeilingY
+        func levelChanged(_ stored: Float?, _ resolved: Float?, tolerance: Float) -> Bool {
+            switch (stored, resolved) {
+            case let (stored?, resolved?): return abs(stored - resolved) > tolerance
+            case (nil, nil): return false
+            default: return true
+            }
+        }
+        let floorChanged = levelChanged(storedFloorY, resolvedFloorY, tolerance: 0.005)
+        let ceilingChanged = levelChanged(storedCeilingY, resolvedCeilingY, tolerance: 0.008)
+        if floorChanged || ceilingChanged {
+            do {
+                try projectStore.reconcileSpatialCalibration(
+                    floorY: resolvedFloorY,
+                    ceilingY: resolvedCeilingY
+                )
+            } catch {
+                publishStatus("Oda kotları kaydedilemedi: \(error.localizedDescription)", color: .red)
+            }
+        }
+        updateSpatialCalibrationSummary()
     }
 
     private func applyStoredSpatialCalibration() {
@@ -4564,6 +5201,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderGeneration &+= 1
         assetLoadSubscriptions.values.forEach { $0.cancel() }
         assetLoadSubscriptions.removeAll()
+        assetLoadTokens.removeAll()
         loadingEntityIDs.removeAll()
         let propAnchors = arView.session.currentFrame?.anchors.filter {
             PropKind.from(anchorName: $0.name) != nil
@@ -4632,8 +5270,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if let placement = projectStore.project.placements.last(where: {
             $0.kind.emitsVirtualLight
         }) {
-            selectedEntityID = placement.id
-            selectedLightSettings = placement.lightSettings ?? .defaultFixture
+            selectRenderedEntity(id: placement.id)
             isPlacingProp = false
             if isARReady {
                 let recovery = restorePlacementAnchorsIfNeeded(
@@ -4679,12 +5316,13 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Mevcut kayıt tamamlanınca mekân arşivlenecek", color: .yellow)
             return
         }
-        guard let trackingState = arView.session.currentFrame?.camera.trackingState,
-              case .normal = trackingState else {
+        guard let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped) else {
             shouldSaveWorldMapWhenReady = true
             scheduleReadinessRecovery()
             publishStatus(
-                "Kaydetme sıraya alındı — kamera takibi hazır olunca tamamlanacak",
+                "Kaydetme sıraya alındı — oda koordinatları sabitlenince tamamlanacak",
                 color: .yellow
             )
             return
@@ -4868,6 +5506,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         assetLoadSubscriptions[id]?.cancel()
         assetLoadSubscriptions[id] = nil
+        assetLoadTokens[id] = nil
         loadingEntityIDs.remove(id)
         if clearSelection, selectedEntityID == id {
             selectedEntityID = nil
@@ -4959,7 +5598,11 @@ final class ARSessionController: NSObject, ObservableObject {
     ) -> Bool {
         guard shouldSaveWorldMapWhenReady, !isSavingWorldMap,
               let trackingState, case .normal = trackingState,
-              let arView else { return false }
+              let arView,
+              let frame = arView.session.currentFrame,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped) else {
+            return false
+        }
         shouldSaveWorldMapWhenReady = false
         performWorldMapSave(in: arView)
         return true
@@ -5052,6 +5695,7 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            applyStoredVisualStyle()
             importedAssetURLs = projectStore.importedModelURLs
             hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
             refreshSceneCatalogs()
@@ -5079,6 +5723,7 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            applyStoredVisualStyle()
             importedAssetURLs = projectStore.importedModelURLs
             hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
             roomCoordinateSpaceIsActive = hasScannedRoom
@@ -5187,6 +5832,40 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    private func beginAssetLoad(
+        id: UUID,
+        prop: PropKind,
+        generation: UInt64,
+        timeout: TimeInterval = 10
+    ) -> UUID {
+        let token = UUID()
+        assetLoadTokens[id] = token
+        loadingEntityIDs.insert(id)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
+            guard let self,
+                  self.renderGeneration == generation,
+                  self.assetLoadTokens[id] == token,
+                  self.loadingEntityIDs.contains(id) else { return }
+            self.assetLoadSubscriptions[id]?.cancel()
+            self.assetLoadSubscriptions[id] = nil
+            self.assetLoadTokens[id] = nil
+            self.loadingEntityIDs.remove(id)
+            self.publishStatus(
+                "\(prop.title) yükleme zaman aşımına uğradı; yerindeki yedek model korunuyor",
+                color: .yellow
+            )
+        }
+        return token
+    }
+
+    private func finishAssetLoad(id: UUID, token: UUID, generation: UInt64) -> Bool {
+        guard renderGeneration == generation, assetLoadTokens[id] == token else { return false }
+        loadingEntityIDs.remove(id)
+        assetLoadSubscriptions[id] = nil
+        assetLoadTokens[id] = nil
+        return true
+    }
+
     private func render(prop: PropKind, id: UUID, for anchor: ARAnchor) {
         guard arView != nil,
               knownPropAnchorIDs.contains(anchor.identifier),
@@ -5203,6 +5882,17 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if let descriptor = prop.photorealDescriptor {
             let generation = renderGeneration
+            if let cached = photorealEntityCache[prop.rawValue]?.clone(recursive: true) {
+                attach(
+                    entity: cached,
+                    prop: prop,
+                    id: id,
+                    anchor: anchor,
+                    generation: generation
+                )
+                publishStatus("\(prop.title) önbellekten hazır", color: .green)
+                return
+            }
             let loadingProxy = makeLoadingProxy(
                 for: prop,
                 dimensions: descriptor.dimensions
@@ -5216,19 +5906,23 @@ final class ARSessionController: NSObject, ObservableObject {
             )
             guard let modelURL = bundledAssetURL(named: descriptor.assetName) else {
                 publishStatus(
-                    "\(prop.title) USDZ pakette bulunamadı; görünür yedek model kullanılıyor",
+                    "\(prop.title) USDZ pakette bulunamadı; yerindeki yedek model hazır",
                     color: .yellow
                 )
                 return
             }
-            loadingEntityIDs.insert(id)
+            let loadToken = beginAssetLoad(id: id, prop: prop, generation: generation)
+            publishStatus("\(prop.title) yerinde — gerçek USDZ hazırlanıyor", color: .yellow)
             let request = Entity.loadAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] completion in
-                    guard let self, self.renderGeneration == generation else { return }
-                    self.loadingEntityIDs.remove(id)
-                    self.assetLoadSubscriptions[id] = nil
+                    guard let self,
+                          self.finishAssetLoad(
+                            id: id,
+                            token: loadToken,
+                            generation: generation
+                          ) else { return }
                     if case .failure(let error) = completion {
                         self.publishStatus(
                             "\(prop.title) USDZ açılamadı; yedek model gösteriliyor: "
@@ -5238,6 +5932,7 @@ final class ARSessionController: NSObject, ObservableObject {
                     }
                 } receiveValue: { [weak self] content in
                     guard let self,
+                          self.assetLoadTokens[id] == loadToken,
                           let entity = self.makePhotorealLibraryEntity(
                             content: content,
                             prop: prop,
@@ -5249,6 +5944,7 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         return
                     }
+                    self.photorealEntityCache[prop.rawValue] = entity.clone(recursive: true)
                     if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
@@ -5285,6 +5981,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 anchor: anchor,
                 generation: renderGeneration
             )
+            publishStatus("\(prop.title) hazır", color: .green)
             return
         }
 
@@ -5301,6 +5998,17 @@ final class ARSessionController: NSObject, ObservableObject {
                 return
             }
             let generation = renderGeneration
+            if let cached = customEntityCache[fileName]?.clone(recursive: true) {
+                attach(
+                    entity: cached,
+                    prop: prop,
+                    id: id,
+                    anchor: anchor,
+                    generation: generation
+                )
+                publishStatus("3B dekor önbellekten hazır", color: .green)
+                return
+            }
             attach(
                 entity: makeLoadingProxy(
                     for: prop,
@@ -5311,14 +6019,18 @@ final class ARSessionController: NSObject, ObservableObject {
                 anchor: anchor,
                 generation: generation
             )
-            loadingEntityIDs.insert(id)
+            let loadToken = beginAssetLoad(id: id, prop: prop, generation: generation)
+            publishStatus("3B dekor yerinde — USDZ hazırlanıyor", color: .yellow)
             let request = ModelEntity.loadModelAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] completion in
-                    guard let self, self.renderGeneration == generation else { return }
-                    self.loadingEntityIDs.remove(id)
-                    self.assetLoadSubscriptions[id] = nil
+                    guard let self,
+                          self.finishAssetLoad(
+                            id: id,
+                            token: loadToken,
+                            generation: generation
+                          ) else { return }
                     if case .failure(let error) = completion {
                         self.publishStatus(
                             "3B dekor açılamadı; yedek model gösteriliyor: "
@@ -5327,7 +6039,8 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                     }
                 } receiveValue: { [weak self] entity in
-                    guard let self else { return }
+                    guard let self, self.assetLoadTokens[id] == loadToken else { return }
+                    self.customEntityCache[fileName] = entity.clone(recursive: true)
                     if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
@@ -5348,6 +6061,7 @@ final class ARSessionController: NSObject, ObservableObject {
             anchor: anchor,
             generation: renderGeneration
         )
+        publishStatus("\(prop.title) hazır", color: .green)
     }
 
     private func attach(
@@ -5368,11 +6082,6 @@ final class ARSessionController: NSObject, ObservableObject {
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
-        if hasLockedPhysicalScale(prop) {
-            // Catalog dimensions are measured in metres. Keeping scale at one prevents
-            // a distant object from becoming toy-sized or oversized after a stray pinch.
-            entity.scale = SIMD3<Float>(repeating: 1)
-        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -5393,8 +6102,8 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         // Translation is deliberately excluded: a placed prop stays bound to its
-        // world anchor. Measured catalog props keep their physical scale; unmeasured
-        // and imported props retain scale control for art direction.
+        // world anchor. Measured catalog props use the bounded size panel so a stray
+        // pinch cannot destroy realism; manual/imported props also support pinch.
         if hasLockedPhysicalScale(prop) {
             arView.installGestures([.rotation], for: entity)
         } else {
@@ -5469,9 +6178,6 @@ final class ARSessionController: NSObject, ObservableObject {
 
         entity.name = id.uuidString
         entity.transform = preservedTransform
-        if hasLockedPhysicalScale(prop) {
-            entity.scale = SIMD3<Float>(repeating: 1)
-        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -6241,7 +6947,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private var contactShadowAlpha: Float {
         let normalized = min(max((ambientLightIntensity - 100) / 1_500, 0), 1)
-        return 0.12 + sqrt(normalized) * 0.09
+        return (0.12 + sqrt(normalized) * 0.09) * contactShadowStrength
     }
 
     private func addContactShadowLayer(
@@ -6279,6 +6985,10 @@ final class ARSessionController: NSObject, ObservableObject {
         ambientLightIntensity = previous * 0.72 + measured * 0.28
         guard abs(ambientLightIntensity - previous) / max(previous, 1) >= 0.08 else { return }
 
+        refreshContactShadowMaterials()
+    }
+
+    private func refreshContactShadowMaterials() {
         let baseAlpha = contactShadowAlpha
         for entity in renderedEntities.values {
             if let outer = entity.findEntity(named: "cinear.contact-shadow.outer") as? ModelEntity,
@@ -6635,11 +7345,13 @@ final class ARSessionController: NSObject, ObservableObject {
         if placement.kind == .bloodWaterfall { return "Canlı CGI • Duvara sabit" }
         var details = placement.kind.emitsVirtualLight ? ["Sanal ışık", surface] : [surface]
         if let dimensions = physicalDimensions(for: placement.kind) {
+            let scale = min(max(placement.transform.scale.first ?? 1, 0.25), 3)
             details.append(String(
-                format: "%.2f × %.2f × %.2f m",
-                Double(dimensions.x),
-                Double(dimensions.y),
-                Double(dimensions.z)
+                format: "%.2f × %.2f × %.2f m • %%%.0f",
+                Double(dimensions.x * scale),
+                Double(dimensions.y * scale),
+                Double(dimensions.z * scale),
+                Double(scale * 100)
             ))
         }
         return details.joined(separator: " • ")
@@ -6802,6 +7514,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        updatePlacementTrackingStability(using: frame)
         updateSpatialCalibration(using: frame)
         updateAmbientLighting(using: frame)
         updatePlacementGuidance(using: frame)
@@ -8008,6 +8721,7 @@ struct ContentView: View {
     @State private var showingSceneContents = false
     @State private var showingSavedPlaces = false
     @State private var showingCGIStudio = false
+    @State private var showingFilmStudio = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
     @State private var sceneObjectPendingDeletion: SceneObjectSummary?
@@ -8018,6 +8732,11 @@ struct ContentView: View {
         ZStack {
             ARViewContainer(controller: session)
                 .ignoresSafeArea()
+                .saturation(session.activeFilmLook.saturation)
+                .contrast(session.activeFilmLook.contrast)
+                .brightness(session.activeFilmLook.brightness)
+                .hueRotation(.degrees(session.activeFilmLook.hueDegrees))
+                .overlay { filmLookOverlay }
 
             if session.isPlacingProp,
                !session.isRecording,
@@ -8053,6 +8772,8 @@ struct ContentView: View {
                     } else {
                         if session.selectedLightSettings != nil {
                             lightControls
+                        } else if session.selectedEntityID != nil {
+                            objectScaleControls
                         }
                         if controlsExpanded {
                             controls
@@ -8116,6 +8837,37 @@ struct ContentView: View {
             liveCGIStudio
                 .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showingFilmStudio) {
+            filmStudio
+                .presentationDetents([.medium, .large])
+        }
+    }
+
+    private var filmLookOverlay: some View {
+        let tint = session.activeFilmLook.tintRGBA
+        return ZStack {
+            Color(
+                red: tint.red,
+                green: tint.green,
+                blue: tint.blue
+            )
+            .opacity(tint.alpha)
+            .blendMode(.softLight)
+
+            RadialGradient(
+                colors: [
+                    Color.clear,
+                    Color.clear,
+                    Color.black.opacity(session.activeFilmLook.vignetteOpacity)
+                ],
+                center: .center,
+                startRadius: 80,
+                endRadius: 520
+            )
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var statusBar: some View {
@@ -8251,6 +9003,9 @@ struct ContentView: View {
                 }
                 utilityButton("Canlı CGI", "wand.and.stars") {
                     showingCGIStudio = true
+                }
+                utilityButton("Film & Gölge", "camera.filters") {
+                    showingFilmStudio = true
                 }
                 utilityButton(
                     updateChecker.isChecking ? "Denetleniyor" : "Güncelleme",
@@ -8495,6 +9250,26 @@ struct ContentView: View {
                     showingSavedPlaces = true
                 }
             }
+
+            Button {
+                showingFilmStudio = true
+            } label: {
+                HStack(spacing: 9) {
+                    Image(systemName: session.activeFilmLook.symbol)
+                    Text("Film: \(session.activeFilmLook.title)")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Text("Gölge %\(Int(session.contactShadowStrength * 100))")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
         }
         .disabled(session.isRecordingTransitioning)
         .padding(8)
@@ -8610,6 +9385,26 @@ struct ContentView: View {
                     range: 0...1,
                     step: 0.01
                 )
+
+                HStack(spacing: 9) {
+                    Text("Armatür boyutu")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Button { session.adjustSelectedObjectScale(by: 0.90) } label: {
+                        Image(systemName: "minus")
+                    }
+                    .buttonStyle(.bordered)
+                    Text("%\(Int(session.selectedObjectScale * 100))")
+                        .font(.caption.monospacedDigit())
+                        .frame(minWidth: 42)
+                    Button { session.adjustSelectedObjectScale(by: 1.10) } label: {
+                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.bordered)
+                    Button("1:1") { session.resetSelectedObjectScale() }
+                        .buttonStyle(.bordered)
+                        .font(.caption2.weight(.bold))
+                }
             }
 
             Text("Spot ışık sanal nesneleri aydınlatır; LiDAR yüzeyindeki yumuşak projektör izi kamera görünümünde hedef noktayı gösterir.")
@@ -8619,6 +9414,154 @@ struct ContentView: View {
         }
         .padding(12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var objectScaleControls: some View {
+        VStack(spacing: 7) {
+            HStack {
+                Label(
+                    session.selectedObjectTitle.isEmpty
+                        ? "Nesne Boyutu"
+                        : session.selectedObjectTitle,
+                    systemImage: "arrow.up.left.and.arrow.down.right"
+                )
+                .font(.subheadline.weight(.bold))
+                Spacer()
+                Text("%\(Int(session.selectedObjectScale * 100))")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                Button {
+                    session.clearSelectedObject()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .accessibilityLabel("Nesne seçimini kapat")
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    session.adjustSelectedObjectScale(by: 0.90)
+                } label: {
+                    Image(systemName: "minus.magnifyingglass")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("Nesneyi küçült")
+
+                Slider(
+                    value: Binding(
+                        get: { Double(session.selectedObjectScale) },
+                        set: { session.previewSelectedObjectScale(Float($0)) }
+                    ),
+                    in: 0.25...3,
+                    step: 0.05,
+                    onEditingChanged: { isEditing in
+                        if !isEditing { session.persistSelectedObjectScale() }
+                    }
+                )
+
+                Button {
+                    session.adjustSelectedObjectScale(by: 1.10)
+                } label: {
+                    Image(systemName: "plus.magnifyingglass")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("Nesneyi büyüt")
+
+                Button("1:1") {
+                    session.resetSelectedObjectScale()
+                }
+                .buttonStyle(.bordered)
+                .font(.caption.weight(.bold))
+            }
+
+            Text("Boyut %25–%300 arasında sınırlıdır; yüzeye temas noktası ve dünya anchor'ı değişmez.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var filmStudio: some View {
+        NavigationStack {
+            Form {
+                Section("Canlı Film Filtreleri") {
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
+                        spacing: 8
+                    ) {
+                        ForEach(FilmLookID.allCases) { look in
+                            Button {
+                                session.selectFilmLook(look)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: look.symbol)
+                                    Text(look.title)
+                                        .font(.caption.weight(.semibold))
+                                    Spacer(minLength: 2)
+                                    if session.activeFilmLook == look {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                                .foregroundStyle(.primary)
+                                .padding(10)
+                                .background(
+                                    session.activeFilmLook == look
+                                        ? Color.accentColor.opacity(0.18)
+                                        : Color.secondary.opacity(0.08),
+                                    in: RoundedRectangle(cornerRadius: 11)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                Section("Nesne Gölgelendirmesi") {
+                    HStack {
+                        Text("Temas gölgesi")
+                        Spacer()
+                        Text("%\(Int(session.contactShadowStrength * 100))")
+                            .font(.body.monospacedDigit())
+                    }
+                    Slider(
+                        value: Binding(
+                            get: { Double(session.contactShadowStrength) },
+                            set: { session.setContactShadowStrength(Float($0)) }
+                        ),
+                        in: 0...2,
+                        step: 0.05,
+                        onEditingChanged: { isEditing in
+                            if !isEditing { session.persistVisualStyle() }
+                        }
+                    )
+                    Text(
+                        "Gölge, ARKit'in ortam ışığı ölçümüne göre otomatik uyarlanır. "
+                            + "Bu ayar yalnız temas gölgesinin kuvvetini belirler."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    Button("Doğal Görünüme Sıfırla") {
+                        session.resetVisualStyle()
+                    }
+                } footer: {
+                    Text("Seçilen görünüm canlı kamerada ve ReplayKit HEVC çekiminde görünür; mekân kaydıyla birlikte saklanır.")
+                }
+            }
+            .navigationTitle("Film & Gölge")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") {
+                        session.persistVisualStyle()
+                        showingFilmStudio = false
+                    }
+                }
+            }
+        }
     }
 
     private func lightSliderRow(
@@ -13252,8 +14195,105 @@ import Foundation
 import RealityKit
 import simd
 
+enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
+    case natural
+    case cinema
+    case tealOrange
+    case noir
+    case thriller
+    case dream
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .natural: "Doğal"
+        case .cinema: "Sinema"
+        case .tealOrange: "Teal & Orange"
+        case .noir: "Noir"
+        case .thriller: "Gerilim"
+        case .dream: "Rüya"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .natural: "camera.filters"
+        case .cinema: "film.fill"
+        case .tealOrange: "circle.lefthalf.filled"
+        case .noir: "circle.righthalf.filled"
+        case .thriller: "moon.stars.fill"
+        case .dream: "sparkles"
+        }
+    }
+
+    var saturation: Double {
+        switch self {
+        case .natural: 1
+        case .cinema: 0.88
+        case .tealOrange: 1.18
+        case .noir: 0
+        case .thriller: 0.62
+        case .dream: 0.78
+        }
+    }
+
+    var contrast: Double {
+        switch self {
+        case .natural: 1
+        case .cinema: 1.14
+        case .tealOrange: 1.16
+        case .noir: 1.28
+        case .thriller: 1.24
+        case .dream: 0.88
+        }
+    }
+
+    var brightness: Double {
+        switch self {
+        case .natural: 0
+        case .cinema: -0.015
+        case .tealOrange: -0.01
+        case .noir: -0.035
+        case .thriller: -0.055
+        case .dream: 0.035
+        }
+    }
+
+    var hueDegrees: Double {
+        switch self {
+        case .natural, .cinema, .noir: 0
+        case .tealOrange: -6
+        case .thriller: -12
+        case .dream: 8
+        }
+    }
+
+    var tintRGBA: (red: Double, green: Double, blue: Double, alpha: Double) {
+        switch self {
+        case .natural: (0, 0, 0, 0)
+        case .cinema: (0.08, 0.18, 0.28, 0.10)
+        case .tealOrange: (0.04, 0.28, 0.30, 0.13)
+        case .noir: (0.08, 0.09, 0.12, 0.08)
+        case .thriller: (0.04, 0.16, 0.10, 0.16)
+        case .dream: (0.40, 0.24, 0.48, 0.11)
+        }
+    }
+
+    var vignetteOpacity: Double {
+        switch self {
+        case .natural: 0
+        case .cinema: 0.34
+        case .tealOrange: 0.25
+        case .noir: 0.48
+        case .thriller: 0.52
+        case .dream: 0.18
+        }
+    }
+}
+
 struct SceneProject: Codable {
-    static let currentVersion = 5
+    static let currentVersion = 6
 
     var version = currentVersion
     var name = "Ana Set"
@@ -13265,6 +14305,10 @@ struct SceneProject: Codable {
     // keep scene files from versions 1-4 decodable without a separate JSON schema.
     var calibratedFloorY: Float?
     var calibratedCeilingY: Float?
+    // Version-6 cinematic settings are optional so all earlier scene.json files
+    // decode without a custom decoder. Missing values mean natural/100 percent.
+    var filmLook: FilmLookID?
+    var contactShadowStrength: Float?
 }
 
 struct PlacementRecord: Codable, Identifiable {
@@ -13427,6 +14471,7 @@ enum SceneProjectStoreError: LocalizedError {
     case invalidAssetFileName(String)
     case unsupportedAssetType
     case invalidLightSettings(UUID)
+    case invalidVisualStyle
     case invalidSpatialCalibration
     case worldMapOutOfDate
     case worldMapChecksumMismatch
@@ -13450,6 +14495,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Yalnızca USDZ dosyaları içe aktarılabilir"
         case .invalidLightSettings(let id):
             "\(id.uuidString) kimlikli ışık ayarları geçersiz"
+        case .invalidVisualStyle:
+            "Film filtresi veya gölge gücü geçersiz"
         case .invalidSpatialCalibration:
             "Zemin/tavan kalibrasyonu geçersiz veya oda yüksekliği gerçekçi değil"
         case .worldMapOutOfDate:
@@ -13870,6 +14917,20 @@ final class SceneProjectStore {
         }
     }
 
+    func updateVisualStyle(
+        filmLook: FilmLookID,
+        contactShadowStrength: Float
+    ) throws {
+        try commit(invalidateWorldMap: false) { candidate in
+            guard contactShadowStrength.isFinite,
+                  (0...2).contains(contactShadowStrength) else {
+                throw SceneProjectStoreError.invalidVisualStyle
+            }
+            candidate.filmLook = filmLook
+            candidate.contactShadowStrength = contactShadowStrength
+        }
+    }
+
     func setCalibratedFloorY(_ floorY: Float) throws {
         try commit(invalidateWorldMap: true) { candidate in
             guard floorY.isFinite else {
@@ -13892,6 +14953,24 @@ final class SceneProjectStore {
                !(1.50...6.50).contains(ceilingY - floorY) {
                 throw SceneProjectStoreError.invalidSpatialCalibration
             }
+            candidate.calibratedCeilingY = ceilingY
+        }
+    }
+
+    /// RoomPlan and the active ARWorldMap already share the same world coordinate
+    /// space. Correcting only the measured floor/ceiling metadata must therefore keep
+    /// the map valid; invalidating it here would make stable anchors relocalize again.
+    func reconcileSpatialCalibration(floorY: Float?, ceilingY: Float?) throws {
+        try commit(invalidateWorldMap: false) { candidate in
+            guard floorY.map({ $0.isFinite }) ?? true,
+                  ceilingY.map({ $0.isFinite }) ?? true else {
+                throw SceneProjectStoreError.invalidSpatialCalibration
+            }
+            if let floorY, let ceilingY,
+               !(1.50...6.50).contains(ceilingY - floorY) {
+                throw SceneProjectStoreError.invalidSpatialCalibration
+            }
+            candidate.calibratedFloorY = floorY
             candidate.calibratedCeilingY = ceilingY
         }
     }
@@ -14116,6 +15195,12 @@ final class SceneProjectStore {
             project.version = 5
             project.updatedAt = Date()
         }
+        if project.version < 6 {
+            project.filmLook = project.filmLook ?? .natural
+            project.contactShadowStrength = project.contactShadowStrength ?? 1
+            project.version = 6
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }
@@ -14133,6 +15218,11 @@ final class SceneProjectStore {
            let ceilingY = project.calibratedCeilingY,
            !(1.50...6.50).contains(ceilingY - floorY) {
             throw SceneProjectStoreError.invalidSpatialCalibration
+        }
+        guard project.contactShadowStrength.map({
+            $0.isFinite && (0...2).contains($0)
+        }) ?? true else {
+            throw SceneProjectStoreError.invalidVisualStyle
         }
 
         var ids = Set<UUID>()
@@ -14484,10 +15574,18 @@ incelemesine uygulama gondermesi mumkun degildir.
    noktalarinda da kayitli zemin seviyesiyle yerlestirme calismali.
 10. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
    golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula. Modelin en alt
-   gorunur noktasi zeminden 0-5 mm yukarida olmali. Modeli 0.5x ve 2x olcekle;
-   taban zemine sabit kalmali, havaya kalkmamali veya zemine gomulmemeli.
+   gorunur noktasi zeminden 0-5 mm yukarida olmali. Nesneyi secip boyut panelini
+   yuzde 25, 50, 100, 200 ve 300 konumlarinda dene; eksi/arti ve `1:1` dugmeleri de
+   ayni degeri vermeli. Her olcekte taban zemine sabit kalmali, havaya kalkmamali veya
+   zemine gomulmemeli. Kaydet/yukle sonrasinda yuzde degeri ve fiziksel boyut korunmali.
+   `Film & Golge` ekraninda alti filtrenin her birini sec; kamera ve sanal nesneler
+   birlikte degismeli, arayuz renkleri degismemeli. Temas golgesini yuzde 0, 100 ve
+   200'de dene; HEVC kaydinda secilen filtre gorunmeli. Mekani kaydedip yukleyince
+   filtre ve golge gucu geri gelmeli.
 11. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
-   olceklendirme calismali. Donus/olcek sonrasinda projeyi kaydet.
+   boyut paneli calismali. Katalog nesnesinde yanlislikla pinch boyutu bozmamali;
+   kullanicinin ekledigi ozel USDZ'de pinch olceklendirme de calismali. Donus/olcek
+   sonrasinda projeyi kaydet.
 12. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
     kapat, ayni alanda ac ve projeyi yukle; dekor anchor'i otomatik kayitla gelmeli.
     Ayrica yeni tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilmali.
@@ -14516,8 +15614,9 @@ incelemesine uygulama gondermesi mumkun degildir.
     `Aktif` oldugunu; gecikmenin ve SAM maske
     sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini
     tekrar et; AI kapaliyken ve acikken video kaydi alip kenar hatasini karsilastir.
-    RTX 3050'de 1500 ms'yi asan fakat 6000 ms'nin altinda kalan basarili HTTP sonucu
-    baglanti hatasi sayilmamali; dunya-koordinatli AI mesh'i yine uygulanmali.
+    Sunucu acikken `benchmark_server.py` testinin ilk istek dahil 350 ms sinirini
+    gecmesini dogrula. Bu siniri asan sonuc sahneye uygulanmamali; uygulama yerel
+    LiDAR/person-depth occlusion'ina geri donmeli.
     Servisi kapatinca eski AI mesh'i kaybolmali ve ARKit occlusion devam etmeli.
 16. `Sahne Listesi`ni ac; tum dekor, isik ve CGI efektlerinin ayri satirda gorundugunu
     dogrula. Listeden bir nesneyi sec, sonra cop kutusuyla sil; yalniz o nesne ve
@@ -14559,8 +15658,10 @@ incelemesine uygulama gondermesi mumkun degildir.
     kapatiyor` demeli; zemin karari PC baglantisindan etkilenmemeli.
 24. PC AI acikken `Kasa` sec. Yerlesim boyunca AI durumu beklemede olmali; zemine
     dokununca kasa dunya sifirindan veya kameradan kayarak gelmemeli, yalnizca AR
-    anchor kesinlestigi nihai noktada gorunmeli. PC yaniti 1200 ms'yi asarsa yerel
+    anchor kesinlestigi nihai noktada gorunmeli. PC yaniti 350 ms'yi asarsa yerel
     LiDAR'a donmeli; kasa titrememeli, kaybolmamali ve alt/ust yarisi kesilmemeli.
+    Varsayilan PC `/health` cevabinda `sam_enabled:false`, `depth_input_size:322` ve
+    sifirdan buyuk `warmup_milliseconds` gorulmeli.
 25. `Kontroller > Guncelleme`ye bas. Internet varken denetim sekiz saniye icinde
     sonuc vermeli. TestFlight yapisinda `TestFlight'i Ac`, yayindaki App Store
     surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
@@ -14577,6 +15678,15 @@ incelemesine uygulama gondermesi mumkun degildir.
     modellerini buyutup kucultmemeli. Zemin ve duvar temas golgelerinde sert tek bir
     leke yerine yumusak ic/dis katman gorulmeli; ortam aydinligi degistiginde golge
     yogunlugu ani sicrama yapmadan uyarlanmali.
+28. RoomPlan taramasindan once bilerek 10-15 cm hatali telefon zemin/tavan kalibrasyonu
+    olustur, sonra odayi tam tara. Tarama bitince RoomPlan kotlari hatali tek-poz olcumu
+    duzeltmeli ve zemin `Y 97.00` kalmali. Model secip telefonu hedefte sabit tut;
+    `Doğrulandı` yesil olmadan dokunma kabul edilmemeli. Ayni USDZ'yi ikinci kez
+    yerlestirmek onbellekten hizli acilmali; bozuk model 10 saniye sonunda yedek modele
+    gecip `yukleniyor`da kalmamali. Bir kisi nesnenin onunden yururken yerel person-depth
+    kisiyi onde tutmali; 350 ms'den gec PC derinligi goruntuye uygulanmamali. Tavan
+    armaturu dolap veya yuksek raf ustune degil, yalniz siniflandirilmis ya da kalibre
+    edilmis gercek tavan kotuna yerlestirilebilmeli.
 
 ## Baslangic kabul esikleri
 
@@ -14662,16 +15772,19 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
   mekan mesh'iyle occlusion
-- Istege bagli PC destekli SAM 2.1 Tiny + Depth Anything V2 Small derinlik fuz yonu;
+- Istege bagli PC destekli Depth Anything V2 Small + opsiyonel SAM 2.1 Tiny derinlik fuz yonu;
   iPhone kamera ve LiDAR karesini ayni Wi-Fi'daki RTX bilgisayara yollar, LiDAR ile
   metreye kalibre edilen sonuc RealityKit'te gorunmez occlusion mesh'i olur
 - AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
   cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
+- Karede kisi maskesi goruldugunde gecikmeli PC mesh'ini aninda devre disi birakip
+  ARKit person-depth'i one alma; kisi kaybolana kadar uzak sonucu sahneye uygulamama
 - Yerlesim sirasinda uzak AI occlusion'ini durdurma; AR anchor kesinlesmeden modeli
-  gostermeme, 1200 ms'den eski veya hareketle uyusmayan AI karesini reddetme ve
+  gostermeme, 350 ms'den eski veya kamera pozuyla sikica uyusmayan AI karesini reddetme ve
   LiDAR/AI derinliklerini ust uste cizmeden nesne kesilmesini engelleme
-- PC dengeli profilinde 512 px JPEG, 448 px/6 nokta SAM 2 ve 500 ms istek araligi;
-  LiDAR metre tamponunun cozunurlugunu dusurmeden daha dusuk gecikme ve VRAM kullanimi
+- RTX 3050 hizli profilinde 322 px Depth Anything, varsayilan kapali SAM ve 500 ms
+  istek araligi; sunucu hazir olmadan CUDA isitmasi ve LiDAR metre tamponunun
+  cozunurlugunu dusurmeden daha dusuk gecikme
 - PC veya bulut gerektirmeyen `Zemin Olcer`: siniflandirilmis LiDAR/ARKit zemin kotu,
   merkez piksel derinligi, gorus-cizgisi zemin mesafesi, kamera yuksekligi, egim,
   X/Y/Z koordinatlari ve 25 cm aralikli 4 x 4 metre saydam dunya grid'i
@@ -14692,10 +15805,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
 - Fotogercekci veya kullanici USDZ'si acilirken katalog olcusunde gorunur anlik yedek;
-  dosya hazir olunca ayni dunya anchor'i ve kullanici donusumu korunarak gercek modelle degisim
+  10 saniye zaman asimi ve oturum ici model onbellegiyle sonsuz `yukleniyor` durumunu
+  engelleme; dosya hazir olunca ayni dunya anchor'inda gercek modelle degisim
 - Anchor edilmeden yapilan USDZ olcumunde inactive cocuklari da hesaba katma; RealityKit'in
   sifir boyut dondurup 30 modelin tamamini mavi yedek kutuya dusurmesini engelleme
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
+- Canli kamera ve sanal dekorlari birlikte etkileyen Dogal, Sinema, Teal & Orange,
+  Noir, Gerilim ve Ruya film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
+  ayarlari ReplayKit HEVC kaydina da islenir
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
 - Duvar kataloglari gorunur beyaz hatlara bagli kalmadan sonlu RoomPlan/ARKit/LiDAR
@@ -14710,13 +15827,18 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
-- Dekor konumunu dunya anchor'ina kilitleme; olculu kataloglarda yalniz dondurme,
-  ozel/olcusuz dekorlarda dondurme ve olceklendirmeye izin verme
-- Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
+- Dekor konumunu dunya anchor'ina kilitleme; secili her nesne icin temas noktasini
+  bozmayan yuzde 25-300 boyut kaydiricisi, artir/azalt ve 1:1 sifirlama; olculu
+  kataloglarda yanlislikla olcek bozulmasin diye pinch yerine kontrollu panel,
+  ozel/olcusuz dekorlarda ek olarak dondurme ve pinch olceklendirme
+- Yalniz haritalama `extending/mapped`, takip normal ve kamera en az 240 ms sabitken
+  kalici ARKit/RoomPlan yuzeyine yerlestirme; hareketli kare anchor'i ve kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
 - `.floor` sinifli ARKit duzlemi, `.floor` sinifli LiDAR mesh yuzleri, RoomPlan zemin
   kotu ve dokunulan pikseldeki orta/yuksek guvenli `smoothedSceneDepth` olcumunu
   birlestiren kati zemin cozucu; masa gibi siniflandirilmamis yatay yuzey zemine gecmez
+- Tavan armaturlerinde yalniz `.ceiling` sinifli sonlu ARKit yuzeyi veya kalibre
+  RoomPlan tavan kotunu kabul etme; dolap ustu ve yuksek raflari tavan saymama
 - Parmakla dokunulan noktayi izleyen yesil/sari/kirmizi hedef gostergesi ve metre
   cinsinden derinlik geri bildirimi
 - USDZ'nin gercek alt/ust/arka gorsel sinirini yuzey temas pivotuna alan donusum;
@@ -14724,9 +15846,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Modelin gercek gorsel sinirindan uretilen iki katmanli yumusak temas golgesi;
-  ARKit ortam isigi degistikce golge yogunlugu da yumusakca uyarlanir
+  ARKit ortam isigi degistikce golge yogunlugu da yumusakca uyarlanir ve Film & Golge
+  panelinden yuzde 0-200 araliginda ayarlanir
 - Telefon zeminde sabitken o seviyeyi Minecraft benzeri `Y 97.00` katmani olarak
-  kilitleyen, tavani LiDAR ile ayni koordinatta olcen kalici koordinat sistemi
+  kilitleyen, tavani ayni koordinatta olcen kalici sistem; tamamlanmis RoomPlan taramasi
+  varsa cok-ornekli zemin/tavan kotu eski veya hatali tek-poz kalibrasyonu otomatik duzeltir
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - RoomPlan gecisi veya relocalization bir uygulama anchor'ini gecici kaldirirsa gorseli
   silmeden canli anchor'a yeniden baglama; geri gelmeyen anchor'i son guvenilir dunya
@@ -14789,8 +15913,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
    koymaz; hedef yuzeyi yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
    kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
-   modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
-   dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
+   nesneyi tekrar secip boyut panelinden yuzde 25-300 araliginda buyutup
+   kucultebilirsiniz; `1:1` gercek katalog boyutuna dondurur. Yuzey temas noktasi
+   olcek degisirken sabit kalir. Yerlesimden sonra yalniz kompakt dock geri gelir;
+   ayrintili araclar `Kontroller` ile acilir.
 
 8. Bir lamba yerlestirildiginde veya tekrar secildiginde `Sanal Isik` panelinden
    `Projektor Hedefini Sec`e basin ve isin vuracagi yuzeye dokunun. Guc, renk
@@ -14798,6 +15924,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    RealityKit SpotLight sanal dekorlari ve golgelerini fiziksel olarak aydinlatir;
    gercek kamera pikseli yeniden isiklandirilmaz, fakat LiDAR yuzeyine oturan saydam
    projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
+   Kompakt dock'taki `Film` satirindan alti canli renk gorunumunden birini secin;
+   ayni ekrandaki `Temas golgesi` kaydiricisi nesne golgesini yuzde 0-200 arasinda
+   ayarlar. Bu degerler mekana kaydedilir ve HEVC ekran kaydinda gorunur.
 9. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
    degilse istek siraya alinir ve otomatik tamamlanir. Manuel kayit `Kayitli Mekanlar`
@@ -14836,9 +15965,10 @@ kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayikl
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;
 AI kapatilirsa hafif ice alinmis RoomPlan yedegi tekrar etkinlesir.
-RTX 3050 sinifi bir PC'de SAM 2 + Depth Anything kareleri tipik olarak 2-3 saniye
-surer; istemci 6 saniyeye kadar gecerli dunya-koordinatli sonucu kabul eder ve
-olculen toplam gecikmeyi durum alaninda gosterir.
+RTX 3050 sinifi bir PC'de her karede SAM 2 calistirmak gercek zamanli degildir. Bu
+nedenle varsayilan hizli profil 322 px Depth Anything + LiDAR kullanir; SAM kalite
+modu elle acilir. Istemci yalniz 350 ms icinde gelen ve guncel kamera pozuyla sikica
+uyusan sonucu kabul eder, diger karelerde yerel LiDAR/person-depth'e doner.
 
 ## Proje dosyalari
 
@@ -14859,8 +15989,9 @@ CineARProjects/SavedPlaces/<UUID>/
   Assets/*.usdz
 ```
 
-`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, kalibre edilmis
-zemin/tavan kotlarini, projektor hedef koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
+`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, nesne olceklerini,
+film filtresini, temas golgesi gucunu, kalibre edilmis zemin/tavan kotlarini, projektor
+hedef koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
 haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama

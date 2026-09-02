@@ -27,8 +27,15 @@ DEPTH_MODEL_ID = os.environ.get(
     "depth-anything/Depth-Anything-V2-Small-hf",
 )
 SAM_MODEL_ID = os.environ.get("CINEAR_SAM_MODEL", "facebook/sam2.1-hiera-tiny")
+SAM_ENABLED = os.environ.get("CINEAR_SAM_ENABLED", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 SAM_POINTS_PER_SIDE = int(os.environ.get("CINEAR_SAM_POINTS", "6"))
 SAM_MAX_SIDE = int(os.environ.get("CINEAR_SAM_MAX_SIDE", "448"))
+DEPTH_INPUT_SIZE = min(max(int(os.environ.get("CINEAR_DEPTH_INPUT_SIZE", "322")), 224), 518)
 MAX_PIXELS = 640 * 480
 SERVICE_PORT = 8765
 BONJOUR_SERVICE_TYPE = "_cinear-ai._tcp.local."
@@ -78,6 +85,8 @@ def register_bonjour_service(address: str | None = None) -> tuple[Zeroconf, Serv
         zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
         zeroconf.register_service(info, allow_name_change=True)
         bonjour_url = f"http://{address}:{SERVICE_PORT}"
+        print(f"Mevcut ag IPv4 adresi: {address}")
+        print(f"iPhone sunucu adresi: {bonjour_url}")
         print(f"CineAR Bonjour: advertising {bonjour_url}")
         return zeroconf, info
     except Exception as error:
@@ -144,6 +153,7 @@ class InferenceModels:
         self.mask_generator = None
         self.ready = False
         self.load_error: str | None = None
+        self.warmup_milliseconds = 0.0
         self.lock = Lock()
 
     def load(self) -> None:
@@ -152,24 +162,61 @@ class InferenceModels:
             self.depth_model = AutoModelForDepthEstimation.from_pretrained(DEPTH_MODEL_ID)
             self.depth_model = self.depth_model.to(self.device).eval()
 
-            from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
-            from sam2.build_sam import build_sam2_hf
+            if SAM_ENABLED:
+                from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
+                from sam2.build_sam import build_sam2_hf
 
-            sam_model = build_sam2_hf(
-                SAM_MODEL_ID,
-                device=str(self.device),
-                apply_postprocessing=False,
+                sam_model = build_sam2_hf(
+                    SAM_MODEL_ID,
+                    device=str(self.device),
+                    apply_postprocessing=False,
+                )
+                self.mask_generator = SAM2AutomaticMaskGenerator(
+                    model=sam_model,
+                    points_per_side=SAM_POINTS_PER_SIDE,
+                    points_per_batch=16,
+                    pred_iou_thresh=0.88,
+                    stability_score_thresh=0.92,
+                    crop_n_layers=0,
+                    min_mask_region_area=0,
+                    output_mode="binary_mask",
+                )
+            # Pay the CUDA graph/kernel startup cost before /health reports ready.
+            # Without this warm-up the first phone frame takes about one second on an
+            # RTX 3050 and is correctly rejected by the iPhone as stale.
+            warmup_started = time.perf_counter()
+            # Match the phone request geometry and exercise interpolation/fusion too.
+            # A tiny, flat image did not initialise every CUDA kernel: the first real
+            # 512x384 frame could still miss the iPhone's 350 ms freshness deadline.
+            warmup_width, warmup_height = 512, 384
+            warmup_depth_width, warmup_depth_height = 256, 192
+            horizontal = np.linspace(0, 255, warmup_width, dtype=np.uint8)
+            vertical = np.linspace(0, 255, warmup_height, dtype=np.uint8)
+            warmup_pixels = np.empty((warmup_height, warmup_width, 3), dtype=np.uint8)
+            warmup_pixels[..., 0] = horizontal[None, :]
+            warmup_pixels[..., 1] = vertical[:, None]
+            warmup_pixels[..., 2] = 127
+            warmup_image = Image.fromarray(warmup_pixels, mode="RGB")
+            warmup_lidar = np.full(
+                (warmup_depth_height, warmup_depth_width),
+                2.0,
+                dtype=np.float32,
             )
-            self.mask_generator = SAM2AutomaticMaskGenerator(
-                model=sam_model,
-                points_per_side=SAM_POINTS_PER_SIDE,
-                points_per_batch=16,
-                pred_iou_thresh=0.88,
-                stability_score_thresh=0.92,
-                crop_n_layers=0,
-                min_mask_region_area=0,
-                output_mode="binary_mask",
-            )
+            for _ in range(2):
+                relative = self._relative_depth(
+                    warmup_image,
+                    warmup_depth_height,
+                    warmup_depth_width,
+                )
+                masks = self._sam_masks(
+                    warmup_image,
+                    warmup_depth_height,
+                    warmup_depth_width,
+                )
+                _ = fuse_depth(relative, warmup_lidar, masks)
+            if self.device.type == "cuda":
+                torch.cuda.synchronize()
+            self.warmup_milliseconds = (time.perf_counter() - warmup_started) * 1_000
             self.ready = True
         except Exception as error:  # surfaced by /health and startup log
             self.load_error = f"{type(error).__name__}: {error}"
@@ -181,7 +228,11 @@ class InferenceModels:
         return nullcontext()
 
     def _relative_depth(self, image: Image.Image, height: int, width: int) -> np.ndarray:
-        inputs = self.depth_processor(images=image, return_tensors="pt")
+        inputs = self.depth_processor(
+            images=image,
+            return_tensors="pt",
+            size={"height": DEPTH_INPUT_SIZE, "width": DEPTH_INPUT_SIZE},
+        )
         pixel_values = inputs["pixel_values"].to(self.device)
         with torch.inference_mode(), self._autocast():
             prediction = self.depth_model(pixel_values=pixel_values).predicted_depth
@@ -194,6 +245,8 @@ class InferenceModels:
         return prediction.float().cpu().numpy().astype(np.float32, copy=False)
 
     def _sam_masks(self, image: Image.Image, height: int, width: int) -> list[np.ndarray]:
+        if self.mask_generator is None:
+            return []
         scale = min(1.0, SAM_MAX_SIDE / max(image.size))
         sam_size = (
             max(32, round(image.width * scale)),
@@ -260,8 +313,11 @@ def health() -> dict[str, object]:
         "device": str(models.device),
         "depth_model": DEPTH_MODEL_ID,
         "sam_model": SAM_MODEL_ID,
+        "sam_enabled": SAM_ENABLED,
         "sam_points_per_side": SAM_POINTS_PER_SIDE,
         "sam_max_side": SAM_MAX_SIDE,
+        "depth_input_size": DEPTH_INPUT_SIZE,
+        "warmup_milliseconds": round(models.warmup_milliseconds, 1),
         "bonjour_url": bonjour_url,
         "error": models.load_error,
     }

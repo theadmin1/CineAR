@@ -23,16 +23,19 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
   mekan mesh'iyle occlusion
-- Istege bagli PC destekli SAM 2.1 Tiny + Depth Anything V2 Small derinlik fuz yonu;
+- Istege bagli PC destekli Depth Anything V2 Small + opsiyonel SAM 2.1 Tiny derinlik fuz yonu;
   iPhone kamera ve LiDAR karesini ayni Wi-Fi'daki RTX bilgisayara yollar, LiDAR ile
   metreye kalibre edilen sonuc RealityKit'te gorunmez occlusion mesh'i olur
 - AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
   cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
+- Karede kisi maskesi goruldugunde gecikmeli PC mesh'ini aninda devre disi birakip
+  ARKit person-depth'i one alma; kisi kaybolana kadar uzak sonucu sahneye uygulamama
 - Yerlesim sirasinda uzak AI occlusion'ini durdurma; AR anchor kesinlesmeden modeli
-  gostermeme, 1200 ms'den eski veya hareketle uyusmayan AI karesini reddetme ve
+  gostermeme, 350 ms'den eski veya kamera pozuyla sikica uyusmayan AI karesini reddetme ve
   LiDAR/AI derinliklerini ust uste cizmeden nesne kesilmesini engelleme
-- PC dengeli profilinde 512 px JPEG, 448 px/6 nokta SAM 2 ve 500 ms istek araligi;
-  LiDAR metre tamponunun cozunurlugunu dusurmeden daha dusuk gecikme ve VRAM kullanimi
+- RTX 3050 hizli profilinde 322 px Depth Anything, varsayilan kapali SAM ve 500 ms
+  istek araligi; sunucu hazir olmadan CUDA isitmasi ve LiDAR metre tamponunun
+  cozunurlugunu dusurmeden daha dusuk gecikme
 - PC veya bulut gerektirmeyen `Zemin Olcer`: siniflandirilmis LiDAR/ARKit zemin kotu,
   merkez piksel derinligi, gorus-cizgisi zemin mesafesi, kamera yuksekligi, egim,
   X/Y/Z koordinatlari ve 25 cm aralikli 4 x 4 metre saydam dunya grid'i
@@ -53,10 +56,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
   gercek sekilli prosedurel yedek model; yerlestirme sessizce kaybolmaz
 - Fotogercekci veya kullanici USDZ'si acilirken katalog olcusunde gorunur anlik yedek;
-  dosya hazir olunca ayni dunya anchor'i ve kullanici donusumu korunarak gercek modelle degisim
+  10 saniye zaman asimi ve oturum ici model onbellegiyle sonsuz `yukleniyor` durumunu
+  engelleme; dosya hazir olunca ayni dunya anchor'inda gercek modelle degisim
 - Anchor edilmeden yapilan USDZ olcumunde inactive cocuklari da hesaba katma; RealityKit'in
   sifir boyut dondurup 30 modelin tamamini mavi yedek kutuya dusurmesini engelleme
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
+- Canli kamera ve sanal dekorlari birlikte etkileyen Dogal, Sinema, Teal & Orange,
+  Noir, Gerilim ve Ruya film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
+  ayarlari ReplayKit HEVC kaydina da islenir
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
 - Duvar kataloglari gorunur beyaz hatlara bagli kalmadan sonlu RoomPlan/ARKit/LiDAR
@@ -71,13 +78,18 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
-- Dekor konumunu dunya anchor'ina kilitleme; olculu kataloglarda yalniz dondurme,
-  ozel/olcusuz dekorlarda dondurme ve olceklendirmeye izin verme
-- Yalniz normal takipte ve kalici ARKit/RoomPlan yuzeyi uzerinde yerlestirme; kamera-onu
+- Dekor konumunu dunya anchor'ina kilitleme; secili her nesne icin temas noktasini
+  bozmayan yuzde 25-300 boyut kaydiricisi, artir/azalt ve 1:1 sifirlama; olculu
+  kataloglarda yanlislikla olcek bozulmasin diye pinch yerine kontrollu panel,
+  ozel/olcusuz dekorlarda ek olarak dondurme ve pinch olceklendirme
+- Yalniz haritalama `extending/mapped`, takip normal ve kamera en az 240 ms sabitken
+  kalici ARKit/RoomPlan yuzeyine yerlestirme; hareketli kare anchor'i ve kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
 - `.floor` sinifli ARKit duzlemi, `.floor` sinifli LiDAR mesh yuzleri, RoomPlan zemin
   kotu ve dokunulan pikseldeki orta/yuksek guvenli `smoothedSceneDepth` olcumunu
   birlestiren kati zemin cozucu; masa gibi siniflandirilmamis yatay yuzey zemine gecmez
+- Tavan armaturlerinde yalniz `.ceiling` sinifli sonlu ARKit yuzeyi veya kalibre
+  RoomPlan tavan kotunu kabul etme; dolap ustu ve yuksek raflari tavan saymama
 - Parmakla dokunulan noktayi izleyen yesil/sari/kirmizi hedef gostergesi ve metre
   cinsinden derinlik geri bildirimi
 - USDZ'nin gercek alt/ust/arka gorsel sinirini yuzey temas pivotuna alan donusum;
@@ -85,9 +97,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Modelin gercek gorsel sinirindan uretilen iki katmanli yumusak temas golgesi;
-  ARKit ortam isigi degistikce golge yogunlugu da yumusakca uyarlanir
+  ARKit ortam isigi degistikce golge yogunlugu da yumusakca uyarlanir ve Film & Golge
+  panelinden yuzde 0-200 araliginda ayarlanir
 - Telefon zeminde sabitken o seviyeyi Minecraft benzeri `Y 97.00` katmani olarak
-  kilitleyen, tavani LiDAR ile ayni koordinatta olcen kalici koordinat sistemi
+  kilitleyen, tavani ayni koordinatta olcen kalici sistem; tamamlanmis RoomPlan taramasi
+  varsa cok-ornekli zemin/tavan kotu eski veya hatali tek-poz kalibrasyonu otomatik duzeltir
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - RoomPlan gecisi veya relocalization bir uygulama anchor'ini gecici kaldirirsa gorseli
   silmeden canli anchor'a yeniden baglama; geri gelmeyen anchor'i son guvenilir dunya
@@ -150,8 +164,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
    koymaz; hedef yuzeyi yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
    kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
-   modeli dondurebilir ve olceklendirebilirsiniz. Yerlesimden sonra yalniz kompakt
-   dock geri gelir; ayrintili araclar `Kontroller` ile acilir.
+   nesneyi tekrar secip boyut panelinden yuzde 25-300 araliginda buyutup
+   kucultebilirsiniz; `1:1` gercek katalog boyutuna dondurur. Yuzey temas noktasi
+   olcek degisirken sabit kalir. Yerlesimden sonra yalniz kompakt dock geri gelir;
+   ayrintili araclar `Kontroller` ile acilir.
 
 8. Bir lamba yerlestirildiginde veya tekrar secildiginde `Sanal Isik` panelinden
    `Projektor Hedefini Sec`e basin ve isin vuracagi yuzeye dokunun. Guc, renk
@@ -159,6 +175,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    RealityKit SpotLight sanal dekorlari ve golgelerini fiziksel olarak aydinlatir;
    gercek kamera pikseli yeniden isiklandirilmaz, fakat LiDAR yuzeyine oturan saydam
    projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
+   Kompakt dock'taki `Film` satirindan alti canli renk gorunumunden birini secin;
+   ayni ekrandaki `Temas golgesi` kaydiricisi nesne golgesini yuzde 0-200 arasinda
+   ayarlar. Bu degerler mekana kaydedilir ve HEVC ekran kaydinda gorunur.
 9. Tarama sonrasinda ilk dunya haritasi ve her yeni dekor anchor'i otomatik kaydedilir.
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
    degilse istek siraya alinir ve otomatik tamamlanir. Manuel kayit `Kayitli Mekanlar`
@@ -197,9 +216,10 @@ kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayikl
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;
 AI kapatilirsa hafif ice alinmis RoomPlan yedegi tekrar etkinlesir.
-RTX 3050 sinifi bir PC'de SAM 2 + Depth Anything kareleri tipik olarak 2-3 saniye
-surer; istemci 6 saniyeye kadar gecerli dunya-koordinatli sonucu kabul eder ve
-olculen toplam gecikmeyi durum alaninda gosterir.
+RTX 3050 sinifi bir PC'de her karede SAM 2 calistirmak gercek zamanli degildir. Bu
+nedenle varsayilan hizli profil 322 px Depth Anything + LiDAR kullanir; SAM kalite
+modu elle acilir. Istemci yalniz 350 ms icinde gelen ve guncel kamera pozuyla sikica
+uyusan sonucu kabul eder, diger karelerde yerel LiDAR/person-depth'e doner.
 
 ## Proje dosyalari
 
@@ -220,8 +240,9 @@ CineARProjects/SavedPlaces/<UUID>/
   Assets/*.usdz
 ```
 
-`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, kalibre edilmis
-zemin/tavan kotlarini, projektor hedef koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
+`scene.json`, dekor kimliklerini, temas-pivotlu yerel transformlarini, nesne olceklerini,
+film filtresini, temas golgesi gucunu, kalibre edilmis zemin/tavan kotlarini, projektor
+hedef koordinatini ve sanal isik ayarlarini; `room.json`, RoomPlan'in
 semantik yuzey/obje verisini; `worldmap.arexperience` ise ARKit'in mekansal
 haritasini ve anchor'larini saklar. Normal kamera gorunumunde `room.json` opak bir
 oda modeli olarak cizilmez; veri sonraki semantik ozellikler icin korunur. Tarama

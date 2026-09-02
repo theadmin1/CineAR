@@ -110,6 +110,10 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isPlacingProp = false
     @Published private(set) var isRoomOutlineVisible = false
     @Published private(set) var selectedLightSettings: VirtualLightSettings?
+    @Published private(set) var selectedObjectScale: Float = 1
+    @Published private(set) var selectedObjectTitle = ""
+    @Published private(set) var activeFilmLook: FilmLookID = .natural
+    @Published private(set) var contactShadowStrength: Float = 1
     @Published private(set) var isAimingLight = false
     @Published private(set) var placementSurfaceMessage = "Yüzey ölçülüyor"
     @Published private(set) var placementSurfaceColor: Color = .yellow
@@ -159,6 +163,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private var renderedLightFootprints: [UUID: AnchorEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
+    private var assetLoadTokens: [UUID: UUID] = [:]
+    private var photorealEntityCache: [String: ModelEntity] = [:]
+    private var customEntityCache: [String: ModelEntity] = [:]
     private var renderGeneration: UInt64 = 0
     private weak var coachingOverlay: ARCoachingOverlayView?
     private var isSavingWorldMap = false
@@ -177,8 +184,14 @@ final class ARSessionController: NSObject, ObservableObject {
     private var isRoomRealityRendering = false
     private var lastKnownFloorY: Float?
     private var lastKnownCeilingY: Float?
+    private var roomPlanFloorY: Float?
+    private var roomPlanCeilingY: Float?
     private let floorSurfaceTracker = FloorSurfaceTracker()
     private var lastPlacementGuidanceTimestamp: TimeInterval = 0
+    private var lastPlacementCameraTransform: simd_float4x4?
+    private var lastPlacementCameraTimestamp: TimeInterval?
+    private var placementPoseStableSince: TimeInterval?
+    private var isPlacementPoseStable = false
     private var lastFloorMeterUpdateTimestamp: TimeInterval = 0
     private var floorMeterOrigin: SIMD3<Float>?
     private var floorMeterAnchor: AnchorEntity?
@@ -189,6 +202,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var lastProjectorRefreshTimestamp: TimeInterval = 0
     private var lastShadowLightingUpdateTimestamp: TimeInterval = 0
     private var ambientLightIntensity: Float = 1_000
+    private var lastPersonObservationTimestamp: TimeInterval = -Double.greatestFiniteMagnitude
     private var shouldSaveWorldMapWhenReady = false
     private var shouldShowRoomOutlineWhenReady = false
     private var readinessRecoveryGeneration: UInt64 = 0
@@ -251,6 +265,11 @@ final class ARSessionController: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        activeFilmLook = projectStore.project.filmLook ?? .natural
+        contactShadowStrength = min(
+            max(projectStore.project.contactShadowStrength ?? 1, 0),
+            2
+        )
         aiEnhancementEnabled = UserDefaults.standard.bool(forKey: Self.aiEnabledDefaultsKey)
         let storedAIAddress = UserDefaults.standard.string(forKey: Self.aiServerDefaultsKey)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -334,20 +353,29 @@ final class ARSessionController: NSObject, ObservableObject {
            ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
             configuration.sceneReconstruction = .meshWithClassification
         }
-        if enableAdvancedOcclusion,
-           ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
-            configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        }
-        // Keep scene depth alongside person depth when the device supports both.
-        // Person segmentation handles people; scene depth/mesh handles furniture
-        // crossing in front of a virtual prop.
-        if enableAdvancedOcclusion,
-           ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            configuration.frameSemantics.insert(.sceneDepth)
-        }
-        if enableAdvancedOcclusion,
-           ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        if enableAdvancedOcclusion {
+            var semantics: ARConfiguration.FrameSemantics = []
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+                semantics.insert(.personSegmentationWithDepth)
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentation) {
+                semantics.insert(.personSegmentation)
+            }
+
+            // Request only one scene-depth stream and validate the complete option set.
+            // Individual flags can be supported while their combination is not; passing
+            // such a combination makes ARSession reject the whole configuration.
+            let smoothedCandidate = semantics.union(.smoothedSceneDepth)
+            let rawCandidate = semantics.union(.sceneDepth)
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(smoothedCandidate) {
+                semantics = smoothedCandidate
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(rawCandidate) {
+                semantics = rawCandidate
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+                semantics = [.smoothedSceneDepth]
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+                semantics = [.sceneDepth]
+            }
+            configuration.frameSemantics = semantics
         }
         return configuration
     }
@@ -386,6 +414,12 @@ final class ARSessionController: NSObject, ObservableObject {
         bloodWaterfallParticles.removeAll()
         loadingEntityIDs.removeAll()
         assetLoadSubscriptions.removeAll()
+        assetLoadTokens.removeAll()
+        lastPlacementCameraTransform = nil
+        lastPlacementCameraTimestamp = nil
+        placementPoseStableSince = nil
+        isPlacementPoseStable = false
+        lastPersonObservationTimestamp = -Double.greatestFiniteMagnitude
         selectedEntityID = nil
         selectedLightSettings = nil
         isAimingLight = false
@@ -403,6 +437,8 @@ final class ARSessionController: NSObject, ObservableObject {
         roomCoordinateSpaceIsActive = initialWorldMap != nil
         lastKnownFloorY = nil
         lastKnownCeilingY = nil
+        roomPlanFloorY = nil
+        roomPlanCeilingY = nil
         calibratedFloorY = nil
         calibratedCeilingY = nil
         spatialCalibrationMode = nil
@@ -413,11 +449,12 @@ final class ARSessionController: NSObject, ObservableObject {
         spatialCalibrationColor = .secondary
         floorSurfaceTracker.reset()
         if roomCoordinateSpaceIsActive {
-            updateKnownFloorFromRoomData()
             applyStoredSpatialCalibration()
+            updateKnownFloorFromRoomData()
         }
         arView.session.delegateQueue = .main
         arView.session.delegate = self
+        arView.renderOptions.remove(.disablePersonOcclusion)
         arView.session.run(
             configuration(initialWorldMap: initialWorldMap),
             options: [.resetTracking, .removeExistingAnchors]
@@ -620,13 +657,30 @@ final class ARSessionController: NSObject, ObservableObject {
               !isSessionInterrupted,
               case .normal = frame.camera.trackingState,
               let serverURL = AIEnhancementClient.serverURL(from: aiServerAddress) else { return }
+        if frameContainsPerson(frame) {
+            lastPersonObservationTimestamp = frame.timestamp
+            aiDepthRenderer.clear()
+            activateLocalOcclusionFallback()
+            aiEnhancementStatus = .stabilizing
+            return
+        }
         aiEnhancementClient.submit(frame: frame, serverURL: serverURL) { [weak self] result in
             guard let self, self.aiEnhancementEnabled, !self.isPlacingProp else { return }
             switch result {
             case .success(let depth):
+                if let timestamp = self.arView?.session.currentFrame?.timestamp,
+                   timestamp - self.lastPersonObservationTimestamp < 0.75 {
+                    self.aiDepthRenderer.clear()
+                    self.activateLocalOcclusionFallback()
+                    self.aiEnhancementStatus = .stabilizing
+                    return
+                }
                 // Old remote depth is worse than the device LiDAR fallback for moving
                 // people and during placement. Never display a multi-second ghost mesh.
-                guard depth.totalLatencyMilliseconds <= 1_200 else {
+                // Remote depth is useful for static geometry only while it is close to
+                // real time. A late mesh makes a walking person appear behind virtual
+                // content, so immediately fall back to ARKit person/LiDAR occlusion.
+                guard depth.totalLatencyMilliseconds <= 350 else {
                     self.aiDepthRenderer.clear()
                     self.activateLocalOcclusionFallback()
                     self.aiEnhancementStatus = .failed(
@@ -672,6 +726,28 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    private func frameContainsPerson(_ frame: ARFrame) -> Bool {
+        guard let mask = frame.segmentationBuffer,
+              CVPixelBufferGetPixelFormatType(mask) == kCVPixelFormatType_OneComponent8,
+              CVPixelBufferGetWidth(mask) > 0,
+              CVPixelBufferGetHeight(mask) > 0 else { return false }
+        CVPixelBufferLockBaseAddress(mask, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(mask, .readOnly) }
+        guard let base = CVPixelBufferGetBaseAddress(mask) else { return false }
+        let width = CVPixelBufferGetWidth(mask)
+        let height = CVPixelBufferGetHeight(mask)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(mask)
+        let stepX = max(1, width / 24)
+        let stepY = max(1, height / 18)
+        for y in stride(from: stepY / 2, to: height, by: stepY) {
+            let row = base.advanced(by: y * bytesPerRow).assumingMemoryBound(to: UInt8.self)
+            for x in stride(from: stepX / 2, to: width, by: stepX) where row[x] >= 24 {
+                return true
+            }
+        }
+        return false
+    }
+
     private func aiResultMatchesCurrentCamera(_ result: AIDepthResult) -> Bool {
         guard let current = arView?.session.currentFrame?.camera.transform else { return false }
         let capturedPosition = SIMD3<Float>(
@@ -684,7 +760,7 @@ final class ARSessionController: NSObject, ObservableObject {
             current.columns.3.y,
             current.columns.3.z
         )
-        guard simd_distance(capturedPosition, currentPosition) <= 0.18 else { return false }
+        guard simd_distance(capturedPosition, currentPosition) <= 0.055 else { return false }
 
         let capturedForward = simd_normalize(SIMD3<Float>(
             -result.cameraTransform.columns.2.x,
@@ -697,7 +773,7 @@ final class ARSessionController: NSObject, ObservableObject {
             -current.columns.2.z
         ))
         let cosine = min(max(simd_dot(capturedForward, currentForward), -1), 1)
-        return acos(cosine) <= Float.pi / 15
+        return acos(cosine) <= Float.pi / 30
     }
 
     private func activateLocalOcclusionFallback() {
@@ -769,6 +845,7 @@ final class ARSessionController: NSObject, ObservableObject {
         pendingRealityThemeAfterScan = themeToSchedule
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
+        arView?.renderOptions.remove(.disablePersonOcclusion)
         arView?.session.run(configuration(), options: [])
         refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
@@ -1159,32 +1236,26 @@ final class ARSessionController: NSObject, ObservableObject {
         cameraPosition: SIMD3<Float>
     ) {
         guard floorY.isFinite else { return }
-        if let detectedFloorY = lastKnownFloorY,
-           abs(detectedFloorY - floorY) > 0.18 {
-            spatialCalibrationSamples.removeAll()
-            spatialCalibrationStartedAt = nil
-            spatialCalibrationStatus = "Telefon seviyesi LiDAR zemininden farklı — gerçekten zeminde olduğunu kontrol et"
-            spatialCalibrationColor = .red
-            return
-        }
+        let resolvedFloorY = roomPlanFloorY ?? floorY
         do {
-            try projectStore.setCalibratedFloorY(floorY)
-            calibratedFloorY = floorY
+            try projectStore.setCalibratedFloorY(resolvedFloorY)
+            calibratedFloorY = resolvedFloorY
             calibratedCeilingY = projectStore.project.calibratedCeilingY
-            lastKnownFloorY = floorY
+            lastKnownFloorY = resolvedFloorY
             lastKnownCeilingY = calibratedCeilingY
-            floorSurfaceTracker.setCalibratedFloor(floorY)
+            floorSurfaceTracker.setCalibratedFloor(resolvedFloorY)
             if roomCoordinateSpaceIsActive, calibratedCeilingY == nil {
                 updateKnownFloorFromRoomData()
             }
-            floorMeterOrigin = SIMD3(cameraPosition.x, floorY, cameraPosition.z)
+            floorMeterOrigin = SIMD3(cameraPosition.x, resolvedFloorY, cameraPosition.z)
             if let arView, let floorMeterOrigin {
                 installFloorMeterGrid(origin: floorMeterOrigin, in: arView)
             }
             finishSpatialCalibration()
             shouldSaveWorldMapWhenReady = true
             scheduleReadinessRecovery()
-            publishStatus("Zemin Y 97.00 olarak kilitlendi", color: .green)
+            let source = roomPlanFloorY == nil ? "telefon ölçümü" : "RoomPlan doğrulaması"
+            publishStatus("Zemin Y 97.00 olarak kilitlendi — \(source)", color: .green)
         } catch {
             spatialCalibrationStatus = error.localizedDescription
             spatialCalibrationColor = .red
@@ -1193,10 +1264,11 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func finishCeilingCalibration(ceilingY: Float) {
         guard ceilingY.isFinite else { return }
+        let resolvedCeilingY = roomPlanCeilingY ?? ceilingY
         do {
-            try projectStore.setCalibratedCeilingY(ceilingY)
-            calibratedCeilingY = ceilingY
-            lastKnownCeilingY = ceilingY
+            try projectStore.setCalibratedCeilingY(resolvedCeilingY)
+            calibratedCeilingY = resolvedCeilingY
+            lastKnownCeilingY = resolvedCeilingY
             finishSpatialCalibration()
             shouldSaveWorldMapWhenReady = true
             scheduleReadinessRecovery()
@@ -1425,17 +1497,116 @@ final class ARSessionController: NSObject, ObservableObject {
         persistSelectedLightSettings()
         isAimingLight = false
         selectedEntityID = id
-        if let placement = projectStore.placement(id: id), placement.kind.emitsVirtualLight {
+        guard let placement = projectStore.placement(id: id) else {
+            selectedObjectTitle = ""
+            selectedObjectScale = 1
+            return
+        }
+        selectedObjectTitle = placement.kind.title
+        let storedScale = placement.transform.scale.first ?? 1
+        selectedObjectScale = min(max(renderedEntities[id]?.scale.x ?? storedScale, 0.25), 3)
+        if placement.kind.emitsVirtualLight {
             selectedLightSettings = placement.lightSettings ?? .defaultFixture
             publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
-        } else if let placement = projectStore.placement(id: id),
-                  hasLockedPhysicalScale(placement.kind) {
-            selectedLightSettings = nil
-            publishStatus("Dekor seçildi — gerçek dünya ölçeği kilitli; döndürebilirsin", color: .blue)
         } else {
             selectedLightSettings = nil
-            publishStatus("Dekor seçildi — konumu kilitli; döndür veya ölçekle", color: .blue)
+            publishStatus("Dekor seçildi — boyut panelinden ölçekle veya döndür", color: .blue)
         }
+    }
+
+    func clearSelectedObject() {
+        persistSelectedLightSettings()
+        selectedEntityID = nil
+        selectedLightSettings = nil
+        selectedObjectTitle = ""
+        selectedObjectScale = 1
+        isAimingLight = false
+    }
+
+    func previewSelectedObjectScale(_ requestedScale: Float) {
+        guard selectedEntityID != nil else { return }
+        let scale = min(max(requestedScale, 0.25), 3)
+        selectedObjectScale = scale
+        if let id = selectedEntityID {
+            renderedEntities[id]?.scale = SIMD3<Float>(repeating: scale)
+        }
+    }
+
+    func persistSelectedObjectScale() {
+        guard let id = selectedEntityID,
+              let placement = projectStore.placement(id: id) else { return }
+        let scale = min(max(selectedObjectScale, 0.25), 3)
+        var transform = renderedEntities[id]?.transform ?? placement.transform.realityKitTransform
+        let previousScale = placement.transform.realityKitTransform.scale
+        transform.scale = SIMD3<Float>(repeating: scale)
+        renderedEntities[id]?.scale = transform.scale
+        do {
+            try projectStore.updateTransforms([id: transform])
+            selectedObjectScale = scale
+            refreshSceneCatalogs()
+        } catch {
+            renderedEntities[id]?.scale = previousScale
+            selectedObjectScale = previousScale.x
+            publishStatus("Nesne boyutu kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func adjustSelectedObjectScale(by factor: Float) {
+        previewSelectedObjectScale(selectedObjectScale * factor)
+        persistSelectedObjectScale()
+    }
+
+    func resetSelectedObjectScale() {
+        previewSelectedObjectScale(1)
+        persistSelectedObjectScale()
+    }
+
+    func selectFilmLook(_ look: FilmLookID) {
+        let previous = activeFilmLook
+        activeFilmLook = look
+        do {
+            try projectStore.updateVisualStyle(
+                filmLook: look,
+                contactShadowStrength: contactShadowStrength
+            )
+            publishStatus("\(look.title) film filtresi etkin", color: .green)
+        } catch {
+            activeFilmLook = previous
+            publishStatus("Film filtresi kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func setContactShadowStrength(_ requestedStrength: Float) {
+        contactShadowStrength = min(max(requestedStrength, 0), 2)
+        refreshContactShadowMaterials()
+    }
+
+    func persistVisualStyle() {
+        do {
+            try projectStore.updateVisualStyle(
+                filmLook: activeFilmLook,
+                contactShadowStrength: contactShadowStrength
+            )
+        } catch {
+            publishStatus("Gölge ayarı kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    func resetVisualStyle() {
+        activeFilmLook = .natural
+        contactShadowStrength = 1
+        refreshContactShadowMaterials()
+        persistVisualStyle()
+        publishStatus("Film görünümü ve gölgeler doğal ayara döndü", color: .green)
+    }
+
+    private func applyStoredVisualStyle() {
+        activeFilmLook = projectStore.project.filmLook ?? .natural
+        contactShadowStrength = min(
+            max(projectStore.project.contactShadowStrength ?? 1, 0),
+            2
+        )
+        refreshContactShadowMaterials()
     }
 
     func selectSceneObject(id: UUID) {
@@ -1839,9 +2010,14 @@ final class ARSessionController: NSObject, ObservableObject {
         guard !isRoomScanActive,
               !isSessionInterrupted,
               isARReady,
-              let trackingState = arView.session.currentFrame?.camera.trackingState,
-              case .normal = trackingState else {
-            publishStatus("Kararlı yerleştirme için telefonu yavaşlat ve yeşil takibi bekle", color: .yellow)
+              let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped),
+              isPlacementPoseStable else {
+            publishStatus(
+                "Anchor sabitleniyor — telefonu hedefte kısa süre hareketsiz tut",
+                color: .yellow
+            )
             return
         }
 
@@ -1880,6 +2056,8 @@ final class ARSessionController: NSObject, ObservableObject {
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
+            selectedObjectTitle = selectedProp.title
+            selectedObjectScale = 1
             selectedLightSettings = placement.lightSettings
             isPlacingProp = false
             placementReticlePoint = nil
@@ -1918,6 +2096,9 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         if prop.placementSurface == .wall {
             return strictWallPlacementSolution(in: arView, at: point, for: prop)
+        }
+        if prop.placementSurface == .ceiling {
+            return strictCeilingPlacementSolution(in: arView, at: point, for: prop)
         }
 
         // When a room theme is visible, use the geometry the user actually sees. The
@@ -2225,6 +2406,105 @@ final class ARSessionController: NSObject, ObservableObject {
         return true
     }
 
+    /// Ceiling props must resolve to a classified ceiling or to the persistent metric
+    /// ceiling captured by RoomPlan/manual calibration. Merely being above the camera
+    /// is not enough: the top of a cupboard used to satisfy that test and moved a light
+    /// visibly downward when ARKit refined the plane later.
+    private func strictCeilingPlacementSolution(
+        in arView: ARView,
+        at point: CGPoint,
+        for prop: PropKind
+    ) -> PlacementSurfaceSolution? {
+        guard let frame = arView.session.currentFrame else { return nil }
+        let depth = sceneDepthSample(frame: frame, in: arView, at: point)
+        let cameraPosition = arView.cameraTransform.translation
+
+        let classifiedResults = arView.raycast(
+            from: point,
+            allowing: .existingPlaneGeometry,
+            alignment: .horizontal
+        )
+        for result in classifiedResults {
+            guard let plane = result.anchor as? ARPlaneAnchor,
+                  plane.classification == .ceiling else { continue }
+            let position = SIMD3<Float>(
+                result.worldTransform.columns.3.x,
+                result.worldTransform.columns.3.y,
+                result.worldTransform.columns.3.z
+            )
+            if let ceilingY = lastKnownCeilingY, abs(position.y - ceilingY) > 0.10 {
+                continue
+            }
+            guard depth.map({ ceilingDepthAgrees($0, position: position, ceilingY: position.y) })
+                    ?? true else { continue }
+            return ceilingSolution(
+                position: position,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .arkitPlane,
+                depth: depth
+            )
+        }
+
+        guard let ceilingY = lastKnownCeilingY,
+              ceilingY > cameraPosition.y + 0.30,
+              let ray = arView.ray(through: point) else { return nil }
+        let direction = simd_normalize(ray.direction)
+        guard direction.y > 0.025 else { return nil }
+        let distance = (ceilingY - ray.origin.y) / direction.y
+        guard distance.isFinite, (0.20...8.0).contains(distance) else { return nil }
+        let position = ray.origin + direction * distance
+
+        // A current depth pixel may veto a cupboard or beam in front of the stored
+        // ceiling. Short depth gaps are allowed because the RoomPlan level persists.
+        if let depth {
+            guard ceilingDepthAgrees(depth, position: position, ceilingY: ceilingY) else {
+                return nil
+            }
+        }
+        return ceilingSolution(
+            position: position,
+            prop: prop,
+            cameraPosition: cameraPosition,
+            source: roomPlanCeilingY != nil ? .roomPlanLevel : .deviceCalibration,
+            depth: depth
+        )
+    }
+
+    private func ceilingSolution(
+        position: SIMD3<Float>,
+        prop: PropKind,
+        cameraPosition: SIMD3<Float>,
+        source: PlacementSurfaceSource,
+        depth: SceneDepthSurfaceSample?
+    ) -> PlacementSurfaceSolution {
+        PlacementSurfaceSolution(
+            transform: placementTransform(
+                position: position,
+                normal: [0, -1, 0],
+                prop: prop,
+                cameraPosition: cameraPosition
+            ),
+            position: position,
+            normal: [0, -1, 0],
+            source: source,
+            depthMeters: depth?.depthMeters
+        )
+    }
+
+    private func ceilingDepthAgrees(
+        _ depth: SceneDepthSurfaceSample,
+        position: SIMD3<Float>,
+        ceilingY: Float
+    ) -> Bool {
+        guard abs(depth.worldPoint.y - ceilingY) <= 0.14,
+              simd_distance(depth.worldPoint, position) <= 0.28 else { return false }
+        if let normal = depth.worldNormal {
+            return abs(normal.y) >= 0.64
+        }
+        return true
+    }
+
     /// Floor props use a deliberately stricter resolver than generic horizontal
     /// props. A table is horizontal and often sits more than 25 cm below the camera;
     /// height alone can therefore never prove that a hit is the floor.
@@ -2254,7 +2534,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 result.worldTransform.columns.3.z
             )
             if let calibratedFloorY,
-               abs(position.y - calibratedFloorY) > 0.055 {
+               abs(position.y - calibratedFloorY) > 0.085 {
                 continue
             }
             guard depth.map({ floorDepthAgrees($0, position: position, floorY: position.y) })
@@ -2281,7 +2561,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 && !belongsToRoomReality($0.entity)
                 && !belongsToProjectorVisualization($0.entity)
                 && abs(simd_normalize($0.normal).y) >= 0.78
-                && abs($0.position.y - floor.y) <= 0.055
+                && abs($0.position.y - floor.y) <= 0.085
         }), let depth,
            floorDepthAgrees(depth, position: hit.position, floorY: floor.y) {
             return floorSolution(
@@ -2296,7 +2576,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
            abs(simd_normalize(hit.normal).y) >= 0.78,
-           abs(hit.position.y - floor.y) <= 0.055,
+           abs(hit.position.y - floor.y) <= 0.085,
            let depth,
            floorDepthAgrees(depth, position: hit.position, floorY: floor.y) {
             return floorSolution(
@@ -2385,6 +2665,16 @@ final class ARSessionController: NSObject, ObservableObject {
             placementSurfaceColor = .yellow
             return
         }
+        guard frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped else {
+            placementSurfaceMessage = "Sarı: oda koordinatları haritalanıyor"
+            placementSurfaceColor = .yellow
+            return
+        }
+        guard isPlacementPoseStable else {
+            placementSurfaceMessage = "Sarı: telefonu hedefte kısa süre sabit tut"
+            placementSurfaceColor = .yellow
+            return
+        }
         let point = requestedPoint
             ?? placementReticlePoint
             ?? CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
@@ -2416,6 +2706,63 @@ final class ARSessionController: NSObject, ObservableObject {
         } else {
             placementSurfaceMessage = "Sarı: uygun yüzeyi yavaşça tara"
             placementSurfaceColor = .yellow
+        }
+    }
+
+    /// ARKit can report `.normal` during a fast camera sweep, but an anchor created in
+    /// that frame often corrects itself visibly a moment later. Require a short period
+    /// of low translational and angular velocity before accepting a placement tap.
+    private func updatePlacementTrackingStability(using frame: ARFrame) {
+        defer {
+            lastPlacementCameraTransform = frame.camera.transform
+            lastPlacementCameraTimestamp = frame.timestamp
+        }
+        guard case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped),
+              let previousTransform = lastPlacementCameraTransform,
+              let previousTimestamp = lastPlacementCameraTimestamp else {
+            placementPoseStableSince = nil
+            isPlacementPoseStable = false
+            return
+        }
+
+        let elapsed = frame.timestamp - previousTimestamp
+        guard elapsed.isFinite, (0.005...0.40).contains(elapsed) else {
+            placementPoseStableSince = nil
+            isPlacementPoseStable = false
+            return
+        }
+        let currentPosition = SIMD3<Float>(
+            frame.camera.transform.columns.3.x,
+            frame.camera.transform.columns.3.y,
+            frame.camera.transform.columns.3.z
+        )
+        let previousPosition = SIMD3<Float>(
+            previousTransform.columns.3.x,
+            previousTransform.columns.3.y,
+            previousTransform.columns.3.z
+        )
+        let linearSpeed = simd_distance(currentPosition, previousPosition) / Float(elapsed)
+        let currentForward = simd_normalize(SIMD3<Float>(
+            -frame.camera.transform.columns.2.x,
+            -frame.camera.transform.columns.2.y,
+            -frame.camera.transform.columns.2.z
+        ))
+        let previousForward = simd_normalize(SIMD3<Float>(
+            -previousTransform.columns.2.x,
+            -previousTransform.columns.2.y,
+            -previousTransform.columns.2.z
+        ))
+        let cosine = min(max(simd_dot(currentForward, previousForward), -1), 1)
+        let angularSpeed = acos(cosine) / Float(elapsed)
+        let poseIsQuiet = linearSpeed <= 0.22 && angularSpeed <= 0.55
+
+        if poseIsQuiet {
+            if placementPoseStableSince == nil { placementPoseStableSince = frame.timestamp }
+            isPlacementPoseStable = frame.timestamp - (placementPoseStableSince ?? frame.timestamp) >= 0.24
+        } else {
+            placementPoseStableSince = nil
+            isPlacementPoseStable = false
         }
     }
 
@@ -2461,33 +2808,79 @@ final class ARSessionController: NSObject, ObservableObject {
     private func updateKnownFloorFromRoomData() {
         floorSurfaceTracker.clearRoomFloor()
         lastKnownFloorY = nil
+        lastKnownCeilingY = nil
+        roomPlanFloorY = nil
+        roomPlanCeilingY = nil
         guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
         roomRealityRenderer.cachePlacementSurfaces(from: room)
         let levels = room.floors.compactMap { floor -> Float? in
             let y = floor.transform.columns.3.y
             return y.isFinite ? y : nil
         }.sorted()
-        if !levels.isEmpty {
-            let roomFloorY = levels[levels.count / 2]
+        let roomFloorY = levels.isEmpty ? nil : levels[levels.count / 2]
+        roomPlanFloorY = roomFloorY
+        if let roomFloorY {
             floorSurfaceTracker.setRoomFloor(roomFloorY)
-            lastKnownFloorY = roomFloorY
         }
+
+        let roomCeilingY: Float?
         do {
-            if let ceilingY = try roomRealityRenderer.inferredCeilingLevel(
+            let inferred = try roomRealityRenderer.inferredCeilingLevel(
                 roomJSONURL: roomDataURL
-            ), ceilingY.isFinite {
-                lastKnownCeilingY = ceilingY
-            }
+            )
+            roomCeilingY = inferred.flatMap { $0.isFinite ? $0 : nil }
         } catch {
-            lastKnownCeilingY = nil
+            roomCeilingY = nil
         }
-        if let calibratedFloorY {
-            floorSurfaceTracker.setCalibratedFloor(calibratedFloorY)
-            lastKnownFloorY = calibratedFloorY
+        roomPlanCeilingY = roomCeilingY
+
+        // A completed RoomPlan scan observes many floor/wall samples and is more
+        // reliable than a one-second phone pose. Stale manual calibration previously
+        // overrode the scan and made every later object appear too high or too low.
+        let resolvedFloorY = roomFloorY ?? calibratedFloorY
+        let resolvedCeilingY: Float?
+        if let roomCeilingY,
+           let resolvedFloorY,
+           (1.50...6.50).contains(roomCeilingY - resolvedFloorY) {
+            resolvedCeilingY = roomCeilingY
+        } else if let calibratedCeilingY,
+                  let resolvedFloorY,
+                  (1.50...6.50).contains(calibratedCeilingY - resolvedFloorY) {
+            resolvedCeilingY = calibratedCeilingY
+        } else {
+            resolvedCeilingY = nil
         }
-        if let calibratedCeilingY {
-            lastKnownCeilingY = calibratedCeilingY
+
+        calibratedFloorY = resolvedFloorY
+        calibratedCeilingY = resolvedCeilingY
+        if let resolvedFloorY {
+            floorSurfaceTracker.setCalibratedFloor(resolvedFloorY)
+            lastKnownFloorY = resolvedFloorY
         }
+        lastKnownCeilingY = resolvedCeilingY
+
+        let storedFloorY = projectStore.project.calibratedFloorY
+        let storedCeilingY = projectStore.project.calibratedCeilingY
+        func levelChanged(_ stored: Float?, _ resolved: Float?, tolerance: Float) -> Bool {
+            switch (stored, resolved) {
+            case let (stored?, resolved?): return abs(stored - resolved) > tolerance
+            case (nil, nil): return false
+            default: return true
+            }
+        }
+        let floorChanged = levelChanged(storedFloorY, resolvedFloorY, tolerance: 0.005)
+        let ceilingChanged = levelChanged(storedCeilingY, resolvedCeilingY, tolerance: 0.008)
+        if floorChanged || ceilingChanged {
+            do {
+                try projectStore.reconcileSpatialCalibration(
+                    floorY: resolvedFloorY,
+                    ceilingY: resolvedCeilingY
+                )
+            } catch {
+                publishStatus("Oda kotları kaydedilemedi: \(error.localizedDescription)", color: .red)
+            }
+        }
+        updateSpatialCalibrationSummary()
     }
 
     private func applyStoredSpatialCalibration() {
@@ -2771,6 +3164,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderGeneration &+= 1
         assetLoadSubscriptions.values.forEach { $0.cancel() }
         assetLoadSubscriptions.removeAll()
+        assetLoadTokens.removeAll()
         loadingEntityIDs.removeAll()
         let propAnchors = arView.session.currentFrame?.anchors.filter {
             PropKind.from(anchorName: $0.name) != nil
@@ -2839,8 +3233,7 @@ final class ARSessionController: NSObject, ObservableObject {
         if let placement = projectStore.project.placements.last(where: {
             $0.kind.emitsVirtualLight
         }) {
-            selectedEntityID = placement.id
-            selectedLightSettings = placement.lightSettings ?? .defaultFixture
+            selectRenderedEntity(id: placement.id)
             isPlacingProp = false
             if isARReady {
                 let recovery = restorePlacementAnchorsIfNeeded(
@@ -2886,12 +3279,13 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Mevcut kayıt tamamlanınca mekân arşivlenecek", color: .yellow)
             return
         }
-        guard let trackingState = arView.session.currentFrame?.camera.trackingState,
-              case .normal = trackingState else {
+        guard let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped) else {
             shouldSaveWorldMapWhenReady = true
             scheduleReadinessRecovery()
             publishStatus(
-                "Kaydetme sıraya alındı — kamera takibi hazır olunca tamamlanacak",
+                "Kaydetme sıraya alındı — oda koordinatları sabitlenince tamamlanacak",
                 color: .yellow
             )
             return
@@ -3075,6 +3469,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         assetLoadSubscriptions[id]?.cancel()
         assetLoadSubscriptions[id] = nil
+        assetLoadTokens[id] = nil
         loadingEntityIDs.remove(id)
         if clearSelection, selectedEntityID == id {
             selectedEntityID = nil
@@ -3166,7 +3561,11 @@ final class ARSessionController: NSObject, ObservableObject {
     ) -> Bool {
         guard shouldSaveWorldMapWhenReady, !isSavingWorldMap,
               let trackingState, case .normal = trackingState,
-              let arView else { return false }
+              let arView,
+              let frame = arView.session.currentFrame,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped) else {
+            return false
+        }
         shouldSaveWorldMapWhenReady = false
         performWorldMapSave(in: arView)
         return true
@@ -3259,6 +3658,7 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            applyStoredVisualStyle()
             importedAssetURLs = projectStore.importedModelURLs
             hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
             refreshSceneCatalogs()
@@ -3286,6 +3686,7 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            applyStoredVisualStyle()
             importedAssetURLs = projectStore.importedModelURLs
             hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
             roomCoordinateSpaceIsActive = hasScannedRoom
@@ -3394,6 +3795,40 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    private func beginAssetLoad(
+        id: UUID,
+        prop: PropKind,
+        generation: UInt64,
+        timeout: TimeInterval = 10
+    ) -> UUID {
+        let token = UUID()
+        assetLoadTokens[id] = token
+        loadingEntityIDs.insert(id)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
+            guard let self,
+                  self.renderGeneration == generation,
+                  self.assetLoadTokens[id] == token,
+                  self.loadingEntityIDs.contains(id) else { return }
+            self.assetLoadSubscriptions[id]?.cancel()
+            self.assetLoadSubscriptions[id] = nil
+            self.assetLoadTokens[id] = nil
+            self.loadingEntityIDs.remove(id)
+            self.publishStatus(
+                "\(prop.title) yükleme zaman aşımına uğradı; yerindeki yedek model korunuyor",
+                color: .yellow
+            )
+        }
+        return token
+    }
+
+    private func finishAssetLoad(id: UUID, token: UUID, generation: UInt64) -> Bool {
+        guard renderGeneration == generation, assetLoadTokens[id] == token else { return false }
+        loadingEntityIDs.remove(id)
+        assetLoadSubscriptions[id] = nil
+        assetLoadTokens[id] = nil
+        return true
+    }
+
     private func render(prop: PropKind, id: UUID, for anchor: ARAnchor) {
         guard arView != nil,
               knownPropAnchorIDs.contains(anchor.identifier),
@@ -3410,6 +3845,17 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if let descriptor = prop.photorealDescriptor {
             let generation = renderGeneration
+            if let cached = photorealEntityCache[prop.rawValue]?.clone(recursive: true) {
+                attach(
+                    entity: cached,
+                    prop: prop,
+                    id: id,
+                    anchor: anchor,
+                    generation: generation
+                )
+                publishStatus("\(prop.title) önbellekten hazır", color: .green)
+                return
+            }
             let loadingProxy = makeLoadingProxy(
                 for: prop,
                 dimensions: descriptor.dimensions
@@ -3423,19 +3869,23 @@ final class ARSessionController: NSObject, ObservableObject {
             )
             guard let modelURL = bundledAssetURL(named: descriptor.assetName) else {
                 publishStatus(
-                    "\(prop.title) USDZ pakette bulunamadı; görünür yedek model kullanılıyor",
+                    "\(prop.title) USDZ pakette bulunamadı; yerindeki yedek model hazır",
                     color: .yellow
                 )
                 return
             }
-            loadingEntityIDs.insert(id)
+            let loadToken = beginAssetLoad(id: id, prop: prop, generation: generation)
+            publishStatus("\(prop.title) yerinde — gerçek USDZ hazırlanıyor", color: .yellow)
             let request = Entity.loadAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] completion in
-                    guard let self, self.renderGeneration == generation else { return }
-                    self.loadingEntityIDs.remove(id)
-                    self.assetLoadSubscriptions[id] = nil
+                    guard let self,
+                          self.finishAssetLoad(
+                            id: id,
+                            token: loadToken,
+                            generation: generation
+                          ) else { return }
                     if case .failure(let error) = completion {
                         self.publishStatus(
                             "\(prop.title) USDZ açılamadı; yedek model gösteriliyor: "
@@ -3445,6 +3895,7 @@ final class ARSessionController: NSObject, ObservableObject {
                     }
                 } receiveValue: { [weak self] content in
                     guard let self,
+                          self.assetLoadTokens[id] == loadToken,
                           let entity = self.makePhotorealLibraryEntity(
                             content: content,
                             prop: prop,
@@ -3456,6 +3907,7 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         return
                     }
+                    self.photorealEntityCache[prop.rawValue] = entity.clone(recursive: true)
                     if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
@@ -3492,6 +3944,7 @@ final class ARSessionController: NSObject, ObservableObject {
                 anchor: anchor,
                 generation: renderGeneration
             )
+            publishStatus("\(prop.title) hazır", color: .green)
             return
         }
 
@@ -3508,6 +3961,17 @@ final class ARSessionController: NSObject, ObservableObject {
                 return
             }
             let generation = renderGeneration
+            if let cached = customEntityCache[fileName]?.clone(recursive: true) {
+                attach(
+                    entity: cached,
+                    prop: prop,
+                    id: id,
+                    anchor: anchor,
+                    generation: generation
+                )
+                publishStatus("3B dekor önbellekten hazır", color: .green)
+                return
+            }
             attach(
                 entity: makeLoadingProxy(
                     for: prop,
@@ -3518,14 +3982,18 @@ final class ARSessionController: NSObject, ObservableObject {
                 anchor: anchor,
                 generation: generation
             )
-            loadingEntityIDs.insert(id)
+            let loadToken = beginAssetLoad(id: id, prop: prop, generation: generation)
+            publishStatus("3B dekor yerinde — USDZ hazırlanıyor", color: .yellow)
             let request = ModelEntity.loadModelAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] completion in
-                    guard let self, self.renderGeneration == generation else { return }
-                    self.loadingEntityIDs.remove(id)
-                    self.assetLoadSubscriptions[id] = nil
+                    guard let self,
+                          self.finishAssetLoad(
+                            id: id,
+                            token: loadToken,
+                            generation: generation
+                          ) else { return }
                     if case .failure(let error) = completion {
                         self.publishStatus(
                             "3B dekor açılamadı; yedek model gösteriliyor: "
@@ -3534,7 +4002,8 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                     }
                 } receiveValue: { [weak self] entity in
-                    guard let self else { return }
+                    guard let self, self.assetLoadTokens[id] == loadToken else { return }
+                    self.customEntityCache[fileName] = entity.clone(recursive: true)
                     if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
@@ -3555,6 +4024,7 @@ final class ARSessionController: NSObject, ObservableObject {
             anchor: anchor,
             generation: renderGeneration
         )
+        publishStatus("\(prop.title) hazır", color: .green)
     }
 
     private func attach(
@@ -3575,11 +4045,6 @@ final class ARSessionController: NSObject, ObservableObject {
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
-        if hasLockedPhysicalScale(prop) {
-            // Catalog dimensions are measured in metres. Keeping scale at one prevents
-            // a distant object from becoming toy-sized or oversized after a stray pinch.
-            entity.scale = SIMD3<Float>(repeating: 1)
-        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -3600,8 +4065,8 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         // Translation is deliberately excluded: a placed prop stays bound to its
-        // world anchor. Measured catalog props keep their physical scale; unmeasured
-        // and imported props retain scale control for art direction.
+        // world anchor. Measured catalog props use the bounded size panel so a stray
+        // pinch cannot destroy realism; manual/imported props also support pinch.
         if hasLockedPhysicalScale(prop) {
             arView.installGestures([.rotation], for: entity)
         } else {
@@ -3676,9 +4141,6 @@ final class ARSessionController: NSObject, ObservableObject {
 
         entity.name = id.uuidString
         entity.transform = preservedTransform
-        if hasLockedPhysicalScale(prop) {
-            entity.scale = SIMD3<Float>(repeating: 1)
-        }
         if entity.collision == nil {
             entity.generateCollisionShapes(recursive: true)
         }
@@ -4448,7 +4910,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private var contactShadowAlpha: Float {
         let normalized = min(max((ambientLightIntensity - 100) / 1_500, 0), 1)
-        return 0.12 + sqrt(normalized) * 0.09
+        return (0.12 + sqrt(normalized) * 0.09) * contactShadowStrength
     }
 
     private func addContactShadowLayer(
@@ -4486,6 +4948,10 @@ final class ARSessionController: NSObject, ObservableObject {
         ambientLightIntensity = previous * 0.72 + measured * 0.28
         guard abs(ambientLightIntensity - previous) / max(previous, 1) >= 0.08 else { return }
 
+        refreshContactShadowMaterials()
+    }
+
+    private func refreshContactShadowMaterials() {
         let baseAlpha = contactShadowAlpha
         for entity in renderedEntities.values {
             if let outer = entity.findEntity(named: "cinear.contact-shadow.outer") as? ModelEntity,
@@ -4842,11 +5308,13 @@ final class ARSessionController: NSObject, ObservableObject {
         if placement.kind == .bloodWaterfall { return "Canlı CGI • Duvara sabit" }
         var details = placement.kind.emitsVirtualLight ? ["Sanal ışık", surface] : [surface]
         if let dimensions = physicalDimensions(for: placement.kind) {
+            let scale = min(max(placement.transform.scale.first ?? 1, 0.25), 3)
             details.append(String(
-                format: "%.2f × %.2f × %.2f m",
-                Double(dimensions.x),
-                Double(dimensions.y),
-                Double(dimensions.z)
+                format: "%.2f × %.2f × %.2f m • %%%.0f",
+                Double(dimensions.x * scale),
+                Double(dimensions.y * scale),
+                Double(dimensions.z * scale),
+                Double(scale * 100)
             ))
         }
         return details.joined(separator: " • ")
@@ -5009,6 +5477,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        updatePlacementTrackingStability(using: frame)
         updateSpatialCalibration(using: frame)
         updateAmbientLighting(using: frame)
         updatePlacementGuidance(using: frame)

@@ -12,6 +12,8 @@ $env:HF_HOME = Join-Path $modelCache "huggingface"
 $env:TORCH_HOME = Join-Path $modelCache "torch"
 if (-not $env:CINEAR_SAM_POINTS) { $env:CINEAR_SAM_POINTS = "6" }
 if (-not $env:CINEAR_SAM_MAX_SIDE) { $env:CINEAR_SAM_MAX_SIDE = "448" }
+if (-not $env:CINEAR_SAM_ENABLED) { $env:CINEAR_SAM_ENABLED = "0" }
+if (-not $env:CINEAR_DEPTH_INPUT_SIZE) { $env:CINEAR_DEPTH_INPUT_SIZE = "322" }
 
 # Older CineAR virtual environments do not contain the lightweight Bonjour
 # dependency. Install only that missing package so an existing CUDA/PyTorch
@@ -25,16 +27,35 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
-$activeNetwork = Get-NetIPConfiguration -ErrorAction SilentlyContinue |
+$networkCandidates = @(Get-NetIPConfiguration -ErrorAction SilentlyContinue |
     Where-Object {
         $_.NetAdapter.Status -eq "Up" -and
         $_.IPv4DefaultGateway -and
-        $_.IPv4Address
+        $_.IPv4Address -and
+        $_.InterfaceAlias -notmatch "Loopback|vEthernet|VMware|VirtualBox|Hyper-V"
     } |
-    Sort-Object { $_.NetIPInterface.InterfaceMetric } |
+    Sort-Object { $_.NetIPInterface.InterfaceMetric })
+
+# Telefonun erisecegi fiziksel Wi-Fi adresini Ethernet ve sanal adaptorlere tercih et.
+# Windows dili Turkce veya Ingilizce olabilecegi icin hem media type hem ad/aciklama
+# denetlenir.
+$wifiNetwork = $networkCandidates |
+    Where-Object {
+        $_.NetAdapter.MediaType -eq "Native 802.11" -or
+        $_.InterfaceAlias -match "Wi-?Fi|Wireless|WLAN|Kablosuz" -or
+        $_.NetAdapter.InterfaceDescription -match "Wi-?Fi|Wireless|WLAN|802\.11|Kablosuz"
+    } |
     Select-Object -First 1
 
+$activeNetwork = if ($wifiNetwork) {
+    $wifiNetwork
+} else {
+    $networkCandidates | Select-Object -First 1
+}
+
 $address = $activeNetwork.IPv4Address.IPAddress | Select-Object -First 1
+$addressLabel = if ($wifiNetwork) { "Mevcut Wi-Fi IPv4 adresi" } else { "Etkin ag IPv4 adresi" }
+$adapterName = $activeNetwork.InterfaceAlias
 if (-not $address) {
     $address = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
         Where-Object {
@@ -44,10 +65,16 @@ if (-not $address) {
         } |
         Sort-Object InterfaceMetric |
         Select-Object -First 1 -ExpandProperty IPAddress
+    $addressLabel = "Bulunan yerel IPv4 adresi"
+    $adapterName = $null
 }
 
 if ($address) {
     $env:CINEAR_ADVERTISE_ADDRESS = $address
+    if ($adapterName) {
+        Write-Host "Aktif ag adaptoru: $adapterName"
+    }
+    Write-Host "${addressLabel}: $address" -ForegroundColor Cyan
     Write-Host "iPhone sunucu adresi: http://${address}:8765"
     Write-Host "CineAR bu adresi otomatik bulacak. iPhone ve PC ayni Wi-Fi'da olmali."
 } else {
@@ -55,7 +82,8 @@ if ($address) {
     Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."
 }
 Write-Host "Ilk acilis model dosyalarini indirecegi icin birkac dakika surebilir."
-Write-Host "Hizli profil: SAM nokta=${env:CINEAR_SAM_POINTS}, azami kenar=${env:CINEAR_SAM_MAX_SIDE}px"
+$samMode = if ($env:CINEAR_SAM_ENABLED -eq "1") { "acik" } else { "kapali (hizli)" }
+Write-Host "Hizli profil: Depth=${env:CINEAR_DEPTH_INPUT_SIZE}px, SAM=$samMode"
 
 Push-Location $repoRoot
 try {

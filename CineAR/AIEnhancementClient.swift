@@ -234,9 +234,21 @@ final class AIEnhancementClient {
                     return
                 }
                 let device = object["device"] as? String ?? "bilinmeyen cihaz"
+                let samEnabled = object["sam_enabled"] as? Bool ?? true
                 let samPoints = object["sam_points_per_side"] as? Int
                 let samSide = object["sam_max_side"] as? Int
-                if let samPoints, let samSide {
+                let depthSize = object["depth_input_size"] as? Int
+                let warmup = object["warmup_milliseconds"] as? Double
+                let warmupText = warmup.map { String(format: " • ısınma %.0f ms", $0) } ?? ""
+                if let depthSize, !samEnabled {
+                    completion(.success(
+                        "\(device) • hızlı Depth \(depthSize) px • SAM kapalı\(warmupText)"
+                    ))
+                } else if let depthSize, let samPoints, let samSide {
+                    completion(.success(
+                        "\(device) • Depth \(depthSize) px • SAM \(samPoints)/\(samSide) px\(warmupText)"
+                    ))
+                } else if let samPoints, let samSide {
                     completion(.success("\(device) • hızlı SAM \(samPoints)/\(samSide) px"))
                 } else {
                     completion(.success(device))

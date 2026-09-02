@@ -66,10 +66,18 @@
    noktalarinda da kayitli zemin seviyesiyle yerlestirme calismali.
 10. Duvar, platform ve en az iki farkli USDZ model yerlestir; modellerin zemine temas
    golgesini ve kamera hareketinde anchor konumunu korudugunu dogrula. Modelin en alt
-   gorunur noktasi zeminden 0-5 mm yukarida olmali. Modeli 0.5x ve 2x olcekle;
-   taban zemine sabit kalmali, havaya kalkmamali veya zemine gomulmemeli.
+   gorunur noktasi zeminden 0-5 mm yukarida olmali. Nesneyi secip boyut panelini
+   yuzde 25, 50, 100, 200 ve 300 konumlarinda dene; eksi/arti ve `1:1` dugmeleri de
+   ayni degeri vermeli. Her olcekte taban zemine sabit kalmali, havaya kalkmamali veya
+   zemine gomulmemeli. Kaydet/yukle sonrasinda yuzde degeri ve fiziksel boyut korunmali.
+   `Film & Golge` ekraninda alti filtrenin her birini sec; kamera ve sanal nesneler
+   birlikte degismeli, arayuz renkleri degismemeli. Temas golgesini yuzde 0, 100 ve
+   200'de dene; HEVC kaydinda secilen filtre gorunmeli. Mekani kaydedip yukleyince
+   filtre ve golge gucu geri gelmeli.
 11. Model uzerinde surukleme yapildiginda dunya konumu degismemeli; dondurme ve
-   olceklendirme calismali. Donus/olcek sonrasinda projeyi kaydet.
+   boyut paneli calismali. Katalog nesnesinde yanlislikla pinch boyutu bozmamali;
+   kullanicinin ekledigi ozel USDZ'de pinch olceklendirme de calismali. Donus/olcek
+   sonrasinda projeyi kaydet.
 12. Yeni dekor yerlestirdikten sonra manuel `Kaydet`e basmadan uygulamayi tamamen
     kapat, ayni alanda ac ve projeyi yukle; dekor anchor'i otomatik kayitla gelmeli.
     Ayrica yeni tarama sonrasinda otomatik uretilen dunya haritasi `Yukle` ile acilmali.
@@ -98,8 +106,9 @@
     `Aktif` oldugunu; gecikmenin ve SAM maske
     sayisinin sifirdan buyuk oldugunu dogrula. Masa kenari ile on/arka insan testini
     tekrar et; AI kapaliyken ve acikken video kaydi alip kenar hatasini karsilastir.
-    RTX 3050'de 1500 ms'yi asan fakat 6000 ms'nin altinda kalan basarili HTTP sonucu
-    baglanti hatasi sayilmamali; dunya-koordinatli AI mesh'i yine uygulanmali.
+    Sunucu acikken `benchmark_server.py` testinin ilk istek dahil 350 ms sinirini
+    gecmesini dogrula. Bu siniri asan sonuc sahneye uygulanmamali; uygulama yerel
+    LiDAR/person-depth occlusion'ina geri donmeli.
     Servisi kapatinca eski AI mesh'i kaybolmali ve ARKit occlusion devam etmeli.
 16. `Sahne Listesi`ni ac; tum dekor, isik ve CGI efektlerinin ayri satirda gorundugunu
     dogrula. Listeden bir nesneyi sec, sonra cop kutusuyla sil; yalniz o nesne ve
@@ -141,8 +150,10 @@
     kapatiyor` demeli; zemin karari PC baglantisindan etkilenmemeli.
 24. PC AI acikken `Kasa` sec. Yerlesim boyunca AI durumu beklemede olmali; zemine
     dokununca kasa dunya sifirindan veya kameradan kayarak gelmemeli, yalnizca AR
-    anchor kesinlestigi nihai noktada gorunmeli. PC yaniti 1200 ms'yi asarsa yerel
+    anchor kesinlestigi nihai noktada gorunmeli. PC yaniti 350 ms'yi asarsa yerel
     LiDAR'a donmeli; kasa titrememeli, kaybolmamali ve alt/ust yarisi kesilmemeli.
+    Varsayilan PC `/health` cevabinda `sam_enabled:false`, `depth_input_size:322` ve
+    sifirdan buyuk `warmup_milliseconds` gorulmeli.
 25. `Kontroller > Guncelleme`ye bas. Internet varken denetim sekiz saniye icinde
     sonuc vermeli. TestFlight yapisinda `TestFlight'i Ac`, yayindaki App Store
     surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
@@ -159,6 +170,15 @@
     modellerini buyutup kucultmemeli. Zemin ve duvar temas golgelerinde sert tek bir
     leke yerine yumusak ic/dis katman gorulmeli; ortam aydinligi degistiginde golge
     yogunlugu ani sicrama yapmadan uyarlanmali.
+28. RoomPlan taramasindan once bilerek 10-15 cm hatali telefon zemin/tavan kalibrasyonu
+    olustur, sonra odayi tam tara. Tarama bitince RoomPlan kotlari hatali tek-poz olcumu
+    duzeltmeli ve zemin `Y 97.00` kalmali. Model secip telefonu hedefte sabit tut;
+    `Doğrulandı` yesil olmadan dokunma kabul edilmemeli. Ayni USDZ'yi ikinci kez
+    yerlestirmek onbellekten hizli acilmali; bozuk model 10 saniye sonunda yedek modele
+    gecip `yukleniyor`da kalmamali. Bir kisi nesnenin onunden yururken yerel person-depth
+    kisiyi onde tutmali; 350 ms'den gec PC derinligi goruntuye uygulanmamali. Tavan
+    armaturu dolap veya yuksek raf ustune degil, yalniz siniflandirilmis ya da kalibre
+    edilmis gercek tavan kotuna yerlestirilebilmeli.
 
 ## Baslangic kabul esikleri
 

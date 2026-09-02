@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var showingSceneContents = false
     @State private var showingSavedPlaces = false
     @State private var showingCGIStudio = false
+    @State private var showingFilmStudio = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
     @State private var sceneObjectPendingDeletion: SceneObjectSummary?
@@ -22,6 +23,11 @@ struct ContentView: View {
         ZStack {
             ARViewContainer(controller: session)
                 .ignoresSafeArea()
+                .saturation(session.activeFilmLook.saturation)
+                .contrast(session.activeFilmLook.contrast)
+                .brightness(session.activeFilmLook.brightness)
+                .hueRotation(.degrees(session.activeFilmLook.hueDegrees))
+                .overlay { filmLookOverlay }
 
             if session.isPlacingProp,
                !session.isRecording,
@@ -57,6 +63,8 @@ struct ContentView: View {
                     } else {
                         if session.selectedLightSettings != nil {
                             lightControls
+                        } else if session.selectedEntityID != nil {
+                            objectScaleControls
                         }
                         if controlsExpanded {
                             controls
@@ -120,6 +128,37 @@ struct ContentView: View {
             liveCGIStudio
                 .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showingFilmStudio) {
+            filmStudio
+                .presentationDetents([.medium, .large])
+        }
+    }
+
+    private var filmLookOverlay: some View {
+        let tint = session.activeFilmLook.tintRGBA
+        return ZStack {
+            Color(
+                red: tint.red,
+                green: tint.green,
+                blue: tint.blue
+            )
+            .opacity(tint.alpha)
+            .blendMode(.softLight)
+
+            RadialGradient(
+                colors: [
+                    Color.clear,
+                    Color.clear,
+                    Color.black.opacity(session.activeFilmLook.vignetteOpacity)
+                ],
+                center: .center,
+                startRadius: 80,
+                endRadius: 520
+            )
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var statusBar: some View {
@@ -255,6 +294,9 @@ struct ContentView: View {
                 }
                 utilityButton("Canlı CGI", "wand.and.stars") {
                     showingCGIStudio = true
+                }
+                utilityButton("Film & Gölge", "camera.filters") {
+                    showingFilmStudio = true
                 }
                 utilityButton(
                     updateChecker.isChecking ? "Denetleniyor" : "Güncelleme",
@@ -499,6 +541,26 @@ struct ContentView: View {
                     showingSavedPlaces = true
                 }
             }
+
+            Button {
+                showingFilmStudio = true
+            } label: {
+                HStack(spacing: 9) {
+                    Image(systemName: session.activeFilmLook.symbol)
+                    Text("Film: \(session.activeFilmLook.title)")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Text("Gölge %\(Int(session.contactShadowStrength * 100))")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
         }
         .disabled(session.isRecordingTransitioning)
         .padding(8)
@@ -614,6 +676,26 @@ struct ContentView: View {
                     range: 0...1,
                     step: 0.01
                 )
+
+                HStack(spacing: 9) {
+                    Text("Armatür boyutu")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Button { session.adjustSelectedObjectScale(by: 0.90) } label: {
+                        Image(systemName: "minus")
+                    }
+                    .buttonStyle(.bordered)
+                    Text("%\(Int(session.selectedObjectScale * 100))")
+                        .font(.caption.monospacedDigit())
+                        .frame(minWidth: 42)
+                    Button { session.adjustSelectedObjectScale(by: 1.10) } label: {
+                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.bordered)
+                    Button("1:1") { session.resetSelectedObjectScale() }
+                        .buttonStyle(.bordered)
+                        .font(.caption2.weight(.bold))
+                }
             }
 
             Text("Spot ışık sanal nesneleri aydınlatır; LiDAR yüzeyindeki yumuşak projektör izi kamera görünümünde hedef noktayı gösterir.")
@@ -623,6 +705,154 @@ struct ContentView: View {
         }
         .padding(12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var objectScaleControls: some View {
+        VStack(spacing: 7) {
+            HStack {
+                Label(
+                    session.selectedObjectTitle.isEmpty
+                        ? "Nesne Boyutu"
+                        : session.selectedObjectTitle,
+                    systemImage: "arrow.up.left.and.arrow.down.right"
+                )
+                .font(.subheadline.weight(.bold))
+                Spacer()
+                Text("%\(Int(session.selectedObjectScale * 100))")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                Button {
+                    session.clearSelectedObject()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .accessibilityLabel("Nesne seçimini kapat")
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    session.adjustSelectedObjectScale(by: 0.90)
+                } label: {
+                    Image(systemName: "minus.magnifyingglass")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("Nesneyi küçült")
+
+                Slider(
+                    value: Binding(
+                        get: { Double(session.selectedObjectScale) },
+                        set: { session.previewSelectedObjectScale(Float($0)) }
+                    ),
+                    in: 0.25...3,
+                    step: 0.05,
+                    onEditingChanged: { isEditing in
+                        if !isEditing { session.persistSelectedObjectScale() }
+                    }
+                )
+
+                Button {
+                    session.adjustSelectedObjectScale(by: 1.10)
+                } label: {
+                    Image(systemName: "plus.magnifyingglass")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityLabel("Nesneyi büyüt")
+
+                Button("1:1") {
+                    session.resetSelectedObjectScale()
+                }
+                .buttonStyle(.bordered)
+                .font(.caption.weight(.bold))
+            }
+
+            Text("Boyut %25–%300 arasında sınırlıdır; yüzeye temas noktası ve dünya anchor'ı değişmez.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var filmStudio: some View {
+        NavigationStack {
+            Form {
+                Section("Canlı Film Filtreleri") {
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
+                        spacing: 8
+                    ) {
+                        ForEach(FilmLookID.allCases) { look in
+                            Button {
+                                session.selectFilmLook(look)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: look.symbol)
+                                    Text(look.title)
+                                        .font(.caption.weight(.semibold))
+                                    Spacer(minLength: 2)
+                                    if session.activeFilmLook == look {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                                .foregroundStyle(.primary)
+                                .padding(10)
+                                .background(
+                                    session.activeFilmLook == look
+                                        ? Color.accentColor.opacity(0.18)
+                                        : Color.secondary.opacity(0.08),
+                                    in: RoundedRectangle(cornerRadius: 11)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                Section("Nesne Gölgelendirmesi") {
+                    HStack {
+                        Text("Temas gölgesi")
+                        Spacer()
+                        Text("%\(Int(session.contactShadowStrength * 100))")
+                            .font(.body.monospacedDigit())
+                    }
+                    Slider(
+                        value: Binding(
+                            get: { Double(session.contactShadowStrength) },
+                            set: { session.setContactShadowStrength(Float($0)) }
+                        ),
+                        in: 0...2,
+                        step: 0.05,
+                        onEditingChanged: { isEditing in
+                            if !isEditing { session.persistVisualStyle() }
+                        }
+                    )
+                    Text(
+                        "Gölge, ARKit'in ortam ışığı ölçümüne göre otomatik uyarlanır. "
+                            + "Bu ayar yalnız temas gölgesinin kuvvetini belirler."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    Button("Doğal Görünüme Sıfırla") {
+                        session.resetVisualStyle()
+                    }
+                } footer: {
+                    Text("Seçilen görünüm canlı kamerada ve ReplayKit HEVC çekiminde görünür; mekân kaydıyla birlikte saklanır.")
+                }
+            }
+            .navigationTitle("Film & Gölge")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") {
+                        session.persistVisualStyle()
+                        showingFilmStudio = false
+                    }
+                }
+            }
+        }
     }
 
     private func lightSliderRow(

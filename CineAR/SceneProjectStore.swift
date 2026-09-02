@@ -4,8 +4,105 @@ import Foundation
 import RealityKit
 import simd
 
+enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
+    case natural
+    case cinema
+    case tealOrange
+    case noir
+    case thriller
+    case dream
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .natural: "Doğal"
+        case .cinema: "Sinema"
+        case .tealOrange: "Teal & Orange"
+        case .noir: "Noir"
+        case .thriller: "Gerilim"
+        case .dream: "Rüya"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .natural: "camera.filters"
+        case .cinema: "film.fill"
+        case .tealOrange: "circle.lefthalf.filled"
+        case .noir: "circle.righthalf.filled"
+        case .thriller: "moon.stars.fill"
+        case .dream: "sparkles"
+        }
+    }
+
+    var saturation: Double {
+        switch self {
+        case .natural: 1
+        case .cinema: 0.88
+        case .tealOrange: 1.18
+        case .noir: 0
+        case .thriller: 0.62
+        case .dream: 0.78
+        }
+    }
+
+    var contrast: Double {
+        switch self {
+        case .natural: 1
+        case .cinema: 1.14
+        case .tealOrange: 1.16
+        case .noir: 1.28
+        case .thriller: 1.24
+        case .dream: 0.88
+        }
+    }
+
+    var brightness: Double {
+        switch self {
+        case .natural: 0
+        case .cinema: -0.015
+        case .tealOrange: -0.01
+        case .noir: -0.035
+        case .thriller: -0.055
+        case .dream: 0.035
+        }
+    }
+
+    var hueDegrees: Double {
+        switch self {
+        case .natural, .cinema, .noir: 0
+        case .tealOrange: -6
+        case .thriller: -12
+        case .dream: 8
+        }
+    }
+
+    var tintRGBA: (red: Double, green: Double, blue: Double, alpha: Double) {
+        switch self {
+        case .natural: (0, 0, 0, 0)
+        case .cinema: (0.08, 0.18, 0.28, 0.10)
+        case .tealOrange: (0.04, 0.28, 0.30, 0.13)
+        case .noir: (0.08, 0.09, 0.12, 0.08)
+        case .thriller: (0.04, 0.16, 0.10, 0.16)
+        case .dream: (0.40, 0.24, 0.48, 0.11)
+        }
+    }
+
+    var vignetteOpacity: Double {
+        switch self {
+        case .natural: 0
+        case .cinema: 0.34
+        case .tealOrange: 0.25
+        case .noir: 0.48
+        case .thriller: 0.52
+        case .dream: 0.18
+        }
+    }
+}
+
 struct SceneProject: Codable {
-    static let currentVersion = 5
+    static let currentVersion = 6
 
     var version = currentVersion
     var name = "Ana Set"
@@ -17,6 +114,10 @@ struct SceneProject: Codable {
     // keep scene files from versions 1-4 decodable without a separate JSON schema.
     var calibratedFloorY: Float?
     var calibratedCeilingY: Float?
+    // Version-6 cinematic settings are optional so all earlier scene.json files
+    // decode without a custom decoder. Missing values mean natural/100 percent.
+    var filmLook: FilmLookID?
+    var contactShadowStrength: Float?
 }
 
 struct PlacementRecord: Codable, Identifiable {
@@ -179,6 +280,7 @@ enum SceneProjectStoreError: LocalizedError {
     case invalidAssetFileName(String)
     case unsupportedAssetType
     case invalidLightSettings(UUID)
+    case invalidVisualStyle
     case invalidSpatialCalibration
     case worldMapOutOfDate
     case worldMapChecksumMismatch
@@ -202,6 +304,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Yalnızca USDZ dosyaları içe aktarılabilir"
         case .invalidLightSettings(let id):
             "\(id.uuidString) kimlikli ışık ayarları geçersiz"
+        case .invalidVisualStyle:
+            "Film filtresi veya gölge gücü geçersiz"
         case .invalidSpatialCalibration:
             "Zemin/tavan kalibrasyonu geçersiz veya oda yüksekliği gerçekçi değil"
         case .worldMapOutOfDate:
@@ -622,6 +726,20 @@ final class SceneProjectStore {
         }
     }
 
+    func updateVisualStyle(
+        filmLook: FilmLookID,
+        contactShadowStrength: Float
+    ) throws {
+        try commit(invalidateWorldMap: false) { candidate in
+            guard contactShadowStrength.isFinite,
+                  (0...2).contains(contactShadowStrength) else {
+                throw SceneProjectStoreError.invalidVisualStyle
+            }
+            candidate.filmLook = filmLook
+            candidate.contactShadowStrength = contactShadowStrength
+        }
+    }
+
     func setCalibratedFloorY(_ floorY: Float) throws {
         try commit(invalidateWorldMap: true) { candidate in
             guard floorY.isFinite else {
@@ -644,6 +762,24 @@ final class SceneProjectStore {
                !(1.50...6.50).contains(ceilingY - floorY) {
                 throw SceneProjectStoreError.invalidSpatialCalibration
             }
+            candidate.calibratedCeilingY = ceilingY
+        }
+    }
+
+    /// RoomPlan and the active ARWorldMap already share the same world coordinate
+    /// space. Correcting only the measured floor/ceiling metadata must therefore keep
+    /// the map valid; invalidating it here would make stable anchors relocalize again.
+    func reconcileSpatialCalibration(floorY: Float?, ceilingY: Float?) throws {
+        try commit(invalidateWorldMap: false) { candidate in
+            guard floorY.map({ $0.isFinite }) ?? true,
+                  ceilingY.map({ $0.isFinite }) ?? true else {
+                throw SceneProjectStoreError.invalidSpatialCalibration
+            }
+            if let floorY, let ceilingY,
+               !(1.50...6.50).contains(ceilingY - floorY) {
+                throw SceneProjectStoreError.invalidSpatialCalibration
+            }
+            candidate.calibratedFloorY = floorY
             candidate.calibratedCeilingY = ceilingY
         }
     }
@@ -868,6 +1004,12 @@ final class SceneProjectStore {
             project.version = 5
             project.updatedAt = Date()
         }
+        if project.version < 6 {
+            project.filmLook = project.filmLook ?? .natural
+            project.contactShadowStrength = project.contactShadowStrength ?? 1
+            project.version = 6
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }
@@ -885,6 +1027,11 @@ final class SceneProjectStore {
            let ceilingY = project.calibratedCeilingY,
            !(1.50...6.50).contains(ceilingY - floorY) {
             throw SceneProjectStoreError.invalidSpatialCalibration
+        }
+        guard project.contactShadowStrength.map({
+            $0.isFinite && (0...2).contains($0)
+        }) ?? true else {
+            throw SceneProjectStoreError.invalidVisualStyle
         }
 
         var ids = Set<UUID>()
