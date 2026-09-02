@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.0`
-- Proje build numarası: `34`
+- Uygulama sürümü: `0.17.1`
+- Proje build numarası: `35`
 - Git dalı: `main`
-- Kaynak commit: `a2f0166d1fe72bebf8041064202b5e657c03aa6f`
-- Oluşturulma zamanı: `2026-09-02 11:51:10 +03:00`
+- Kaynak commit: `07b8d5b97c3dec533047565a8d659e916dd0b450`
+- Oluşturulma zamanı: `2026-09-02 12:30:10 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -262,7 +262,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 462 | 19491 |
-| `CineAR/ARSessionController.swift` | 6045 | 252625 |
+| `CineAR/ARSessionController.swift` | 6074 | 254274 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -277,7 +277,7 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
-| `CineAR/RoomRealityRenderer.swift` | 2144 | 82215 |
+| `CineAR/RoomRealityRenderer.swift` | 2169 | 83772 |
 | `CineAR/RoomScanner.swift` | 725 | 25857 |
 | `CineAR/SceneProjectStore.swift` | 1081 | 42848 |
 | `codemagic.yaml` | 138 | 4626 |
@@ -1471,13 +1471,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.0;
+				MARKETING_VERSION = 0.17.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1494,12 +1494,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.0;
+				MARKETING_VERSION = 0.17.1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -4303,9 +4303,10 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     /// Every wall prop must be attached to the physical wall under the user's finger.
-    /// Infinite planes and camera-relative guesses can appear stable for one frame but
-    /// slide when the camera moves, so this resolver requires finite wall geometry and
-    /// agreement with the current LiDAR depth pixel when that pixel is available.
+    /// The live LiDAR pixel is deliberately preferred over the stored RoomPlan plane:
+    /// a small relocalization error in a restored room used to put every wall prop
+    /// several centimetres behind the wall and the polygon gate exposed only a tiny
+    /// tappable patch. Infinite planes and camera-relative guesses remain forbidden.
     private func strictWallPlacementSolution(
         in arView: ARView,
         at point: CGPoint,
@@ -4317,34 +4318,24 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         let cameraPosition = arView.cameraTransform.translation
 
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-           depth.map({
-               wallDepthAgrees($0, position: hit.position, normal: hit.normal)
-           }) ?? true {
+        // A valid vertical normal reconstructed from the depth neighbourhood gives
+        // the exact physical pixel that the user touched. This avoids inheriting a
+        // stale RoomPlan plane offset after a saved scan has been reloaded.
+        if let depth,
+           let measuredNormal = depth.worldNormal,
+           wallSurfaceAccepts(normal: measuredNormal) {
             return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
+                position: depth.worldPoint,
+                normal: measuredNormal,
                 prop: prop,
                 cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
+                source: .lidarDepth,
                 depth: depth
             )
         }
 
-        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
-           wallSurfaceAccepts(normal: hit.normal),
-           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
-                depth: depth
-            )
-        }
-
+        // Scene-understanding mesh is current-session geometry and is consequently a
+        // safer fallback than the persisted RoomPlan representation.
         if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
             entityID(from: hit.entity) == nil
                 && !belongsToRoomReality(hit.entity)
@@ -4364,14 +4355,15 @@ final class ARSessionController: NSObject, ObservableObject {
             )
         }
 
+        // A vertical raycast is already constrained to vertical ARPlane geometry.
+        // Requiring classification == .wall made a freshly scanned wall untappable
+        // until ARKit happened to classify that individual plane fragment.
         let results = arView.raycast(
             from: point,
             allowing: .existingPlaneGeometry,
             alignment: .vertical
         )
         for result in results {
-            guard let plane = result.anchor as? ARPlaneAnchor,
-                  plane.classification == .wall else { continue }
             let position = SIMD3<Float>(
                 result.worldTransform.columns.3.x,
                 result.worldTransform.columns.3.y,
@@ -4391,6 +4383,38 @@ final class ARSessionController: NSObject, ObservableObject {
                 prop: prop,
                 cameraPosition: cameraPosition,
                 source: .arkitPlane,
+                depth: depth
+            )
+        }
+
+        // Rendered replacement-room geometry is useful while a theme is visible,
+        // but must never override a more recent physical LiDAR/ARKit wall.
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
+           wallSurfaceAccepts(normal: hit.normal),
+           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .roomPlanGeometry,
+                depth: depth
+            )
+        }
+
+        // The persisted RoomPlan wall is the final finite fallback. It remains useful
+        // when depth is temporarily unavailable, without masking live geometry.
+        if roomCoordinateSpaceIsActive,
+           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
+           depth.map({
+               wallDepthAgrees($0, position: hit.position, normal: hit.normal)
+           }) ?? true {
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .roomPlanGeometry,
                 depth: depth
             )
         }
@@ -6742,7 +6766,10 @@ final class ARSessionController: NSObject, ObservableObject {
                 content.position.y -= maximumY
             case .wall:
                 let minimumZ = bounds.center.z - extents.z * 0.5
-                content.position.z += 0.008 - minimumZ
+                // Keep the rear face just 3 mm in front of the measured wall. The old
+                // 8 mm gap was visible on thin clocks after scaling, while a zero gap
+                // can z-fight with the physical-occlusion wall.
+                content.position.z += 0.003 - minimumZ
             }
             root.collision = CollisionComponent(
                 shapes: [ShapeResource.generateBox(size: SIMD3(
@@ -7822,6 +7849,7 @@ private struct PlacementSurfaceSolution {
 private enum PlacementSurfaceSource: Equatable {
     case classifiedFloorPlane
     case classifiedFloorMesh
+    case lidarDepth
     case lidarMesh
     case arkitPlane
     case roomPlanGeometry
@@ -7832,6 +7860,7 @@ private enum PlacementSurfaceSource: Equatable {
         switch self {
         case .classifiedFloorPlane: "ARKit zemin"
         case .classifiedFloorMesh: "LiDAR zemin"
+        case .lidarDepth: "LiDAR dokunma derinliği"
         case .lidarMesh: "LiDAR yüzey"
         case .arkitPlane: "ARKit yüzey"
         case .roomPlanGeometry: "RoomPlan yüzey"
@@ -11489,6 +11518,20 @@ final class RoomRealityRenderer {
         for wall in room.walls.prefix(Self.maximumWalls) {
             guard let bounds = Self.surfaceBounds(wall),
                   Self.isValidAffineTransform(wall.transform) else { continue }
+            let finiteWallBounds: PlanarBounds
+            if let dimensions = Self.planarDimensions(wall.dimensions) {
+                // polygonCorners can initially cover only the confidently observed
+                // patch. dimensions is RoomPlan's finite metric envelope for the same
+                // wall, so unioning both keeps every scanned portion selectable.
+                finiteWallBounds = PlanarBounds(
+                    minX: min(bounds.minX, -dimensions.x * 0.5),
+                    maxX: max(bounds.maxX, dimensions.x * 0.5),
+                    minY: min(bounds.minY, -dimensions.y * 0.5),
+                    maxY: max(bounds.maxY, dimensions.y * 0.5)
+                )
+            } else {
+                finiteWallBounds = bounds
+            }
             let transform = lastAlignmentTransform * wall.transform
             let planeOrigin = SIMD3<Float>(
                 transform.columns.3.x,
@@ -11516,9 +11559,20 @@ final class RoomRealityRenderer {
                   abs(local.z) <= 0.08 else { continue }
             let polygon = Self.localPolygon(for: wall) ?? Self.rectanglePolygon(bounds)
             let intervals = Self.verticalIntervals(in: polygon, atX: local.x)
-            guard intervals.contains(where: {
+            let isInsideExactPolygon = intervals.contains(where: {
                 local.y >= $0.lower - 0.015 && local.y <= $0.upper + 0.015
-            }) else { continue }
+            })
+            // RoomPlan can return a sparse/nonuniform polygon while its metric wall
+            // extent is already stable. Keep the precise polygon as the first test,
+            // then accept the finite reported wall bounds so the entire scanned wall
+            // remains tappable. This is still a bounded wall, never an infinite plane.
+            let boundsMargin: Float = 0.03
+            let isInsideFiniteWallBounds =
+                local.x >= finiteWallBounds.minX - boundsMargin
+                && local.x <= finiteWallBounds.maxX + boundsMargin
+                && local.y >= finiteWallBounds.minY - boundsMargin
+                && local.y <= finiteWallBounds.maxY + boundsMargin
+            guard isInsideExactPolygon || isInsideFiniteWallBounds else { continue }
 
             if simd_dot(normal, direction) > 0 { normal = -normal }
             closest = RoomPlanPlacementHit(

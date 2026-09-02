@@ -2266,9 +2266,10 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     /// Every wall prop must be attached to the physical wall under the user's finger.
-    /// Infinite planes and camera-relative guesses can appear stable for one frame but
-    /// slide when the camera moves, so this resolver requires finite wall geometry and
-    /// agreement with the current LiDAR depth pixel when that pixel is available.
+    /// The live LiDAR pixel is deliberately preferred over the stored RoomPlan plane:
+    /// a small relocalization error in a restored room used to put every wall prop
+    /// several centimetres behind the wall and the polygon gate exposed only a tiny
+    /// tappable patch. Infinite planes and camera-relative guesses remain forbidden.
     private func strictWallPlacementSolution(
         in arView: ARView,
         at point: CGPoint,
@@ -2280,34 +2281,24 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         let cameraPosition = arView.cameraTransform.translation
 
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-           depth.map({
-               wallDepthAgrees($0, position: hit.position, normal: hit.normal)
-           }) ?? true {
+        // A valid vertical normal reconstructed from the depth neighbourhood gives
+        // the exact physical pixel that the user touched. This avoids inheriting a
+        // stale RoomPlan plane offset after a saved scan has been reloaded.
+        if let depth,
+           let measuredNormal = depth.worldNormal,
+           wallSurfaceAccepts(normal: measuredNormal) {
             return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
+                position: depth.worldPoint,
+                normal: measuredNormal,
                 prop: prop,
                 cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
+                source: .lidarDepth,
                 depth: depth
             )
         }
 
-        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
-           wallSurfaceAccepts(normal: hit.normal),
-           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
-                depth: depth
-            )
-        }
-
+        // Scene-understanding mesh is current-session geometry and is consequently a
+        // safer fallback than the persisted RoomPlan representation.
         if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
             entityID(from: hit.entity) == nil
                 && !belongsToRoomReality(hit.entity)
@@ -2327,14 +2318,15 @@ final class ARSessionController: NSObject, ObservableObject {
             )
         }
 
+        // A vertical raycast is already constrained to vertical ARPlane geometry.
+        // Requiring classification == .wall made a freshly scanned wall untappable
+        // until ARKit happened to classify that individual plane fragment.
         let results = arView.raycast(
             from: point,
             allowing: .existingPlaneGeometry,
             alignment: .vertical
         )
         for result in results {
-            guard let plane = result.anchor as? ARPlaneAnchor,
-                  plane.classification == .wall else { continue }
             let position = SIMD3<Float>(
                 result.worldTransform.columns.3.x,
                 result.worldTransform.columns.3.y,
@@ -2354,6 +2346,38 @@ final class ARSessionController: NSObject, ObservableObject {
                 prop: prop,
                 cameraPosition: cameraPosition,
                 source: .arkitPlane,
+                depth: depth
+            )
+        }
+
+        // Rendered replacement-room geometry is useful while a theme is visible,
+        // but must never override a more recent physical LiDAR/ARKit wall.
+        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
+           wallSurfaceAccepts(normal: hit.normal),
+           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .roomPlanGeometry,
+                depth: depth
+            )
+        }
+
+        // The persisted RoomPlan wall is the final finite fallback. It remains useful
+        // when depth is temporarily unavailable, without masking live geometry.
+        if roomCoordinateSpaceIsActive,
+           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
+           depth.map({
+               wallDepthAgrees($0, position: hit.position, normal: hit.normal)
+           }) ?? true {
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .roomPlanGeometry,
                 depth: depth
             )
         }
@@ -4705,7 +4729,10 @@ final class ARSessionController: NSObject, ObservableObject {
                 content.position.y -= maximumY
             case .wall:
                 let minimumZ = bounds.center.z - extents.z * 0.5
-                content.position.z += 0.008 - minimumZ
+                // Keep the rear face just 3 mm in front of the measured wall. The old
+                // 8 mm gap was visible on thin clocks after scaling, while a zero gap
+                // can z-fight with the physical-occlusion wall.
+                content.position.z += 0.003 - minimumZ
             }
             root.collision = CollisionComponent(
                 shapes: [ShapeResource.generateBox(size: SIMD3(
@@ -5785,6 +5812,7 @@ private struct PlacementSurfaceSolution {
 private enum PlacementSurfaceSource: Equatable {
     case classifiedFloorPlane
     case classifiedFloorMesh
+    case lidarDepth
     case lidarMesh
     case arkitPlane
     case roomPlanGeometry
@@ -5795,6 +5823,7 @@ private enum PlacementSurfaceSource: Equatable {
         switch self {
         case .classifiedFloorPlane: "ARKit zemin"
         case .classifiedFloorMesh: "LiDAR zemin"
+        case .lidarDepth: "LiDAR dokunma derinliği"
         case .lidarMesh: "LiDAR yüzey"
         case .arkitPlane: "ARKit yüzey"
         case .roomPlanGeometry: "RoomPlan yüzey"

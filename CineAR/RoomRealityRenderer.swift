@@ -175,6 +175,20 @@ final class RoomRealityRenderer {
         for wall in room.walls.prefix(Self.maximumWalls) {
             guard let bounds = Self.surfaceBounds(wall),
                   Self.isValidAffineTransform(wall.transform) else { continue }
+            let finiteWallBounds: PlanarBounds
+            if let dimensions = Self.planarDimensions(wall.dimensions) {
+                // polygonCorners can initially cover only the confidently observed
+                // patch. dimensions is RoomPlan's finite metric envelope for the same
+                // wall, so unioning both keeps every scanned portion selectable.
+                finiteWallBounds = PlanarBounds(
+                    minX: min(bounds.minX, -dimensions.x * 0.5),
+                    maxX: max(bounds.maxX, dimensions.x * 0.5),
+                    minY: min(bounds.minY, -dimensions.y * 0.5),
+                    maxY: max(bounds.maxY, dimensions.y * 0.5)
+                )
+            } else {
+                finiteWallBounds = bounds
+            }
             let transform = lastAlignmentTransform * wall.transform
             let planeOrigin = SIMD3<Float>(
                 transform.columns.3.x,
@@ -202,9 +216,20 @@ final class RoomRealityRenderer {
                   abs(local.z) <= 0.08 else { continue }
             let polygon = Self.localPolygon(for: wall) ?? Self.rectanglePolygon(bounds)
             let intervals = Self.verticalIntervals(in: polygon, atX: local.x)
-            guard intervals.contains(where: {
+            let isInsideExactPolygon = intervals.contains(where: {
                 local.y >= $0.lower - 0.015 && local.y <= $0.upper + 0.015
-            }) else { continue }
+            })
+            // RoomPlan can return a sparse/nonuniform polygon while its metric wall
+            // extent is already stable. Keep the precise polygon as the first test,
+            // then accept the finite reported wall bounds so the entire scanned wall
+            // remains tappable. This is still a bounded wall, never an infinite plane.
+            let boundsMargin: Float = 0.03
+            let isInsideFiniteWallBounds =
+                local.x >= finiteWallBounds.minX - boundsMargin
+                && local.x <= finiteWallBounds.maxX + boundsMargin
+                && local.y >= finiteWallBounds.minY - boundsMargin
+                && local.y <= finiteWallBounds.maxY + boundsMargin
+            guard isInsideExactPolygon || isInsideFiniteWallBounds else { continue }
 
             if simd_dot(normal, direction) > 0 { normal = -normal }
             closest = RoomPlanPlacementHit(
