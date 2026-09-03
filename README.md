@@ -85,6 +85,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yalniz haritalama `extending/mapped`, takip normal ve kamera en az 240 ms sabitken
   kalici ARKit/RoomPlan yuzeyine yerlestirme; hareketli kare anchor'i ve kamera-onu
   tahmini noktalar reddedilerek nesnenin yuzmesi engellenir
+- Dokunulan yuzeyi tek karede kabul etmek yerine en az 260 ms boyunca alti ayri
+  LiDAR/ARKit olcumunde konum ve normal tutarliligi arama; derinlik sicrayan kareleri
+  ayiklayip yalniz cok-kareli yuzey kilidi olusunca dunya anchor'i ekleme
 - `.floor` sinifli ARKit duzlemi, `.floor` sinifli LiDAR mesh yuzleri, RoomPlan zemin
   kotu ve dokunulan pikseldeki orta/yuksek guvenli `smoothedSceneDepth` olcumunu
   birlestiren kati zemin cozucu; masa gibi siniflandirilmamis yatay yuzey zemine gecmez
@@ -119,6 +122,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - `Kayitli Mekanlar` listesinden tarih/nesne sayisini gorme, onceki mekani yukleme
   veya aktif sahneyi etkilemeden arsiv kaydini silme
 - Kayitli mekanda relocalization
+- Kalici bir duvar kosesini `Referans Kaydet` ile sahneye saklama; daha sonra mekani
+  yukleyip ayni noktaya `Referansla Hizala` ile dokununca dekor anchor'larini, RoomPlan
+  yuzeylerini, zemin/tavan kotlarini ve projektor hedeflerini birlikte duzeltme
 - Duvara anchor edilen, uygulama yeniden acildiginda sahne kaydiyla geri gelen
   hareketli kan selalesi CGI efekti; yalniz sonlu, dikey duvar geometrisi ile
   dokunulan LiDAR derinligi eslestiginde yerlestirme
@@ -160,7 +166,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
    Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
-   dokunun. Zemin nesnelerinde masa/koltuk gibi bir yuzey kirmizi olur. Kararli yuzey
+   dokunun. Uygulama dokunustan sonra telefonu kisa sure sabit tutarken ayni noktayi
+   alti karede olcer; yalniz konum ve yuzey normali uyusursa nesneyi sabitler.
+   Zemin nesnelerinde masa/koltuk gibi bir yuzey kirmizi olur. Kararli yuzey
    yoksa uygulama nesneyi kamera onunde tahmini bir noktaya
    koymaz; hedef yuzeyi yavasca taramanizi ister. Tamamlanmis bir RoomPlan taramasi varsa
    kayitli zemin ve tavan duzlemleri tam alan icin guvenli yedek olarak kullanilir. Konum dunya anchor'ina kilitlenir;
@@ -182,7 +190,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    Dondurme/olceklendirme degisikliklerinden sonra `Kaydet` tusuna basin; takip hazir
    degilse istek siraya alinir ve otomatik tamamlanir. Manuel kayit `Kayitli Mekanlar`
    icinde ayri bir arsiv olusturur; listeden eski tarama ve o taramaya ait nesneler
-   birlikte geri yuklenir.
+   birlikte geri yuklenir. Ilk kayitta degismeyecek, belirgin bir duvar kosesine
+   `Referans Kaydet` ile dokunun. Mekani daha sonra yuklediginizde otomatik takip tam
+   oturmazsa `Referansla Hizala`ya basin ve fiziksel olarak ayni noktaya dokunun;
+   uygulama tum sahneyi tek bir koordinat duzeltmesiyle yeniden sabitler ve kaydeder.
 10. `Sahne` listesinden eklenmis nesneyi secin veya cop kutusuyla tek basina silin.
     `Canli CGI` ekraninda kan selalesini secip hedef yesile dondugunde gorunur duvara
     dokunun; `Avucta Canli Elma`yi acip avucunuzu kameraya gosterin. Sesli komut icin

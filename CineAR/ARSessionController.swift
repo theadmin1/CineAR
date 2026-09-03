@@ -47,6 +47,11 @@ private enum SpatialCalibrationMode: Equatable {
     case ceiling
 }
 
+private enum AlignmentReferenceAction: Equatable {
+    case save
+    case apply
+}
+
 private final class AILocalServiceDiscovery {
     enum Event {
         case searching
@@ -137,6 +142,9 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isLiveAppleEnabled = false
     @Published private(set) var isListeningForCGICommands = false
     @Published private(set) var liveCGIStatus = "Hazır efekt seç veya Türkçe komut ver"
+    @Published private(set) var hasAlignmentReference = false
+    @Published private(set) var isAlignmentReferenceActive = false
+    @Published private(set) var alignmentReferenceStatus = "Hizalama referansı kaydedilmedi"
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -192,6 +200,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private var lastPlacementCameraTimestamp: TimeInterval?
     private var placementPoseStableSince: TimeInterval?
     private var isPlacementPoseStable = false
+    private var pendingPlacementRequest: PendingPlacementRequest?
+    private var alignmentReferenceAction: AlignmentReferenceAction?
+    private var pendingAlignmentRequest: PendingPlacementRequest?
     private var lastFloorMeterUpdateTimestamp: TimeInterval = 0
     private var floorMeterOrigin: SIMD3<Float>?
     private var floorMeterAnchor: AnchorEntity?
@@ -249,6 +260,10 @@ final class ARSessionController: NSObject, ObservableObject {
     var roomModelURL: URL { projectStore.roomModelURL }
     var roomDataURL: URL { projectStore.roomDataURL }
     var sharedARSession: ARSession? { arView?.session }
+    private var roomAlignmentTransform: simd_float4x4 {
+        projectStore.project.roomAlignment?.realityKitTransform.matrix
+            ?? matrix_identity_float4x4
+    }
     var displayedFloorLayer: Float? {
         calibratedFloorY.map { _ in Self.coordinateFloorLayer }
     }
@@ -283,6 +298,10 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         UserDefaults.standard.set(aiServerAddress, forKey: Self.aiServerDefaultsKey)
         aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
+        hasAlignmentReference = projectStore.project.alignmentReference != nil
+        alignmentReferenceStatus = hasAlignmentReference
+            ? "Hizalama referansı hazır"
+            : "Hizalama referansı kaydedilmedi"
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
         if projectStore.savedPlaces.isEmpty,
@@ -424,12 +443,19 @@ final class ARSessionController: NSObject, ObservableObject {
         selectedLightSettings = nil
         isAimingLight = false
         placementReticlePoint = nil
+        pendingPlacementRequest = nil
+        alignmentReferenceAction = nil
+        pendingAlignmentRequest = nil
+        isAlignmentReferenceActive = false
         liveAppleAnchor = nil
         filteredLiveApplePosition = nil
         isRoomOutlineVisible = false
         guard let arView else { return }
         aiEnhancementClient.cancel()
         aiDepthRenderer.remove()
+        // A loaded place can carry a different version-7 RoomPlan alignment. Never
+        // reuse the previous room's prepared outline/collision geometry across maps.
+        roomRealityRenderer.clear()
         clearFloorMeterVisualization()
         floorMeterOrigin = nil
         floorMeterReading = nil
@@ -471,6 +497,9 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func pauseForRoomScan() {
         cancelPlacement()
+        alignmentReferenceAction = nil
+        pendingAlignmentRequest = nil
+        isAlignmentReferenceActive = false
         if isListeningForCGICommands { stopCGIVoiceCommands() }
         aiEnhancementClient.cancel()
         aiDepthRenderer.clear()
@@ -694,11 +723,29 @@ final class ARSessionController: NSObject, ObservableObject {
                     self.aiEnhancementStatus = .stabilizing
                     return
                 }
+
+                // On a LiDAR device the current-frame reconstruction must own the
+                // depth buffer. Replacing it with a delayed PC mesh made moving
+                // furniture pass in front of virtual props and let props leak through
+                // walls. Keep SAM/depth analysis active for status and diagnostics,
+                // but render the server mesh only on devices without local scene
+                // reconstruction. Person occlusion remains an independent ARKit pass.
+                if ARWorldTrackingConfiguration.supportsSceneReconstruction(
+                    .meshWithClassification
+                ) {
+                    self.aiDepthRenderer.clear()
+                    self.roomRealityRenderer.isPhysicalOcclusionVisible = false
+                    self.setPhysicalSceneOcclusion(enabled: true)
+                    self.aiEnhancementStatus = .active(
+                        latencyMilliseconds: depth.totalLatencyMilliseconds,
+                        samMaskCount: depth.samMaskCount
+                    )
+                    return
+                }
                 do {
                     self.roomRealityRenderer.isPhysicalOcclusionVisible = false
-                    // The fused AI mesh already includes LiDAR. Drawing RealityKit's
-                    // scene-understanding occluder at the same time creates two close
-                    // depth surfaces and makes placed models flicker or appear cut.
+                    // A non-LiDAR device has no live reconstruction depth writer, so
+                    // the fused server mesh becomes its finite static-geometry fallback.
                     self.setPhysicalSceneOcclusion(enabled: false)
                     try self.aiDepthRenderer.render(depth)
                     self.aiEnhancementStatus = .active(
@@ -824,6 +871,8 @@ final class ARSessionController: NSObject, ObservableObject {
                     .red
                 )
             } else {
+                hasAlignmentReference = false
+                alignmentReferenceStatus = "Yeni tarama için hizalama referansı kaydedilmedi"
                 updateKnownFloorFromRoomData()
                 shouldSaveWorldMapWhenReady = hasScannedRoom
                 shouldArchiveAfterNextSave = hasScannedRoom
@@ -898,7 +947,8 @@ final class ARSessionController: NSObject, ObservableObject {
             let theme = RealityThemeCatalog.theme(withID: id)
             let report = try roomRealityRenderer.render(
                 roomJSONURL: roomDataURL,
-                theme: theme
+                theme: theme,
+                alignmentTransform: roomAlignmentTransform
             )
             roomRealityRenderer.isVisible = true
             activeRealityThemeID = id
@@ -982,7 +1032,10 @@ final class ARSessionController: NSObject, ObservableObject {
                let preparedReport = roomRealityRenderer.lastReport {
                 report = preparedReport
             } else {
-                report = try roomRealityRenderer.renderOutline(roomJSONURL: roomDataURL)
+                report = try roomRealityRenderer.renderOutline(
+                    roomJSONURL: roomDataURL,
+                    alignmentTransform: roomAlignmentTransform
+                )
             }
             roomRealityRenderer.isVisible = true
             isRoomOutlineVisible = true
@@ -1005,10 +1058,61 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    func beginSavingAlignmentReference() {
+        beginAlignmentReferenceAction(.save)
+    }
+
+    func beginApplyingAlignmentReference() {
+        guard hasAlignmentReference,
+              projectStore.project.alignmentReference != nil else {
+            publishStatus("Önce kalıcı bir duvar noktasını referans olarak kaydet", color: .yellow)
+            return
+        }
+        beginAlignmentReferenceAction(.apply)
+    }
+
+    func cancelAlignmentReference() {
+        alignmentReferenceAction = nil
+        pendingAlignmentRequest = nil
+        isAlignmentReferenceActive = false
+        placementReticlePoint = nil
+        alignmentReferenceStatus = hasAlignmentReference
+            ? "Hizalama referansı hazır"
+            : "Hizalama referansı kaydedilmedi"
+        publishStatus("Mekân hizalama işlemi iptal edildi", color: .yellow)
+    }
+
+    private func beginAlignmentReferenceAction(_ action: AlignmentReferenceAction) {
+        guard !isRoomScanActive,
+              !isSessionInterrupted,
+              isARReady,
+              roomCoordinateSpaceIsActive else {
+            publishStatus(
+                "Hizalama için önce oda taramasını veya kayıtlı mekânı yükle",
+                color: .yellow
+            )
+            return
+        }
+        if isPlacingProp { cancelPlacement() }
+        alignmentReferenceAction = action
+        pendingAlignmentRequest = nil
+        isAlignmentReferenceActive = true
+        placementReticlePoint = nil
+        placementSurfaceColor = .yellow
+        alignmentReferenceStatus = action == .save
+            ? "Kalıcı bir duvar köşesine dokun; 6 LiDAR karesi ölçülecek"
+            : "Daha önce kaydettiğin aynı duvar noktasına dokun"
+        publishStatus(alignmentReferenceStatus, color: .blue)
+    }
+
     func selectProp(_ prop: PropKind) {
         persistSelectedLightSettings()
+        alignmentReferenceAction = nil
+        pendingAlignmentRequest = nil
+        isAlignmentReferenceActive = false
         isAimingLight = false
         placementReticlePoint = nil
+        pendingPlacementRequest = nil
         selectedProp = prop
         selectedEntityID = nil
         selectedLightSettings = nil
@@ -1032,6 +1136,7 @@ final class ARSessionController: NSObject, ObservableObject {
     func cancelPlacement() {
         guard isPlacingProp else { return }
         isPlacingProp = false
+        pendingPlacementRequest = nil
         placementSurfaceMessage = "Yerleştirme kapalı"
         placementSurfaceColor = .yellow
         placementReticlePoint = nil
@@ -1998,6 +2103,11 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
+        if alignmentReferenceAction != nil {
+            beginAlignmentReferenceLock(in: arView, at: point)
+            return
+        }
+
         if !isPlacingProp,
            let hitEntity = arView.entity(at: point),
            let id = entityID(from: hitEntity) {
@@ -2021,60 +2131,368 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
-        guard let placementSolution = placementSolution(
-            in: arView,
-            at: point,
-            for: selectedProp
-        ) else {
-            publishStatus(
-                placementFailureMessage(for: selectedProp),
-                color: .yellow
-            )
-            return
-        }
-        let placementTransform = placementSolution.transform
-
-        let id = UUID()
         guard selectedProp != .custom || selectedAssetURL != nil else {
             publishStatus("Önce kütüphaneden bir USDZ dekor seç", color: .yellow)
             return
         }
+
+        pendingPlacementRequest = PendingPlacementRequest(
+            prop: selectedProp,
+            point: point,
+            startedAt: frame.timestamp,
+            lastSampleAt: -Double.greatestFiniteMagnitude,
+            samples: []
+        )
+        placementReticlePoint = point
+        placementSurfaceMessage = "Sarı: çok kareli LiDAR kilidi ölçülüyor • 0/6"
+        placementSurfaceColor = .yellow
+        publishStatus("Yüzey sabitleniyor — telefonu kısa süre hareketsiz tut", color: .yellow)
+        updatePendingPlacement(using: frame)
+    }
+
+    private func commitPlacement(
+        in arView: ARView,
+        solution placementSolution: PlacementSurfaceSolution,
+        prop: PropKind
+    ) {
+        guard isPlacingProp, selectedProp == prop else { return }
+        let placementTransform = placementSolution.transform
+        let id = UUID()
         let placement = PlacementRecord(
             id: id,
-            kind: selectedProp,
-            assetFileName: selectedProp == .custom ? selectedAssetURL?.lastPathComponent : nil,
-            transform: StoredTransform(defaultTransform(for: selectedProp)),
-            lightSettings: selectedProp.emitsVirtualLight ? .defaultFixture : nil
+            kind: prop,
+            assetFileName: prop == .custom ? selectedAssetURL?.lastPathComponent : nil,
+            transform: StoredTransform(defaultTransform(for: prop)),
+            lightSettings: prop.emitsVirtualLight ? .defaultFixture : nil
         )
         do {
             try projectStore.upsert(placement)
             let anchor = ARAnchor(
-                name: selectedProp.anchorName(id: id),
+                name: prop.anchorName(id: id),
                 transform: placementTransform
             )
             managedPropAnchorsByPlacementID[id] = anchor
             pendingAutoSaveAnchorIDs.insert(anchor.identifier)
             arView.session.add(anchor: anchor)
             selectedEntityID = id
-            selectedObjectTitle = selectedProp.title
+            selectedObjectTitle = prop.title
             selectedObjectScale = 1
             selectedLightSettings = placement.lightSettings
             isPlacingProp = false
+            pendingPlacementRequest = nil
             placementReticlePoint = nil
             refreshSceneCatalogs()
-            if selectedProp == .custom {
+            if prop == .custom {
                 publishStatus("USDZ sahneye yükleniyor...", color: .yellow)
             } else if renderedEntities[id] != nil {
                 publishStatus(
-                    "\(selectedProp.title) yüzeye sabitlendi — \(placementSolution.source.title)",
+                    "\(prop.title) yüzeye sabitlendi — çok kareli \(placementSolution.source.title)",
                     color: .green
                 )
             } else {
-                publishStatus("\(selectedProp.title) hazırlanıyor...", color: .yellow)
+                publishStatus("\(prop.title) kararlı yüzeyde hazırlanıyor...", color: .yellow)
             }
         } catch {
             publishStatus("Proje kaydedilemedi: \(error.localizedDescription)", color: .red)
         }
+    }
+
+    private func updatePendingPlacement(using frame: ARFrame) {
+        guard var request = pendingPlacementRequest,
+              isPlacingProp,
+              selectedProp == request.prop,
+              let arView,
+              !isRoomScanActive,
+              !isSessionInterrupted else {
+            pendingPlacementRequest = nil
+            return
+        }
+
+        let elapsed = frame.timestamp - request.startedAt
+        if elapsed > 1.35 {
+            pendingPlacementRequest = nil
+            placementSurfaceMessage = "Kırmızı: yüzey kararlı ölçülemedi • tekrar dokun"
+            placementSurfaceColor = .red
+            publishStatus(
+                "Yüzey kilitlenemedi — hedefe sabit tutup tekrar dokun",
+                color: .yellow
+            )
+            return
+        }
+
+        guard case .normal = frame.camera.trackingState,
+              isPlacementPoseStable,
+              frame.timestamp - request.lastSampleAt >= 0.055 else { return }
+        request.lastSampleAt = frame.timestamp
+
+        guard let solution = placementSolution(
+            in: arView,
+            at: request.point,
+            for: request.prop
+        ) else {
+            pendingPlacementRequest = request
+            placementSurfaceMessage = "Sarı: aynı fiziksel yüzey yeniden aranıyor"
+            placementSurfaceColor = .yellow
+            return
+        }
+
+        request.samples.append(PlacementLockSample(
+            position: solution.position,
+            normal: solution.normal,
+            source: solution.source,
+            depthMeters: solution.depthMeters,
+            timestamp: frame.timestamp
+        ))
+        if request.samples.count > 18 {
+            request.samples.removeFirst(request.samples.count - 18)
+        }
+        pendingPlacementRequest = request
+
+        if let locked = stablePlacementSolution(
+            from: request.samples,
+            prop: request.prop,
+            cameraPosition: arView.cameraTransform.translation
+        ) {
+            placementSurfaceMessage = "Yeşil: çok kareli yüzey kilitlendi"
+            placementSurfaceColor = .green
+            commitPlacement(in: arView, solution: locked, prop: request.prop)
+        } else {
+            placementSurfaceMessage =
+                "Sarı: çok kareli LiDAR kilidi ölçülüyor • \(min(request.samples.count, 6))/6"
+            placementSurfaceColor = .yellow
+        }
+    }
+
+    private func beginAlignmentReferenceLock(in arView: ARView, at point: CGPoint) {
+        guard alignmentReferenceAction != nil,
+              let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped),
+              isPlacementPoseStable else {
+            publishStatus(
+                "Referans ölçümü için telefonu hedefte kısa süre sabit tut",
+                color: .yellow
+            )
+            return
+        }
+        pendingAlignmentRequest = PendingPlacementRequest(
+            prop: .wall,
+            point: point,
+            startedAt: frame.timestamp,
+            lastSampleAt: -Double.greatestFiniteMagnitude,
+            samples: []
+        )
+        placementReticlePoint = point
+        alignmentReferenceStatus = "Duvar referansı ölçülüyor • 0/6"
+        publishStatus("Duvar referansı kilitleniyor", color: .yellow)
+        updatePendingAlignment(using: frame)
+    }
+
+    private func updatePendingAlignment(using frame: ARFrame) {
+        guard var request = pendingAlignmentRequest,
+              let action = alignmentReferenceAction,
+              isAlignmentReferenceActive,
+              let arView,
+              !isRoomScanActive,
+              !isSessionInterrupted else { return }
+
+        if frame.timestamp - request.startedAt > 1.50 {
+            pendingAlignmentRequest = nil
+            alignmentReferenceStatus = "Referans kararlı ölçülemedi • yeniden dokun"
+            publishStatus("Duvar referansı kilitlenemedi; tekrar dokun", color: .yellow)
+            return
+        }
+        guard case .normal = frame.camera.trackingState,
+              isPlacementPoseStable,
+              frame.timestamp - request.lastSampleAt >= 0.055 else { return }
+        request.lastSampleAt = frame.timestamp
+
+        guard let solution = strictWallPlacementSolution(
+            in: arView,
+            at: request.point,
+            for: .wall
+        ) else {
+            pendingAlignmentRequest = request
+            alignmentReferenceStatus = "Aynı dikey duvar noktası aranıyor"
+            return
+        }
+        request.samples.append(PlacementLockSample(
+            position: solution.position,
+            normal: solution.normal,
+            source: solution.source,
+            depthMeters: solution.depthMeters,
+            timestamp: frame.timestamp
+        ))
+        if request.samples.count > 18 {
+            request.samples.removeFirst(request.samples.count - 18)
+        }
+        pendingAlignmentRequest = request
+
+        guard let locked = stablePlacementSolution(
+            from: request.samples,
+            prop: .wall,
+            cameraPosition: arView.cameraTransform.translation
+        ) else {
+            alignmentReferenceStatus =
+                "Duvar referansı ölçülüyor • \(min(request.samples.count, 6))/6"
+            return
+        }
+
+        pendingAlignmentRequest = nil
+        switch action {
+        case .save:
+            saveAlignmentReference(locked)
+        case .apply:
+            applyAlignmentReference(locked, in: arView)
+        }
+    }
+
+    private func saveAlignmentReference(_ solution: PlacementSurfaceSolution) {
+        do {
+            try projectStore.setAlignmentReference(
+                StoredTransform(Transform(matrix: solution.transform))
+            )
+            hasAlignmentReference = true
+            isAlignmentReferenceActive = false
+            alignmentReferenceAction = nil
+            placementReticlePoint = nil
+            alignmentReferenceStatus = "Hizalama referansı hazır"
+            publishStatus(
+                "Duvar referansı kaydedildi — mekân yüklenince aynı noktayı kullan",
+                color: .green
+            )
+        } catch {
+            publishStatus("Referans kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    private func applyAlignmentReference(
+        _ current: PlacementSurfaceSolution,
+        in arView: ARView
+    ) {
+        guard let stored = projectStore.project.alignmentReference else {
+            hasAlignmentReference = false
+            cancelAlignmentReference()
+            return
+        }
+        let storedMatrix = stored.realityKitTransform.matrix
+        let storedForward = simd_normalize(SIMD3<Float>(
+            storedMatrix.columns.2.x,
+            storedMatrix.columns.2.y,
+            storedMatrix.columns.2.z
+        ))
+        let currentForward = simd_normalize(SIMD3<Float>(
+            current.transform.columns.2.x,
+            current.transform.columns.2.y,
+            current.transform.columns.2.z
+        ))
+        guard simd_dot(storedForward, currentForward) >= 0.82 else {
+            publishStatus(
+                "Bu noktanın duvar yönü referansla eşleşmiyor; aynı duvarı seç",
+                color: .red
+            )
+            return
+        }
+        let correction = current.transform * simd_inverse(storedMatrix)
+        let translation = SIMD3<Float>(
+            correction.columns.3.x,
+            correction.columns.3.y,
+            correction.columns.3.z
+        )
+        guard simd_length(translation) <= 5 else {
+            publishStatus("Hizalama farkı çok büyük; doğru referans noktasını seç", color: .red)
+            return
+        }
+
+        do {
+            try projectStore.applyAlignmentCorrection(
+                correction,
+                newReference: StoredTransform(Transform(matrix: current.transform))
+            )
+            applyAlignmentCorrectionToAnchors(correction, in: arView)
+            hasAlignmentReference = true
+            isAlignmentReferenceActive = false
+            alignmentReferenceAction = nil
+            placementReticlePoint = nil
+            alignmentReferenceStatus = "Mekân referansa göre hizalandı"
+            updateKnownFloorFromRoomData()
+            rebuildRoomRenderingAfterAlignment()
+            shouldSaveWorldMapWhenReady = true
+            scheduleReadinessRecovery()
+            publishStatus(
+                String(format: "Mekân hizalandı • düzeltme %.0f cm", simd_length(translation) * 100),
+                color: .green
+            )
+        } catch {
+            publishStatus("Mekân hizalanamadı: \(error.localizedDescription)", color: .red)
+        }
+    }
+
+    private func stablePlacementSolution(
+        from samples: [PlacementLockSample],
+        prop: PropKind,
+        cameraPosition: SIMD3<Float>
+    ) -> PlacementSurfaceSolution? {
+        guard samples.count >= 6,
+              let firstTimestamp = samples.first?.timestamp,
+              let lastTimestamp = samples.last?.timestamp,
+              lastTimestamp - firstTimestamp >= 0.26 else { return nil }
+
+        func median(_ values: [Float]) -> Float {
+            let sorted = values.sorted()
+            return sorted[sorted.count / 2]
+        }
+        let medianPosition = SIMD3<Float>(
+            median(samples.map { $0.position.x }),
+            median(samples.map { $0.position.y }),
+            median(samples.map { $0.position.z })
+        )
+        let measuredDepths = samples.compactMap { $0.depthMeters }
+        let candidateDepths = measuredDepths.isEmpty
+            ? samples.map { simd_distance($0.position, cameraPosition) }
+            : measuredDepths
+        let medianDepth = median(candidateDepths)
+        let allowedSpread = min(max(0.014 + medianDepth * 0.009, 0.020), 0.045)
+        let inliers = samples.filter {
+            simd_distance($0.position, medianPosition) <= allowedSpread
+        }
+        guard inliers.count >= max(5, Int(ceil(Double(samples.count) * 0.72))) else {
+            return nil
+        }
+
+        var referenceNormal = inliers[inliers.count / 2].normal
+        guard simd_length_squared(referenceNormal) > 0.000_001 else { return nil }
+        referenceNormal = simd_normalize(referenceNormal)
+        var normalSum = SIMD3<Float>.zero
+        var alignedNormalCount = 0
+        for sample in inliers where simd_length_squared(sample.normal) > 0.000_001 {
+            var normal = simd_normalize(sample.normal)
+            if simd_dot(normal, referenceNormal) < 0 { normal = -normal }
+            guard simd_dot(normal, referenceNormal) >= 0.90 else { continue }
+            normalSum += normal
+            alignedNormalCount += 1
+        }
+        guard alignedNormalCount >= max(5, Int(ceil(Double(inliers.count) * 0.78))),
+              simd_length_squared(normalSum) > 0.000_001 else { return nil }
+
+        let lockedPosition = inliers.reduce(SIMD3<Float>.zero) { $0 + $1.position }
+            / Float(inliers.count)
+        let lockedNormal = simd_normalize(normalSum)
+        // `samples` and `inliers` are both proven non-empty above; keep the selected
+        // source non-optional so this path is also unambiguous to older Swift compilers.
+        let source = inliers[inliers.count - 1].source
+        return PlacementSurfaceSolution(
+            transform: placementTransform(
+                position: lockedPosition,
+                normal: lockedNormal,
+                prop: prop,
+                cameraPosition: cameraPosition
+            ),
+            position: lockedPosition,
+            normal: lockedNormal,
+            source: source,
+            depthMeters: medianDepth
+        )
     }
 
     @objc private func handleSurfaceProbe(_ recognizer: UILongPressGestureRecognizer) {
@@ -2681,7 +3099,9 @@ final class ARSessionController: NSObject, ObservableObject {
         at requestedPoint: CGPoint? = nil,
         force: Bool = false
     ) {
-        guard isPlacingProp, let arView,
+        guard isPlacingProp,
+              pendingPlacementRequest == nil,
+              let arView,
               force || frame.timestamp - lastPlacementGuidanceTimestamp >= 0.14 else { return }
         lastPlacementGuidanceTimestamp = frame.timestamp
         guard isARReady, case .normal = frame.camera.trackingState else {
@@ -2836,9 +3256,14 @@ final class ARSessionController: NSObject, ObservableObject {
         roomPlanFloorY = nil
         roomPlanCeilingY = nil
         guard let room = try? RoomRealityRenderer.loadRoomJSON(from: roomDataURL) else { return }
-        roomRealityRenderer.cachePlacementSurfaces(from: room)
+        let alignment = roomAlignmentTransform
+        roomRealityRenderer.cachePlacementSurfaces(
+            from: room,
+            alignmentTransform: alignment
+        )
         let levels = room.floors.compactMap { floor -> Float? in
-            let y = floor.transform.columns.3.y
+            let transform = alignment * floor.transform
+            let y = transform.columns.3.y
             return y.isFinite ? y : nil
         }.sorted()
         let roomFloorY = levels.isEmpty ? nil : levels[levels.count / 2]
@@ -2852,7 +3277,11 @@ final class ARSessionController: NSObject, ObservableObject {
             let inferred = try roomRealityRenderer.inferredCeilingLevel(
                 roomJSONURL: roomDataURL
             )
-            roomCeilingY = inferred.flatMap { $0.isFinite ? $0 : nil }
+            roomCeilingY = inferred.flatMap { rawLevel in
+                guard rawLevel.isFinite else { return nil }
+                let transformed = alignment * SIMD4<Float>(0, rawLevel, 0, 1)
+                return transformed.y.isFinite ? transformed.y : nil
+            }
         } catch {
             roomCeilingY = nil
         }
@@ -3579,6 +4008,70 @@ final class ARSessionController: NSObject, ObservableObject {
         return (insertedAnchor, waitingForAnchor)
     }
 
+    private func applyAlignmentCorrectionToAnchors(
+        _ correction: simd_float4x4,
+        in arView: ARView
+    ) {
+        var liveAnchors: [UUID: ARAnchor] = [:]
+        for anchor in arView.session.currentFrame?.anchors ?? [] {
+            guard let descriptor = PropKind.descriptor(from: anchor.name),
+                  liveAnchors[descriptor.id] == nil else { continue }
+            liveAnchors[descriptor.id] = anchor
+        }
+        for placement in projectStore.project.placements {
+            guard let previous = liveAnchors[placement.id]
+                    ?? managedPropAnchorsByPlacementID[placement.id] else { continue }
+            let replacement = ARAnchor(
+                name: placement.kind.anchorName(id: placement.id),
+                transform: correction * previous.transform
+            )
+            supersededPropAnchorIDs.insert(previous.identifier)
+            knownPropAnchorIDs.remove(previous.identifier)
+            pendingAutoSaveAnchorIDs.remove(previous.identifier)
+            managedPropAnchorsByPlacementID[placement.id] = replacement
+            knownPropAnchorIDs.insert(replacement.identifier)
+            pendingAutoSaveAnchorIDs.insert(replacement.identifier)
+            detachRenderedPlacement(id: placement.id)
+            if liveAnchors[placement.id] != nil {
+                arView.session.remove(anchor: previous)
+            }
+            arView.session.add(anchor: replacement)
+        }
+    }
+
+    private func rebuildRoomRenderingAfterAlignment() {
+        guard let arView,
+              FileManager.default.fileExists(atPath: roomDataURL.path) else { return }
+        let wasOutlineVisible = isRoomOutlineVisible
+        let themeID = activeRealityThemeID
+        roomRealityRenderer.install(in: arView)
+        roomRealityRenderer.clear()
+        do {
+            if wasOutlineVisible {
+                _ = try roomRealityRenderer.renderOutline(
+                    roomJSONURL: roomDataURL,
+                    alignmentTransform: roomAlignmentTransform
+                )
+                roomRealityRenderer.isVisible = true
+                isRoomOutlineVisible = true
+            } else if let themeID {
+                _ = try roomRealityRenderer.render(
+                    roomJSONURL: roomDataURL,
+                    theme: RealityThemeCatalog.theme(withID: themeID),
+                    alignmentTransform: roomAlignmentTransform
+                )
+                roomRealityRenderer.isVisible = true
+            } else {
+                roomRealityRenderer.isVisible = false
+                refreshPhysicalRoomOcclusionIfPossible(allowWhileAIEnabled: true)
+            }
+        } catch {
+            roomRealityRenderer.isVisible = false
+            isRoomOutlineVisible = false
+            publishStatus("Oda geometrisi yeniden hizalanamadı: \(error.localizedDescription)", color: .red)
+        }
+    }
+
     @discardableResult
     private func savePendingWorldMapIfPossible(
         trackingState: ARCamera.TrackingState?
@@ -3682,6 +4175,10 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            hasAlignmentReference = projectStore.project.alignmentReference != nil
+            alignmentReferenceStatus = hasAlignmentReference
+                ? "Hizalama referansı hazır"
+                : "Hizalama referansı kaydedilmedi"
             applyStoredVisualStyle()
             importedAssetURLs = projectStore.importedModelURLs
             hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
@@ -3710,6 +4207,10 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             try validate(worldMap: worldMap, placements: snapshot.project.placements)
             projectStore.activate(snapshot)
+            hasAlignmentReference = projectStore.project.alignmentReference != nil
+            alignmentReferenceStatus = hasAlignmentReference
+                ? "Hizalama referansı hazır"
+                : "Hizalama referansı kaydedilmedi"
             applyStoredVisualStyle()
             importedAssetURLs = projectStore.importedModelURLs
             hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
@@ -5480,7 +5981,8 @@ final class ARSessionController: NSObject, ObservableObject {
         }
         do {
             let count = try roomRealityRenderer.preparePhysicalOcclusion(
-                roomJSONURL: roomDataURL
+                roomJSONURL: roomDataURL,
+                alignmentTransform: roomAlignmentTransform
             )
             roomRealityRenderer.isPhysicalOcclusionVisible = count > 0
             return count > 0
@@ -5505,6 +6007,8 @@ final class ARSessionController: NSObject, ObservableObject {
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         updatePlacementTrackingStability(using: frame)
+        updatePendingAlignment(using: frame)
+        updatePendingPlacement(using: frame)
         updateSpatialCalibration(using: frame)
         updateAmbientLighting(using: frame)
         updatePlacementGuidance(using: frame)
@@ -5786,6 +6290,22 @@ private struct SceneDepthSurfaceSample {
     let worldPoint: SIMD3<Float>
     let worldNormal: SIMD3<Float>?
     let depthMeters: Float
+}
+
+private struct PlacementLockSample {
+    let position: SIMD3<Float>
+    let normal: SIMD3<Float>
+    let source: PlacementSurfaceSource
+    let depthMeters: Float?
+    let timestamp: TimeInterval
+}
+
+private struct PendingPlacementRequest {
+    let prop: PropKind
+    let point: CGPoint
+    let startedAt: TimeInterval
+    var lastSampleAt: TimeInterval
+    var samples: [PlacementLockSample]
 }
 
 private struct BloodWaterfallParticle {

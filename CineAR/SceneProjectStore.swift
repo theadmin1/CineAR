@@ -102,7 +102,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
 }
 
 struct SceneProject: Codable {
-    static let currentVersion = 6
+    static let currentVersion = 7
 
     var version = currentVersion
     var name = "Ana Set"
@@ -118,6 +118,11 @@ struct SceneProject: Codable {
     // decode without a custom decoder. Missing values mean natural/100 percent.
     var filmLook: FilmLookID?
     var contactShadowStrength: Float?
+    // Version-7 manual relocalization data. The reference is a repeatable point on
+    // a permanent wall; roomAlignment maps immutable RoomPlan coordinates into the
+    // corrected ARWorldMap coordinate space.
+    var alignmentReference: StoredTransform?
+    var roomAlignment: StoredTransform?
 }
 
 struct PlacementRecord: Codable, Identifiable {
@@ -282,6 +287,7 @@ enum SceneProjectStoreError: LocalizedError {
     case invalidLightSettings(UUID)
     case invalidVisualStyle
     case invalidSpatialCalibration
+    case invalidAlignmentReference
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
@@ -308,6 +314,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Film filtresi veya gölge gücü geçersiz"
         case .invalidSpatialCalibration:
             "Zemin/tavan kalibrasyonu geçersiz veya oda yüksekliği gerçekçi değil"
+        case .invalidAlignmentReference:
+            "Mekân hizalama referansı geçersiz"
         case .worldMapOutOfDate:
             "Sahne son harita kaydından sonra değişmiş; önce yeniden Kaydet'e dokunun"
         case .worldMapChecksumMismatch:
@@ -784,6 +792,90 @@ final class SceneProjectStore {
         }
     }
 
+    func setAlignmentReference(_ reference: StoredTransform) throws {
+        try commit(invalidateWorldMap: false) { candidate in
+            guard Self.isValid(reference) else {
+                throw SceneProjectStoreError.invalidAlignmentReference
+            }
+            candidate.alignmentReference = reference
+        }
+    }
+
+    /// Applies a rigid, gravity-preserving correction to RoomPlan metadata and any
+    /// world-space light targets. ARAnchor transforms are recreated by the controller
+    /// and the following automatic world-map save makes the corrected scene durable.
+    func applyAlignmentCorrection(
+        _ correction: simd_float4x4,
+        newReference: StoredTransform
+    ) throws {
+        let correctionTransform = StoredTransform(Transform(matrix: correction))
+        let values = [
+            correction.columns.0.x, correction.columns.0.y,
+            correction.columns.0.z, correction.columns.0.w,
+            correction.columns.1.x, correction.columns.1.y,
+            correction.columns.1.z, correction.columns.1.w,
+            correction.columns.2.x, correction.columns.2.y,
+            correction.columns.2.z, correction.columns.2.w,
+            correction.columns.3.x, correction.columns.3.y,
+            correction.columns.3.z, correction.columns.3.w,
+        ]
+        let translation = SIMD3<Float>(
+            correction.columns.3.x,
+            correction.columns.3.y,
+            correction.columns.3.z
+        )
+        let up = SIMD3<Float>(
+            correction.columns.1.x,
+            correction.columns.1.y,
+            correction.columns.1.z
+        )
+        guard values.allSatisfy(\.isFinite),
+              simd_length(translation) <= 5,
+              simd_length_squared(up) > 0.000_001,
+              simd_dot(simd_normalize(up), SIMD3<Float>(0, 1, 0)) >= 0.985,
+              Self.isValid(correctionTransform),
+              Self.isValid(newReference) else {
+            throw SceneProjectStoreError.invalidAlignmentReference
+        }
+
+        try commit(invalidateWorldMap: true) { candidate in
+            let existing = candidate.roomAlignment?.realityKitTransform.matrix
+                ?? matrix_identity_float4x4
+            candidate.roomAlignment = StoredTransform(
+                Transform(matrix: correction * existing)
+            )
+            candidate.alignmentReference = newReference
+
+            if let floorY = candidate.calibratedFloorY {
+                let point = correction * SIMD4<Float>(0, floorY, 0, 1)
+                candidate.calibratedFloorY = point.y
+            }
+            if let ceilingY = candidate.calibratedCeilingY {
+                let point = correction * SIMD4<Float>(0, ceilingY, 0, 1)
+                candidate.calibratedCeilingY = point.y
+            }
+            for index in candidate.placements.indices {
+                guard var light = candidate.placements[index].lightSettings,
+                      let target = light.projectorTarget else { continue }
+                let corrected = correction * SIMD4<Float>(target, 1)
+                light.targetPosition = [corrected.x, corrected.y, corrected.z]
+                if let normal = light.projectorTargetNormal {
+                    let correctedNormal = correction * SIMD4<Float>(normal, 0)
+                    let vector = SIMD3<Float>(
+                        correctedNormal.x,
+                        correctedNormal.y,
+                        correctedNormal.z
+                    )
+                    if simd_length_squared(vector) > 0.000_001 {
+                        let normalized = simd_normalize(vector)
+                        light.targetNormal = [normalized.x, normalized.y, normalized.z]
+                    }
+                }
+                candidate.placements[index].lightSettings = light
+            }
+        }
+    }
+
     func remove(id: UUID) throws {
         try commit(invalidateWorldMap: true) { candidate in
             guard candidate.placements.contains(where: { $0.id == id }) else {
@@ -802,7 +894,10 @@ final class SceneProjectStore {
     /// A new RoomPlan scan has a new spatial source of truth. Keep placements,
     /// but force the user to save a matching ARWorldMap before a later reload.
     func invalidateWorldMapForRoomScan() throws {
-        try commit(invalidateWorldMap: true) { _ in }
+        try commit(invalidateWorldMap: true) { candidate in
+            candidate.alignmentReference = nil
+            candidate.roomAlignment = nil
+        }
     }
 
     @discardableResult
@@ -1010,6 +1105,10 @@ final class SceneProjectStore {
             project.version = 6
             project.updatedAt = Date()
         }
+        if project.version < 7 {
+            project.version = 7
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }
@@ -1032,6 +1131,10 @@ final class SceneProjectStore {
             $0.isFinite && (0...2).contains($0)
         }) ?? true else {
             throw SceneProjectStoreError.invalidVisualStyle
+        }
+        guard project.alignmentReference.map({ isValid($0) }) ?? true,
+              project.roomAlignment.map({ isValid($0) }) ?? true else {
+            throw SceneProjectStoreError.invalidAlignmentReference
         }
 
         var ids = Set<UUID>()

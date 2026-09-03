@@ -29,7 +29,7 @@ struct ContentView: View {
                 .hueRotation(.degrees(session.activeFilmLook.hueDegrees))
                 .overlay { filmLookOverlay }
 
-            if session.isPlacingProp,
+            if (session.isPlacingProp || session.isAlignmentReferenceActive),
                !session.isRecording,
                !session.isRecordingTransitioning {
                 placementReticle
@@ -264,6 +264,23 @@ struct ContentView: View {
                 utilityButton("Yükle", "arrow.clockwise.icloud") {
                     session.loadWorldMap()
                 }
+                if session.isAlignmentReferenceActive {
+                    utilityButton("Hizalamayı İptal", "xmark.circle.fill") {
+                        session.cancelAlignmentReference()
+                    }
+                } else {
+                    utilityButton(
+                        session.hasAlignmentReference ? "Referansı Yenile" : "Referans Kaydet",
+                        "scope"
+                    ) {
+                        session.beginSavingAlignmentReference()
+                    }
+                    if session.hasAlignmentReference {
+                        utilityButton("Referansla Hizala", "viewfinder.circle.fill") {
+                            session.beginApplyingAlignmentReference()
+                        }
+                    }
+                }
                 utilityButton("Sahne Listesi", "list.bullet.rectangle") {
                     showingSceneContents = true
                 }
@@ -359,6 +376,10 @@ struct ContentView: View {
             Text("Tarama sırasında ve Beyaz Hatlar modunda kamera kapanmaz; katı duvar çizilmez")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+
+            Text(session.alignmentReferenceStatus)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(session.isAlignmentReferenceActive ? Color.yellow : Color.secondary)
         }
     }
 
