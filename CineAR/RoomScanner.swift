@@ -1,4 +1,5 @@
 import ARKit
+import Foundation
 import RoomPlan
 import SwiftUI
 import UIKit
@@ -216,6 +217,7 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var pendingArtifacts: CapturedRoomStore.StagedArtifacts?
     private var scanGeneration: UInt64 = 0
     private var stagingTask: Task<CapturedRoomStageOutcome, Never>?
+    private var lastScanSummaryUpdateTime: TimeInterval = 0
 
     init(
         exportURL: URL,
@@ -255,6 +257,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         guard !isTornDown, !isSessionRunning, !isProcessing else { return }
 
         scanGeneration &+= 1
+        lastScanSummaryUpdateTime = 0
         let isRetryingAfterFailure = failureMessage != nil
         stagingTask?.cancel()
         stagingTask = nil
@@ -427,6 +430,13 @@ final class RoomScannerController: NSObject, ObservableObject {
 
 extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
     func captureSession(_ session: RoomCaptureSession, didUpdate room: CapturedRoom) {
+        // RoomPlan can publish several semantic snapshots per video frame. Updating
+        // SwiftUI for every snapshot floods the main queue and makes the native white
+        // scan lines lag behind the camera. The geometry still updates at full speed;
+        // only the small text summary is throttled.
+        let now = ProcessInfo.processInfo.systemUptime
+        guard now - lastScanSummaryUpdateTime >= 0.25 else { return }
+        lastScanSummaryUpdateTime = now
         let floorCount = room.floors.count
         let wallCount = room.walls.count
         let objectCount = room.objects.count

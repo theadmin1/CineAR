@@ -297,7 +297,9 @@ final class ARSessionController: NSObject, ObservableObject {
             aiServerAddressSource = "Varsayılan yedek"
         }
         UserDefaults.standard.set(aiServerAddress, forKey: Self.aiServerDefaultsKey)
-        aiEnhancementStatus = aiEnhancementEnabled ? .waiting : .disabled
+        aiEnhancementStatus = aiEnhancementEnabled
+            ? (Self.hasLiveSceneReconstruction ? .localLiDAR : .waiting)
+            : .disabled
         hasAlignmentReference = projectStore.project.alignmentReference != nil
         alignmentReferenceStatus = hasAlignmentReference
             ? "Hizalama referansı hazır"
@@ -349,7 +351,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         arView = view
         refreshAIServerDiscovery()
-        if aiEnhancementEnabled {
+        if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: view)
         }
         runSession()
@@ -486,9 +488,11 @@ final class ARSessionController: NSObject, ObservableObject {
             options: [.resetTracking, .removeExistingAnchors]
         )
         roomRealityRenderer.install(in: arView)
-        if aiEnhancementEnabled {
+        if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: arView)
-            aiEnhancementStatus = .waiting
+        }
+        if aiEnhancementEnabled {
+            aiEnhancementStatus = Self.hasLiveSceneReconstruction ? .localLiDAR : .waiting
         }
         refreshPhysicalRoomOcclusionIfPossible()
         restoreRoomRealityIfPossible()
@@ -542,6 +546,19 @@ final class ARSessionController: NSObject, ObservableObject {
             aiDepthRenderer.clear()
             aiEnhancementStatus = .disabled
             activateLocalOcclusionFallback()
+            return
+        }
+        if Self.hasLiveSceneReconstruction {
+            // The iPhone's current-frame LiDAR mesh is both faster and temporally
+            // aligned with the camera. Encoding and uploading a camera frame here did
+            // not improve LiDAR occlusion, but blocked RealityKit's main thread every
+            // half second and made fixed anchors look as if they were trembling.
+            shouldEnableAIWhenDiscovered = false
+            aiEnhancementClient.cancel()
+            aiDepthRenderer.clear()
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            setPhysicalSceneOcclusion(enabled: true)
+            aiEnhancementStatus = .localLiDAR
             return
         }
         // The live LiDAR/AI mesh is more precise than RoomPlan's coarse furniture
@@ -634,10 +651,9 @@ final class ARSessionController: NSObject, ObservableObject {
                     self.setAIEnhancementEnabled(true)
                 }
                 if self.aiEnhancementEnabled {
-                    self.aiEnhancementStatus = .active(
-                        latencyMilliseconds: 0,
-                        samMaskCount: 0
-                    )
+                    self.aiEnhancementStatus = Self.hasLiveSceneReconstruction
+                        ? .localLiDAR
+                        : .active(latencyMilliseconds: 0, samMaskCount: 0)
                 }
                 self.publishStatus(
                     "PC AI otomatik bulundu: \(device) · \(normalizedAddress)",
@@ -666,7 +682,9 @@ final class ARSessionController: NSObject, ObservableObject {
                 // flow painted the test green but left frame submission disabled when
                 // the toggle was off, which looked exactly like a broken connection.
                 self.setAIEnhancementEnabled(true)
-                self.aiEnhancementStatus = .active(latencyMilliseconds: 0, samMaskCount: 0)
+                self.aiEnhancementStatus = Self.hasLiveSceneReconstruction
+                    ? .localLiDAR
+                    : .active(latencyMilliseconds: 0, samMaskCount: 0)
                 self.publishStatus(
                     "AI servisi hazır: \(device) — canlı derinlik otomatik açıldı",
                     color: .green
@@ -684,8 +702,22 @@ final class ARSessionController: NSObject, ObservableObject {
               !isPlacingProp,
               !isRoomScanActive,
               !isSessionInterrupted,
-              case .normal = frame.camera.trackingState,
-              let serverURL = AIEnhancementClient.serverURL(from: aiServerAddress) else { return }
+              case .normal = frame.camera.trackingState else { return }
+
+        // LiDAR already supplies a camera-synchronised reconstruction every frame.
+        // The server result is deliberately not rendered on these devices, so sending
+        // JPEG + depth payloads only introduces periodic frame-time spikes and network
+        // load. Keep the server path for non-LiDAR hardware where it is a real fallback.
+        if Self.hasLiveSceneReconstruction {
+            aiDepthRenderer.clear()
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            setPhysicalSceneOcclusion(enabled: true)
+            if aiEnhancementStatus != .localLiDAR {
+                aiEnhancementStatus = .localLiDAR
+            }
+            return
+        }
+        guard let serverURL = AIEnhancementClient.serverURL(from: aiServerAddress) else { return }
         if frameContainsPerson(frame) {
             lastPersonObservationTimestamp = frame.timestamp
             aiDepthRenderer.clear()
@@ -724,24 +756,9 @@ final class ARSessionController: NSObject, ObservableObject {
                     return
                 }
 
-                // On a LiDAR device the current-frame reconstruction must own the
-                // depth buffer. Replacing it with a delayed PC mesh made moving
-                // furniture pass in front of virtual props and let props leak through
-                // walls. Keep SAM/depth analysis active for status and diagnostics,
-                // but render the server mesh only on devices without local scene
-                // reconstruction. Person occlusion remains an independent ARKit pass.
-                if ARWorldTrackingConfiguration.supportsSceneReconstruction(
-                    .meshWithClassification
-                ) {
-                    self.aiDepthRenderer.clear()
-                    self.roomRealityRenderer.isPhysicalOcclusionVisible = false
-                    self.setPhysicalSceneOcclusion(enabled: true)
-                    self.aiEnhancementStatus = .active(
-                        latencyMilliseconds: depth.totalLatencyMilliseconds,
-                        samMaskCount: depth.samMaskCount
-                    )
-                    return
-                }
+                // This response path is reached only on hardware without live scene
+                // reconstruction. Its fused server mesh is the finite static fallback;
+                // person occlusion remains an independent ARKit pass.
                 do {
                     self.roomRealityRenderer.isPhysicalOcclusionVisible = false
                     // A non-LiDAR device has no live reconstruction depth writer, so
@@ -1148,7 +1165,7 @@ final class ARSessionController: NSObject, ObservableObject {
         aiEnhancementClient.cancel()
         aiDepthRenderer.clear()
         activateLocalOcclusionFallback()
-        aiEnhancementStatus = .waiting
+        aiEnhancementStatus = Self.hasLiveSceneReconstruction ? .localLiDAR : .waiting
     }
 
     func setFloorMeterEnabled(_ enabled: Bool) {
@@ -1192,6 +1209,16 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         if !isFloorMeterEnabled { setFloorMeterEnabled(true) }
+        let cameraPosition = SIMD3<Float>(
+            frame.camera.transform.columns.3.x,
+            frame.camera.transform.columns.3.y,
+            frame.camera.transform.columns.3.z
+        )
+        if calibratedFloorY == nil,
+           let floor = floorSurfaceTracker.estimate(cameraY: cameraPosition.y), floor.isStable {
+            finishDeviceFloorCalibration(floorY: floor.y, cameraPosition: cameraPosition)
+            return
+        }
         spatialCalibrationMode = .deviceFloor
         spatialCalibrationSamples.removeAll()
         spatialCalibrationStartedAt = nil
@@ -1214,6 +1241,16 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
         if !isFloorMeterEnabled { setFloorMeterEnabled(true) }
+        if calibratedCeilingY == nil, let roomPlanCeilingY {
+            finishCeilingCalibration(ceilingY: roomPlanCeilingY)
+            return
+        }
+        let cameraY = frame.camera.transform.columns.3.y
+        if calibratedCeilingY == nil,
+           let ceilingY = floorSurfaceTracker.ceilingEstimate(cameraY: cameraY) {
+            finishCeilingCalibration(ceilingY: ceilingY)
+            return
+        }
         spatialCalibrationMode = .ceiling
         spatialCalibrationSamples.removeAll()
         spatialCalibrationStartedAt = nil
@@ -1259,7 +1296,7 @@ final class ARSessionController: NSObject, ObservableObject {
         let sample: SIMD3<Float>
         switch mode {
         case .deviceFloor:
-            guard forward.y >= 0.90 else {
+            guard forward.y >= 0.75 else {
                 spatialCalibrationSamples.removeAll()
                 spatialCalibrationStartedAt = nil
                 spatialCalibrationStatus = "Telefon yatay değil — arka kamera doğrudan tavana bakmalı"
@@ -1268,7 +1305,7 @@ final class ARSessionController: NSObject, ObservableObject {
             }
             sample = cameraPosition
         case .ceiling:
-            guard forward.y >= 0.18,
+            guard forward.y >= 0.08,
                   let arView, arView.bounds.width > 1, arView.bounds.height > 1 else {
                 spatialCalibrationSamples.removeAll()
                 spatialCalibrationStartedAt = nil
@@ -1277,9 +1314,24 @@ final class ARSessionController: NSObject, ObservableObject {
                 return
             }
             let point = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
+            if let result = arView.raycast(
+                from: point,
+                allowing: .existingPlaneGeometry,
+                alignment: .horizontal
+            ).first(where: {
+                ($0.anchor as? ARPlaneAnchor)?.classification == .ceiling
+                    && $0.worldTransform.columns.3.y > cameraPosition.y + 0.25
+            }) {
+                sample = SIMD3<Float>(
+                    result.worldTransform.columns.3.x,
+                    result.worldTransform.columns.3.y,
+                    result.worldTransform.columns.3.z
+                )
+                break
+            }
             guard let depth = sceneDepthSample(frame: frame, in: arView, at: point),
-                  depth.worldPoint.y > cameraPosition.y + 0.30,
-                  depth.worldNormal.map({ abs($0.y) >= 0.70 }) ?? true else {
+                  depth.worldPoint.y > cameraPosition.y + 0.25,
+                  depth.worldNormal.map({ abs($0.y) >= 0.50 }) ?? true else {
                 spatialCalibrationSamples.removeAll()
                 spatialCalibrationStartedAt = nil
                 spatialCalibrationStatus = "Merkezde düz ve boş bir tavan yüzeyi bulunamadı"
@@ -1297,7 +1349,7 @@ final class ARSessionController: NSObject, ObservableObject {
             case .ceiling:
                 movement = abs(first.y - sample.y)
             }
-            if movement > (mode == .deviceFloor ? 0.025 : 0.060) {
+            if movement > (mode == .deviceFloor ? 0.040 : 0.100) {
                 spatialCalibrationSamples.removeAll()
                 spatialCalibrationStartedAt = frame.timestamp
                 spatialCalibrationStatus = "Ölçüm hareket etti — 1 saniye sabit kal"
@@ -1341,7 +1393,7 @@ final class ARSessionController: NSObject, ObservableObject {
         cameraPosition: SIMD3<Float>
     ) {
         guard floorY.isFinite else { return }
-        let resolvedFloorY = roomPlanFloorY ?? floorY
+        let resolvedFloorY = floorY
         do {
             try projectStore.setCalibratedFloorY(resolvedFloorY)
             calibratedFloorY = resolvedFloorY
@@ -1359,7 +1411,9 @@ final class ARSessionController: NSObject, ObservableObject {
             finishSpatialCalibration()
             shouldSaveWorldMapWhenReady = true
             scheduleReadinessRecovery()
-            let source = roomPlanFloorY == nil ? "telefon ölçümü" : "RoomPlan doğrulaması"
+            let source = roomPlanFloorY.map { abs($0 - resolvedFloorY) <= 0.04 } == true
+                ? "RoomPlan doğrulaması"
+                : "telefon ölçümü"
             publishStatus("Zemin Y 97.00 olarak kilitlendi — \(source)", color: .green)
         } catch {
             spatialCalibrationStatus = error.localizedDescription
@@ -1369,7 +1423,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func finishCeilingCalibration(ceilingY: Float) {
         guard ceilingY.isFinite else { return }
-        let resolvedCeilingY = roomPlanCeilingY ?? ceilingY
+        let resolvedCeilingY = ceilingY
         do {
             try projectStore.setCalibratedCeilingY(resolvedCeilingY)
             calibratedCeilingY = resolvedCeilingY
@@ -1620,6 +1674,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func clearSelectedObject() {
+        persistSelectedObjectScale()
         persistSelectedLightSettings()
         selectedEntityID = nil
         selectedLightSettings = nil
@@ -3352,8 +3407,60 @@ final class ARSessionController: NSObject, ObservableObject {
     private func updateKnownFloor(from anchors: [ARAnchor]) {
         guard let cameraY = arView?.session.currentFrame?.camera.transform.columns.3.y else { return }
         floorSurfaceTracker.update(with: anchors, cameraY: cameraY)
-        if let estimate = floorSurfaceTracker.estimate(cameraY: cameraY), estimate.isStable {
+        let floorEstimate = floorSurfaceTracker.estimate(cameraY: cameraY)
+        if let estimate = floorEstimate, estimate.isStable {
             lastKnownFloorY = estimate.y
+        }
+        let ceilingEstimate = floorSurfaceTracker.ceilingEstimate(cameraY: cameraY)
+        if let ceilingEstimate {
+            lastKnownCeilingY = ceilingEstimate
+        }
+        adoptLiveSpatialCalibrationIfNeeded(
+            floor: floorEstimate?.isStable == true ? floorEstimate?.y : nil,
+            ceiling: ceilingEstimate
+        )
+    }
+
+    /// Classified ARKit planes/mesh should make the floor and ceiling usable without
+    /// forcing the user through two manual calibration gestures. Manual calibration
+    /// remains available to replace either value when a room has unusual geometry.
+    private func adoptLiveSpatialCalibrationIfNeeded(floor: Float?, ceiling: Float?) {
+        var resolvedFloor = calibratedFloorY
+        var resolvedCeiling = calibratedCeilingY
+        var changed = false
+
+        if resolvedFloor == nil, let floor, floor.isFinite {
+            resolvedFloor = floor
+            changed = true
+        }
+        if resolvedCeiling == nil,
+           let ceiling,
+           ceiling.isFinite,
+           let resolvedFloor,
+           (1.50...6.50).contains(ceiling - resolvedFloor) {
+            resolvedCeiling = ceiling
+            changed = true
+        }
+        guard changed else { return }
+
+        do {
+            try projectStore.reconcileSpatialCalibration(
+                floorY: resolvedFloor,
+                ceilingY: resolvedCeiling
+            )
+            calibratedFloorY = resolvedFloor
+            calibratedCeilingY = resolvedCeiling
+            if let resolvedFloor {
+                lastKnownFloorY = resolvedFloor
+                floorSurfaceTracker.setCalibratedFloor(resolvedFloor)
+            }
+            if let resolvedCeiling {
+                lastKnownCeilingY = resolvedCeiling
+            }
+            updateSpatialCalibrationSummary()
+        } catch {
+            // Live anchors continue to be usable for placement even if the small
+            // calibration metadata write cannot be completed in this frame.
         }
     }
 
@@ -4701,6 +4808,7 @@ final class ARSessionController: NSObject, ObservableObject {
         settings.isEnabled = isEnabled
         previewSelectedLight(settings)
         persistSelectedLightSettings()
+        publishStatus(isEnabled ? "Sanal ışık açıldı" : "Sanal ışık kapatıldı", color: .green)
     }
 
     func setSelectedLightIntensity(_ lumens: Float) {
@@ -4899,7 +5007,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private func apply(settings: VirtualLightSettings, to light: SpotLight, prop: PropKind) {
         light.isEnabled = settings.isEnabled
-        light.light.intensity = settings.intensityLumens
+        light.light.intensity = settings.isEnabled ? settings.intensityLumens : 0
         light.light.color = Self.colorTemperature(kelvin: settings.temperatureKelvin)
         light.light.innerAngleInDegrees = settings.coneAngleDegrees
             * (1 - settings.effectiveBeamSoftness * 0.72)
@@ -4949,7 +5057,11 @@ final class ARSessionController: NSObject, ObservableObject {
            let id = UUID(uuidString: String(idText)),
            let emitter = renderedLightEmitters[id] {
             var material = UnlitMaterial()
-            material.color = .init(tint: Self.colorTemperature(kelvin: settings.temperatureKelvin))
+            material.color = .init(
+                tint: settings.isEnabled
+                    ? Self.colorTemperature(kelvin: settings.temperatureKelvin)
+                    : UIColor(white: 0.16, alpha: 1)
+            )
             if var model = emitter.components[ModelComponent.self] {
                 model.materials = [material]
                 emitter.components.set(model)
@@ -5432,7 +5544,13 @@ final class ARSessionController: NSObject, ObservableObject {
                 alpha: baseAlpha * 0.78
             )
         case .ceiling:
-            break
+            addContactShadowLayer(
+                to: entity,
+                name: "cinear.ceiling-contact-shadow",
+                scale: [extents.x * 0.88, 0.004, extents.z * 0.88],
+                position: [bounds.center.x, -0.0025, bounds.center.z],
+                alpha: baseAlpha * 0.72
+            )
         }
     }
 
@@ -5459,11 +5577,18 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func contactShadowMaterial(alpha: Float) -> PhysicallyBasedMaterial {
-        RealityMaterialRecipe(
-            0.010, 0.012, 0.016,
-            alpha: alpha,
-            roughness: 1
-        ).makeMaterial()
+        // Keep the tint opaque and express transparency only through blending.
+        // Supplying `alpha` to both made RealityKit multiply it twice, leaving a
+        // nominal 20% contact shadow at roughly 4% and practically invisible.
+        let opacity = min(max(alpha, 0), 1)
+        var material = PhysicallyBasedMaterial()
+        material.baseColor = .init(
+            tint: UIColor(red: 0.010, green: 0.012, blue: 0.016, alpha: 1)
+        )
+        material.roughness = .init(floatLiteral: 1)
+        material.metallic = .init(floatLiteral: 0)
+        material.blending = .transparent(opacity: .init(floatLiteral: opacity))
+        return material
     }
 
     private func updateAmbientLighting(using frame: ARFrame) {
@@ -5501,6 +5626,11 @@ final class ARSessionController: NSObject, ObservableObject {
                var model = inner.model {
                 model.materials = [contactShadowMaterial(alpha: baseAlpha * 0.78)]
                 inner.model = model
+            }
+            if let ceiling = entity.findEntity(named: "cinear.ceiling-contact-shadow") as? ModelEntity,
+               var model = ceiling.model {
+                model.materials = [contactShadowMaterial(alpha: baseAlpha * 0.72)]
+                ceiling.model = model
             }
         }
     }
@@ -6006,6 +6136,10 @@ final class ARSessionController: NSObject, ObservableObject {
 
 extension ARSessionController: @preconcurrency ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        // RoomPlan owns the shared ARSession while its full-screen scanner is open.
+        // Running placement, effects, projector refreshes and AI work in parallel
+        // steals the same frame budget and makes the scan overlay visibly stutter.
+        guard !isRoomScanActive else { return }
         updatePlacementTrackingStability(using: frame)
         updatePendingAlignment(using: frame)
         updatePendingPlacement(using: frame)
@@ -6015,15 +6149,21 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         updateFloorMeter(using: frame)
         updateBloodWaterfalls(timestamp: frame.timestamp)
         updateLiveAppleTracking(using: frame)
-        if frame.timestamp - lastProjectorRefreshTimestamp >= 0.16 {
+        if frame.timestamp - lastProjectorRefreshTimestamp >= 0.75 {
             lastProjectorRefreshTimestamp = frame.timestamp
             refreshProjectorLights()
         }
         submitFrameToAIIfNeeded(frame)
     }
 
+    private static var hasLiveSceneReconstruction: Bool {
+        ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification)
+    }
+
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
-        updateKnownFloor(from: anchors)
+        if !isRoomScanActive {
+            updateKnownFloor(from: anchors)
+        }
         var shouldScheduleAutomaticSave = false
         for anchor in anchors {
             guard let descriptor = PropKind.descriptor(from: anchor.name) else { continue }
@@ -6057,6 +6197,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 
     func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+        guard !isRoomScanActive else { return }
         updateKnownFloor(from: anchors)
     }
 
@@ -6367,7 +6508,10 @@ private final class FloorSurfaceTracker {
     private var calibratedFloorY: Float?
     private var classifiedPlaneLevels: [UUID: Float] = [:]
     private var classifiedMeshLevels: [UUID: Float] = [:]
+    private var classifiedCeilingPlaneLevels: [UUID: Float] = [:]
+    private var classifiedCeilingMeshLevels: [UUID: Float] = [:]
     private var liveHistory: [Float] = []
+    private var liveCeilingHistory: [Float] = []
     private var latestLiveSource: PlacementSurfaceSource = .classifiedFloorMesh
 
     func reset() {
@@ -6375,7 +6519,10 @@ private final class FloorSurfaceTracker {
         calibratedFloorY = nil
         classifiedPlaneLevels.removeAll()
         classifiedMeshLevels.removeAll()
+        classifiedCeilingPlaneLevels.removeAll()
+        classifiedCeilingMeshLevels.removeAll()
         liveHistory.removeAll()
+        liveCeilingHistory.removeAll()
         latestLiveSource = .classifiedFloorMesh
     }
 
@@ -6397,6 +6544,8 @@ private final class FloorSurfaceTracker {
         for anchor in anchors {
             classifiedPlaneLevels[anchor.identifier] = nil
             classifiedMeshLevels[anchor.identifier] = nil
+            classifiedCeilingPlaneLevels[anchor.identifier] = nil
+            classifiedCeilingMeshLevels[anchor.identifier] = nil
         }
     }
 
@@ -6411,11 +6560,24 @@ private final class FloorSurfaceTracker {
                 } else {
                     classifiedPlaneLevels[plane.identifier] = nil
                 }
+                if plane.alignment == .horizontal,
+                   plane.classification == .ceiling,
+                   plane.transform.columns.3.y.isFinite {
+                    classifiedCeilingPlaneLevels[plane.identifier] = plane.transform.columns.3.y
+                } else {
+                    classifiedCeilingPlaneLevels[plane.identifier] = nil
+                }
             } else if let mesh = anchor as? ARMeshAnchor {
-                if let level = Self.classifiedFloorLevel(in: mesh), level.isFinite {
-                    classifiedMeshLevels[mesh.identifier] = level
+                let levels = Self.classifiedHorizontalLevels(in: mesh)
+                if let floor = levels.floor, floor.isFinite {
+                    classifiedMeshLevels[mesh.identifier] = floor
                 } else {
                     classifiedMeshLevels[mesh.identifier] = nil
+                }
+                if let ceiling = levels.ceiling, ceiling.isFinite {
+                    classifiedCeilingMeshLevels[mesh.identifier] = ceiling
+                } else {
+                    classifiedCeilingMeshLevels[mesh.identifier] = nil
                 }
             }
         }
@@ -6435,16 +6597,23 @@ private final class FloorSurfaceTracker {
             candidates = meshCandidates
             latestLiveSource = .classifiedFloorMesh
         }
-        guard let candidate = candidates.min(by: {
+        if let candidate = candidates.min(by: {
             abs($0 - expectedFloor) < abs($1 - expectedFloor)
-        }) else { return }
-
-        if let last = liveHistory.last, abs(last - candidate) > 0.18 {
-            liveHistory.removeAll()
+        }) {
+            Self.appendStable(candidate, to: &liveHistory, resetDistance: 0.18)
         }
-        liveHistory.append(candidate)
-        if liveHistory.count > 24 {
-            liveHistory.removeFirst(liveHistory.count - 24)
+
+        let ceilingPlaneCandidates = classifiedCeilingPlaneLevels.values.filter {
+            $0 > cameraY + 0.25 && $0 < cameraY + 4.5
+        }
+        let ceilingMeshCandidates = classifiedCeilingMeshLevels.values.filter {
+            $0 > cameraY + 0.25 && $0 < cameraY + 4.5
+        }
+        let ceilingCandidates = ceilingPlaneCandidates.isEmpty
+            ? ceilingMeshCandidates
+            : ceilingPlaneCandidates
+        if let ceiling = ceilingCandidates.min() {
+            Self.appendStable(ceiling, to: &liveCeilingHistory, resetDistance: 0.22)
         }
     }
 
@@ -6499,25 +6668,62 @@ private final class FloorSurfaceTracker {
         return nil
     }
 
-    private static func classifiedFloorLevel(in anchor: ARMeshAnchor) -> Float? {
+    func ceilingEstimate(cameraY: Float) -> Float? {
+        guard cameraY.isFinite,
+              let median = Self.median(liveCeilingHistory),
+              median > cameraY + 0.25,
+              median < cameraY + 4.5 else { return nil }
+        let spread = Self.median(liveCeilingHistory.map { abs($0 - median) })
+            ?? .greatestFiniteMagnitude
+        guard liveCeilingHistory.count >= 3, spread <= 0.045 else { return nil }
+        return median
+    }
+
+    private static func appendStable(
+        _ value: Float,
+        to history: inout [Float],
+        resetDistance: Float
+    ) {
+        if let last = history.last, abs(last - value) > resetDistance {
+            history.removeAll()
+        }
+        history.append(value)
+        if history.count > 24 {
+            history.removeFirst(history.count - 24)
+        }
+    }
+
+    private static func classifiedHorizontalLevels(
+        in anchor: ARMeshAnchor
+    ) -> (floor: Float?, ceiling: Float?) {
         let geometry = anchor.geometry
-        guard geometry.faces.count > 0 else { return nil }
+        guard geometry.faces.count > 0 else { return (nil, nil) }
         let maximumSamples = 240
         let step = max(1, geometry.faces.count / maximumSamples)
-        var levels: [Float] = []
-        levels.reserveCapacity(min(geometry.faces.count, maximumSamples))
+        var floorLevels: [Float] = []
+        var ceilingLevels: [Float] = []
+        floorLevels.reserveCapacity(min(geometry.faces.count, maximumSamples))
+        ceilingLevels.reserveCapacity(min(geometry.faces.count, maximumSamples))
 
         for faceIndex in stride(from: 0, to: geometry.faces.count, by: step) {
-            guard classification(of: faceIndex, in: geometry) == .floor else { continue }
+            let faceClassification = classification(of: faceIndex, in: geometry)
+            guard faceClassification == .floor || faceClassification == .ceiling else { continue }
             let indices = vertexIndices(of: faceIndex, in: geometry)
             guard indices.count == 3 else { continue }
             let vertices = indices.map { vertex(at: $0, in: geometry) }
             let localCenter = (vertices[0] + vertices[1] + vertices[2]) / 3
             let worldCenter = anchor.transform * SIMD4(localCenter.x, localCenter.y, localCenter.z, 1)
-            if worldCenter.y.isFinite { levels.append(worldCenter.y) }
+            guard worldCenter.y.isFinite else { continue }
+            if faceClassification == .floor {
+                floorLevels.append(worldCenter.y)
+            } else {
+                ceilingLevels.append(worldCenter.y)
+            }
         }
-        guard levels.count >= 3 else { return nil }
-        return median(levels)
+        return (
+            floorLevels.count >= 3 ? median(floorLevels) : nil,
+            ceilingLevels.count >= 3 ? median(ceilingLevels) : nil
+        )
     }
 
     private static func classification(

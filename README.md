@@ -23,13 +23,16 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
   mekan mesh'iyle occlusion
-- Istege bagli PC destekli Depth Anything V2 Small + opsiyonel SAM 2.1 Tiny derinlik fuz yonu;
-  iPhone kamera ve LiDAR karesini ayni Wi-Fi'daki RTX bilgisayara yollar, LiDAR ile
-  metreye kalibre edilen sonuc RealityKit'te gorunmez occlusion mesh'i olur
+- Istege bagli PC destekli Depth Anything V2 Small + opsiyonel SAM 2.1 Tiny altyapisi;
+  LiDAR bulunmayan uygun cihazlarda statik derinlik yedegi, sonraki yapay zeka
+  efektlerinde ise yerel sunucu olarak kullanilmak uzere baglanti destegi korunur
 - AI servisi kapali veya ulasilamazsa stale AI mesh'ini kaldirip kesintisiz olarak
   cihazdaki ARKit scene depth, person depth ve LiDAR mesh occlusion'a geri donme
 - Karede kisi maskesi goruldugunde gecikmeli PC mesh'ini aninda devre disi birakip
   ARKit person-depth'i one alma; kisi kaybolana kadar uzak sonucu sahneye uygulamama
+- LiDAR destekli iPhone'da zaten cizilmeyen PC derinlik karesi icin kamera JPEG'i
+  hazirlayip gondermeme; ana goruntu is parcacigindaki periyodik takilmayi kaldirip
+  kamera ile ayni ana ait yerel mesh'i tek occlusion kaynagi olarak kullanma
 - Yerlesim sirasinda uzak AI occlusion'ini durdurma; AR anchor kesinlesmeden modeli
   gostermeme, 350 ms'den eski veya kamera pozuyla sikica uyusmayan AI karesini reddetme ve
   LiDAR/AI derinliklerini ust uste cizmeden nesne kesilmesini engelleme
@@ -42,6 +45,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - Tarama ekraninda canli zemin/duvar/nesne sayaci; en az bir zemin ve bir duvar
   bulunmadan hatali veya bos taramayi bitirmeyi engelleme
+- RoomPlan acikken ana AR denetleyicisindeki yerlestirme, efekt, projektor, AI ve
+  LiDAR siniflandirma islerini durdurma; bilgi sayacini 250 ms aralikla yenileyerek
+  kamera ve beyaz tarama cizgilerine kare butcesini birakma
 - RoomPlan acilirken kararlı AR karesini bekleme; `worldTrackingFailure` sonrasinda
   paylasilan oturumu guvenli yeniden calistiran ve Turkce yonlendirme veren tekrar deneme
 - RoomPlan donusunde callback beklemeden mevcut kamera frame'ini yoklayan AR hazirlik kurtarmasi
@@ -78,6 +84,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
+- Isik panelinde her ekran boyunda gorunen kapatma dugmesi ve kaydirilabilir ayarlar;
+  kapatirken isik degerlerini kaydetme ve hedef secim modunu sonlandirma; isik kapali
+  iken SpotLight gucunu sifirlama, projektor izini kaldirma ve armaturu karartma
 - Dekor konumunu dunya anchor'ina kilitleme; secili her nesne icin temas noktasini
   bozmayan yuzde 25-300 boyut kaydiricisi, artir/azalt ve 1:1 sifirlama; olculu
   kataloglarda yanlislikla olcek bozulmasin diye pinch yerine kontrollu panel,
@@ -100,11 +109,14 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - RoomPlan'in tanidigi masa, sandalye ve buyuk mobilyalari gercek kamera gorunumunde
   gorunmez derinlik geometrisine cevirerek sanal nesnelerde kalici occlusion
 - Modelin gercek gorsel sinirindan uretilen iki katmanli yumusak temas golgesi;
-  ARKit ortam isigi degistikce golge yogunlugu da yumusakca uyarlanir ve Film & Golge
-  panelinden yuzde 0-200 araliginda ayarlanir
+  saydamligi iki kez uygulamayan gorunur materyal, tavan armaturu temas golgesi ve
+  nesne boyut panelinden dogrudan yuzde 0-200 golge ayari
 - Telefon zeminde sabitken o seviyeyi Minecraft benzeri `Y 97.00` katmani olarak
   kilitleyen, tavani ayni koordinatta olcen kalici sistem; tamamlanmis RoomPlan taramasi
   varsa cok-ornekli zemin/tavan kotu eski veya hatali tek-poz kalibrasyonu otomatik duzeltir
+- Siniflandirilmis ARKit duzlemi veya LiDAR mesh yeterince kararli oldugunda zemin ve
+  tavani otomatik kilitleme; manuel tavan olcumunde once sonlu `.ceiling` duzlemini,
+  sonra yumusatilmis egim esikli merkez derinligini kullanma
 - Yeni dekor anchor'i oturuma eklendiginde dunya haritasini otomatik guncelleme
 - RoomPlan gecisi veya relocalization bir uygulama anchor'ini gecici kaldirirsa gorseli
   silmeden canli anchor'a yeniden baglama; geri gelmeyen anchor'i son guvenilir dunya
@@ -151,7 +163,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
    olarak degisir. Tarama ekranindaki `Zemin / Duvar / Nesne` sayacinda en az bir
    zemin ve bir duvar gorulmeden `Taramayi Bitir` etkinlesmez.
-   `Koordinat` dugmesiyle olceri acin. `Telefonla Zemin Y97`ye basip telefonu ekrani
+   `Koordinat` dugmesiyle olceri acin. Uygulama siniflandirilmis LiDAR/ARKit zemini ve
+   tavani yeterince kararli gorurse kotlari otomatik kilitler. Gerekirse `Zemini Bul · Y97`ye basip telefonu ekrani
    zemine, arka kamerasi tavana bakacak sekilde bir saniye sabit birakin; bu fiziksel
    seviye `Y 97.00` olur. Ardindan `Tavani Olc` ile merkez artiyi bos tavana tutun;
    tavan katmani ve metre cinsinden oda yuksekligi ayni koordinatta hesaplanir.
@@ -223,6 +236,11 @@ IP ile yeniler ve iPhone adresi elle giris istemeden alir. Ilk acilista etkin
 Wi-Fi/Ethernet adresi otomatik secilir ve VMware gibi sanal adaptorler atlanir.
 Bonjour engellenirse terminaldeki adres ayni alana elle yazilabilir; Safari'de
 kullanilan `/health` son ekli adres yapistirilsa da uygulama sunucu kokunu ayiklar.
+
+LiDAR destekli iPhone'da PC'ye canli kamera karesi gonderilmez; PC derinligi bu
+cihazlarda kamera ile ayni ana ait olmadigi icin sabitlemeyi iyilestirmez. Canli
+LiDAR mesh ve insan derinligi dogrudan cihazda kullanilir. LiDAR bulunmayan bir
+cihazda PC yolu statik geometri yedegi olarak calismaya devam eder.
 
 AI acikken hassas canli derinlik ile kaba RoomPlan mobilya kutulari ayni anda
 occlusion yazmaz. Bu, masa kenarinda sanal nesnenin yariya kesilmesini engeller;

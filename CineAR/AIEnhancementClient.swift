@@ -7,6 +7,7 @@ import simd
 
 enum AIEnhancementStatus: Equatable {
     case disabled
+    case localLiDAR
     case waiting
     case waitingForDepth
     case stabilizing
@@ -16,6 +17,7 @@ enum AIEnhancementStatus: Equatable {
     var title: String {
         switch self {
         case .disabled: "Kapalı"
+        case .localLiDAR: "Canlı LiDAR modu · PC karesi gönderilmiyor"
         case .waiting: "PC bağlantısı bekleniyor"
         case .waitingForDepth: "PC bağlı · LiDAR karesi bekleniyor"
         case .stabilizing: "Kamera yavaşlayınca AI derinliği uygulanacak"

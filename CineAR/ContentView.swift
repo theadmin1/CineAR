@@ -448,10 +448,10 @@ struct ContentView: View {
                     LabeledContent("Uygulama sürümü", value: appVersionText)
 
                     Text(
-                        "iPhone kamera ve LiDAR derinliğini aynı Wi-Fi'daki PC'ye yollar. "
-                            + "Depth Anything boşlukları tamamlar; SAM 2 nesne sınırlarını ayırır. "
-                            + "Sonuç yalnız sanal nesnelerin gerçek insan ve mobilyaların arkasında "
-                            + "doğru kesilmesi için görünmez derinlik ağı olarak kullanılır."
+                        "LiDAR destekli iPhone'da kamera ile aynı ana ait yerel mesh kullanılır; "
+                            + "canlı kare PC'ye gönderilmez. Böylece ağ ve JPEG hazırlığı görüntüyü "
+                            + "takılmaz. PC bağlantısı LiDAR bulunmayan cihazdaki statik derinlik "
+                            + "yedekleri ve sonraki yapay zekâ efektleri için korunur."
                     )
                     .font(.footnote)
 
@@ -482,7 +482,7 @@ struct ContentView: View {
 
     private var aiStatusColor: Color {
         switch session.aiEnhancementStatus {
-        case .active: .green
+        case .active, .localLiDAR: .green
         case .failed: .red
         case .waiting, .waitingForDepth, .stabilizing: .orange
         case .disabled: .secondary
@@ -618,9 +618,18 @@ struct ContentView: View {
                     )
                 )
                 .labelsHidden()
+                Button {
+                    session.clearSelectedObject()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Işık ayarlarını kapat")
             }
 
             if let settings = session.selectedLightSettings {
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(spacing: 9) {
                 Button {
                     if session.isAimingLight {
                         session.cancelSelectedLightTargeting()
@@ -717,6 +726,28 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .font(.caption2.weight(.bold))
                 }
+
+                HStack(spacing: 8) {
+                    Text("Temas gölgesi")
+                        .font(.caption.weight(.semibold))
+                    Slider(
+                        value: Binding(
+                            get: { Double(session.contactShadowStrength) },
+                            set: { session.setContactShadowStrength(Float($0)) }
+                        ),
+                        in: 0...2,
+                        step: 0.05,
+                        onEditingChanged: { isEditing in
+                            if !isEditing { session.persistVisualStyle() }
+                        }
+                    )
+                    Text("%\(Int(session.contactShadowStrength * 100))")
+                        .font(.caption2.monospacedDigit())
+                        .frame(minWidth: 42)
+                }
+                    }
+                }
+                .frame(maxHeight: 340)
             }
 
             Text("Spot ışık sanal nesneleri aydınlatır; LiDAR yüzeyindeki yumuşak projektör izi kamera görünümünde hedef noktayı gösterir.")
@@ -783,6 +814,25 @@ struct ContentView: View {
                 }
                 .buttonStyle(.bordered)
                 .font(.caption.weight(.bold))
+            }
+
+            HStack(spacing: 8) {
+                Label("Gölge", systemImage: "circle.lefthalf.filled")
+                    .font(.caption.weight(.semibold))
+                Slider(
+                    value: Binding(
+                        get: { Double(session.contactShadowStrength) },
+                        set: { session.setContactShadowStrength(Float($0)) }
+                    ),
+                    in: 0...2,
+                    step: 0.05,
+                    onEditingChanged: { isEditing in
+                        if !isEditing { session.persistVisualStyle() }
+                    }
+                )
+                Text("%\(Int(session.contactShadowStrength * 100))")
+                    .font(.caption2.monospacedDigit())
+                    .frame(minWidth: 42)
             }
 
             Text("Boyut %25–%300 arasında sınırlıdır; yüzeye temas noktası ve dünya anchor'ı değişmez.")
@@ -1021,7 +1071,7 @@ struct ContentView: View {
                 Button {
                     session.beginDeviceFloorCalibration()
                 } label: {
-                    Label("Telefonla Zemin Y97", systemImage: "iphone.gen3")
+                    Label("Zemini Bul · Y97", systemImage: "square.and.arrow.down")
                 }
                 .buttonStyle(.borderedProminent)
                 .font(.caption2.weight(.semibold))
