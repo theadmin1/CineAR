@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.3`
-- Proje build numarası: `37`
+- Uygulama sürümü: `0.17.4`
+- Proje build numarası: `38`
 - Git dalı: `main`
-- Kaynak commit: `ab4f0097c949789e392d075e9188310b4ac9b556`
-- Oluşturulma zamanı: `2026-09-04 17:48:30 +03:00`
+- Kaynak commit: `f4075e78a9c98bb9e0ea1f92a85259fd26daf6f8`
+- Oluşturulma zamanı: `2026-09-05 18:16:44 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -262,7 +262,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 6800 | 285055 |
+| `CineAR/ARSessionController.swift` | 6788 | 284828 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -284,7 +284,7 @@ Yok.
 | `Docs/CODEMAGIC.md` | 86 | 4715 |
 | `Docs/DEVICE_TEST.md` | 208 | 14968 |
 | `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 308 | 20741 |
+| `README.md` | 311 | 20896 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
 | `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
@@ -1471,13 +1471,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.3;
+				MARKETING_VERSION = 0.17.4;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1494,12 +1494,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.3;
+				MARKETING_VERSION = 0.17.4;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -7124,7 +7124,9 @@ final class ARSessionController: NSObject, ObservableObject {
         settings: VirtualLightSettings
     ) {
         guard let id, let arView, let light = renderedLights[id], light.scene != nil,
-              settings.isEnabled, settings.intensityLumens > 1 else {
+              settings.isEnabled, settings.intensityLumens > 1,
+              let target = settings.projectorTarget,
+              let targetNormal = settings.projectorTargetNormal else {
             if let id, let footprint = renderedLightFootprints.removeValue(forKey: id) {
                 footprint.scene?.removeAnchor(footprint)
             }
@@ -7137,43 +7139,27 @@ final class ARSessionController: NSObject, ObservableObject {
             lightWorld.columns.3.y,
             lightWorld.columns.3.z
         )
-        let forward = simd_normalize(SIMD3<Float>(
-            -lightWorld.columns.2.x,
-            -lightWorld.columns.2.y,
-            -lightWorld.columns.2.z
-        ))
-
-        let target: SIMD3<Float>
-        let storedNormal: SIMD3<Float>?
-        if let storedTarget = settings.projectorTarget {
-            target = storedTarget
-            storedNormal = settings.projectorTargetNormal
-        } else if forward.y < -0.025,
-                  let floorY = lastKnownFloorY {
-            let distance = (floorY - origin.y) / forward.y
-            guard distance.isFinite, (0.15...20).contains(distance) else { return }
-            target = origin + forward * distance
-            storedNormal = [0, 1, 0]
-        } else {
+        let beam = target - origin
+        let distance = simd_length(beam)
+        guard distance.isFinite, distance >= 0.08, distance <= 20 else {
             if let footprint = renderedLightFootprints.removeValue(forKey: id) {
                 footprint.scene?.removeAnchor(footprint)
             }
             return
         }
-
-        let beam = target - origin
-        let distance = simd_length(beam)
-        guard distance.isFinite, distance >= 0.08, distance <= 20 else { return }
         let direction = beam / distance
-        var normal = storedNormal ?? -direction
+        var normal = targetNormal
         guard simd_length_squared(normal) > 0.000_001 else { return }
         normal = simd_normalize(normal)
         if simd_dot(normal, -direction) < 0 { normal = -normal }
 
         let halfAngle = settings.coneAngleDegrees * .pi / 360
-        let radius = min(max(tan(halfAngle) * distance, 0.045), 3.5)
-        let incidence = max(abs(simd_dot(direction, normal)), 0.28)
-        let elongatedRadius = min(radius / incidence, radius * 3.2)
+        // This is only a restrained camera-surface preview; the real SpotLight still
+        // lights virtual geometry. Large stacked white discs looked like solid decals
+        // and broke apart against the LiDAR mesh in device footage.
+        let radius = min(max(tan(halfAngle) * distance, 0.045), 1.20)
+        let incidence = max(abs(simd_dot(direction, normal)), 0.52)
+        let elongatedRadius = min(radius / incidence, radius * 1.55)
 
         let anchor: AnchorEntity
         let visualRoot: Entity
@@ -7215,7 +7201,9 @@ final class ARSessionController: NSObject, ObservableObject {
             normal,
             surfaceForward
         ))
-        visualRoot.position = target + normal * 0.006
+        // Keep the preview just in front of the reconstructed surface to avoid
+        // z-fighting while preserving normal scene occlusion by closer objects.
+        visualRoot.position = target + normal * 0.014
         visualRoot.orientation = simd_quatf(orientationMatrix)
 
         let factors: [Float] = [1.0, 0.82, 0.64, 0.46, 0.28]
@@ -7227,8 +7215,8 @@ final class ARSessionController: NSObject, ObservableObject {
             disc.scale = [radius * factor, 1, elongatedRadius * factor]
             let edgeWeight = Float(index + 1) / Float(factors.count)
             let alpha = CGFloat(
-                min(0.34, (0.018 + intensity * 0.105)
-                    * (0.55 + edgeWeight * (1.2 - settings.effectiveBeamSoftness * 0.45)))
+                min(0.028, (0.002 + intensity * 0.012)
+                    * (0.38 + edgeWeight * (0.78 - settings.effectiveBeamSoftness * 0.24)))
             )
             var material = UnlitMaterial()
             material.color = .init(tint: color.withAlphaComponent(alpha))
@@ -16794,8 +16782,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
   8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar
 - `Projektor Hedefini Sec` ile zemine, masaya veya duvara dokunup SpotLight'i tam
-  dunya koordinatina yoneltme; mesafe ve aciya gore olceklenen, egik yuzeyde elipse
-  donusen yumusak isik izi kamera gorunumunde hedef noktayi belirginlestirir
+  dunya koordinatina yoneltme; hedef secilmeden gercek yuzeye yapay iz cizilmez.
+  Hedef secildiginde iz en fazla 1,2 metre yaricapli, dusuk opaklikli ve egik
+  yuzeyde sinirli elips olarak gosterilir; boylece LiDAR yuzeyinde katı beyaz leke
+  ve parcalanma olusmaz
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
@@ -16909,8 +16899,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    `Projektor Hedefini Sec`e basin ve isin vuracagi yuzeye dokunun. Guc, renk
    sicakligi, spot acisi, kenar yumusakligi ve acik/kapali durumu degistirilebilir.
    RealityKit SpotLight sanal dekorlari ve golgelerini fiziksel olarak aydinlatir;
-   gercek kamera pikseli yeniden isiklandirilmaz, fakat LiDAR yuzeyine oturan saydam
-   projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
+   gercek kamera pikseli yeniden isiklandirilmaz. Hedef secildiginde LiDAR yuzeyine
+   oturan kucuk ve dusuk opaklikli projektor onizlemesi ayni hedefi gosterir; hedef
+   secilmediyse kamerada yapay beyaz yuzey cizilmez.
    Kompakt dock'taki `Film` satirindan alti canli renk gorunumunden birini secin;
    ayni ekrandaki `Temas golgesi` kaydiricisi nesne golgesini yuzde 0-200 arasinda
    ayarlar. Bu degerler mekana kaydedilir ve HEVC ekran kaydinda gorunur.

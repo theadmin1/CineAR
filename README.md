@@ -79,8 +79,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
   8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar
 - `Projektor Hedefini Sec` ile zemine, masaya veya duvara dokunup SpotLight'i tam
-  dunya koordinatina yoneltme; mesafe ve aciya gore olceklenen, egik yuzeyde elipse
-  donusen yumusak isik izi kamera gorunumunde hedef noktayi belirginlestirir
+  dunya koordinatina yoneltme; hedef secilmeden gercek yuzeye yapay iz cizilmez.
+  Hedef secildiginde iz en fazla 1,2 metre yaricapli, dusuk opaklikli ve egik
+  yuzeyde sinirli elips olarak gosterilir; boylece LiDAR yuzeyinde katı beyaz leke
+  ve parcalanma olusmaz
 - Yeni sanal lambalarda otomatik ortam aydinlatmasina karsi fark edilir 6000 lumen baslangic gucu
 - `Sahne Isigi` dugmesi mevcut son isigi dogrudan ayara acar; sahnede isik yoksa
   tavan isigi yerlestirme modunu baslatir, boylece kontrol paneli gizli kalmaz
@@ -194,8 +196,9 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    `Projektor Hedefini Sec`e basin ve isin vuracagi yuzeye dokunun. Guc, renk
    sicakligi, spot acisi, kenar yumusakligi ve acik/kapali durumu degistirilebilir.
    RealityKit SpotLight sanal dekorlari ve golgelerini fiziksel olarak aydinlatir;
-   gercek kamera pikseli yeniden isiklandirilmaz, fakat LiDAR yuzeyine oturan saydam
-   projektor izi kamera gorunumunde ayni hedefi gosterir ve gercek derinlikle ortulur.
+   gercek kamera pikseli yeniden isiklandirilmaz. Hedef secildiginde LiDAR yuzeyine
+   oturan kucuk ve dusuk opaklikli projektor onizlemesi ayni hedefi gosterir; hedef
+   secilmediyse kamerada yapay beyaz yuzey cizilmez.
    Kompakt dock'taki `Film` satirindan alti canli renk gorunumunden birini secin;
    ayni ekrandaki `Temas golgesi` kaydiricisi nesne golgesini yuzde 0-200 arasinda
    ayarlar. Bu degerler mekana kaydedilir ve HEVC ekran kaydinda gorunur.

@@ -5085,7 +5085,9 @@ final class ARSessionController: NSObject, ObservableObject {
         settings: VirtualLightSettings
     ) {
         guard let id, let arView, let light = renderedLights[id], light.scene != nil,
-              settings.isEnabled, settings.intensityLumens > 1 else {
+              settings.isEnabled, settings.intensityLumens > 1,
+              let target = settings.projectorTarget,
+              let targetNormal = settings.projectorTargetNormal else {
             if let id, let footprint = renderedLightFootprints.removeValue(forKey: id) {
                 footprint.scene?.removeAnchor(footprint)
             }
@@ -5098,43 +5100,27 @@ final class ARSessionController: NSObject, ObservableObject {
             lightWorld.columns.3.y,
             lightWorld.columns.3.z
         )
-        let forward = simd_normalize(SIMD3<Float>(
-            -lightWorld.columns.2.x,
-            -lightWorld.columns.2.y,
-            -lightWorld.columns.2.z
-        ))
-
-        let target: SIMD3<Float>
-        let storedNormal: SIMD3<Float>?
-        if let storedTarget = settings.projectorTarget {
-            target = storedTarget
-            storedNormal = settings.projectorTargetNormal
-        } else if forward.y < -0.025,
-                  let floorY = lastKnownFloorY {
-            let distance = (floorY - origin.y) / forward.y
-            guard distance.isFinite, (0.15...20).contains(distance) else { return }
-            target = origin + forward * distance
-            storedNormal = [0, 1, 0]
-        } else {
+        let beam = target - origin
+        let distance = simd_length(beam)
+        guard distance.isFinite, distance >= 0.08, distance <= 20 else {
             if let footprint = renderedLightFootprints.removeValue(forKey: id) {
                 footprint.scene?.removeAnchor(footprint)
             }
             return
         }
-
-        let beam = target - origin
-        let distance = simd_length(beam)
-        guard distance.isFinite, distance >= 0.08, distance <= 20 else { return }
         let direction = beam / distance
-        var normal = storedNormal ?? -direction
+        var normal = targetNormal
         guard simd_length_squared(normal) > 0.000_001 else { return }
         normal = simd_normalize(normal)
         if simd_dot(normal, -direction) < 0 { normal = -normal }
 
         let halfAngle = settings.coneAngleDegrees * .pi / 360
-        let radius = min(max(tan(halfAngle) * distance, 0.045), 3.5)
-        let incidence = max(abs(simd_dot(direction, normal)), 0.28)
-        let elongatedRadius = min(radius / incidence, radius * 3.2)
+        // This is only a restrained camera-surface preview; the real SpotLight still
+        // lights virtual geometry. Large stacked white discs looked like solid decals
+        // and broke apart against the LiDAR mesh in device footage.
+        let radius = min(max(tan(halfAngle) * distance, 0.045), 1.20)
+        let incidence = max(abs(simd_dot(direction, normal)), 0.52)
+        let elongatedRadius = min(radius / incidence, radius * 1.55)
 
         let anchor: AnchorEntity
         let visualRoot: Entity
@@ -5176,7 +5162,9 @@ final class ARSessionController: NSObject, ObservableObject {
             normal,
             surfaceForward
         ))
-        visualRoot.position = target + normal * 0.006
+        // Keep the preview just in front of the reconstructed surface to avoid
+        // z-fighting while preserving normal scene occlusion by closer objects.
+        visualRoot.position = target + normal * 0.014
         visualRoot.orientation = simd_quatf(orientationMatrix)
 
         let factors: [Float] = [1.0, 0.82, 0.64, 0.46, 0.28]
@@ -5188,8 +5176,8 @@ final class ARSessionController: NSObject, ObservableObject {
             disc.scale = [radius * factor, 1, elongatedRadius * factor]
             let edgeWeight = Float(index + 1) / Float(factors.count)
             let alpha = CGFloat(
-                min(0.34, (0.018 + intensity * 0.105)
-                    * (0.55 + edgeWeight * (1.2 - settings.effectiveBeamSoftness * 0.45)))
+                min(0.028, (0.002 + intensity * 0.012)
+                    * (0.38 + edgeWeight * (0.78 - settings.effectiveBeamSoftness * 0.24)))
             )
             var material = UnlitMaterial()
             material.color = .init(tint: color.withAlphaComponent(alpha))
