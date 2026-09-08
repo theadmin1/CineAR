@@ -214,6 +214,42 @@
     armaturu dolap veya yuksek raf ustune degil, yalniz siniflandirilmis ya da kalibre
     edilmis gercek tavan kotuna yerlestirilebilmeli.
 
+## Anlik LiDAR ortmesi regresyonu
+
+Bu kontroller gercek LiDAR iPhone'da yapilmalidir; Swift geometri testleri kamera,
+RealityKit derinlik testi ve termal performans yerine gecmez.
+
+1. Duvara sanal saat koy; mat bir kettle veya kutuyu gercekte onune yerlestir.
+   Telefonla saga/sola egil: saat yalniz gorus hattinda kalan kisimlarda gorunmeli,
+   tamamen kapandigi acida hic gorunmemeli. Ardindan gercek nesneyi hareket ettir;
+   eski konumunda kalici gorunmez delik kalmamali. Parlak kettle ile de tekrar et,
+   dusuk guvenli yuzeylerdeki sensor kayiplarini ayri kaydet.
+2. Kumas yigini ve uzerinde kutu bulunan masanin arkasina sanal nesne yerlestir.
+   Ortme RoomPlan'in dikdortgen mobilya kutusuna degil olculen gorunen yuzeye
+   uymali; kutu-duvar arasindaki bosluk ucgenle kapatilmamali. RoomPlan kaydinda
+   ayrintili kumas geometrisi beklenmez; bu test canli goruntu icindir.
+3. Ayni testi dikey/yatay telefon yonunde, yaklasip uzaklasarak, HEVC kaydi sirasinda,
+   oda taramasindan donuste ve kayitli projeyi yukledikten sonra tekrarla.
+   Kayitta da on/arka sirasi korunmali. Arka plana al, geri don, takibi gecici kaybet:
+   eski derinlik yuzu sabit bir maske gibi goruntude kalmamali.
+4. Koordinat panelindeki anlik LiDAR durumunu izle. Gorunen yuzde tum oda taramasinin
+   tamamlanma orani degil gecerli anlik ornek oranidir. Cihaz isindiginda veya
+   hesaplama geciktiginde kalite/hiz azalabilir; kritik termalde ARKit yedegi
+   kullanilir. Instruments ile 10 dakikalik kayitta CPU/GPU, bellek ve kare zamanini
+   olc; yeni yolun kuyruk biriktirmedigini ve hedef 30 fps'i dogrula.
+5. Eski hatali duvar kaplamasini silip yeniden yerlestir. Duvarin onundeki dolaba
+   dokunmak tum duvari one cekmemeli; yeni panel duvar duzlemine yakin kalmali.
+
+Otomatik geometri testleri (Mac/Swift):
+
+```sh
+swiftc CineAR/LiveDepthGeometry.swift Tools/test_live_depth_geometry.swift -o /tmp/cinear-depth-tests
+/tmp/cinear-depth-tests
+```
+
+Testler duz/egri yuzey, derinlik kopuklugu, eksik kose, guven degeri, gecersiz
+olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmistir.
+
 ## Baslangic kabul esikleri
 
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az

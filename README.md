@@ -32,7 +32,18 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   ARKit person-depth'i one alma; kisi kaybolana kadar uzak sonucu sahneye uygulamama
 - LiDAR destekli iPhone'da zaten cizilmeyen PC derinlik karesi icin kamera JPEG'i
   hazirlayip gondermeme; ana goruntu is parcacigindaki periyodik takilmayi kaldirip
-  kamera ile ayni ana ait yerel mesh'i tek occlusion kaynagi olarak kullanma
+  yerel ARKit mesh'ini taze ham LiDAR derinlik geometrisiyle tamamlama
+- Kettle, kumas yigini ve ust uste nesneler icin RoomPlan nesne sinifindan bagimsiz
+  anlik ortme: en fazla 256 x 192 derinlik ornegi, orta/yuksek guvenli olcumler,
+  on nesne-arka duvar arasini kapatmayan kenar filtresi ve 8-25 mm derinlik toleransi.
+  Tek arka plan isi ve tek asenkron mesh yuklemesi; en fazla 30 Hz, isinma veya
+  gecikmede dusuk cozunurluk/15 Hz. 100 ms'den eski veya kamera pozundan kopan
+  yuzey kaldirilir; ARKit mesh/person ortmesi yedek olarak acik kalir.
+  LiDAR cihazda kaba RoomPlan mobilya kutulari ek ortucu olarak kullanilmaz.
+  Koordinat panelindeki guven yuzdesi o anki derinlik orneklerine aittir; odanin
+  tamamlanma orani degildir. Bu ozellik RoomPlan'in kaydedilen semantik oda modelini
+  ayrintili bir nesne taramasina donusturmez. Parlak/cam/cok koyu yuzeylerde
+  sensorun olcemedigi bolgeler icin kusursuz ortme garanti edilemez.
 - Yerlesim sirasinda uzak AI occlusion'ini durdurma; AR anchor kesinlesmeden modeli
   gostermeme, 350 ms'den eski veya kamera pozuyla sikica uyusmayan AI karesini reddetme ve
   LiDAR/AI derinliklerini ust uste cizmeden nesne kesilmesini engelleme
@@ -82,6 +93,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
   RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
   yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
+  Dokunma duvar duzleminden en fazla 5 cm sapabilir; duzlem derinlik duzeltmesi
+  1,5 cm ile sinirlidir. Eski kayitli kaplamalar bu degisiklikle tasinmaz.
   On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
   tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
   Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.

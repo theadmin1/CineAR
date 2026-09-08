@@ -1070,6 +1070,10 @@ struct ContentView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(session.spatialCalibrationColor)
 
+            Text(session.liveOcclusionStatus)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
             HStack(spacing: 7) {
                 Button {
                     session.beginDeviceFloorCalibration()

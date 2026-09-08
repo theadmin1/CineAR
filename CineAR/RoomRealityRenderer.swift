@@ -273,7 +273,7 @@ final class RoomRealityRenderer {
                 world.columns.2.x, world.columns.2.y, world.columns.2.z
             ))
             guard abs(simd_dot(worldNormal, measuredNormal)) >= 0.96,
-                  abs(local.z) <= 0.12,
+                  abs(local.z) <= 0.05,
                   WallCladdingGeometry.contains([local.x, local.y], polygon: polygon) else { continue }
             let cuts = (associations.aperturesByWallID[wall.identifier] ?? []).compactMap {
                 apertureRect($0, relativeTo: wall, wallBounds: bounds)
@@ -283,7 +283,9 @@ final class RoomRealityRenderer {
                     && local.y >= $0.minY && local.y <= $0.maxY
             }) else { continue }
             let center = bounds.center
-            let worldCenter = world * SIMD4<Float>(center.x, center.y, local.z, 1)
+            // A foreground cabinet must not pull the entire wall into the room.
+            let depthRefinement = min(max(local.z, -0.015), 0.015)
+            let worldCenter = world * SIMD4<Float>(center.x, center.y, depthRefinement, 1)
             let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
             let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
             var transform = world

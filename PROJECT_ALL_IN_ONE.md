@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.4`
-- Proje build numarası: `38`
+- Uygulama sürümü: `0.17.5`
+- Proje build numarası: `39`
 - Git dalı: `unavailable`
 - Kaynak commit: `unavailable`
-- Oluşturulma zamanı: `2026-09-08 13:16:18 +03:00`
+- Oluşturulma zamanı: `2026-09-08 15:09:10 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -19,6 +19,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 
 - Swift + SwiftUI kullanıcı arayüzü
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
+- Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma
 - Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i
 - RoomPlan ile semantik oda taraması, canlı zemin/duvar/nesne sayacı ve doğrulanmış `room.json` üretimi
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
@@ -128,6 +129,8 @@ CineAR/BundledRoomRealityAssetProvider.swift
 CineAR/CineARApp.swift
 CineAR/ContentView.swift
 CineAR/Info.plist
+CineAR/LiveDepthGeometry.swift
+CineAR/LiveDepthOcclusionRenderer.swift
 CineAR/ProfessionalRecorder.swift
 CineAR/PropKind.swift
 CineAR/RealityTheme.swift
@@ -202,6 +205,7 @@ Tools/fetch_wall_textures.ps1
 Tools/generate_all_in_one_markdown.ps1
 Tools/generate_wall_assets.py
 Tools/render_usdz_thumbnails.py
+Tools/test_live_depth_geometry.swift
 Tools/test_wall_cladding_geometry.swift
 Tools/validate_usdz_assets.py
 ````
@@ -282,40 +286,43 @@ Yok.
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
-| `CineAR.xcodeproj/project.pbxproj` | 280 | 13806 |
+| `CineAR.xcodeproj/project.pbxproj` | 288 | 14804 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 6885 | 289549 |
+| `CineAR/ARSessionController.swift` | 6914 | 290976 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 180 | 6728 |
-| `CineAR/ContentView.swift` | 1474 | 62812 |
+| `CineAR/ContentView.swift` | 1478 | 62936 |
 | `CineAR/Info.plist` | 62 | 2153 |
+| `CineAR/LiveDepthGeometry.swift` | 91 | 4027 |
+| `CineAR/LiveDepthOcclusionRenderer.swift` | 214 | 10898 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 413 | 17104 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
-| `CineAR/RoomRealityRenderer.swift` | 2236 | 87612 |
+| `CineAR/RoomRealityRenderer.swift` | 2238 | 87768 |
 | `CineAR/RoomScanner.swift` | 1177 | 44411 |
 | `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
-| `codemagic.yaml` | 149 | 5039 |
+| `codemagic.yaml` | 159 | 5414 |
 | `Docs/CODEMAGIC.md` | 86 | 4708 |
-| `Docs/DEVICE_TEST.md` | 242 | 17616 |
+| `Docs/DEVICE_TEST.md` | 278 | 19717 |
 | `Docs/ICON_PROMPT.md` | 25 | 1421 |
-| `README.md` | 370 | 24743 |
+| `README.md` | 383 | 25763 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
 | `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
-| `Tools/generate_all_in_one_markdown.ps1` | 373 | 20058 |
+| `Tools/generate_all_in_one_markdown.ps1` | 374 | 20265 |
 | `Tools/generate_wall_assets.py` | 81 | 3290 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
+| `Tools/test_live_depth_geometry.swift` | 73 | 3746 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
 | `Tools/validate_usdz_assets.py` | 101 | 3573 |
 
@@ -1311,6 +1318,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		A1000000000000000000000D /* RoomAssets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* RoomAssets */; };
 		A1000000000000000000000E /* AIEnhancementClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* AIEnhancementClient.swift */; };
 		A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* WallCladdingGeometry.swift */; };
+		A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* LiveDepthGeometry.swift */; };
+		A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -1331,6 +1340,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		B1000000000000000000000F /* RoomAssets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = RoomAssets; sourceTree = "<group>"; };
 		B10000000000000000000010 /* AIEnhancementClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEnhancementClient.swift; sourceTree = "<group>"; };
 		B10000000000000000000011 /* WallCladdingGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallCladdingGeometry.swift; sourceTree = "<group>"; };
+		B10000000000000000000012 /* LiveDepthGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthGeometry.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthOcclusionRenderer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1367,6 +1378,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				B1000000000000000000000E /* BundledRoomRealityAssetProvider.swift */,
 				B10000000000000000000010 /* AIEnhancementClient.swift */,
 				B10000000000000000000011 /* WallCladdingGeometry.swift */,
+				B10000000000000000000012 /* LiveDepthGeometry.swift */,
+				B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */,
 				B1000000000000000000000F /* RoomAssets */,
 				B10000000000000000000006 /* Assets.xcassets */,
 				B10000000000000000000007 /* Info.plist */,
@@ -1456,6 +1469,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				A1000000000000000000000C /* BundledRoomRealityAssetProvider.swift in Sources */,
 				A1000000000000000000000E /* AIEnhancementClient.swift in Sources */,
 				A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */,
+				A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */,
+				A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1503,13 +1518,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 39;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.4;
+				MARKETING_VERSION = 0.17.5;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1526,12 +1541,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 38;
+				CURRENT_PROJECT_VERSION = 39;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.4;
+				MARKETING_VERSION = 0.17.5;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2216,6 +2231,7 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var hasAlignmentReference = false
     @Published private(set) var isAlignmentReferenceActive = false
     @Published private(set) var alignmentReferenceStatus = "Hizalama referansı kaydedilmedi"
+    @Published private(set) var liveOcclusionStatus = "Anlık LiDAR derinliği bekleniyor"
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -2227,6 +2243,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private let aiEnhancementClient = AIEnhancementClient()
     private let aiServiceDiscovery = AILocalServiceDiscovery()
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
+    private let liveDepthRenderer = LiveDepthOcclusionRenderer()
+    private var lastOcclusionStatusTimestamp: TimeInterval = 0
     private var aiDiscoveryHealthCheckURL: URL?
     private var aiDiscoveryPendingURLs: [URL] = []
     private var aiDiscoveryGeneration: UInt64 = 0
@@ -2423,6 +2441,11 @@ final class ARSessionController: NSObject, ObservableObject {
         addCoachingOverlay(to: view)
 
         arView = view
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            liveDepthRenderer.install(in: view)
+        } else {
+            liveOcclusionStatus = "Bu cihazda anlık LiDAR derinliği yok"
+        }
         refreshAIServerDiscovery()
         if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: view)
@@ -2460,14 +2483,15 @@ final class ARSessionController: NSObject, ObservableObject {
             // such a combination makes ARSession reject the whole configuration.
             let smoothedCandidate = semantics.union(.smoothedSceneDepth)
             let rawCandidate = semantics.union(.sceneDepth)
-            if ARWorldTrackingConfiguration.supportsFrameSemantics(smoothedCandidate) {
-                semantics = smoothedCandidate
-            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(rawCandidate) {
+            // Raw depth follows moving foreground objects without temporal averaging.
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(rawCandidate) {
                 semantics = rawCandidate
-            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-                semantics = [.smoothedSceneDepth]
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(smoothedCandidate) {
+                semantics = smoothedCandidate
             } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
                 semantics = [.sceneDepth]
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+                semantics = [.smoothedSceneDepth]
             }
             configuration.frameSemantics = semantics
         }
@@ -2475,6 +2499,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func runSession(initialWorldMap: ARWorldMap? = nil) {
+        liveDepthRenderer.clear()
         guard ARWorldTrackingConfiguration.isSupported else {
             publishStatus("Bu cihaz ARKit dünya takibini desteklemiyor", color: .red)
             return
@@ -2573,6 +2598,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func pauseForRoomScan() {
+        liveDepthRenderer.clear()
         cancelPlacement()
         alignmentReferenceAction = nil
         pendingAlignmentRequest = nil
@@ -2777,7 +2803,7 @@ final class ARSessionController: NSObject, ObservableObject {
               !isSessionInterrupted,
               case .normal = frame.camera.trackingState else { return }
 
-        // LiDAR already supplies a camera-synchronised reconstruction every frame.
+        // LiDAR supplies per-frame depth; native reconstruction is a coarser mesh.
         // The server result is deliberately not rendered on these devices, so sending
         // JPEG + depth payloads only introduces periodic frame-time spikes and network
         // load. Keep the server path for non-LiDAR hardware where it is a real fallback.
@@ -2919,6 +2945,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
+        liveDepthRenderer.clear()
         isRoomScanActive = false
         isARReady = false
         didAttemptSessionFailureRecovery = false
@@ -8250,6 +8277,12 @@ final class ARSessionController: NSObject, ObservableObject {
     private func refreshPhysicalRoomOcclusionIfPossible(
         allowWhileAIEnabled: Bool = false
     ) -> Bool {
+        // RoomPlan furniture boxes are semantic approximations, not the actual
+        // kettle/clothing silhouettes. LiDAR uses native mesh plus fresh fine depth.
+        if Self.hasLiveSceneReconstruction {
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            return false
+        }
         guard !isRoomScanActive,
               (!aiEnhancementEnabled || allowWhileAIEnabled),
               activeRealityThemeID == nil,
@@ -8296,6 +8329,15 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         // Running placement, effects, projector refreshes and AI work in parallel
         // steals the same frame budget and makes the scan overlay visibly stutter.
         guard !isRoomScanActive else { return }
+        liveDepthRenderer.update(
+            frame: frame,
+            enabled: !isSessionInterrupted
+                && (!renderedEntities.isEmpty || isLiveAppleEnabled || roomRealityRenderer.isVisible)
+        )
+        if frame.timestamp - lastOcclusionStatusTimestamp >= 0.5 {
+            lastOcclusionStatusTimestamp = frame.timestamp
+            liveOcclusionStatus = liveDepthRenderer.status
+        }
         updatePlacementTrackingStability(using: frame)
         updatePendingAlignment(using: frame)
         updatePendingPlacement(using: frame)
@@ -8439,6 +8481,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 
     func session(_ session: ARSession, didFailWithError error: Error) {
+        liveDepthRenderer.clear()
         guard let arView, session === arView.session else {
             publishStatus("AR hatası: \(error.localizedDescription)", color: .red)
             return
@@ -8488,6 +8531,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 
     func sessionWasInterrupted(_ session: ARSession) {
+        liveDepthRenderer.clear()
         guard !isSessionInterrupted else { return }
 
         readinessRecoveryGeneration &+= 1
@@ -10653,6 +10697,10 @@ struct ContentView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(session.spatialCalibrationColor)
 
+            Text(session.liveOcclusionStatus)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
             HStack(spacing: 7) {
                 Button {
                     session.beginDeviceFloorCalibration()
@@ -11120,6 +11168,319 @@ struct ContentView: View {
 	</array>
 </dict>
 </plist>
+````
+
+## `CineAR/LiveDepthGeometry.swift`
+
+````swift
+import Foundation
+
+struct LiveDepthMeshData: Sendable {
+    let positions: [SIMD3<Float>]
+    let indices: [UInt32]
+    let validFraction: Float
+}
+
+/// Camera-space geometry in metres: +X right, +Y up, camera looks down -Z.
+/// This kernel uses no RoomPlan classes or object categories.
+enum LiveDepthGeometry {
+    static let maximumSampleCount = 256 * 192
+    static let maximumAge: TimeInterval = 0.10
+
+    static func isFresh(capturedAt: TimeInterval, now: TimeInterval) -> Bool {
+        let age = now - capturedAt
+        return age.isFinite && age >= 0 && age <= maximumAge
+    }
+
+    static func depthBias(_ depth: Float) -> Float {
+        // Avoid cutting a clock attached to the very surface that supplied depth.
+        min(0.008 + depth * 0.004, 0.025)
+    }
+
+    static func build(
+        width: Int, height: Int, step: Int,
+        fx: Float, fy: Float, cx: Float, cy: Float,
+        sample: (Int, Int) -> (depth: Float, confidence: UInt8)
+    ) -> LiveDepthMeshData? {
+        guard (2...1024).contains(width), (2...1024).contains(height),
+              (1...16).contains(step),
+              [fx, fy, cx, cy].allSatisfy(\.isFinite), fx > 0, fy > 0 else { return nil }
+        var xs = Array(stride(from: 0, to: width, by: step))
+        var ys = Array(stride(from: 0, to: height, by: step))
+        if xs.last != width - 1 { xs.append(width - 1) }
+        if ys.last != height - 1 { ys.append(height - 1) }
+        let count = xs.count * ys.count
+        guard count <= maximumSampleCount else { return nil }
+        var positions = [SIMD3<Float>](repeating: .zero, count: count)
+        var depths = [Float](repeating: 0, count: count)
+        var validCount = 0
+        for (row, y) in ys.enumerated() {
+            for (column, x) in xs.enumerated() {
+                let value = sample(x, y)
+                // 0 = low, 1 = medium, 2 = high. Never invent unknown depth.
+                guard value.confidence == 1 || value.confidence == 2,
+                      value.depth.isFinite, (0.15...6).contains(value.depth) else { continue }
+                let i = row * xs.count + column
+                depths[i] = value.depth
+                let z = value.depth + depthBias(value.depth)
+                positions[i] = [(Float(x) - cx) * z / fx, -(Float(y) - cy) * z / fy, -z]
+                validCount += 1
+            }
+        }
+        var indices: [UInt32] = []
+        indices.reserveCapacity((xs.count - 1) * (ys.count - 1) * 6)
+        func accepts(_ a: Int, _ b: Int, _ c: Int) -> Bool {
+            let minimum = min(depths[a], depths[b], depths[c])
+            let maximum = max(depths[a], depths[b], depths[c])
+            // Do not bridge kettle -> wall or clothing -> table across a depth edge.
+            return minimum > 0 && maximum - minimum <= max(0.025, minimum * 0.025)
+        }
+        func append(_ a: Int, _ b: Int, _ c: Int, if accepted: Bool) {
+            if accepted { indices.append(contentsOf: [UInt32(a), UInt32(b), UInt32(c)]) }
+        }
+        for row in 0..<(ys.count - 1) {
+            for column in 0..<(xs.count - 1) {
+                let a = row * xs.count + column
+                let b = a + 1
+                let c = a + xs.count
+                let d = c + 1
+                let firstA = accepts(a, c, b)
+                let firstB = accepts(b, c, d)
+                let secondA = accepts(a, d, b)
+                let secondB = accepts(a, c, d)
+                let firstScore = (firstA ? 1 : 0) + (firstB ? 1 : 0)
+                let secondScore = (secondA ? 1 : 0) + (secondB ? 1 : 0)
+                if secondScore > firstScore {
+                    append(a, d, b, if: secondA)
+                    append(a, c, d, if: secondB)
+                } else {
+                    append(a, c, b, if: firstA)
+                    append(b, c, d, if: firstB)
+                }
+            }
+        }
+        guard !indices.isEmpty else { return nil }
+        return .init(positions: positions, indices: indices, validFraction: Float(validCount) / Float(count))
+    }
+}
+````
+
+## `CineAR/LiveDepthOcclusionRenderer.swift`
+
+````swift
+import ARKit
+import Combine
+import CoreVideo
+import Foundation
+import QuartzCore
+import RealityKit
+import simd
+
+/// A camera-synchronised fine-depth supplement to ARKit's coarser reconstruction.
+/// One worker and one mesh upload at a time; no queued ARFrames, network or collision hulls.
+@MainActor
+final class LiveDepthOcclusionRenderer {
+    private weak var arView: ARView?
+    private let worker = DispatchQueue(label: "com.cinear.lidar-occlusion", qos: .userInitiated)
+    private var anchor: AnchorEntity?
+    private var model: ModelEntity?
+    private var generation: UInt64 = 0
+    private var isBuilding = false
+    private var upload: AnyCancellable?
+    private var expiryTimer: AnyCancellable?
+    private var lastSubmitted: TimeInterval = -.greatestFiniteMagnitude
+    private var acceptedTimestamp: TimeInterval?
+    private var acceptedReceivedAt: TimeInterval?
+    private var acceptedPose: simd_float4x4?
+    private var buildStartedAt: TimeInterval = 0
+    private var lastBuildSeconds: TimeInterval = 0
+    private(set) var status = "Anlık LiDAR derinliği bekleniyor"
+
+    func install(in view: ARView) {
+        if arView !== view || anchor?.scene == nil {
+            anchor?.removeFromParent()
+            let root = AnchorEntity(world: .zero)
+            root.name = "cinear.live-depth.anchor"
+            let surface = ModelEntity()
+            surface.name = "cinear.live-depth.occlusion"
+            surface.isEnabled = false
+            root.addChild(surface)
+            view.scene.addAnchor(root)
+            anchor = root
+            model = surface
+        }
+        arView = view
+        if expiryTimer == nil {
+            expiryTimer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+                .sink { [weak self] _ in self?.expireIfNeeded() }
+        }
+    }
+
+    func clear() {
+        generation &+= 1
+        upload?.cancel()
+        upload = nil
+        // The worker may still be running. Keep isBuilding true until it returns,
+        // so a restart cannot queue a second retained ARFrame behind it.
+        model?.isEnabled = false
+        model?.model = nil
+        acceptedTimestamp = nil
+        acceptedReceivedAt = nil
+        acceptedPose = nil
+        lastSubmitted = -.greatestFiniteMagnitude
+    }
+
+    func update(frame: ARFrame, enabled: Bool) {
+        expireIfNeeded()
+        guard ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) else {
+            status = "Bu cihazda anlık LiDAR derinliği yok"
+            return
+        }
+        guard enabled, case .normal = frame.camera.trackingState else {
+            if acceptedTimestamp != nil || upload != nil || isBuilding { clear() }
+            status = enabled ? "Takip kararlı değil — anlık örtme beklemede" : "Sanal nesne yerleştirildiğinde anlık örtme etkinleşir"
+            return
+        }
+        guard let view = arView else { return }
+        install(in: view)
+        guard let depth = frame.sceneDepth, let confidenceBuffer = depth.confidenceMap else {
+            if acceptedTimestamp != nil || upload != nil || isBuilding { clear() }
+            status = "Anlık derinlik yok — ARKit yüzey örtmesi kullanılıyor"
+            return
+        }
+        let thermal = ProcessInfo.processInfo.thermalState
+        guard thermal != .critical else {
+            clear()
+            status = "Cihaz sıcak — ARKit yüzey örtmesi kullanılıyor"
+            return
+        }
+        let reduced = thermal == .serious || lastBuildSeconds > 0.045
+        let interval: TimeInterval = reduced ? 1.0 / 15 : 1.0 / 30
+        guard !isBuilding, upload == nil, frame.timestamp - lastSubmitted >= interval else { return }
+        isBuilding = true
+        lastSubmitted = frame.timestamp
+        let token = generation
+        let timestamp = frame.timestamp
+        let pose = frame.camera.transform
+        let intrinsics = frame.camera.intrinsics
+        let imageSize = frame.camera.imageResolution
+        let startedAt = CACurrentMediaTime()
+        buildStartedAt = startedAt
+        // Retain only depth/confidence buffers, not the captured camera image/frame.
+        let depthBuffer = depth.depthMap
+        worker.async { [weak self] in
+            let data = Self.copyGeometry(
+                depth: depthBuffer, confidence: confidenceBuffer,
+                intrinsics: intrinsics, imageSize: imageSize, reduced: reduced
+            )
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.isBuilding = false
+                guard self.generation == token else { return }
+                self.lastBuildSeconds = CACurrentMediaTime() - startedAt
+                guard let data else {
+                    self.clear()
+                    self.status = "LiDAR ölçümü yetersiz — yüzeyi başka açıdan göster"
+                    return
+                }
+                guard self.matchesCurrentFrame(timestamp: timestamp, receivedAt: startedAt, pose: pose) else { return }
+                var descriptor = MeshDescriptor(name: "cinear.live-depth")
+                descriptor.positions = MeshBuffers.Positions(data.positions)
+                descriptor.primitives = .triangles(data.indices)
+                self.upload = MeshResource.generateAsync(from: [descriptor])
+                    .receive(on: DispatchQueue.main)
+                    .sink { [weak self] completion in
+                        guard let self, self.generation == token else { return }
+                        self.upload = nil
+                        self.lastBuildSeconds = CACurrentMediaTime() - startedAt
+                        if case .failure = completion {
+                            self.clear()
+                            self.status = "Anlık örtme hazırlanamadı — ARKit kullanılıyor"
+                        }
+                    } receiveValue: { [weak self] mesh in
+                        guard let self, self.generation == token,
+                              self.matchesCurrentFrame(timestamp: timestamp, receivedAt: startedAt, pose: pose) else { return }
+                        self.model?.model = ModelComponent(mesh: mesh, materials: [OcclusionMaterial()])
+                        self.model?.transform = Transform(matrix: pose)
+                        self.model?.isEnabled = true
+                        self.acceptedTimestamp = timestamp
+                        self.acceptedReceivedAt = startedAt
+                        self.acceptedPose = pose
+                        self.status = "Anlık LiDAR örtmesi • güvenilir ölçüm %\(Int(data.validFraction * 100))"
+                    }
+            }
+        }
+    }
+
+    private func expireIfNeeded() {
+        if upload != nil, CACurrentMediaTime() - buildStartedAt > 0.25 {
+            clear()
+            status = "Derinlik işlemi gecikti — ARKit kullanılıyor"
+        }
+        guard let timestamp = acceptedTimestamp, let receivedAt = acceptedReceivedAt,
+              let pose = acceptedPose else { return }
+        if !matchesCurrentFrame(timestamp: timestamp, receivedAt: receivedAt, pose: pose) {
+            model?.isEnabled = false
+            acceptedTimestamp = nil
+            acceptedReceivedAt = nil
+            acceptedPose = nil
+            status = "Güncel LiDAR ölçümü bekleniyor — ARKit kullanılıyor"
+        }
+    }
+
+    private func matchesCurrentFrame(timestamp: TimeInterval, receivedAt: TimeInterval, pose: simd_float4x4) -> Bool {
+        // Compare each clock only with itself; do not assume AR timestamps share
+        // an epoch with CACurrentMediaTime. Wall time also catches a stalled session.
+        guard LiveDepthGeometry.isFresh(capturedAt: receivedAt, now: CACurrentMediaTime()),
+              let frame = arView?.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              LiveDepthGeometry.isFresh(capturedAt: timestamp, now: frame.timestamp) else { return false }
+        let relative = simd_inverse(pose) * frame.camera.transform
+        let translation = SIMD3<Float>(relative.columns.3.x, relative.columns.3.y, relative.columns.3.z)
+        let trace = relative.columns.0.x + relative.columns.1.y + relative.columns.2.z
+        // Test full orientation, including roll; forward-vector checks miss phone rotation.
+        let cosine = min(max((trace - 1) * 0.5, -1), 1)
+        return simd_length(translation) <= 0.07 && cosine >= cos(Float(8) * .pi / 180)
+    }
+
+    nonisolated private static func copyGeometry(
+        depth: CVPixelBuffer, confidence: CVPixelBuffer,
+        intrinsics: simd_float3x3, imageSize: CGSize, reduced: Bool
+    ) -> LiveDepthMeshData? {
+        let width = CVPixelBufferGetWidth(depth)
+        let height = CVPixelBufferGetHeight(depth)
+        guard (2...1024).contains(width), (2...1024).contains(height),
+              CVPixelBufferGetPixelFormatType(depth) == kCVPixelFormatType_DepthFloat32,
+              CVPixelBufferGetPixelFormatType(confidence) == kCVPixelFormatType_OneComponent8,
+              CVPixelBufferGetWidth(confidence) == width,
+              CVPixelBufferGetHeight(confidence) == height,
+              imageSize.width > 0, imageSize.height > 0 else { return nil }
+        guard CVPixelBufferLockBaseAddress(depth, .readOnly) == kCVReturnSuccess else { return nil }
+        defer { CVPixelBufferUnlockBaseAddress(depth, .readOnly) }
+        guard CVPixelBufferLockBaseAddress(confidence, .readOnly) == kCVReturnSuccess else { return nil }
+        defer { CVPixelBufferUnlockBaseAddress(confidence, .readOnly) }
+        guard let depthBase = CVPixelBufferGetBaseAddress(depth),
+              let confidenceBase = CVPixelBufferGetBaseAddress(confidence) else { return nil }
+        let depthStride = CVPixelBufferGetBytesPerRow(depth)
+        let confidenceStride = CVPixelBufferGetBytesPerRow(confidence)
+        let sx = Float(width) / Float(imageSize.width)
+        let sy = Float(height) / Float(imageSize.height)
+        // Ceil keeps oversized streams inside the hard mesh allocation budget.
+        var step = max(reduced ? 2 : 1, max((width + 255) / 256, (height + 191) / 192))
+        func sampleCount(_ extent: Int) -> Int { (extent - 1 + step - 1) / step + 1 }
+        while sampleCount(width) * sampleCount(height) > LiveDepthGeometry.maximumSampleCount { step += 1 }
+        return LiveDepthGeometry.build(
+            width: width, height: height, step: step,
+            fx: intrinsics.columns.0.x * sx, fy: intrinsics.columns.1.y * sy,
+            cx: intrinsics.columns.2.x * sx, cy: intrinsics.columns.2.y * sy
+        ) { x, y in
+            let z = depthBase.advanced(by: y * depthStride).assumingMemoryBound(to: Float.self)[x]
+            let confidenceValue = confidenceBase.advanced(by: y * confidenceStride)
+                .assumingMemoryBound(to: UInt8.self)[x]
+            return (z, confidenceValue)
+        }
+    }
+}
 ````
 
 ## `CineAR/ProfessionalRecorder.swift`
@@ -12620,7 +12981,7 @@ final class RoomRealityRenderer {
                 world.columns.2.x, world.columns.2.y, world.columns.2.z
             ))
             guard abs(simd_dot(worldNormal, measuredNormal)) >= 0.96,
-                  abs(local.z) <= 0.12,
+                  abs(local.z) <= 0.05,
                   WallCladdingGeometry.contains([local.x, local.y], polygon: polygon) else { continue }
             let cuts = (associations.aperturesByWallID[wall.identifier] ?? []).compactMap {
                 apertureRect($0, relativeTo: wall, wallBounds: bounds)
@@ -12630,7 +12991,9 @@ final class RoomRealityRenderer {
                     && local.y >= $0.minY && local.y <= $0.maxY
             }) else { continue }
             let center = bounds.center
-            let worldCenter = world * SIMD4<Float>(center.x, center.y, local.z, 1)
+            // A foreground cabinet must not pull the entire wall into the room.
+            let depthRefinement = min(max(local.z, -0.015), 0.015)
+            let worldCenter = world * SIMD4<Float>(center.x, center.y, depthRefinement, 1)
             let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
             let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
             var transform = world
@@ -17339,6 +17702,16 @@ workflows:
             -o "$wall_test_dir/wall-cladding-tests"
           "$wall_test_dir/wall-cladding-tests"
 
+      - name: Test live LiDAR occlusion geometry
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          depth_test_dir="$(mktemp -d)"
+          xcrun swiftc CineAR/LiveDepthGeometry.swift Tools/test_live_depth_geometry.swift \
+            -o "$depth_test_dir/live-depth-tests"
+          "$depth_test_dir/live-depth-tests"
+
       - name: Apply provisioning profile
         script: xcode-project use-profiles
 
@@ -17710,6 +18083,42 @@ incelemesine uygulama gondermesi mumkun degildir.
     armaturu dolap veya yuksek raf ustune degil, yalniz siniflandirilmis ya da kalibre
     edilmis gercek tavan kotuna yerlestirilebilmeli.
 
+## Anlik LiDAR ortmesi regresyonu
+
+Bu kontroller gercek LiDAR iPhone'da yapilmalidir; Swift geometri testleri kamera,
+RealityKit derinlik testi ve termal performans yerine gecmez.
+
+1. Duvara sanal saat koy; mat bir kettle veya kutuyu gercekte onune yerlestir.
+   Telefonla saga/sola egil: saat yalniz gorus hattinda kalan kisimlarda gorunmeli,
+   tamamen kapandigi acida hic gorunmemeli. Ardindan gercek nesneyi hareket ettir;
+   eski konumunda kalici gorunmez delik kalmamali. Parlak kettle ile de tekrar et,
+   dusuk guvenli yuzeylerdeki sensor kayiplarini ayri kaydet.
+2. Kumas yigini ve uzerinde kutu bulunan masanin arkasina sanal nesne yerlestir.
+   Ortme RoomPlan'in dikdortgen mobilya kutusuna degil olculen gorunen yuzeye
+   uymali; kutu-duvar arasindaki bosluk ucgenle kapatilmamali. RoomPlan kaydinda
+   ayrintili kumas geometrisi beklenmez; bu test canli goruntu icindir.
+3. Ayni testi dikey/yatay telefon yonunde, yaklasip uzaklasarak, HEVC kaydi sirasinda,
+   oda taramasindan donuste ve kayitli projeyi yukledikten sonra tekrarla.
+   Kayitta da on/arka sirasi korunmali. Arka plana al, geri don, takibi gecici kaybet:
+   eski derinlik yuzu sabit bir maske gibi goruntude kalmamali.
+4. Koordinat panelindeki anlik LiDAR durumunu izle. Gorunen yuzde tum oda taramasinin
+   tamamlanma orani degil gecerli anlik ornek oranidir. Cihaz isindiginda veya
+   hesaplama geciktiginde kalite/hiz azalabilir; kritik termalde ARKit yedegi
+   kullanilir. Instruments ile 10 dakikalik kayitta CPU/GPU, bellek ve kare zamanini
+   olc; yeni yolun kuyruk biriktirmedigini ve hedef 30 fps'i dogrula.
+5. Eski hatali duvar kaplamasini silip yeniden yerlestir. Duvarin onundeki dolaba
+   dokunmak tum duvari one cekmemeli; yeni panel duvar duzlemine yakin kalmali.
+
+Otomatik geometri testleri (Mac/Swift):
+
+```sh
+swiftc CineAR/LiveDepthGeometry.swift Tools/test_live_depth_geometry.swift -o /tmp/cinear-depth-tests
+/tmp/cinear-depth-tests
+```
+
+Testler duz/egri yuzey, derinlik kopuklugu, eksik kose, guven degeri, gecersiz
+olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmistir.
+
 ## Baslangic kabul esikleri
 
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
@@ -17803,7 +18212,18 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   ARKit person-depth'i one alma; kisi kaybolana kadar uzak sonucu sahneye uygulamama
 - LiDAR destekli iPhone'da zaten cizilmeyen PC derinlik karesi icin kamera JPEG'i
   hazirlayip gondermeme; ana goruntu is parcacigindaki periyodik takilmayi kaldirip
-  kamera ile ayni ana ait yerel mesh'i tek occlusion kaynagi olarak kullanma
+  yerel ARKit mesh'ini taze ham LiDAR derinlik geometrisiyle tamamlama
+- Kettle, kumas yigini ve ust uste nesneler icin RoomPlan nesne sinifindan bagimsiz
+  anlik ortme: en fazla 256 x 192 derinlik ornegi, orta/yuksek guvenli olcumler,
+  on nesne-arka duvar arasini kapatmayan kenar filtresi ve 8-25 mm derinlik toleransi.
+  Tek arka plan isi ve tek asenkron mesh yuklemesi; en fazla 30 Hz, isinma veya
+  gecikmede dusuk cozunurluk/15 Hz. 100 ms'den eski veya kamera pozundan kopan
+  yuzey kaldirilir; ARKit mesh/person ortmesi yedek olarak acik kalir.
+  LiDAR cihazda kaba RoomPlan mobilya kutulari ek ortucu olarak kullanilmaz.
+  Koordinat panelindeki guven yuzdesi o anki derinlik orneklerine aittir; odanin
+  tamamlanma orani degildir. Bu ozellik RoomPlan'in kaydedilen semantik oda modelini
+  ayrintili bir nesne taramasina donusturmez. Parlak/cam/cok koyu yuzeylerde
+  sensorun olcemedigi bolgeler icin kusursuz ortme garanti edilemez.
 - Yerlesim sirasinda uzak AI occlusion'ini durdurma; AR anchor kesinlesmeden modeli
   gostermeme, 350 ms'den eski veya kamera pozuyla sikica uyusmayan AI karesini reddetme ve
   LiDAR/AI derinliklerini ust uste cizmeden nesne kesilmesini engelleme
@@ -17853,6 +18273,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
   RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
   yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
+  Dokunma duvar duzleminden en fazla 5 cm sapabilir; duzlem derinlik duzeltmesi
+  1,5 cm ile sinirlidir. Eski kayitli kaplamalar bu degisiklikle tasinmaz.
   On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
   tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
   Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.
@@ -18777,6 +19199,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("- Swift + SwiftUI kullanıcı arayüzü")
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
+[void]$builder.AppendLine("- Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma")
 [void]$builder.AppendLine("- Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i")
 [void]$builder.AppendLine("- RoomPlan ile semantik oda taraması, canlı zemin/duvar/nesne sayacı ve doğrulanmış ``room.json`` üretimi")
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
@@ -19126,6 +19549,83 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+````
+
+## `Tools/test_live_depth_geometry.swift`
+
+````swift
+import Foundation
+
+@main
+struct LiveDepthGeometryTests {
+    static func mesh(
+        width: Int = 4, height: Int = 4, step: Int = 1,
+        sample: (Int, Int) -> (depth: Float, confidence: UInt8) = { _, _ in (1, 2) }
+    ) -> LiveDepthMeshData? {
+        LiveDepthGeometry.build(width: width, height: height, step: step,
+                                fx: 100, fy: 100, cx: 1, cy: 1, sample: sample)
+    }
+
+    static func main() {
+        let flat = mesh()!
+        precondition(flat.indices.count == 54 && flat.positions.count == 16)
+        precondition(flat.validFraction == 1)
+        precondition(flat.positions[5].x == 0 && flat.positions[5].y == 0)
+        precondition(flat.positions[0].x < 0 && flat.positions[0].y > 0)
+        precondition(abs(flat.positions[0].z + 1.012) < 0.00001)
+        for i in stride(from: 0, to: flat.indices.count, by: 3) {
+            let a = flat.positions[Int(flat.indices[i])]
+            let b = flat.positions[Int(flat.indices[i + 1])]
+            let c = flat.positions[Int(flat.indices[i + 2])]
+            let ab = b - a, ac = c - a
+            precondition(ab.x * ac.y - ab.y * ac.x > 0, "Winding must face camera")
+        }
+
+        let edge = mesh { x, _ in (x < 2 ? 1 : 2, 2) }!
+        precondition(edge.indices.count == 36)
+        for i in stride(from: 0, to: edge.indices.count, by: 3) {
+            let depths = edge.indices[i..<(i + 3)].map { edge.positions[Int($0)].z }
+            precondition(depths.max()! - depths.min()! < 0.001, "Must not bridge kettle and wall")
+        }
+        // Every missing corner must still leave the other three as one triangle.
+        for missing in 0..<4 {
+            let partial = mesh(width: 2, height: 2) { x, y in
+                (1, x + y * 2 == missing ? 0 : 2)
+            }!
+            precondition(partial.indices.count == 3 && partial.validFraction == 0.75)
+            precondition(!partial.indices.contains(UInt32(missing)))
+        }
+        precondition(mesh(sample: { _, _ in (1, 0) }) == nil)
+        precondition(mesh(sample: { _, _ in (1, 3) }) == nil)
+        precondition(mesh(sample: { _, _ in (1, 1) }) != nil)
+        let invalidDepths: [Float] = [.nan, .infinity, -1, 0.1, 7]
+        for invalid in invalidDepths {
+            precondition(mesh(sample: { _, _ in (invalid, 2) }) == nil)
+        }
+        let cloth = mesh(width: 20, height: 20) { x, y in
+            (1 + 0.015 * sin(Float(x) * 0.4) * cos(Float(y) * 0.4), 2)
+        }!
+        precondition(cloth.indices.count == 19 * 19 * 6, "Curved surfaces need no object classification")
+        precondition(mesh(width: 256, height: 192)!.positions.count == 49_152)
+        precondition(mesh(width: 512, height: 384) == nil)
+        let reduced = mesh(width: 256, height: 192, step: 2)!
+        precondition(reduced.positions.count == 129 * 97)
+        precondition(mesh(width: 1) == nil && mesh(step: 0) == nil && mesh(step: 17) == nil)
+        precondition(mesh(width: 1025) == nil && mesh(height: 0) == nil)
+        let invalidFocalLengths: [Float] = [0, -1, .nan, .infinity]
+        for invalidFocalLength in invalidFocalLengths {
+            precondition(LiveDepthGeometry.build(
+                width: 4, height: 4, step: 1, fx: invalidFocalLength, fy: 100, cx: 1, cy: 1,
+                sample: { _, _ in preconditionFailure("Invalid intrinsics must not sample buffers") }
+            ) == nil)
+        }
+        precondition(LiveDepthGeometry.isFresh(capturedAt: 1, now: 1.05))
+        precondition(!LiveDepthGeometry.isFresh(capturedAt: 1, now: 1.101))
+        precondition(!LiveDepthGeometry.isFresh(capturedAt: 2, now: 1))
+        precondition(!LiveDepthGeometry.isFresh(capturedAt: .nan, now: 1))
+        print("Live depth geometry tests passed")
+    }
+}
 ````
 
 ## `Tools/test_wall_cladding_geometry.swift`

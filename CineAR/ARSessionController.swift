@@ -145,6 +145,7 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var hasAlignmentReference = false
     @Published private(set) var isAlignmentReferenceActive = false
     @Published private(set) var alignmentReferenceStatus = "Hizalama referansı kaydedilmedi"
+    @Published private(set) var liveOcclusionStatus = "Anlık LiDAR derinliği bekleniyor"
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -156,6 +157,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private let aiEnhancementClient = AIEnhancementClient()
     private let aiServiceDiscovery = AILocalServiceDiscovery()
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
+    private let liveDepthRenderer = LiveDepthOcclusionRenderer()
+    private var lastOcclusionStatusTimestamp: TimeInterval = 0
     private var aiDiscoveryHealthCheckURL: URL?
     private var aiDiscoveryPendingURLs: [URL] = []
     private var aiDiscoveryGeneration: UInt64 = 0
@@ -352,6 +355,11 @@ final class ARSessionController: NSObject, ObservableObject {
         addCoachingOverlay(to: view)
 
         arView = view
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            liveDepthRenderer.install(in: view)
+        } else {
+            liveOcclusionStatus = "Bu cihazda anlık LiDAR derinliği yok"
+        }
         refreshAIServerDiscovery()
         if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: view)
@@ -389,14 +397,15 @@ final class ARSessionController: NSObject, ObservableObject {
             // such a combination makes ARSession reject the whole configuration.
             let smoothedCandidate = semantics.union(.smoothedSceneDepth)
             let rawCandidate = semantics.union(.sceneDepth)
-            if ARWorldTrackingConfiguration.supportsFrameSemantics(smoothedCandidate) {
-                semantics = smoothedCandidate
-            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(rawCandidate) {
+            // Raw depth follows moving foreground objects without temporal averaging.
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(rawCandidate) {
                 semantics = rawCandidate
-            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-                semantics = [.smoothedSceneDepth]
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(smoothedCandidate) {
+                semantics = smoothedCandidate
             } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
                 semantics = [.sceneDepth]
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+                semantics = [.smoothedSceneDepth]
             }
             configuration.frameSemantics = semantics
         }
@@ -404,6 +413,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func runSession(initialWorldMap: ARWorldMap? = nil) {
+        liveDepthRenderer.clear()
         guard ARWorldTrackingConfiguration.isSupported else {
             publishStatus("Bu cihaz ARKit dünya takibini desteklemiyor", color: .red)
             return
@@ -502,6 +512,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func pauseForRoomScan() {
+        liveDepthRenderer.clear()
         cancelPlacement()
         alignmentReferenceAction = nil
         pendingAlignmentRequest = nil
@@ -706,7 +717,7 @@ final class ARSessionController: NSObject, ObservableObject {
               !isSessionInterrupted,
               case .normal = frame.camera.trackingState else { return }
 
-        // LiDAR already supplies a camera-synchronised reconstruction every frame.
+        // LiDAR supplies per-frame depth; native reconstruction is a coarser mesh.
         // The server result is deliberately not rendered on these devices, so sending
         // JPEG + depth payloads only introduces periodic frame-time spikes and network
         // load. Keep the server path for non-LiDAR hardware where it is a real fallback.
@@ -848,6 +859,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
+        liveDepthRenderer.clear()
         isRoomScanActive = false
         isARReady = false
         didAttemptSessionFailureRecovery = false
@@ -6179,6 +6191,12 @@ final class ARSessionController: NSObject, ObservableObject {
     private func refreshPhysicalRoomOcclusionIfPossible(
         allowWhileAIEnabled: Bool = false
     ) -> Bool {
+        // RoomPlan furniture boxes are semantic approximations, not the actual
+        // kettle/clothing silhouettes. LiDAR uses native mesh plus fresh fine depth.
+        if Self.hasLiveSceneReconstruction {
+            roomRealityRenderer.isPhysicalOcclusionVisible = false
+            return false
+        }
         guard !isRoomScanActive,
               (!aiEnhancementEnabled || allowWhileAIEnabled),
               activeRealityThemeID == nil,
@@ -6225,6 +6243,15 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         // Running placement, effects, projector refreshes and AI work in parallel
         // steals the same frame budget and makes the scan overlay visibly stutter.
         guard !isRoomScanActive else { return }
+        liveDepthRenderer.update(
+            frame: frame,
+            enabled: !isSessionInterrupted
+                && (!renderedEntities.isEmpty || isLiveAppleEnabled || roomRealityRenderer.isVisible)
+        )
+        if frame.timestamp - lastOcclusionStatusTimestamp >= 0.5 {
+            lastOcclusionStatusTimestamp = frame.timestamp
+            liveOcclusionStatus = liveDepthRenderer.status
+        }
         updatePlacementTrackingStability(using: frame)
         updatePendingAlignment(using: frame)
         updatePendingPlacement(using: frame)
@@ -6368,6 +6395,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 
     func session(_ session: ARSession, didFailWithError error: Error) {
+        liveDepthRenderer.clear()
         guard let arView, session === arView.session else {
             publishStatus("AR hatası: \(error.localizedDescription)", color: .red)
             return
@@ -6417,6 +6445,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
     }
 
     func sessionWasInterrupted(_ session: ARSession) {
+        liveDepthRenderer.clear()
         guard !isSessionInterrupted else { return }
 
         readinessRecoveryGeneration &+= 1

@@ -86,6 +86,16 @@ workflows:
             -o "$wall_test_dir/wall-cladding-tests"
           "$wall_test_dir/wall-cladding-tests"
 
+      - name: Test live LiDAR occlusion geometry
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          depth_test_dir="$(mktemp -d)"
+          xcrun swiftc CineAR/LiveDepthGeometry.swift Tools/test_live_depth_geometry.swift \
+            -o "$depth_test_dir/live-depth-tests"
+          "$depth_test_dir/live-depth-tests"
+
       - name: Apply provisioning profile
         script: xcode-project use-profiles
 
