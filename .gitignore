@@ -23,6 +23,7 @@ Kenney-Furniture-Kit.zip
 .tools-cache/
 AIService/.venv/
 AIService/__pycache__/
+Tools/__pycache__/
 AIService/.cache/
 
 # Generated handoff archives are release artifacts, not source files

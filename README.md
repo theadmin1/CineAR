@@ -45,6 +45,13 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - Tarama ekraninda canli zemin/duvar/nesne sayaci; en az bir zemin ve bir duvar
   bulunmadan hatali veya bos taramayi bitirmeyi engelleme
+- RoomPlan'in yerel yaklas/uzaklas, yavasla, isigi artir ve dusuk dokulu yuzey
+  yonlendirmelerini Turkce gosterme; AR takip sinirliyken olcumu tamamlanmis saymama
+- Her 750 ms'de 32 x 24 luma ornegiyle dusuk maliyetli karanlik/parlama denetimi;
+  pencere veya dogrudan lamba kaynakli yuksek dinamik aralikta perde/isik yonu uyarisi
+- Duvarlari yalniz saymak yerine en az uc anlamli duvar parcasi, farkli duvar yonleri,
+  birbirine baglanan kose cevrimi, toplam genislik ve 1,1 saniyelik olcu kararliligi
+  isteyen tarama kalite kapisi
 - RoomPlan acikken ana AR denetleyicisindeki yerlestirme, efekt, projektor, AI ve
   LiDAR siniflandirma islerini durdurma; bilgi sayacini 250 ms aralikla yenileyerek
   kamera ve beyaz tarama cizgilerine kare butcesini birakma
@@ -56,7 +63,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
-- Poly Haven kaynakli 1K PBR dokulu 30 fotogercekci CC0 USDZ dekor; mobilya,
+- Poly Haven kaynakli 1K PBR dokulu 38 fotogercekci CC0 USDZ dekor; mobilya,
   depolama, ekipman, duvar/tavan elemanlari, aydinlatma ve elektronik kategorileri
 - Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
@@ -65,7 +72,26 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   10 saniye zaman asimi ve oturum ici model onbellegiyle sonsuz `yukleniyor` durumunu
   engelleme; dosya hazir olunca ayni dunya anchor'inda gercek modelle degisim
 - Anchor edilmeden yapilan USDZ olcumunde inactive cocuklari da hesaba katma; RealityKit'in
-  sifir boyut dondurup 30 modelin tamamini mavi yedek kutuya dusurmesini engelleme
+  sifir boyut dondurup katalog modellerini mavi yedek kutuya dusurmesini engelleme
+- Iki gercek deri/vintage koltuk, modern deri berjer, mermer orta sehpa, ahsap konsol
+  ve saksili sukulent iceren yeni mobil dekor paketi; model basina 1K doku, 60 bin
+  ucgen ve 8 MB dogrulama butcesi
+- Ayni oturumda yalniz son kullanilan sekiz fotogercekci modeli tutan LRU onbellek;
+  aktif sahne nesnelerini bozmadan kullanilmayan kaynak klonlarini bellekten cikarma
+- Duvar kategorisindeki tugla ve ahsap kaplamalar tek dokunusla taranan duvarin
+  genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
+  RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
+  yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
+  On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
+  tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
+  Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.
+  Duvar olcusu, poligon ve kesimler scene.json'a kaydedilir; eski moduler kaplama
+  kayitlari degistirilmez. Yeni kaplama icin tamamlanmis, hizalanmis oda taramasi gerekir.
+  Egri duvarlar desteklenmez; karmasik geometri butceyi asarsa kapali panel uretilmez.
+  Iki kaynak USDZ sablonu toplam 2,53 MiB, sablon basina 12 ucgendir; otomatik
+  kaplama tek mesh/materyal ve en fazla 512 disbukey parca kullanir. Geometri sadece
+  yerlestirme/yukleme sirasinda uretilir. LiDAR ve insan occlusion'i acik kalir;
+  taramada bulunmayan bosluklar ve sensor kaynakli kesilmeler cihazda kontrol edilmelidir.
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Canli kamera ve sanal dekorlari birlikte etkileyen Dogal, Sinema, Teal & Orange,
   Noir, Gerilim ve Ruya film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
@@ -164,7 +190,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    kapi/pencereleri ve odadaki buyuk objeleri tarayin. AR henuz hazir degilse dugme
    uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
    olarak degisir. Tarama ekranindaki `Zemin / Duvar / Nesne` sayacinda en az bir
-   zemin ve bir duvar gorulmeden `Taramayi Bitir` etkinlesmez.
+   zemin ve yeterli duvar kapsama alani gorulmeden `Taramayi Bitir` etkinlesmez.
+   Sari kalite satiri parlama, karanlik, hizli hareket, dusuk dokulu yuzey, eksik
+   duvar kosesi veya degismeye devam eden olcuyu bildirir. Pencere/lambayi dogrudan
+   kadraja almak yerine isigi arkaya alip duvarin iki ucunu ve komsu kosesini capraz
+   acidan tarayin; kalite satiri yesile donunce taramayi bitirin.
    `Koordinat` dugmesiyle olceri acin. Uygulama siniflandirilmis LiDAR/ARKit zemini ve
    tavani yeterince kararli gorurse kotlari otomatik kilitler. Gerekirse `Zemini Bul · Y97`ye basip telefonu ekrani
    zemine, arka kamerasi tavana bakacak sekilde bir saniye sabit birakin; bu fiziksel
@@ -177,7 +207,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
-   `Hazir 3B Nesne Kutuphanesi` icindeki 30 fotogercekci parcadan
+   `Hazir 3B Nesne Kutuphanesi` icindeki 38 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
    Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
@@ -293,7 +323,8 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde Poly Haven'dan donusturulmus 30 CC0, 1K PBR USDZ model vardir.
+Bu surumde Poly Haven'dan donusturulmus 36 CC0 model ve fotografik dokularla
+uretilmis 2 duvar paneli olmak uzere 38 adet 1K PBR USDZ katalog varligi vardir.
 Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
 boyutlarina normalize edilir, sahne listesinde `genislik x yukseklik x derinlik`
 olarak gosterilir ve olculmus katalog modellerinin olcegi kilitlenir. Eski projeler icin
@@ -308,3 +339,31 @@ zekayla silip arka plani tamamlama (video inpainting) bu surumde yoktur; sanal
 yuzeyler, RoomPlan mobilya derinlik vekilleri ve derinlik/insan occlusion'i kullanilir.
 
 Ayrintili kabul kriterleri icin `Docs/DEVICE_TEST.md` dosyasina bakin.
+
+### Duvar kaplamalarini yeniden uretme
+
+`Tools/fetch_wall_textures.ps1` resmi Poly Haven 1K dokularini MD5 kontroluyle
+indirir (Powered by Poly Haven: https://polyhaven.com). Blender 4.5+ ile:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Tools/fetch_wall_textures.ps1
+blender --background --factory-startup --python-exit-code 1 --python Tools/generate_wall_assets.py -- .asset-cache/wall-textures CineAR/RoomAssets
+blender --background --factory-startup --python-exit-code 1 --python Tools/validate_usdz_assets.py -- CineAR/RoomAssets wall_cladding_brick wall_cladding_wood
+```
+
+USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidir.
+
+### Otomatik duvar kaplama testleri
+
+`WallCladdingGeometry.swift` oda poligonunu ucgenleyip acikliklari cikarir;
+kesimler arasinda ortak metre tabanli doku koordinatlari kullanir. Hesaplama
+testleri kapilar, pencereler, ust uste binen acikliklar, ters duvar yonu, icbukey
+ve egimli sinirlar, kaydet/yukle ve doku tekrarini kapsar. Swift kurulu bir ortamda:
+
+```sh
+swiftc -D WALL_GEOMETRY_TESTS CineAR/WallCladdingGeometry.swift Tools/test_wall_cladding_geometry.swift -o /tmp/cinear-wall-tests
+/tmp/cinear-wall-tests
+```
+
+Codemagic ayni testi IPA derlemesinden once calistirir. Bu test RoomPlan/RealityKit
+cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedir.

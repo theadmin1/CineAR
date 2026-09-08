@@ -13,7 +13,10 @@
    Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
    Canli sayacta zemin, duvar ve nesne adetleri artmali; zemin veya duvar sifirken
-   `Taramayi Bitir` pasif kalmali ve her ikisi de bulundugunda etkinlesmeli.
+   `Taramayi Bitir` pasif kalmali. Tek, kisa bir duvar parcasi bulundugunda da dugme
+   pasif kalmali; en az uc anlamli duvar, komsu duvar yonleri, birbirine baglanan
+   kose cevrimi ve kararlilasma suresi tamamlandiginda kalite satiri yesil olup
+   dugme etkinlesmeli.
    Tarama acilirken RoomPlan baslamadan once dunya takibinin hazirlanmasini bekledigini
    ve `World tracking failure` ham hata metninin gorunmedigini kontrol et. Takibi
    bilerek zayiflatip `Tekrar Tara`ya basinca paylasilan AR oturumu yeniden calismali.
@@ -23,6 +26,12 @@
    insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
    Ana gorunume dondukten sonra AR durumu en gec 10 saniye icinde hazir olmali;
    yeni bir tracking callback'i gelmese de kutuphane ve yerlestirme kullanilabilmeli.
+   Pencereyi veya guclu lambayi dogrudan kadraja alip parlama uyarisi verildigini ve
+   bitirme dugmesinin pasif kaldigini kontrol et. Perdeyi kapatip/isigi arkaya alip
+   iki ardisik kalite olcumunden sonra uyarinin kalktigini dogrula. Karanlik odada
+   RoomPlan `isigi artir`, duz ve dokusuz duvarda `dusuk dokulu yuzey`, hizli kamera
+   hareketinde `yavasla` yonlendirmesi Turkce gorunmeli. Bu kontrol sirasinda kamera
+   onizlemesinde gozle gorulur kare dusmesi olmamali.
 4. `Beyaz Hatlar`i ac; duvar, zemin, kapi/pencere ve taninan buyuk objelerin yalniz
    ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
    butun hatlarin kayboldugunu dogrula.
@@ -32,7 +41,7 @@
    zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
    durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
-6. 30 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Duvar, Isik ve
+6. 38 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
    gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
@@ -41,6 +50,31 @@
    Gecerli modellerde `olcusu okunamadi` mesaji ve katalog boyutunda mavi kutu
    kalmamali; sahneye henuz anchor edilmemis USDZ hiyerarsisi da olculebilmeli.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
+   Deri Koltuk, Vintage Chester Koltuk, Modern Deri Berjer, Mermer Orta Sehpa,
+   Modern Ahsap Konsol ve Saksili Sukulent modellerini sirayla ac. Yukleme sirasinda
+   kamera takilmamali; dokuzdan fazla farkli gercekci model acildiginda eski onbellek
+   girdileri atilmali, sahneye yerlestirilmis nesneler ise gorunur kalmali.
+   Kapi ve pencereli bir odayi tara. `Tugla Duvar Kaplama` ve `Ahsap Duvar Kaplama`
+   icin duvarin farkli noktalarina dokun; her seferinde ayni duvarin tum olcusune
+   oturmali, kapi/pencere/acikliklar hem yukleme yedeginde hem son malzemede acik
+   kalmali. Baska duvarin acikligi yanlis kesilmemeli; dogrudan pencere veya acik
+   kapiya dokunmak o boslugun onune kaplama yerlestirmemeli.
+   6 cm govdenin 54 mm'si duvarin icinde, on yuz 6 mm onde olmali. Yedek modelden
+   USDZ materyaline geciste boyut/konum veya kesimler degismemeli.
+   2 m ve 4 m genisligindeki iki duvari kapla: tugla/ahsap desenlerinin metre olcusu
+   ayni kalmali, genis duvarda daha fazla tekrar gorunmeli; kesimlerde desen atlamamali.
+   Kaplamayi sec; olcek dugmeleri kapali olmali, dondurme kaplamayi cevirmemeli.
+   Kaydet, kapat/ac ve relocalization sonrasi olculer, kesimler ve materyal korunmali.
+   Eski kayitli moduler kaplamanin eski transformuyla yuklendigini de kontrol et.
+   Taramasiz veya egri duvarda anlamli uyari gorunmeli. Capraz/egimli ust sinirda
+   poligon disina tasma olmamali; cok karmasik/bozuk veride kati dikdortgen yedek
+   cizilmemeli. Beyaz Hatlar acik/kapali ve duvarin iki yonunde secimi dene.
+   Duvar onunden bir kisi gecsin, onune sandalye koy: kisi/mobilya kaplamanin
+   onunde kalmali. Acili gorus, farkli isik ve puruzlu duvarda kesilme/titreme,
+   FPS ve isinmayi kaydet. 6 mm pay sensor gurultusune karsi garanti degildir.
+   Taramada hic algilanmayan bir pencere otomatik kesilemez; eksik tarama varsa
+   yeniden tara. Eski Duvar ve Ankesorlu Telefon
+   modellerinin onceki duvar-onu yerlestirmesini korudugunu da kontrol et.
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
    dogru yuzeyi buldugunu; RoomPlan kaydindan sonra uzak zemin ve tavan noktalarinda

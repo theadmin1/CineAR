@@ -1,4 +1,5 @@
 import ARKit
+import CoreVideo
 import Foundation
 import RoomPlan
 import SwiftUI
@@ -194,13 +195,221 @@ private struct CapturedRoomStageOutcome: Sendable {
     let failureMessage: String?
 }
 
+private enum RoomScanLightingState: Equatable, Sendable {
+    case unknown
+    case suitable
+    case tooDark
+    case strongGlare
+}
+
+private struct RoomScanFrameQuality: Sendable {
+    let lighting: RoomScanLightingState
+    let trackingIsNormal: Bool
+    let trackingGuidance: String?
+
+    /// Samples fewer than 1,000 luma pixels from ARKit's full-range Y plane. This is
+    /// deliberately much cheaper than creating a CIImage or running a vision model and
+    /// is sufficient to spot clipped windows, direct lamps and severely dark frames.
+    static func measure(frame: ARFrame) -> RoomScanFrameQuality {
+        let trackingIsNormal: Bool
+        let trackingGuidance: String?
+        switch frame.camera.trackingState {
+        case .normal:
+            trackingIsNormal = true
+            trackingGuidance = nil
+        case .notAvailable:
+            trackingIsNormal = false
+            trackingGuidance = "Kamera takibi kullanılamıyor; telefonu sabit tut"
+        case .limited(let reason):
+            trackingIsNormal = false
+            switch reason {
+            case .excessiveMotion:
+                trackingGuidance = "Telefonu daha yavaş hareket ettir"
+            case .insufficientFeatures:
+                trackingGuidance = "Düz duvara çapraz açıyla yaklaş; köşe veya dokulu alan göster"
+            case .relocalizing:
+                trackingGuidance = "Oda koordinatları yeniden bulunuyor; aynı alanda sabit kal"
+            case .initializing:
+                trackingGuidance = "Dünya takibi hazırlanıyor; telefonu kısa süre sabit tut"
+            @unknown default:
+                trackingGuidance = "Takip sınırlı; telefonu yavaşça detaylı bir alana çevir"
+            }
+        }
+
+        return RoomScanFrameQuality(
+            lighting: measureLighting(
+                in: frame.capturedImage,
+                ambientIntensity: frame.lightEstimate?.ambientIntensity
+            ),
+            trackingIsNormal: trackingIsNormal,
+            trackingGuidance: trackingGuidance
+        )
+    }
+
+    private static func measureLighting(
+        in pixelBuffer: CVPixelBuffer,
+        ambientIntensity: CGFloat?
+    ) -> RoomScanLightingState {
+        guard CVPixelBufferGetPlaneCount(pixelBuffer) > 0,
+              CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly) == kCVReturnSuccess else {
+            return .unknown
+        }
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        let width = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
+        let height = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
+        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        guard width > 0,
+              height > 0,
+              let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else {
+            return .unknown
+        }
+
+        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
+        let xStep = max(1, width / 32)
+        let yStep = max(1, height / 24)
+        var sampleCount = 0
+        var lumaTotal = 0
+        var darkCount = 0
+        var clippedHighlightCount = 0
+
+        var y = yStep / 2
+        while y < height {
+            let row = bytes.advanced(by: y * bytesPerRow)
+            var x = xStep / 2
+            while x < width {
+                let luma = Int(row[x])
+                sampleCount += 1
+                lumaTotal += luma
+                if luma <= 25 { darkCount += 1 }
+                if luma >= 248 { clippedHighlightCount += 1 }
+                x += xStep
+            }
+            y += yStep
+        }
+
+        guard sampleCount > 0 else { return .unknown }
+        let averageLuma = Double(lumaTotal) / Double(sampleCount)
+        let darkRatio = Double(darkCount) / Double(sampleCount)
+        let clippedRatio = Double(clippedHighlightCount) / Double(sampleCount)
+
+        // A bright wall alone should not trigger this warning. The mixed very-dark and
+        // clipped regions are the signature of a window/spotlight that exceeds the
+        // camera's useful dynamic range and commonly disrupts feature tracking.
+        if clippedRatio >= 0.18 || (clippedRatio >= 0.08 && darkRatio >= 0.22) {
+            return .strongGlare
+        }
+        if averageLuma < 42 || darkRatio >= 0.68 || (ambientIntensity ?? 1_000) < 120 {
+            return .tooDark
+        }
+        return .suitable
+    }
+}
+
+private struct RoomScanGeometryMetrics: Sendable {
+    struct WallMeasurement: Equatable, Sendable {
+        let width: Float
+        let height: Float
+    }
+
+    let floorCount: Int
+    let wallCount: Int
+    let objectCount: Int
+    let substantialWallCount: Int
+    let directionCount: Int
+    let totalWallSpan: Float
+    let connectedEndpointRatio: Float
+    let walls: [UUID: WallMeasurement]
+
+    init(room: CapturedRoom) {
+        floorCount = room.floors.count
+        wallCount = room.walls.count
+        objectCount = room.objects.count
+
+        let substantialWalls = room.walls.filter {
+            $0.dimensions.x >= 0.55 && $0.dimensions.y >= 1.0
+        }
+        substantialWallCount = substantialWalls.count
+        totalWallSpan = substantialWalls.reduce(0) { $0 + $1.dimensions.x }
+        walls = Dictionary(uniqueKeysWithValues: substantialWalls.map {
+            (
+                $0.identifier,
+                WallMeasurement(width: $0.dimensions.x, height: $0.dimensions.y)
+            )
+        })
+        directionCount = Self.distinctDirectionCount(in: substantialWalls)
+        connectedEndpointRatio = Self.connectedEndpointRatio(in: substantialWalls)
+    }
+
+    private static func distinctDirectionCount(
+        in walls: [CapturedRoom.Surface]
+    ) -> Int {
+        var directions: [Float] = []
+        let minimumSeparation = Float.pi / 6
+
+        for wall in walls {
+            let normal = wall.transform.columns.2
+            var angle = atan2f(normal.z, normal.x)
+            while angle < 0 { angle += Float.pi }
+            while angle >= Float.pi { angle -= Float.pi }
+
+            let isNewDirection = directions.allSatisfy { existing in
+                let delta = abs(angle - existing)
+                return min(delta, Float.pi - delta) >= minimumSeparation
+            }
+            if isNewDirection { directions.append(angle) }
+        }
+        return directions.count
+    }
+
+    /// A complete room outline has wall endpoints that meet other wall endpoints at
+    /// corners. This catches the common "three walls look present, fourth wall is only
+    /// half scanned" case without assuming that every room is rectangular.
+    private static func connectedEndpointRatio(
+        in walls: [CapturedRoom.Surface]
+    ) -> Float {
+        struct Endpoint {
+            let wallID: UUID
+            let x: Float
+            let z: Float
+        }
+
+        var endpoints: [Endpoint] = []
+        endpoints.reserveCapacity(walls.count * 2)
+        for wall in walls {
+            let halfWidth = wall.dimensions.x * 0.5
+            for localX in [-halfWidth, halfWidth] {
+                let world = wall.transform * SIMD4<Float>(localX, 0, 0, 1)
+                guard world.x.isFinite, world.z.isFinite else { continue }
+                endpoints.append(Endpoint(wallID: wall.identifier, x: world.x, z: world.z))
+            }
+        }
+        guard endpoints.count >= 6 else { return 0 }
+
+        let maximumCornerGapSquared: Float = 0.35 * 0.35
+        var connectedCount = 0
+        for (index, endpoint) in endpoints.enumerated() {
+            let isConnected = endpoints.enumerated().contains { otherIndex, other in
+                guard index != otherIndex, endpoint.wallID != other.wallID else { return false }
+                let dx = endpoint.x - other.x
+                let dz = endpoint.z - other.z
+                return dx * dx + dz * dz <= maximumCornerGapSquared
+            }
+            if isConnected { connectedCount += 1 }
+        }
+        return Float(connectedCount) / Float(endpoints.count)
+    }
+}
+
 @MainActor
 final class RoomScannerController: NSObject, ObservableObject {
     static var isSupported: Bool { RoomCaptureSession.isSupported }
 
     @Published private(set) var statusText = "Odayı yavaşça tarayın"
     @Published private(set) var scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+    @Published private(set) var scanQualityText = "Tarama kalitesi ölçülüyor"
     @Published private(set) var hasUsableRoomGeometry = false
+    @Published private(set) var isScanReady = false
     @Published private(set) var isProcessing = false
     @Published private(set) var exportSucceeded = false
     @Published private(set) var failureMessage: String?
@@ -209,7 +418,11 @@ final class RoomScannerController: NSObject, ObservableObject {
     let roomJSONURL: URL
 
     private let roomStore: CapturedRoomStore
-    private let configuration = RoomCaptureSession.Configuration()
+    private let configuration: RoomCaptureSession.Configuration = {
+        var configuration = RoomCaptureSession.Configuration()
+        configuration.isCoachingEnabled = true
+        return configuration
+    }()
     private let preservesSharedARSession: Bool
     private var shouldExport = true
     private var isSessionRunning = false
@@ -218,6 +431,20 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var scanGeneration: UInt64 = 0
     private var stagingTask: Task<CapturedRoomStageOutcome, Never>?
     private var lastScanSummaryUpdateTime: TimeInterval = 0
+    private var lastFrameQualityUpdateTime: TimeInterval = 0
+    private var scanStartedAt: TimeInterval = 0
+    private var geometryStableSince: TimeInterval?
+    private var lastWallMeasurements: [UUID: RoomScanGeometryMetrics.WallMeasurement] = [:]
+    private var latestFrameQuality = RoomScanFrameQuality(
+        lighting: .unknown,
+        trackingIsNormal: false,
+        trackingGuidance: "Dünya takibi hazırlanıyor"
+    )
+    private var lastMeasuredLighting = RoomScanLightingState.unknown
+    private var lightingMeasurementStreak = 0
+    private var roomPlanGuidance: String?
+    private var roomPlanGuidanceBlocksCompletion = false
+    private var roomPlanGuidanceExpiresAt: TimeInterval = 0
 
     init(
         exportURL: URL,
@@ -258,6 +485,20 @@ final class RoomScannerController: NSObject, ObservableObject {
 
         scanGeneration &+= 1
         lastScanSummaryUpdateTime = 0
+        lastFrameQualityUpdateTime = 0
+        scanStartedAt = 0
+        geometryStableSince = nil
+        lastWallMeasurements.removeAll(keepingCapacity: true)
+        latestFrameQuality = RoomScanFrameQuality(
+            lighting: .unknown,
+            trackingIsNormal: false,
+            trackingGuidance: "Dünya takibi hazırlanıyor"
+        )
+        lastMeasuredLighting = .unknown
+        lightingMeasurementStreak = 0
+        roomPlanGuidance = nil
+        roomPlanGuidanceBlocksCompletion = false
+        roomPlanGuidanceExpiresAt = 0
         let isRetryingAfterFailure = failureMessage != nil
         stagingTask?.cancel()
         stagingTask = nil
@@ -266,7 +507,9 @@ final class RoomScannerController: NSObject, ObservableObject {
         exportSucceeded = false
         failureMessage = nil
         scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+        scanQualityText = "Tarama kalitesi ölçülüyor"
         hasUsableRoomGeometry = false
+        isScanReady = false
         statusText = "Dünya takibi hazırlanıyor…"
         isProcessing = true
         if isRetryingAfterFailure,
@@ -278,8 +521,8 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
-        guard hasUsableRoomGeometry else {
-            statusText = "Bitirmeden önce en az bir zemin ve bir duvar tara"
+        guard isScanReady else {
+            statusText = "Bitirmeden önce sarı kalite uyarısını gider"
             return
         }
 
@@ -317,6 +560,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         shouldExport = false
         discardPendingExport()
         exportSucceeded = false
+        isScanReady = false
         isProcessing = false
         isSessionRunning = false
         failureMessage = message
@@ -334,6 +578,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         if case .normal? = trackingState {
             isProcessing = false
             isSessionRunning = true
+            scanStartedAt = ProcessInfo.processInfo.systemUptime
             statusText = "Önce zemini, sonra duvarları yavaşça tarayın"
             captureView.captureSession.run(configuration: configuration)
             return
@@ -400,6 +645,137 @@ final class RoomScannerController: NSObject, ObservableObject {
         self.pendingArtifacts = nil
     }
 
+    private func wallGeometryChanged(
+        from previous: [UUID: RoomScanGeometryMetrics.WallMeasurement],
+        to current: [UUID: RoomScanGeometryMetrics.WallMeasurement]
+    ) -> Bool {
+        guard Set(previous.keys) == Set(current.keys) else { return true }
+        for (identifier, measurement) in current {
+            guard let old = previous[identifier] else { return true }
+            if abs(old.width - measurement.width) >= 0.06
+                || abs(old.height - measurement.height) >= 0.06 {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func refreshScanQuality(
+        metrics: RoomScanGeometryMetrics,
+        now: TimeInterval
+    ) {
+        if roomPlanGuidanceExpiresAt > 0, now >= roomPlanGuidanceExpiresAt {
+            roomPlanGuidance = nil
+            roomPlanGuidanceBlocksCompletion = false
+            roomPlanGuidanceExpiresAt = 0
+        }
+        let geometryChanged = wallGeometryChanged(
+            from: lastWallMeasurements,
+            to: metrics.walls
+        )
+        if geometryChanged {
+            lastWallMeasurements = metrics.walls
+            geometryStableSince = now
+        } else if geometryStableSince == nil, !metrics.walls.isEmpty {
+            geometryStableSince = now
+        }
+
+        let geometryIsStable = geometryStableSince.map { now - $0 >= 1.1 } ?? false
+        let scanHasSettled = scanStartedAt > 0 && now - scanStartedAt >= 4
+        let hasCornerCoverage = metrics.directionCount >= 2
+        let hasEnoughWallSpan = metrics.totalWallSpan >= 2.4
+        let wallsFormRoomOutline = metrics.connectedEndpointRatio >= 0.72
+        let hasWallCoverage = metrics.substantialWallCount >= 3
+            && hasCornerCoverage
+            && hasEnoughWallSpan
+            && wallsFormRoomOutline
+
+        hasUsableRoomGeometry = metrics.floorCount > 0 && metrics.wallCount > 0
+
+        let lightingIsSuitable: Bool
+        switch latestFrameQuality.lighting {
+        case .tooDark, .strongGlare:
+            lightingIsSuitable = false
+        case .unknown, .suitable:
+            lightingIsSuitable = true
+        }
+
+        isScanReady = hasUsableRoomGeometry
+            && hasWallCoverage
+            && geometryIsStable
+            && scanHasSettled
+            && latestFrameQuality.trackingIsNormal
+            && lightingIsSuitable
+            && !roomPlanGuidanceBlocksCompletion
+
+        if let trackingGuidance = latestFrameQuality.trackingGuidance {
+            statusText = trackingGuidance
+            scanQualityText = "Takip kararsız • Ölçüm bekletiliyor"
+            return
+        }
+        if let roomPlanGuidance {
+            statusText = roomPlanGuidance
+            scanQualityText = "RoomPlan yönlendirmesini tamamla"
+            return
+        }
+        switch latestFrameQuality.lighting {
+        case .strongGlare:
+            statusText = "Parlama algılandı; perdeyi kapat veya ışığı arkana al"
+            scanQualityText = "Aşırı parlak ve koyu bölgeler • Duvar ölçümü bekletiliyor"
+            return
+        case .tooDark:
+            statusText = "Ortam çok karanlık; yaygın oda ışığını artır"
+            scanQualityText = "Yetersiz ışık • Duvar ölçümü bekletiliyor"
+            return
+        case .unknown, .suitable:
+            break
+        }
+        if metrics.floorCount == 0 {
+            statusText = "Kamerayı aşağı eğip zemini yavaşça tara"
+            scanQualityText = "Zemin henüz doğrulanmadı"
+        } else if metrics.substantialWallCount == 0 {
+            statusText = "Zemin bulundu; duvara 1–3 metre mesafeden yaklaş"
+            scanQualityText = "Tam boy bir duvar bekleniyor"
+        } else if !hasWallCoverage {
+            statusText = "Duvarın iki ucunu ve komşu köşeyi çapraz açıyla tara"
+            let cornerPercent = Int((metrics.connectedEndpointRatio * 100).rounded())
+            scanQualityText = "Duvar çevrimi eksik • Köşe bağlantısı %"
+                + String(cornerPercent)
+        } else if !geometryIsStable || !scanHasSettled {
+            statusText = "Ölçünün tamamlanması için telefonu kısa süre sabit tut"
+            scanQualityText = "Duvarlar bulundu • Ölçüler kararlı hale geliyor"
+        } else {
+            statusText = "Tarama kararlı; istersen eksik alanları tamamla veya bitir"
+            scanQualityText = "Işık, takip ve duvar kapsaması uygun"
+        }
+    }
+
+    private func acceptFrameQualityMeasurement(_ measurement: RoomScanFrameQuality) {
+        if measurement.lighting == lastMeasuredLighting {
+            lightingMeasurementStreak += 1
+        } else {
+            lastMeasuredLighting = measurement.lighting
+            lightingMeasurementStreak = 1
+        }
+
+        var acceptedLighting = latestFrameQuality.lighting
+        switch measurement.lighting {
+        case .unknown:
+            break
+        case .suitable, .tooDark, .strongGlare:
+            // Two consecutive readings suppress warnings caused by a hand, a fast
+            // turn past a lamp or one camera auto-exposure transition.
+            if lightingMeasurementStreak >= 2 {
+                acceptedLighting = measurement.lighting
+            }
+        }
+        latestFrameQuality = RoomScanFrameQuality(
+            lighting: acceptedLighting,
+            trackingIsNormal: measurement.trackingIsNormal,
+            trackingGuidance: measurement.trackingGuidance
+        )
+    }
+
     func teardownForDismissal(discardPendingExport shouldDiscard: Bool = true) {
         guard !isTornDown else { return }
         isTornDown = true
@@ -437,24 +813,69 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
         let now = ProcessInfo.processInfo.systemUptime
         guard now - lastScanSummaryUpdateTime >= 0.25 else { return }
         lastScanSummaryUpdateTime = now
-        let floorCount = room.floors.count
-        let wallCount = room.walls.count
-        let objectCount = room.objects.count
+        let metrics = RoomScanGeometryMetrics(room: room)
+        if now - lastFrameQualityUpdateTime >= 0.75,
+           let frame = session.arSession.currentFrame {
+            lastFrameQualityUpdateTime = now
+            acceptFrameQualityMeasurement(RoomScanFrameQuality.measure(frame: frame))
+        }
         let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
             guard let self,
                   self.scanGeneration == generation,
                   self.shouldExport,
                   self.isSessionRunning else { return }
-            let wasUsable = self.hasUsableRoomGeometry
-            self.hasUsableRoomGeometry = floorCount > 0 && wallCount > 0
-            self.scanSummaryText = "Zemin \(floorCount) • Duvar \(wallCount) • Nesne \(objectCount)"
-            if floorCount == 0 {
-                self.statusText = "Kamerayı aşağı eğip zemini yavaşça tara"
-            } else if wallCount == 0 {
-                self.statusText = "Zemin bulundu; şimdi duvar ve köşeleri tara"
-            } else if !wasUsable {
-                self.statusText = "Zemin ve duvar bulundu; eksik alanları tamamla"
+            self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
+            self.refreshScanQuality(metrics: metrics, now: now)
+        }
+    }
+
+    func captureSession(
+        _ session: RoomCaptureSession,
+        didProvide instruction: RoomCaptureSession.Instruction
+    ) {
+        let guidance: String?
+        let blocksCompletion: Bool
+        switch instruction {
+        case .normal:
+            guidance = nil
+            blocksCompletion = false
+        case .moveCloseToWall:
+            guidance = "Duvar ayrıntısı için biraz yaklaş; yaklaşık 1–3 metre uzakta kal"
+            blocksCompletion = true
+        case .moveAwayFromWall:
+            guidance = "Duvarın tamamını görebilmek için biraz geri çekil"
+            blocksCompletion = true
+        case .turnOnLight:
+            guidance = "RoomPlan daha fazla ışık istiyor; yaygın oda ışığını artır"
+            blocksCompletion = true
+        case .slowDown:
+            guidance = "Telefonu yavaşlat; her duvar ve köşede kısa süre dur"
+            blocksCompletion = true
+        case .lowTexture:
+            guidance = "Düz yüzeyde özellik az; duvarı köşe veya kapıyla birlikte çaprazdan tara"
+            blocksCompletion = true
+        @unknown default:
+            guidance = "Tarama açısını değiştirip telefonu yavaşça hareket ettir"
+            blocksCompletion = true
+        }
+
+        let generation = scanGeneration
+        let expiresAt = guidance == nil
+            ? 0
+            : ProcessInfo.processInfo.systemUptime + 2.5
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  self.scanGeneration == generation,
+                  self.shouldExport,
+                  self.isSessionRunning else { return }
+            self.roomPlanGuidance = guidance
+            self.roomPlanGuidanceBlocksCompletion = blocksCompletion
+            self.roomPlanGuidanceExpiresAt = expiresAt
+            if let guidance {
+                self.statusText = guidance
+                self.scanQualityText = "RoomPlan yönlendirmesi etkin"
+                self.isScanReady = false
             }
         }
     }
@@ -498,9 +919,22 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
     func captureView(didPresent processedResult: CapturedRoom, error: Error?) {
         guard shouldExport, isProcessing, !isSessionRunning, !isTornDown else { return }
 
+        let callbackError = error?.localizedDescription
+        let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
+        let processedWallCoverage = processedMetrics.substantialWallCount >= 3
+            && processedMetrics.directionCount >= 2
+            && processedMetrics.totalWallSpan >= 2.4
+            && processedMetrics.connectedEndpointRatio >= 0.72
+        guard callbackError != nil
+                || (processedMetrics.floorCount > 0 && processedWallCoverage) else {
+            recordFailure(
+                "İşleme sonrası duvar kapsaması yetersiz kaldı. Eksik duvarı ve iki komşu köşeyi yeniden tara"
+            )
+            return
+        }
+
         let modelURL = roomStore.modelURL
         let roomJSONURL = roomStore.roomJSONURL
-        let callbackError = error?.localizedDescription
         scanGeneration &+= 1
         let generation = scanGeneration
         stagingTask?.cancel()
@@ -623,12 +1057,20 @@ struct RoomScannerScreen: View {
                     }
                     Label(
                         scanner.scanSummaryText,
-                        systemImage: scanner.hasUsableRoomGeometry
+                        systemImage: scanner.isScanReady
                             ? "checkmark.circle.fill"
                             : "viewfinder.circle"
                     )
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(scanner.hasUsableRoomGeometry ? .green : .yellow)
+                    .foregroundStyle(scanner.isScanReady ? .green : .yellow)
+                    Label(
+                        scanner.scanQualityText,
+                        systemImage: scanner.isScanReady
+                            ? "checkmark.shield.fill"
+                            : "exclamationmark.triangle.fill"
+                    )
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(scanner.isScanReady ? .green : .yellow)
                 }
                 .padding(12)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -663,7 +1105,7 @@ struct RoomScannerScreen: View {
                     .disabled(
                         scanner.isProcessing
                             || !RoomScannerController.isSupported
-                            || !scanner.hasUsableRoomGeometry
+                            || !scanner.isScanReady
                     )
                     .buttonStyle(CineARPrimaryButtonStyle(color: .blue))
                 }

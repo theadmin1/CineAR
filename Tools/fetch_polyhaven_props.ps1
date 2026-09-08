@@ -36,7 +36,13 @@ $assetIDs = @(
     "desk_lamp_arm_01",
     "classic_laptop",
     "television_02",
-    "boombox"
+    "boombox",
+    "sofa_02",
+    "sofa_03",
+    "modern_arm_chair_01",
+    "coffee_table_round_01",
+    "modern_wooden_cabinet",
+    "potted_plant_04"
 )
 
 function Save-VerifiedFile {

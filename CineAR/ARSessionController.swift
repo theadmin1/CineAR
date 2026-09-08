@@ -173,6 +173,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
     private var assetLoadTokens: [UUID: UUID] = [:]
     private var photorealEntityCache: [String: ModelEntity] = [:]
+    private var photorealCacheAccessOrder: [String] = []
+    private let maximumPhotorealCacheEntries = 8
     private var customEntityCache: [String: ModelEntity] = [:]
     private var renderGeneration: UInt64 = 0
     private weak var coachingOverlay: ARCoachingOverlayView?
@@ -1628,6 +1630,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func placementInstruction(for prop: PropKind) -> String {
+        if prop.isWallCladding { return "odayı tara, ardından kaplamak istediğin duvara dokun" }
         switch prop.placementSurface {
         case .floor: return "taranmış zemine dokun"
         case .horizontal: return "zemine veya masa gibi yatay yüzeye dokun"
@@ -1669,7 +1672,12 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
         } else {
             selectedLightSettings = nil
-            publishStatus("Dekor seçildi — boyut panelinden ölçekle veya döndür", color: .blue)
+            publishStatus(
+                placement.wallCladding != nil
+                    ? "Kaplama duvar ölçüsüne sabit — kapı/pencere boşlukları ve doku ölçüsü korunur"
+                    : "Dekor seçildi — boyut panelinden ölçekle veya döndür",
+                color: .blue
+            )
         }
     }
 
@@ -1683,8 +1691,14 @@ final class ARSessionController: NSObject, ObservableObject {
         isAimingLight = false
     }
 
+    var selectedObjectFitsScannedWall: Bool {
+        guard let id = selectedEntityID else { return false }
+        return projectStore.placement(id: id)?.wallCladding != nil
+    }
+
     func previewSelectedObjectScale(_ requestedScale: Float) {
         guard selectedEntityID != nil else { return }
+        guard !selectedObjectFitsScannedWall else { selectedObjectScale = 1; return }
         let scale = min(max(requestedScale, 0.25), 3)
         selectedObjectScale = scale
         if let id = selectedEntityID {
@@ -1695,6 +1709,7 @@ final class ARSessionController: NSObject, ObservableObject {
     func persistSelectedObjectScale() {
         guard let id = selectedEntityID,
               let placement = projectStore.placement(id: id) else { return }
+        guard placement.wallCladding == nil else { selectedObjectScale = 1; return }
         let scale = min(max(selectedObjectScale, 0.25), 3)
         var transform = renderedEntities[id]?.transform ?? placement.transform.realityKitTransform
         let previousScale = placement.transform.realityKitTransform.scale
@@ -2170,6 +2185,22 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
+        if !isPlacingProp {
+            // RoomPlan's invisible wall guide is 4 cm thick and may sit slightly
+            // ahead of a flush cladding. Ignore only that small hit-distance gap;
+            // don't select a covered panel through furniture in front of the wall.
+            let hits = arView.hitTest(point, query: .all, mask: .all)
+            if let nearest = hits.first,
+               let panelHit = hits.first(where: { hit in
+                   guard let id = entityID(from: hit.entity) else { return false }
+                   return projectStore.placement(id: id)?.wallCladding != nil
+                       && hit.distance <= nearest.distance + 0.03
+               }), let id = entityID(from: panelHit.entity) {
+                selectRenderedEntity(id: id)
+                return
+            }
+        }
+
         guard isPlacingProp else { return }
 
         guard !isRoomScanActive,
@@ -2211,14 +2242,28 @@ final class ARSessionController: NSObject, ObservableObject {
         prop: PropKind
     ) {
         guard isPlacingProp, selectedProp == prop else { return }
-        let placementTransform = placementSolution.transform
+        var placementTransform = placementSolution.transform
+        var wallCladding: WallCladdingLayout?
+        if prop.isWallCladding {
+            guard let fitted = roomRealityRenderer.fittedCladdingPlacement(
+                at: placementSolution.position, normal: placementSolution.normal,
+                cameraPosition: arView.cameraTransform.translation
+            ), (try? WallCladdingGeometry.pieces(for: fitted.layout)) != nil else {
+                pendingPlacementRequest = nil
+                publishStatus("Kaplama için taranmış düz bir duvara dokun; gerekirse odayı yeniden tara", color: .yellow)
+                return
+            }
+            placementTransform = fitted.transform
+            wallCladding = fitted.layout
+        }
         let id = UUID()
         let placement = PlacementRecord(
             id: id,
             kind: prop,
             assetFileName: prop == .custom ? selectedAssetURL?.lastPathComponent : nil,
             transform: StoredTransform(defaultTransform(for: prop)),
-            lightSettings: prop.emitsVirtualLight ? .defaultFixture : nil
+            lightSettings: prop.emitsVirtualLight ? .defaultFixture : nil,
+            wallCladding: wallCladding
         )
         do {
             try projectStore.upsert(placement)
@@ -4453,6 +4498,26 @@ final class ARSessionController: NSObject, ObservableObject {
         return token
     }
 
+    private func cachedPhotorealEntity(for prop: PropKind) -> ModelEntity? {
+        let key = prop.rawValue
+        guard let entity = photorealEntityCache[key] else { return nil }
+        photorealCacheAccessOrder.removeAll { $0 == key }
+        photorealCacheAccessOrder.append(key)
+        return entity.clone(recursive: true)
+    }
+
+    private func cachePhotorealEntity(_ entity: ModelEntity, for prop: PropKind) {
+        let key = prop.rawValue
+        photorealEntityCache[key] = entity.clone(recursive: true)
+        photorealCacheAccessOrder.removeAll { $0 == key }
+        photorealCacheAccessOrder.append(key)
+
+        while photorealCacheAccessOrder.count > maximumPhotorealCacheEntries {
+            let evictedKey = photorealCacheAccessOrder.removeFirst()
+            photorealEntityCache[evictedKey] = nil
+        }
+    }
+
     private func finishAssetLoad(id: UUID, token: UUID, generation: UInt64) -> Bool {
         guard renderGeneration == generation, assetLoadTokens[id] == token else { return false }
         loadingEntityIDs.remove(id)
@@ -4477,7 +4542,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if let descriptor = prop.photorealDescriptor {
             let generation = renderGeneration
-            if let cached = photorealEntityCache[prop.rawValue]?.clone(recursive: true) {
+            if let cached = cachedPhotorealEntity(for: prop) {
                 attach(
                     entity: cached,
                     prop: prop,
@@ -4539,7 +4604,7 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         return
                     }
-                    self.photorealEntityCache[prop.rawValue] = entity.clone(recursive: true)
+                    self.cachePhotorealEntity(entity, for: prop)
                     if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
@@ -4673,7 +4738,7 @@ final class ARSessionController: NSObject, ObservableObject {
               renderedEntities[id] == nil,
               let placement = projectStore.placement(id: id),
               placement.kind == prop else { return }
-        let entity = makeContactPivotEntity(content: entity, for: prop)
+        guard let entity = preparePlacementEntity(entity, placement: placement) else { return }
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
@@ -4699,10 +4764,12 @@ final class ARSessionController: NSObject, ObservableObject {
         // Translation is deliberately excluded: a placed prop stays bound to its
         // world anchor. Measured catalog props use the bounded size panel so a stray
         // pinch cannot destroy realism; manual/imported props also support pinch.
-        if hasLockedPhysicalScale(prop) {
-            arView.installGestures([.rotation], for: entity)
-        } else {
-            arView.installGestures([.rotation, .scale], for: entity)
+        // Cladding stays parallel to the wall and uses only the bounded size panel.
+        if !prop.isWallCladding {
+            arView.installGestures(
+                hasLockedPhysicalScale(prop) ? [.rotation] : [.rotation, .scale],
+                for: entity
+            )
         }
 
         renderedAnchorIDs.insert(anchor.identifier)
@@ -4765,7 +4832,7 @@ final class ARSessionController: NSObject, ObservableObject {
               placement.kind == prop else { return false }
 
         let preservedTransform = current.transform
-        let entity = makeContactPivotEntity(content: entity, for: prop)
+        guard let entity = preparePlacementEntity(entity, placement: placement) else { return false }
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
@@ -4794,10 +4861,11 @@ final class ARSessionController: NSObject, ObservableObject {
                 ?? .defaultFixture
             apply(settings: settings, to: light, prop: prop)
         }
-        if hasLockedPhysicalScale(prop) {
-            arView.installGestures([.rotation], for: entity)
-        } else {
-            arView.installGestures([.rotation, .scale], for: entity)
+        if !prop.isWallCladding {
+            arView.installGestures(
+                hasLockedPhysicalScale(prop) ? [.rotation] : [.rotation, .scale],
+                for: entity
+            )
         }
         renderedEntities[id] = entity
         return true
@@ -5304,8 +5372,22 @@ final class ARSessionController: NSObject, ObservableObject {
         return false
     }
 
-    /// Wraps every visual in a surface-contact pivot. Rotation and scale then happen
-    /// around the physical contact point instead of the USDZ's often arbitrary center.
+    /// Fitted walls rebuild the geometry using only the source asset's material.
+    private func preparePlacementEntity(_ content: ModelEntity, placement: PlacementRecord) -> ModelEntity? {
+        guard let layout = placement.wallCladding else {
+            return makeContactPivotEntity(content: content, for: placement.kind)
+        }
+        do {
+            return try WallCladdingMeshFactory.make(
+                layout: layout, tileMeters: placement.kind.wallTextureTileMeters, materialSource: content
+            )
+        } catch {
+            publishStatus("Duvar kaplaması oluşturulamadı; kapı/pencereyi kapatmamak için yerleştirme gösterilmedi", color: .red)
+            return nil
+        }
+    }
+
+    /// Wrap ordinary props around their physical contact point, not the USDZ centre.
     private func makeContactPivotEntity(
         content: ModelEntity,
         for prop: PropKind
@@ -5330,10 +5412,11 @@ final class ARSessionController: NSObject, ObservableObject {
                 content.position.y -= maximumY
             case .wall:
                 let minimumZ = bounds.center.z - extents.z * 0.5
-                // Keep the rear face just 3 mm in front of the measured wall. The old
-                // 8 mm gap was visible on thin clocks after scaling, while a zero gap
-                // can z-fight with the physical-occlusion wall.
-                content.position.z += 0.003 - minimumZ
+                let maximumZ = bounds.center.z + extents.z * 0.5
+                content.position.z += prop.wallContactTranslation(
+                    minimumZ: minimumZ,
+                    maximumZ: maximumZ
+                )
             }
             root.collision = CollisionComponent(
                 shapes: [ShapeResource.generateBox(size: SIMD3(
@@ -5342,6 +5425,16 @@ final class ARSessionController: NSObject, ObservableObject {
                     max(extents.z, 0.04)
                 ))]
             )
+            if prop.isWallCladding {
+                // A thin, front-facing hit target stays selectable although most of
+                // the visual body's depth is behind the real wall. The proxy and final
+                // model use the same pivot, including after saving/reloading a scene.
+                let hitCenter = SIMD3<Float>(bounds.center.x, bounds.center.y, 0.008)
+                root.collision = CollisionComponent(shapes: [
+                    ShapeResource.generateBox(size: [extents.x, extents.y, 0.004])
+                        .offsetBy(translation: hitCenter)
+                ])
+            }
         } else if content.collision == nil {
             content.generateCollisionShapes(recursive: true)
         }
@@ -5488,7 +5581,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func addContactShadow(to entity: ModelEntity, for prop: PropKind) {
-        guard prop != .bloodWaterfall, prop != .rug else { return }
+        guard prop != .bloodWaterfall, prop != .rug, !prop.isWallCladding else { return }
         let bounds = entity.visualBounds(
             recursive: true,
             relativeTo: entity,
@@ -5944,6 +6037,10 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func sceneObjectDetail(for placement: PlacementRecord) -> String {
+        if let layout = placement.wallCladding {
+            return String(format: "Duvara uyumlu • %.2f × %.2f m • %d açıklık",
+                          Double(layout.width), Double(layout.height), layout.cutouts.count)
+        }
         let surface: String
         switch placement.kind.placementSurface {
         case .floor: surface = "Zemin"

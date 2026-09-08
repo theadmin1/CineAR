@@ -49,13 +49,30 @@ $sensitiveExtensions = [System.Collections.Generic.HashSet[string]]::new(
     ".p8", ".p12", ".pem", ".key", ".cer", ".mobileprovision"
 ) | ForEach-Object { [void]$sensitiveExtensions.Add($_) }
 
-$candidatePaths = @(
-    & git -C $repoRoot ls-files --cached --others --exclude-standard
-) + @($sourceRelativePath)
-
-if ($LASTEXITCODE -ne 0) {
-    throw "git ls-files failed with exit code $LASTEXITCODE"
+$hasGitMetadata = (Test-Path -LiteralPath (Join-Path $repoRoot ".git")) -and
+    ($null -ne (Get-Command git -ErrorAction SilentlyContinue))
+if ($hasGitMetadata) {
+    $candidatePaths = @(& git -C $repoRoot ls-files --cached --others --exclude-standard)
+    if ($LASTEXITCODE -ne 0) {
+        throw "git ls-files failed with exit code $LASTEXITCODE"
+    }
+} else {
+    if ($null -eq (Get-Command rg -ErrorAction SilentlyContinue)) {
+        throw "Source folders without Git metadata require ripgrep (rg) to respect .gitignore."
+    }
+    Push-Location $repoRoot
+    try {
+        $candidatePaths = @(& rg --files --hidden --no-require-git `
+            -g '!.git/**' -g '!.codex/**' -g '!.agents/**' `
+            -g '!.github-sync-*/**' -g '!.video-review-*/**')
+        if ($LASTEXITCODE -ne 0) {
+            throw "Source enumeration failed with exit code $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
+    }
 }
+$candidatePaths += @($sourceRelativePath)
 
 $projectPaths = $candidatePaths |
     ForEach-Object { $_.Replace("\", "/") } |
@@ -138,10 +155,14 @@ function Get-CodeFence([string]$Content) {
     return ([char]96).ToString() * $length
 }
 
-$headCommit = (& git -C $repoRoot rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0) { $headCommit = "unavailable" }
-$branchName = (& git -C $repoRoot rev-parse --abbrev-ref HEAD).Trim()
-if ($LASTEXITCODE -ne 0) { $branchName = "unavailable" }
+$headCommit = "unavailable"
+$branchName = "unavailable"
+if ($hasGitMetadata) {
+    $commitOutput = & git -C $repoRoot rev-parse HEAD
+    if ($LASTEXITCODE -eq 0) { $headCommit = "$commitOutput".Trim() }
+    $branchOutput = & git -C $repoRoot rev-parse --abbrev-ref HEAD
+    if ($LASTEXITCODE -eq 0) { $branchName = "$branchOutput".Trim() }
+}
 $generatedAt = [DateTimeOffset]::Now.ToString("yyyy-MM-dd HH:mm:ss zzz")
 
 $projectFile = Join-Path $repoRoot "CineAR.xcodeproj/project.pbxproj"
@@ -181,7 +202,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Projenin amacı")
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 30 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
+[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 38 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Teknoloji ve ana yetenekler")
 [void]$builder.AppendLine()
@@ -192,7 +213,8 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
-[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 30 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi")
 [void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
 [void]$builder.AppendLine("- USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok")
 [void]$builder.AppendLine("- Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli")
@@ -223,10 +245,11 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("| ``ARSessionController`` | ARSession yaşam döngüsü, raycast, manuel dekorlar, gesture'lar, kayıt ve proje koordinasyonu |")
 [void]$builder.AppendLine("| ``RoomScannerController`` | RoomPlan taraması, arka planda güvenli JSON staging ve explicit teardown |")
 [void]$builder.AppendLine("| ``RoomRealityRenderer`` | Düşük maliyetli beyaz oda hatları, görünmez yüzey collider'ları ve deneysel tema renderer'ı |")
+[void]$builder.AppendLine("| ``WallCladdingGeometry`` | Duvar poligonundan açıklıkları çıkarma, tek materyalli kaplama mesh'i, metre tabanlı UV ve boşlukları koruyan dokunma geometrisi |")
 [void]$builder.AppendLine("| ``BundledRoomRealityAssetProvider`` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |")
 [void]$builder.AppendLine("| ``SceneProjectStore`` | ``scene.json``, ``room.json``, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |")
 [void]$builder.AppendLine("| ``ProfessionalRecorder`` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |")
-[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri ve 19 manuel dekor türü |")
+[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri, 38 fotogerçekçi dekor ve eski kayıt uyumluluğu |")
 [void]$builder.AppendLine("| ``codemagic.yaml`` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Temel kullanıcı akışı")
@@ -235,7 +258,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.")
 [void]$builder.AppendLine("3. Sonuç compact ``room.json`` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.")
 [void]$builder.AppendLine("4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.")
-[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 30 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
+[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 38 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
 [void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.")
 [void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
 [void]$builder.AppendLine("8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.")
@@ -266,6 +289,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine('````')
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("Belgenin kendisi sonsuz iç içe geçmeyi önlemek için kaynak listesine alınmaz. Git metadata'sı ve yerel/ignore edilmiş dosyalar dahil edilmez. Sertifika, private key veya provisioning profile uzantıları bulunursa içerikleri gömülmez.")
+[void]$builder.AppendLine("Git metadata'sı olmayan kaynak kopyalarında ripgrep (``rg``) gerekir; ``.gitignore`` kuralları uygulanır ve Git dalı/commit bilgisi ``unavailable`` olarak gösterilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Proje dosya envanteri")
 [void]$builder.AppendLine()

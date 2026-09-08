@@ -75,6 +75,17 @@ workflows:
             exit 1
           fi
 
+      - name: Test wall cladding geometry
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          wall_test_dir="$(mktemp -d)"
+          xcrun swiftc -D WALL_GEOMETRY_TESTS \
+            CineAR/WallCladdingGeometry.swift Tools/test_wall_cladding_geometry.swift \
+            -o "$wall_test_dir/wall-cladding-tests"
+          "$wall_test_dir/wall-cladding-tests"
+
       - name: Apply provisioning profile
         script: xcode-project use-profiles
 

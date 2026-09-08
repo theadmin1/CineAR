@@ -131,6 +131,7 @@ struct PlacementRecord: Codable, Identifiable {
     var assetFileName: String?
     var transform: StoredTransform
     var lightSettings: VirtualLightSettings? = nil
+    var wallCladding: WallCladdingLayout? = nil
 }
 
 struct VirtualLightSettings: Codable, Equatable {
@@ -1157,6 +1158,12 @@ final class SceneProjectStore {
             if let lightSettings = placement.lightSettings {
                 guard placement.kind.emitsVirtualLight, lightSettings.isValid else {
                     throw SceneProjectStoreError.invalidLightSettings(placement.id)
+                }
+            }
+            if let layout = placement.wallCladding {
+                guard placement.kind.isWallCladding, layout.isValid,
+                      placement.transform.scale.allSatisfy({ abs($0 - 1) < 0.0001 }) else {
+                    throw SceneProjectStoreError.invalidTransform(placement.id)
                 }
             }
         }

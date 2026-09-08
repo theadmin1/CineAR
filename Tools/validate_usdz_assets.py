@@ -7,6 +7,11 @@ import sys
 import bpy
 from mathutils import Vector
 
+MAX_USDZ_BYTES = 8 * 1024 * 1024
+MAX_TRIANGLES = 60_000
+MAX_MATERIAL_SLOTS = 24
+MAX_TEXTURE_EDGE = 1024
+
 
 def asset_directory() -> Path:
     try:
@@ -17,6 +22,10 @@ def asset_directory() -> Path:
 
 
 def validate(url: Path) -> None:
+    if url.stat().st_size > MAX_USDZ_BYTES:
+        raise RuntimeError(
+            f"USDZ exceeds mobile bundle budget ({url.stat().st_size} bytes): {url}"
+        )
     bpy.ops.wm.read_factory_settings(use_empty=True)
     imported = bpy.ops.wm.usd_import(filepath=str(url))
     if "FINISHED" not in imported:
@@ -37,10 +46,25 @@ def validate(url: Path) -> None:
     size = maximum - minimum
     if vertices <= 0 or triangles <= 0:
         raise RuntimeError(f"Empty geometry in USDZ: {url}")
+    if triangles > MAX_TRIANGLES:
+        raise RuntimeError(f"Triangle budget exceeded ({triangles}): {url}")
     if not all(isfinite(value) and value > 0.0001 for value in size):
         raise RuntimeError(f"Invalid visual bounds in USDZ: {url}, size={tuple(size)}")
     if material_slots <= 0:
         raise RuntimeError(f"No material slots in USDZ: {url}")
+    if material_slots > MAX_MATERIAL_SLOTS:
+        raise RuntimeError(f"Material slot budget exceeded ({material_slots}): {url}")
+
+    texture_sizes = [
+        tuple(int(value) for value in image.size)
+        for image in bpy.data.images
+        if image.type != "RENDER_RESULT" and min(image.size) > 0
+    ]
+    oversized_textures = [
+        size for size in texture_sizes if max(size) > MAX_TEXTURE_EDGE
+    ]
+    if oversized_textures:
+        raise RuntimeError(f"Texture budget exceeded {oversized_textures}: {url}")
 
     print(
         "CINEAR_USDZ_OK",
@@ -49,15 +73,25 @@ def validate(url: Path) -> None:
         f"vertices={vertices}",
         f"triangles={triangles}",
         f"materials={material_slots}",
+        f"textures={len(texture_sizes)}",
         "size=" + "x".join(f"{value:.4f}" for value in size),
     )
 
 
 def main() -> None:
     directory = asset_directory()
-    urls = sorted(directory.glob("*.usdz"))
+    separator = sys.argv.index("--")
+    requested_names = tuple(sys.argv[separator + 2 :])
+    urls = (
+        [directory / f"{name}.usdz" for name in requested_names]
+        if requested_names
+        else sorted(directory.glob("*.usdz"))
+    )
     if not urls:
         raise SystemExit(f"No USDZ files found: {directory}")
+    missing = [str(url) for url in urls if not url.is_file()]
+    if missing:
+        raise SystemExit("Missing USDZ files: " + ", ".join(missing))
     for url in urls:
         validate(url)
 

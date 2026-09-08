@@ -241,6 +241,73 @@ final class RoomRealityRenderer {
         return closest
     }
 
+    /// Resolve the measured touch to one scanned wall, retaining openings in that
+    /// wall's coordinates. Only the plane's depth is refined by the live LiDAR hit.
+    func fittedCladdingPlacement(
+        at position: SIMD3<Float>, normal measuredNormal: SIMD3<Float>,
+        cameraPosition: SIMD3<Float>
+    ) -> (transform: simd_float4x4, layout: WallCladdingLayout)? {
+        guard let room = lastRoom else { return nil }
+        let walls = Array(room.walls.prefix(Self.maximumWalls))
+        let apertures = Array(room.doors.prefix(Self.maximumPortalsPerKind))
+            + Array(room.windows.prefix(Self.maximumPortalsPerKind))
+            + Array(room.openings.prefix(Self.maximumPortalsPerKind))
+        let associations = associate(apertures: apertures, with: walls)
+        var best: (transform: simd_float4x4, layout: WallCladdingLayout, distance: Float)?
+        for wall in walls {
+            // A flat panel cannot correctly cover a curved wall.
+            guard wall.curve == nil, Self.isValidAffineTransform(wall.transform),
+                  let reportedBounds = Self.surfaceBounds(wall) else { continue }
+            var bounds = reportedBounds
+            var polygon = Self.localPolygon(for: wall) ?? Self.rectanglePolygon(bounds)
+            if Self.isAxisAlignedRectangle(polygon), let size = Self.planarDimensions(wall.dimensions) {
+                bounds = PlanarBounds(
+                    minX: min(bounds.minX, -size.x * 0.5), maxX: max(bounds.maxX, size.x * 0.5),
+                    minY: min(bounds.minY, -size.y * 0.5), maxY: max(bounds.maxY, size.y * 0.5)
+                )
+                polygon = Self.rectanglePolygon(bounds)
+            }
+            let world = lastAlignmentTransform * wall.transform
+            let local = simd_inverse(world) * SIMD4<Float>(position, 1)
+            let worldNormal = simd_normalize(SIMD3<Float>(
+                world.columns.2.x, world.columns.2.y, world.columns.2.z
+            ))
+            guard abs(simd_dot(worldNormal, measuredNormal)) >= 0.96,
+                  abs(local.z) <= 0.12,
+                  WallCladdingGeometry.contains([local.x, local.y], polygon: polygon) else { continue }
+            let cuts = (associations.aperturesByWallID[wall.identifier] ?? []).compactMap {
+                apertureRect($0, relativeTo: wall, wallBounds: bounds)
+            }
+            guard !cuts.contains(where: {
+                local.x >= $0.minX && local.x <= $0.maxX
+                    && local.y >= $0.minY && local.y <= $0.maxY
+            }) else { continue }
+            let center = bounds.center
+            let worldCenter = world * SIMD4<Float>(center.x, center.y, local.z, 1)
+            let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
+            let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
+            var transform = world
+            transform.columns.0 *= sign
+            transform.columns.2 *= sign
+            transform.columns.3 = worldCenter
+            let layout = WallCladdingLayout(
+                wallID: wall.identifier, width: bounds.width, height: bounds.height,
+                outline: polygon.map { [($0.x - center.x) * sign, $0.y - center.y] },
+                cutouts: cuts.map {
+                    let x1 = ($0.minX - center.x) * sign
+                    let x2 = ($0.maxX - center.x) * sign
+                    return .init(minX: min(x1, x2), maxX: max(x1, x2),
+                                 minY: $0.minY - center.y, maxY: $0.maxY - center.y)
+                }
+            )
+            guard layout.isValid else { continue }
+            if best.map({ abs(local.z) < $0.distance }) ?? true {
+                best = (transform, layout, abs(local.z))
+            }
+        }
+        return best.map { ($0.transform, $0.layout) }
+    }
+
     func cachePlacementSurfaces(
         from room: CapturedRoom,
         alignmentTransform: simd_float4x4 = matrix_identity_float4x4

@@ -5,15 +5,15 @@
 
 - Uygulama sürümü: `0.17.4`
 - Proje build numarası: `38`
-- Git dalı: `main`
-- Kaynak commit: `f4075e78a9c98bb9e0ea1f92a85259fd26daf6f8`
-- Oluşturulma zamanı: `2026-09-05 18:16:44 +03:00`
+- Git dalı: `unavailable`
+- Kaynak commit: `unavailable`
+- Oluşturulma zamanı: `2026-09-08 13:16:18 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
 ## Projenin amacı
 
-CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 30 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.
+CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 38 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.
 
 ## Teknoloji ve ana yetenekler
 
@@ -24,7 +24,8 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
-- Poly Haven kaynaklı 1K PBR dokulu 30 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
+- Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
+- Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi
 - Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı
 - USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok
 - Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli
@@ -55,10 +56,11 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 | `ARSessionController` | ARSession yaşam döngüsü, raycast, manuel dekorlar, gesture'lar, kayıt ve proje koordinasyonu |
 | `RoomScannerController` | RoomPlan taraması, arka planda güvenli JSON staging ve explicit teardown |
 | `RoomRealityRenderer` | Düşük maliyetli beyaz oda hatları, görünmez yüzey collider'ları ve deneysel tema renderer'ı |
+| `WallCladdingGeometry` | Duvar poligonundan açıklıkları çıkarma, tek materyalli kaplama mesh'i, metre tabanlı UV ve boşlukları koruyan dokunma geometrisi |
 | `BundledRoomRealityAssetProvider` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |
 | `SceneProjectStore` | `scene.json`, `room.json`, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |
 | `ProfessionalRecorder` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |
-| `RealityTheme` / `PropKind` | Materyal tarifleri, oda rolleri ve 19 manuel dekor türü |
+| `RealityTheme` / `PropKind` | Materyal tarifleri, oda rolleri, 38 fotogerçekçi dekor ve eski kayıt uyumluluğu |
 | `codemagic.yaml` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |
 
 ## Temel kullanıcı akışı
@@ -67,7 +69,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.
 3. Sonuç compact `room.json` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.
 4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.
-5. Kullanıcı kompakt dock'tan hızlı dekor, 30 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
+5. Kullanıcı kompakt dock'tan hızlı dekor, 38 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
 6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.
 7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.
 8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.
@@ -98,6 +100,7 @@ powershell -ExecutionPolicy Bypass -File Tools/generate_all_in_one_markdown.ps1
 ````
 
 Belgenin kendisi sonsuz iç içe geçmeyi önlemek için kaynak listesine alınmaz. Git metadata'sı ve yerel/ignore edilmiş dosyalar dahil edilmez. Sertifika, private key veya provisioning profile uzantıları bulunursa içerikleri gömülmez.
+Git metadata'sı olmayan kaynak kopyalarında ripgrep (`rg`) gerekir; `.gitignore` kuralları uygulanır ve Git dalı/commit bilgisi `unavailable` olarak gösterilir.
 
 ## Proje dosya envanteri
 
@@ -139,6 +142,7 @@ CineAR/RoomAssets/cardboard_box_01.usdz
 CineAR/RoomAssets/ceiling_fan.usdz
 CineAR/RoomAssets/chairModernCushion.usdz
 CineAR/RoomAssets/classic_laptop.usdz
+CineAR/RoomAssets/coffee_table_round_01.usdz
 CineAR/RoomAssets/desk_lamp_arm_01.usdz
 CineAR/RoomAssets/drawer_cabinet.usdz
 CineAR/RoomAssets/hand_truck.usdz
@@ -157,12 +161,17 @@ CineAR/RoomAssets/MANIFEST.sha256
 CineAR/RoomAssets/metal_office_desk.usdz
 CineAR/RoomAssets/metal_tool_chest.usdz
 CineAR/RoomAssets/metal_trash_can.usdz
+CineAR/RoomAssets/modern_arm_chair_01.usdz
+CineAR/RoomAssets/modern_wooden_cabinet.usdz
 CineAR/RoomAssets/plastic_crate_02.usdz
 CineAR/RoomAssets/plastic_monobloc_chair_01.usdz
+CineAR/RoomAssets/potted_plant_04.usdz
 CineAR/RoomAssets/power_box_01.usdz
 CineAR/RoomAssets/SchoolChair_01.usdz
 CineAR/RoomAssets/SchoolDesk_01.usdz
 CineAR/RoomAssets/security_camera_01.usdz
+CineAR/RoomAssets/sofa_02.usdz
+CineAR/RoomAssets/sofa_03.usdz
 CineAR/RoomAssets/stairs.usdz
 CineAR/RoomAssets/steel_frame_shelves_01.usdz
 CineAR/RoomAssets/table.usdz
@@ -170,6 +179,8 @@ CineAR/RoomAssets/television_02.usdz
 CineAR/RoomAssets/televisionModern.usdz
 CineAR/RoomAssets/toilet.usdz
 CineAR/RoomAssets/vintage_wooden_drawer_01.usdz
+CineAR/RoomAssets/wall_cladding_brick.usdz
+CineAR/RoomAssets/wall_cladding_wood.usdz
 CineAR/RoomAssets/wall_clock.usdz
 CineAR/RoomAssets/washerDryerStacked.usdz
 CineAR/RoomAssets/WetFloorSign_01.usdz
@@ -178,6 +189,7 @@ CineAR/RoomAssets/wooden_stool_01.usdz
 CineAR/RoomRealityRenderer.swift
 CineAR/RoomScanner.swift
 CineAR/SceneProjectStore.swift
+CineAR/WallCladdingGeometry.swift
 codemagic.yaml
 Docs/CODEMAGIC.md
 Docs/DEVICE_TEST.md
@@ -186,8 +198,11 @@ README.md
 Tools/convert_kenney_to_usdz.py
 Tools/convert_polyhaven_to_usdz.py
 Tools/fetch_polyhaven_props.ps1
+Tools/fetch_wall_textures.ps1
 Tools/generate_all_in_one_markdown.ps1
+Tools/generate_wall_assets.py
 Tools/render_usdz_thumbnails.py
+Tools/test_wall_cladding_geometry.swift
 Tools/validate_usdz_assets.py
 ````
 
@@ -207,6 +222,7 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/ceiling_fan.usdz` | 2535342 | `f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d` |
 | `CineAR/RoomAssets/chairModernCushion.usdz` | 10190 | `11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e` |
 | `CineAR/RoomAssets/classic_laptop.usdz` | 2745811 | `f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145` |
+| `CineAR/RoomAssets/coffee_table_round_01.usdz` | 1729283 | `d99f126b5a2af640d6ff40e9ce8c5da4b1bdc9cfea9bf6a94f0a620a7adcb0f8` |
 | `CineAR/RoomAssets/desk_lamp_arm_01.usdz` | 3902780 | `6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a` |
 | `CineAR/RoomAssets/drawer_cabinet.usdz` | 2219127 | `351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68` |
 | `CineAR/RoomAssets/hand_truck.usdz` | 3639690 | `fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486` |
@@ -222,12 +238,17 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/metal_office_desk.usdz` | 1847151 | `8e54007f0ddd27d5173e7f4931cdd5792322f6fe39143cfa3bfa5e98ab944511` |
 | `CineAR/RoomAssets/metal_tool_chest.usdz` | 2896433 | `ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba` |
 | `CineAR/RoomAssets/metal_trash_can.usdz` | 5583572 | `d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871` |
+| `CineAR/RoomAssets/modern_arm_chair_01.usdz` | 3086703 | `9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c` |
+| `CineAR/RoomAssets/modern_wooden_cabinet.usdz` | 3599448 | `8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964` |
 | `CineAR/RoomAssets/plastic_crate_02.usdz` | 2088182 | `c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9` |
 | `CineAR/RoomAssets/plastic_monobloc_chair_01.usdz` | 2086673 | `6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a` |
+| `CineAR/RoomAssets/potted_plant_04.usdz` | 2512941 | `22f20d0ddd99b10d3c96b97fd3cfabb4997d2991791a08ad9941a2f149afa34f` |
 | `CineAR/RoomAssets/power_box_01.usdz` | 3489291 | `247cb86f3662b3cdc532229875c3e2ac56d986d5044b967cc51e9499d6fb60a0` |
 | `CineAR/RoomAssets/SchoolChair_01.usdz` | 711033 | `738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6` |
 | `CineAR/RoomAssets/SchoolDesk_01.usdz` | 589809 | `b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596` |
 | `CineAR/RoomAssets/security_camera_01.usdz` | 2355175 | `ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a` |
+| `CineAR/RoomAssets/sofa_02.usdz` | 548337 | `a0033e27a6e82cd725159e85066b8aa6539ef45c9acf96118231ca7793e46890` |
+| `CineAR/RoomAssets/sofa_03.usdz` | 1014368 | `63ca8d488b487ac6abc9f7589ebe464bf66f4c6de10b58298dfb855a845de2e8` |
 | `CineAR/RoomAssets/stairs.usdz` | 27638 | `683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b` |
 | `CineAR/RoomAssets/steel_frame_shelves_01.usdz` | 1767903 | `a809a38664d4e8a65bb067d89a9f74985c1bc24c297b855fa14af4eed807700b` |
 | `CineAR/RoomAssets/table.usdz` | 11768 | `2e84220a7d8db7ca03254c303be3f017ed5c07a080e86f9d94b15a18688af6d0` |
@@ -235,6 +256,8 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/televisionModern.usdz` | 8484 | `a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819` |
 | `CineAR/RoomAssets/toilet.usdz` | 22209 | `b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9` |
 | `CineAR/RoomAssets/vintage_wooden_drawer_01.usdz` | 952403 | `e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe` |
+| `CineAR/RoomAssets/wall_cladding_brick.usdz` | 1085268 | `120420d91647a5567356e933d10c02a41f5b151080b26e5eeeb94dbff23d2b6d` |
+| `CineAR/RoomAssets/wall_cladding_wood.usdz` | 1571074 | `55b869a26454816f1f0ddd71c7674fd2243c1cee22074f4d71012d3f48fa0001` |
 | `CineAR/RoomAssets/wall_clock.usdz` | 1702023 | `9b83332d0db22eab9b514ee5a727acad1d846545785f763c558786e5bc165767` |
 | `CineAR/RoomAssets/washerDryerStacked.usdz` | 83204 | `76d9e6d877d7003c51a503a1c6f890a7b85e9430363daa01f65a2cbb8fd72a16` |
 | `CineAR/RoomAssets/WetFloorSign_01.usdz` | 275541 | `080f512792bcbfdaf913200c3b1e3f1a162c46b16d1ab655ae1b965617c74601` |
@@ -249,7 +272,7 @@ Yok.
 
 | Dosya | Satır | Boyut (byte) |
 | --- | ---: | ---: |
-| `.gitignore` | 30 | 559 |
+| `.gitignore` | 31 | 578 |
 | `AIService/benchmark_server.py` | 118 | 4158 |
 | `AIService/fusion.py` | 100 | 3952 |
 | `AIService/README.md` | 105 | 5042 |
@@ -259,38 +282,42 @@ Yok.
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
-| `CineAR.xcodeproj/project.pbxproj` | 276 | 13316 |
-| `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2161 |
+| `CineAR.xcodeproj/project.pbxproj` | 280 | 13806 |
+| `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 6788 | 284828 |
+| `CineAR/ARSessionController.swift` | 6885 | 289549 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 180 | 6728 |
-| `CineAR/ContentView.swift` | 1466 | 62107 |
+| `CineAR/ContentView.swift` | 1474 | 62812 |
 | `CineAR/Info.plist` | 62 | 2153 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
-| `CineAR/PropKind.swift` | 358 | 14201 |
+| `CineAR/PropKind.swift` | 413 | 17104 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
-| `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 49 | 1217 |
-| `CineAR/RoomAssets/MANIFEST.sha256` | 45 | 3837 |
-| `CineAR/RoomRealityRenderer.swift` | 2169 | 83772 |
-| `CineAR/RoomScanner.swift` | 735 | 26450 |
-| `CineAR/SceneProjectStore.swift` | 1184 | 47533 |
-| `codemagic.yaml` | 138 | 4626 |
-| `Docs/CODEMAGIC.md` | 86 | 4715 |
-| `Docs/DEVICE_TEST.md` | 208 | 14968 |
-| `Docs/ICON_PROMPT.md` | 25 | 1445 |
-| `README.md` | 311 | 20896 |
+| `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
+| `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
+| `CineAR/RoomRealityRenderer.swift` | 2236 | 87612 |
+| `CineAR/RoomScanner.swift` | 1177 | 44411 |
+| `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
+| `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
+| `codemagic.yaml` | 149 | 5039 |
+| `Docs/CODEMAGIC.md` | 86 | 4708 |
+| `Docs/DEVICE_TEST.md` | 242 | 17616 |
+| `Docs/ICON_PROMPT.md` | 25 | 1421 |
+| `README.md` | 370 | 24743 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
-| `Tools/convert_polyhaven_to_usdz.py` | 145 | 4557 |
-| `Tools/fetch_polyhaven_props.ps1` | 88 | 2781 |
-| `Tools/generate_all_in_one_markdown.ps1` | 349 | 18565 |
+| `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
+| `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
+| `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
+| `Tools/generate_all_in_one_markdown.ps1` | 373 | 20058 |
+| `Tools/generate_wall_assets.py` | 81 | 3290 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
-| `Tools/validate_usdz_assets.py` | 67 | 2269 |
+| `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
+| `Tools/validate_usdz_assets.py` | 101 | 3573 |
 
 # Metin tabanlı proje dosyalarının tam içeriği
 
@@ -322,6 +349,7 @@ Kenney-Furniture-Kit.zip
 .tools-cache/
 AIService/.venv/
 AIService/__pycache__/
+Tools/__pycache__/
 AIService/.cache/
 
 # Generated handoff archives are release artifacts, not source files
@@ -1282,6 +1310,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		A1000000000000000000000C /* BundledRoomRealityAssetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* BundledRoomRealityAssetProvider.swift */; };
 		A1000000000000000000000D /* RoomAssets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000F /* RoomAssets */; };
 		A1000000000000000000000E /* AIEnhancementClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* AIEnhancementClient.swift */; };
+		A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* WallCladdingGeometry.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -1301,6 +1330,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		B1000000000000000000000E /* BundledRoomRealityAssetProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledRoomRealityAssetProvider.swift; sourceTree = "<group>"; };
 		B1000000000000000000000F /* RoomAssets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = RoomAssets; sourceTree = "<group>"; };
 		B10000000000000000000010 /* AIEnhancementClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEnhancementClient.swift; sourceTree = "<group>"; };
+		B10000000000000000000011 /* WallCladdingGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallCladdingGeometry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1336,6 +1366,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				B1000000000000000000000D /* RoomRealityRenderer.swift */,
 				B1000000000000000000000E /* BundledRoomRealityAssetProvider.swift */,
 				B10000000000000000000010 /* AIEnhancementClient.swift */,
+				B10000000000000000000011 /* WallCladdingGeometry.swift */,
 				B1000000000000000000000F /* RoomAssets */,
 				B10000000000000000000006 /* Assets.xcassets */,
 				B10000000000000000000007 /* Info.plist */,
@@ -1424,6 +1455,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				A1000000000000000000000B /* RoomRealityRenderer.swift in Sources */,
 				A1000000000000000000000C /* BundledRoomRealityAssetProvider.swift in Sources */,
 				A1000000000000000000000E /* AIEnhancementClient.swift in Sources */,
+				A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2212,6 +2244,8 @@ final class ARSessionController: NSObject, ObservableObject {
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
     private var assetLoadTokens: [UUID: UUID] = [:]
     private var photorealEntityCache: [String: ModelEntity] = [:]
+    private var photorealCacheAccessOrder: [String] = []
+    private let maximumPhotorealCacheEntries = 8
     private var customEntityCache: [String: ModelEntity] = [:]
     private var renderGeneration: UInt64 = 0
     private weak var coachingOverlay: ARCoachingOverlayView?
@@ -3667,6 +3701,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func placementInstruction(for prop: PropKind) -> String {
+        if prop.isWallCladding { return "odayı tara, ardından kaplamak istediğin duvara dokun" }
         switch prop.placementSurface {
         case .floor: return "taranmış zemine dokun"
         case .horizontal: return "zemine veya masa gibi yatay yüzeye dokun"
@@ -3708,7 +3743,12 @@ final class ARSessionController: NSObject, ObservableObject {
             publishStatus("Işık seçildi — güç, renk, yön, eğim ve hüzmeyi ayarlayabilirsin", color: .blue)
         } else {
             selectedLightSettings = nil
-            publishStatus("Dekor seçildi — boyut panelinden ölçekle veya döndür", color: .blue)
+            publishStatus(
+                placement.wallCladding != nil
+                    ? "Kaplama duvar ölçüsüne sabit — kapı/pencere boşlukları ve doku ölçüsü korunur"
+                    : "Dekor seçildi — boyut panelinden ölçekle veya döndür",
+                color: .blue
+            )
         }
     }
 
@@ -3722,8 +3762,14 @@ final class ARSessionController: NSObject, ObservableObject {
         isAimingLight = false
     }
 
+    var selectedObjectFitsScannedWall: Bool {
+        guard let id = selectedEntityID else { return false }
+        return projectStore.placement(id: id)?.wallCladding != nil
+    }
+
     func previewSelectedObjectScale(_ requestedScale: Float) {
         guard selectedEntityID != nil else { return }
+        guard !selectedObjectFitsScannedWall else { selectedObjectScale = 1; return }
         let scale = min(max(requestedScale, 0.25), 3)
         selectedObjectScale = scale
         if let id = selectedEntityID {
@@ -3734,6 +3780,7 @@ final class ARSessionController: NSObject, ObservableObject {
     func persistSelectedObjectScale() {
         guard let id = selectedEntityID,
               let placement = projectStore.placement(id: id) else { return }
+        guard placement.wallCladding == nil else { selectedObjectScale = 1; return }
         let scale = min(max(selectedObjectScale, 0.25), 3)
         var transform = renderedEntities[id]?.transform ?? placement.transform.realityKitTransform
         let previousScale = placement.transform.realityKitTransform.scale
@@ -4209,6 +4256,22 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
+        if !isPlacingProp {
+            // RoomPlan's invisible wall guide is 4 cm thick and may sit slightly
+            // ahead of a flush cladding. Ignore only that small hit-distance gap;
+            // don't select a covered panel through furniture in front of the wall.
+            let hits = arView.hitTest(point, query: .all, mask: .all)
+            if let nearest = hits.first,
+               let panelHit = hits.first(where: { hit in
+                   guard let id = entityID(from: hit.entity) else { return false }
+                   return projectStore.placement(id: id)?.wallCladding != nil
+                       && hit.distance <= nearest.distance + 0.03
+               }), let id = entityID(from: panelHit.entity) {
+                selectRenderedEntity(id: id)
+                return
+            }
+        }
+
         guard isPlacingProp else { return }
 
         guard !isRoomScanActive,
@@ -4250,14 +4313,28 @@ final class ARSessionController: NSObject, ObservableObject {
         prop: PropKind
     ) {
         guard isPlacingProp, selectedProp == prop else { return }
-        let placementTransform = placementSolution.transform
+        var placementTransform = placementSolution.transform
+        var wallCladding: WallCladdingLayout?
+        if prop.isWallCladding {
+            guard let fitted = roomRealityRenderer.fittedCladdingPlacement(
+                at: placementSolution.position, normal: placementSolution.normal,
+                cameraPosition: arView.cameraTransform.translation
+            ), (try? WallCladdingGeometry.pieces(for: fitted.layout)) != nil else {
+                pendingPlacementRequest = nil
+                publishStatus("Kaplama için taranmış düz bir duvara dokun; gerekirse odayı yeniden tara", color: .yellow)
+                return
+            }
+            placementTransform = fitted.transform
+            wallCladding = fitted.layout
+        }
         let id = UUID()
         let placement = PlacementRecord(
             id: id,
             kind: prop,
             assetFileName: prop == .custom ? selectedAssetURL?.lastPathComponent : nil,
             transform: StoredTransform(defaultTransform(for: prop)),
-            lightSettings: prop.emitsVirtualLight ? .defaultFixture : nil
+            lightSettings: prop.emitsVirtualLight ? .defaultFixture : nil,
+            wallCladding: wallCladding
         )
         do {
             try projectStore.upsert(placement)
@@ -6492,6 +6569,26 @@ final class ARSessionController: NSObject, ObservableObject {
         return token
     }
 
+    private func cachedPhotorealEntity(for prop: PropKind) -> ModelEntity? {
+        let key = prop.rawValue
+        guard let entity = photorealEntityCache[key] else { return nil }
+        photorealCacheAccessOrder.removeAll { $0 == key }
+        photorealCacheAccessOrder.append(key)
+        return entity.clone(recursive: true)
+    }
+
+    private func cachePhotorealEntity(_ entity: ModelEntity, for prop: PropKind) {
+        let key = prop.rawValue
+        photorealEntityCache[key] = entity.clone(recursive: true)
+        photorealCacheAccessOrder.removeAll { $0 == key }
+        photorealCacheAccessOrder.append(key)
+
+        while photorealCacheAccessOrder.count > maximumPhotorealCacheEntries {
+            let evictedKey = photorealCacheAccessOrder.removeFirst()
+            photorealEntityCache[evictedKey] = nil
+        }
+    }
+
     private func finishAssetLoad(id: UUID, token: UUID, generation: UInt64) -> Bool {
         guard renderGeneration == generation, assetLoadTokens[id] == token else { return false }
         loadingEntityIDs.remove(id)
@@ -6516,7 +6613,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if let descriptor = prop.photorealDescriptor {
             let generation = renderGeneration
-            if let cached = photorealEntityCache[prop.rawValue]?.clone(recursive: true) {
+            if let cached = cachedPhotorealEntity(for: prop) {
                 attach(
                     entity: cached,
                     prop: prop,
@@ -6578,7 +6675,7 @@ final class ARSessionController: NSObject, ObservableObject {
                         )
                         return
                     }
-                    self.photorealEntityCache[prop.rawValue] = entity.clone(recursive: true)
+                    self.cachePhotorealEntity(entity, for: prop)
                     if self.replaceRenderedEntity(
                         entity: entity,
                         prop: prop,
@@ -6712,7 +6809,7 @@ final class ARSessionController: NSObject, ObservableObject {
               renderedEntities[id] == nil,
               let placement = projectStore.placement(id: id),
               placement.kind == prop else { return }
-        let entity = makeContactPivotEntity(content: entity, for: prop)
+        guard let entity = preparePlacementEntity(entity, placement: placement) else { return }
         let anchorEntity = AnchorEntity(anchor: anchor)
         entity.name = id.uuidString
         entity.transform = placement.transform.realityKitTransform
@@ -6738,10 +6835,12 @@ final class ARSessionController: NSObject, ObservableObject {
         // Translation is deliberately excluded: a placed prop stays bound to its
         // world anchor. Measured catalog props use the bounded size panel so a stray
         // pinch cannot destroy realism; manual/imported props also support pinch.
-        if hasLockedPhysicalScale(prop) {
-            arView.installGestures([.rotation], for: entity)
-        } else {
-            arView.installGestures([.rotation, .scale], for: entity)
+        // Cladding stays parallel to the wall and uses only the bounded size panel.
+        if !prop.isWallCladding {
+            arView.installGestures(
+                hasLockedPhysicalScale(prop) ? [.rotation] : [.rotation, .scale],
+                for: entity
+            )
         }
 
         renderedAnchorIDs.insert(anchor.identifier)
@@ -6804,7 +6903,7 @@ final class ARSessionController: NSObject, ObservableObject {
               placement.kind == prop else { return false }
 
         let preservedTransform = current.transform
-        let entity = makeContactPivotEntity(content: entity, for: prop)
+        guard let entity = preparePlacementEntity(entity, placement: placement) else { return false }
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
@@ -6833,10 +6932,11 @@ final class ARSessionController: NSObject, ObservableObject {
                 ?? .defaultFixture
             apply(settings: settings, to: light, prop: prop)
         }
-        if hasLockedPhysicalScale(prop) {
-            arView.installGestures([.rotation], for: entity)
-        } else {
-            arView.installGestures([.rotation, .scale], for: entity)
+        if !prop.isWallCladding {
+            arView.installGestures(
+                hasLockedPhysicalScale(prop) ? [.rotation] : [.rotation, .scale],
+                for: entity
+            )
         }
         renderedEntities[id] = entity
         return true
@@ -7343,8 +7443,22 @@ final class ARSessionController: NSObject, ObservableObject {
         return false
     }
 
-    /// Wraps every visual in a surface-contact pivot. Rotation and scale then happen
-    /// around the physical contact point instead of the USDZ's often arbitrary center.
+    /// Fitted walls rebuild the geometry using only the source asset's material.
+    private func preparePlacementEntity(_ content: ModelEntity, placement: PlacementRecord) -> ModelEntity? {
+        guard let layout = placement.wallCladding else {
+            return makeContactPivotEntity(content: content, for: placement.kind)
+        }
+        do {
+            return try WallCladdingMeshFactory.make(
+                layout: layout, tileMeters: placement.kind.wallTextureTileMeters, materialSource: content
+            )
+        } catch {
+            publishStatus("Duvar kaplaması oluşturulamadı; kapı/pencereyi kapatmamak için yerleştirme gösterilmedi", color: .red)
+            return nil
+        }
+    }
+
+    /// Wrap ordinary props around their physical contact point, not the USDZ centre.
     private func makeContactPivotEntity(
         content: ModelEntity,
         for prop: PropKind
@@ -7369,10 +7483,11 @@ final class ARSessionController: NSObject, ObservableObject {
                 content.position.y -= maximumY
             case .wall:
                 let minimumZ = bounds.center.z - extents.z * 0.5
-                // Keep the rear face just 3 mm in front of the measured wall. The old
-                // 8 mm gap was visible on thin clocks after scaling, while a zero gap
-                // can z-fight with the physical-occlusion wall.
-                content.position.z += 0.003 - minimumZ
+                let maximumZ = bounds.center.z + extents.z * 0.5
+                content.position.z += prop.wallContactTranslation(
+                    minimumZ: minimumZ,
+                    maximumZ: maximumZ
+                )
             }
             root.collision = CollisionComponent(
                 shapes: [ShapeResource.generateBox(size: SIMD3(
@@ -7381,6 +7496,16 @@ final class ARSessionController: NSObject, ObservableObject {
                     max(extents.z, 0.04)
                 ))]
             )
+            if prop.isWallCladding {
+                // A thin, front-facing hit target stays selectable although most of
+                // the visual body's depth is behind the real wall. The proxy and final
+                // model use the same pivot, including after saving/reloading a scene.
+                let hitCenter = SIMD3<Float>(bounds.center.x, bounds.center.y, 0.008)
+                root.collision = CollisionComponent(shapes: [
+                    ShapeResource.generateBox(size: [extents.x, extents.y, 0.004])
+                        .offsetBy(translation: hitCenter)
+                ])
+            }
         } else if content.collision == nil {
             content.generateCollisionShapes(recursive: true)
         }
@@ -7527,7 +7652,7 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func addContactShadow(to entity: ModelEntity, for prop: PropKind) {
-        guard prop != .bloodWaterfall, prop != .rug else { return }
+        guard prop != .bloodWaterfall, prop != .rug, !prop.isWallCladding else { return }
         let bounds = entity.visualBounds(
             recursive: true,
             relativeTo: entity,
@@ -7983,6 +8108,10 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func sceneObjectDetail(for placement: PlacementRecord) -> String {
+        if let layout = placement.wallCladding {
+            return String(format: "Duvara uyumlu • %.2f × %.2f m • %d açıklık",
+                          Double(layout.width), Double(layout.height), layout.cutouts.count)
+        }
         let surface: String
         switch placement.kind.placementSurface {
         case .floor: surface = "Zemin"
@@ -10269,6 +10398,7 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
                 .font(.caption.weight(.bold))
             }
+            .disabled(session.selectedObjectFitsScannedWall)
 
             HStack(spacing: 8) {
                 Label("Gölge", systemImage: "circle.lefthalf.filled")
@@ -10289,7 +10419,9 @@ struct ContentView: View {
                     .frame(minWidth: 42)
             }
 
-            Text("Boyut %25–%300 arasında sınırlıdır; yüzeye temas noktası ve dünya anchor'ı değişmez.")
+            Text(session.selectedObjectFitsScannedWall
+                 ? "Duvar ölçüsü otomatik uygulanır. Kapı/pencere boşlukları ve tuğla/ahşap doku ölçüsü korunur."
+                 : "Boyut %25–%300 arasında sınırlıdır; yüzeye temas noktası ve dünya anchor'ı değişmez.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -10849,6 +10981,11 @@ struct ContentView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(category.title)
                                     .font(.headline)
+                                if category == .wall {
+                                    Text("Odayı tara, tuğla veya ahşap seç ve duvara dokun. Kaplama duvara sığar; taramada bulunan kapı, pencere ve açıklıklar açık kalır. Desen ölçüsü değişmez.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 LazyVGrid(
                                     columns: Array(
                                         repeating: GridItem(.flexible(), spacing: 10),
@@ -10884,7 +11021,7 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationTitle("30 Gerçekçi 3B Nesne")
+            .navigationTitle("\(PropKind.photorealCases.count) Gerçekçi 3B Nesne")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -11422,6 +11559,7 @@ enum PropLibraryCategory: String, CaseIterable, Identifiable {
     case furniture
     case storage
     case equipment
+    case decor
     case wall
     case lighting
     case electronics
@@ -11434,6 +11572,7 @@ enum PropLibraryCategory: String, CaseIterable, Identifiable {
         case .furniture: "Mobilya"
         case .storage: "Depolama"
         case .equipment: "Ekipman"
+        case .decor: "Dekor"
         case .wall: "Duvar"
         case .lighting: "Işık"
         case .electronics: "Elektronik"
@@ -11477,7 +11616,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case bloodWaterfall
     case apple
 
-    // Curated Poly Haven CC0 photoreal catalog (30 objects).
+    // Curated Poly Haven CC0 photoreal catalog (36 props + 2 wall panels).
     case metalOfficeDesk
     case schoolChair
     case schoolDesk
@@ -11508,6 +11647,14 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case classicLaptop
     case crtTelevision
     case boombox
+    case leatherSofa
+    case vintageSofa
+    case modernArmchair
+    case marbleCoffeeTable
+    case modernCabinet
+    case pottedSucculent
+    case brickWallCladding
+    case woodWallCladding
 
     var id: String { rawValue }
 
@@ -11568,6 +11715,14 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .classicLaptop: "Klasik Dizüstü"
         case .crtTelevision: "Tüplü Televizyon"
         case .boombox: "Kasetçalar"
+        case .leatherSofa: "Deri Koltuk"
+        case .vintageSofa: "Vintage Chester Koltuk"
+        case .modernArmchair: "Modern Deri Berjer"
+        case .marbleCoffeeTable: "Mermer Orta Sehpa"
+        case .modernCabinet: "Modern Ahşap Konsol"
+        case .pottedSucculent: "Saksılı Sukulent"
+        case .brickWallCladding: "Tuğla Duvar Kaplama"
+        case .woodWallCladding: "Ahşap Duvar Kaplama"
         }
     }
 
@@ -11578,9 +11733,9 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .crate, .cardboardBox, .plasticCrate, .woodenCrate: "📦"
         case .lightPanel, .cagedCeilingLight, .industrialPendant,
              .industrialWallLamp, .cagedWallLight, .deskLamp: "💡"
-        case .chair, .schoolChair, .plasticChair: "🪑"
+        case .chair, .schoolChair, .plasticChair, .modernArmchair: "🪑"
         case .table, .metalOfficeDesk, .schoolDesk: "🗄️"
-        case .sofa: "🛋️"
+        case .sofa, .leatherSofa, .vintageSofa: "🛋️"
         case .bed: "🛏️"
         case .bookcase, .steelShelves: "📚"
         case .television, .crtTelevision: "📺"
@@ -11614,6 +11769,11 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .ceilingFan: "🌀"
         case .classicLaptop: "💻"
         case .boombox: "📻"
+        case .marbleCoffeeTable: "☕️"
+        case .modernCabinet: "🗄️"
+        case .pottedSucculent: "🌵"
+        case .brickWallCladding: "🧱"
+        case .woodWallCladding: "🪵"
         }
     }
 
@@ -11631,7 +11791,9 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         .fireExtinguisher, .securityCamera, .powerBox, .payphone,
         .wallClock, .cagedCeilingLight, .industrialPendant, .ceilingFan,
         .industrialWallLamp, .cagedWallLight, .deskLamp, .classicLaptop,
-        .crtTelevision, .boombox
+        .crtTelevision, .boombox, .leatherSofa, .vintageSofa,
+        .modernArmchair, .marbleCoffeeTable, .modernCabinet, .pottedSucculent,
+        .brickWallCladding, .woodWallCladding
     ]
 
     var photorealDescriptor: PhotorealPropDescriptor? {
@@ -11696,9 +11858,39 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
             .init(assetName: "television_02", dimensions: [0.58, 0.48, 0.48], surface: .horizontal, category: .electronics, emitsLight: false)
         case .boombox:
             .init(assetName: "boombox", dimensions: [0.52, 0.31, 0.23], surface: .horizontal, category: .electronics, emitsLight: false)
+        case .leatherSofa:
+            .init(assetName: "sofa_02", dimensions: [1.81, 0.71, 0.82], surface: .floor, category: .furniture, emitsLight: false)
+        case .vintageSofa:
+            .init(assetName: "sofa_03", dimensions: [2.73, 1.12, 0.93], surface: .floor, category: .furniture, emitsLight: false)
+        case .modernArmchair:
+            .init(assetName: "modern_arm_chair_01", dimensions: [0.82, 1.02, 0.99], surface: .floor, category: .furniture, emitsLight: false)
+        case .marbleCoffeeTable:
+            .init(assetName: "coffee_table_round_01", dimensions: [1.30, 0.49, 1.30], surface: .floor, category: .furniture, emitsLight: false)
+        case .modernCabinet:
+            .init(assetName: "modern_wooden_cabinet", dimensions: [2.44, 0.68, 0.52], surface: .floor, category: .storage, emitsLight: false)
+        case .pottedSucculent:
+            .init(assetName: "potted_plant_04", dimensions: [0.17, 0.27, 0.19], surface: .horizontal, category: .decor, emitsLight: false)
+        case .brickWallCladding:
+            .init(assetName: "wall_cladding_brick", dimensions: [2.40, 2.50, 0.06], surface: .wall, category: .wall, emitsLight: false)
+        case .woodWallCladding:
+            .init(assetName: "wall_cladding_wood", dimensions: [2.40, 2.50, 0.06], surface: .wall, category: .wall, emitsLight: false)
         default:
             nil
         }
+    }
+
+    var isWallCladding: Bool {
+        self == .brickWallCladding || self == .woodWallCladding
+    }
+
+    var wallTextureTileMeters: Float {
+        self == .brickWallCladding ? 1.5 : 2.0
+    }
+
+    /// Positive local Z faces the room. Only a small front-face clearance remains
+    /// visible; panel thickness extends behind the measured physical surface.
+    func wallContactTranslation(minimumZ: Float, maximumZ: Float) -> Float {
+        isWallCladding ? 0.006 - maximumZ : 0.003 - minimumZ
     }
 
     var placementSurface: PropPlacementSurface {
@@ -12039,7 +12231,7 @@ attribution. CineAR keeps this notice for provenance and reproducibility.
 The bundled USDZ files were generated from the official 1K glTF downloads with
 Blender 4.5 LTS. Textures are capped at 1024 px for predictable iPhone memory use.
 
-Included Poly Haven asset IDs (30):
+Included Poly Haven asset IDs (36):
 
 metal_office_desk
 SchoolChair_01
@@ -12071,6 +12263,23 @@ desk_lamp_arm_01
 classic_laptop
 television_02
 boombox
+sofa_02
+sofa_03
+modern_arm_chair_01
+coffee_table_round_01
+modern_wooden_cabinet
+potted_plant_04
+
+Additional wall cladding (2 USDZ panels, 38 photoreal catalog entries total):
+wall_cladding_brick.usdz uses https://polyhaven.com/a/brick_wall_001
+wall_cladding_wood.usdz uses https://polyhaven.com/a/wood_plank_wall
+These panels are generated by Tools/generate_wall_assets.py using the original
+1K diffuse, OpenGL normal and roughness textures under the same CC0 license.
+Each panel has 12 triangles and one PBR material; no displacement geometry.
+These bundled panels also act as material templates for automatically fitted
+walls. Runtime wall geometry is rebuilt from the scan with door/window cutouts;
+its triangle count depends on the outline and openings, not the template count.
+Powered by Poly Haven: https://polyhaven.com
 
 Individual source pages follow the form:
 https://polyhaven.com/a/<asset-id>
@@ -12090,6 +12299,7 @@ f0968ac22285b3d7a9af0bfbe4576dc2f9074378dcfbbd2ec093064f9a5e48b0  cardboard_box_
 f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d  ceiling_fan.usdz
 11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e  chairModernCushion.usdz
 f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145  classic_laptop.usdz
+d99f126b5a2af640d6ff40e9ce8c5da4b1bdc9cfea9bf6a94f0a620a7adcb0f8  coffee_table_round_01.usdz
 6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a  desk_lamp_arm_01.usdz
 351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68  drawer_cabinet.usdz
 fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486  hand_truck.usdz
@@ -12105,12 +12315,17 @@ e1ff365a2245f802cd0c31f6972927d8b3a82a4356a46a1f525e79d58558d3ad  loungeDesignSo
 8e54007f0ddd27d5173e7f4931cdd5792322f6fe39143cfa3bfa5e98ab944511  metal_office_desk.usdz
 ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba  metal_tool_chest.usdz
 d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871  metal_trash_can.usdz
+9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c  modern_arm_chair_01.usdz
+8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964  modern_wooden_cabinet.usdz
 c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9  plastic_crate_02.usdz
 6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a  plastic_monobloc_chair_01.usdz
 247cb86f3662b3cdc532229875c3e2ac56d986d5044b967cc51e9499d6fb60a0  power_box_01.usdz
+22f20d0ddd99b10d3c96b97fd3cfabb4997d2991791a08ad9941a2f149afa34f  potted_plant_04.usdz
 738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6  SchoolChair_01.usdz
 b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596  SchoolDesk_01.usdz
 ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a  security_camera_01.usdz
+a0033e27a6e82cd725159e85066b8aa6539ef45c9acf96118231ca7793e46890  sofa_02.usdz
+63ca8d488b487ac6abc9f7589ebe464bf66f4c6de10b58298dfb855a845de2e8  sofa_03.usdz
 683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b  stairs.usdz
 a809a38664d4e8a65bb067d89a9f74985c1bc24c297b855fa14af4eed807700b  steel_frame_shelves_01.usdz
 2e84220a7d8db7ca03254c303be3f017ed5c07a080e86f9d94b15a18688af6d0  table.usdz
@@ -12119,6 +12334,8 @@ a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819  televisionMode
 b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9  toilet.usdz
 e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe  vintage_wooden_drawer_01.usdz
 9b83332d0db22eab9b514ee5a727acad1d846545785f763c558786e5bc165767  wall_clock.usdz
+120420d91647a5567356e933d10c02a41f5b151080b26e5eeeb94dbff23d2b6d  wall_cladding_brick.usdz
+55b869a26454816f1f0ddd71c7674fd2243c1cee22074f4d71012d3f48fa0001  wall_cladding_wood.usdz
 76d9e6d877d7003c51a503a1c6f890a7b85e9430363daa01f65a2cbb8fd72a16  washerDryerStacked.usdz
 080f512792bcbfdaf913200c3b1e3f1a162c46b16d1ab655ae1b965617c74601  WetFloorSign_01.usdz
 842aedb3aa03d4fa34d5e78eb6e7cdf67a2e0da8a26d389b05181bfc494bee8b  wooden_crate_02.usdz
@@ -12369,6 +12586,73 @@ final class RoomRealityRenderer {
             )
         }
         return closest
+    }
+
+    /// Resolve the measured touch to one scanned wall, retaining openings in that
+    /// wall's coordinates. Only the plane's depth is refined by the live LiDAR hit.
+    func fittedCladdingPlacement(
+        at position: SIMD3<Float>, normal measuredNormal: SIMD3<Float>,
+        cameraPosition: SIMD3<Float>
+    ) -> (transform: simd_float4x4, layout: WallCladdingLayout)? {
+        guard let room = lastRoom else { return nil }
+        let walls = Array(room.walls.prefix(Self.maximumWalls))
+        let apertures = Array(room.doors.prefix(Self.maximumPortalsPerKind))
+            + Array(room.windows.prefix(Self.maximumPortalsPerKind))
+            + Array(room.openings.prefix(Self.maximumPortalsPerKind))
+        let associations = associate(apertures: apertures, with: walls)
+        var best: (transform: simd_float4x4, layout: WallCladdingLayout, distance: Float)?
+        for wall in walls {
+            // A flat panel cannot correctly cover a curved wall.
+            guard wall.curve == nil, Self.isValidAffineTransform(wall.transform),
+                  let reportedBounds = Self.surfaceBounds(wall) else { continue }
+            var bounds = reportedBounds
+            var polygon = Self.localPolygon(for: wall) ?? Self.rectanglePolygon(bounds)
+            if Self.isAxisAlignedRectangle(polygon), let size = Self.planarDimensions(wall.dimensions) {
+                bounds = PlanarBounds(
+                    minX: min(bounds.minX, -size.x * 0.5), maxX: max(bounds.maxX, size.x * 0.5),
+                    minY: min(bounds.minY, -size.y * 0.5), maxY: max(bounds.maxY, size.y * 0.5)
+                )
+                polygon = Self.rectanglePolygon(bounds)
+            }
+            let world = lastAlignmentTransform * wall.transform
+            let local = simd_inverse(world) * SIMD4<Float>(position, 1)
+            let worldNormal = simd_normalize(SIMD3<Float>(
+                world.columns.2.x, world.columns.2.y, world.columns.2.z
+            ))
+            guard abs(simd_dot(worldNormal, measuredNormal)) >= 0.96,
+                  abs(local.z) <= 0.12,
+                  WallCladdingGeometry.contains([local.x, local.y], polygon: polygon) else { continue }
+            let cuts = (associations.aperturesByWallID[wall.identifier] ?? []).compactMap {
+                apertureRect($0, relativeTo: wall, wallBounds: bounds)
+            }
+            guard !cuts.contains(where: {
+                local.x >= $0.minX && local.x <= $0.maxX
+                    && local.y >= $0.minY && local.y <= $0.maxY
+            }) else { continue }
+            let center = bounds.center
+            let worldCenter = world * SIMD4<Float>(center.x, center.y, local.z, 1)
+            let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
+            let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
+            var transform = world
+            transform.columns.0 *= sign
+            transform.columns.2 *= sign
+            transform.columns.3 = worldCenter
+            let layout = WallCladdingLayout(
+                wallID: wall.identifier, width: bounds.width, height: bounds.height,
+                outline: polygon.map { [($0.x - center.x) * sign, $0.y - center.y] },
+                cutouts: cuts.map {
+                    let x1 = ($0.minX - center.x) * sign
+                    let x2 = ($0.maxX - center.x) * sign
+                    return .init(minX: min(x1, x2), maxX: max(x1, x2),
+                                 minY: $0.minY - center.y, maxY: $0.maxY - center.y)
+                }
+            )
+            guard layout.isValid else { continue }
+            if best.map({ abs(local.z) < $0.distance }) ?? true {
+                best = (transform, layout, abs(local.z))
+            }
+        }
+        return best.map { ($0.transform, $0.layout) }
     }
 
     func cachePlacementSurfaces(
@@ -14302,6 +14586,7 @@ private extension RoomRealityRenderer {
 
 ````swift
 import ARKit
+import CoreVideo
 import Foundation
 import RoomPlan
 import SwiftUI
@@ -14497,13 +14782,221 @@ private struct CapturedRoomStageOutcome: Sendable {
     let failureMessage: String?
 }
 
+private enum RoomScanLightingState: Equatable, Sendable {
+    case unknown
+    case suitable
+    case tooDark
+    case strongGlare
+}
+
+private struct RoomScanFrameQuality: Sendable {
+    let lighting: RoomScanLightingState
+    let trackingIsNormal: Bool
+    let trackingGuidance: String?
+
+    /// Samples fewer than 1,000 luma pixels from ARKit's full-range Y plane. This is
+    /// deliberately much cheaper than creating a CIImage or running a vision model and
+    /// is sufficient to spot clipped windows, direct lamps and severely dark frames.
+    static func measure(frame: ARFrame) -> RoomScanFrameQuality {
+        let trackingIsNormal: Bool
+        let trackingGuidance: String?
+        switch frame.camera.trackingState {
+        case .normal:
+            trackingIsNormal = true
+            trackingGuidance = nil
+        case .notAvailable:
+            trackingIsNormal = false
+            trackingGuidance = "Kamera takibi kullanılamıyor; telefonu sabit tut"
+        case .limited(let reason):
+            trackingIsNormal = false
+            switch reason {
+            case .excessiveMotion:
+                trackingGuidance = "Telefonu daha yavaş hareket ettir"
+            case .insufficientFeatures:
+                trackingGuidance = "Düz duvara çapraz açıyla yaklaş; köşe veya dokulu alan göster"
+            case .relocalizing:
+                trackingGuidance = "Oda koordinatları yeniden bulunuyor; aynı alanda sabit kal"
+            case .initializing:
+                trackingGuidance = "Dünya takibi hazırlanıyor; telefonu kısa süre sabit tut"
+            @unknown default:
+                trackingGuidance = "Takip sınırlı; telefonu yavaşça detaylı bir alana çevir"
+            }
+        }
+
+        return RoomScanFrameQuality(
+            lighting: measureLighting(
+                in: frame.capturedImage,
+                ambientIntensity: frame.lightEstimate?.ambientIntensity
+            ),
+            trackingIsNormal: trackingIsNormal,
+            trackingGuidance: trackingGuidance
+        )
+    }
+
+    private static func measureLighting(
+        in pixelBuffer: CVPixelBuffer,
+        ambientIntensity: CGFloat?
+    ) -> RoomScanLightingState {
+        guard CVPixelBufferGetPlaneCount(pixelBuffer) > 0,
+              CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly) == kCVReturnSuccess else {
+            return .unknown
+        }
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        let width = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
+        let height = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
+        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
+        guard width > 0,
+              height > 0,
+              let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else {
+            return .unknown
+        }
+
+        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
+        let xStep = max(1, width / 32)
+        let yStep = max(1, height / 24)
+        var sampleCount = 0
+        var lumaTotal = 0
+        var darkCount = 0
+        var clippedHighlightCount = 0
+
+        var y = yStep / 2
+        while y < height {
+            let row = bytes.advanced(by: y * bytesPerRow)
+            var x = xStep / 2
+            while x < width {
+                let luma = Int(row[x])
+                sampleCount += 1
+                lumaTotal += luma
+                if luma <= 25 { darkCount += 1 }
+                if luma >= 248 { clippedHighlightCount += 1 }
+                x += xStep
+            }
+            y += yStep
+        }
+
+        guard sampleCount > 0 else { return .unknown }
+        let averageLuma = Double(lumaTotal) / Double(sampleCount)
+        let darkRatio = Double(darkCount) / Double(sampleCount)
+        let clippedRatio = Double(clippedHighlightCount) / Double(sampleCount)
+
+        // A bright wall alone should not trigger this warning. The mixed very-dark and
+        // clipped regions are the signature of a window/spotlight that exceeds the
+        // camera's useful dynamic range and commonly disrupts feature tracking.
+        if clippedRatio >= 0.18 || (clippedRatio >= 0.08 && darkRatio >= 0.22) {
+            return .strongGlare
+        }
+        if averageLuma < 42 || darkRatio >= 0.68 || (ambientIntensity ?? 1_000) < 120 {
+            return .tooDark
+        }
+        return .suitable
+    }
+}
+
+private struct RoomScanGeometryMetrics: Sendable {
+    struct WallMeasurement: Equatable, Sendable {
+        let width: Float
+        let height: Float
+    }
+
+    let floorCount: Int
+    let wallCount: Int
+    let objectCount: Int
+    let substantialWallCount: Int
+    let directionCount: Int
+    let totalWallSpan: Float
+    let connectedEndpointRatio: Float
+    let walls: [UUID: WallMeasurement]
+
+    init(room: CapturedRoom) {
+        floorCount = room.floors.count
+        wallCount = room.walls.count
+        objectCount = room.objects.count
+
+        let substantialWalls = room.walls.filter {
+            $0.dimensions.x >= 0.55 && $0.dimensions.y >= 1.0
+        }
+        substantialWallCount = substantialWalls.count
+        totalWallSpan = substantialWalls.reduce(0) { $0 + $1.dimensions.x }
+        walls = Dictionary(uniqueKeysWithValues: substantialWalls.map {
+            (
+                $0.identifier,
+                WallMeasurement(width: $0.dimensions.x, height: $0.dimensions.y)
+            )
+        })
+        directionCount = Self.distinctDirectionCount(in: substantialWalls)
+        connectedEndpointRatio = Self.connectedEndpointRatio(in: substantialWalls)
+    }
+
+    private static func distinctDirectionCount(
+        in walls: [CapturedRoom.Surface]
+    ) -> Int {
+        var directions: [Float] = []
+        let minimumSeparation = Float.pi / 6
+
+        for wall in walls {
+            let normal = wall.transform.columns.2
+            var angle = atan2f(normal.z, normal.x)
+            while angle < 0 { angle += Float.pi }
+            while angle >= Float.pi { angle -= Float.pi }
+
+            let isNewDirection = directions.allSatisfy { existing in
+                let delta = abs(angle - existing)
+                return min(delta, Float.pi - delta) >= minimumSeparation
+            }
+            if isNewDirection { directions.append(angle) }
+        }
+        return directions.count
+    }
+
+    /// A complete room outline has wall endpoints that meet other wall endpoints at
+    /// corners. This catches the common "three walls look present, fourth wall is only
+    /// half scanned" case without assuming that every room is rectangular.
+    private static func connectedEndpointRatio(
+        in walls: [CapturedRoom.Surface]
+    ) -> Float {
+        struct Endpoint {
+            let wallID: UUID
+            let x: Float
+            let z: Float
+        }
+
+        var endpoints: [Endpoint] = []
+        endpoints.reserveCapacity(walls.count * 2)
+        for wall in walls {
+            let halfWidth = wall.dimensions.x * 0.5
+            for localX in [-halfWidth, halfWidth] {
+                let world = wall.transform * SIMD4<Float>(localX, 0, 0, 1)
+                guard world.x.isFinite, world.z.isFinite else { continue }
+                endpoints.append(Endpoint(wallID: wall.identifier, x: world.x, z: world.z))
+            }
+        }
+        guard endpoints.count >= 6 else { return 0 }
+
+        let maximumCornerGapSquared: Float = 0.35 * 0.35
+        var connectedCount = 0
+        for (index, endpoint) in endpoints.enumerated() {
+            let isConnected = endpoints.enumerated().contains { otherIndex, other in
+                guard index != otherIndex, endpoint.wallID != other.wallID else { return false }
+                let dx = endpoint.x - other.x
+                let dz = endpoint.z - other.z
+                return dx * dx + dz * dz <= maximumCornerGapSquared
+            }
+            if isConnected { connectedCount += 1 }
+        }
+        return Float(connectedCount) / Float(endpoints.count)
+    }
+}
+
 @MainActor
 final class RoomScannerController: NSObject, ObservableObject {
     static var isSupported: Bool { RoomCaptureSession.isSupported }
 
     @Published private(set) var statusText = "Odayı yavaşça tarayın"
     @Published private(set) var scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+    @Published private(set) var scanQualityText = "Tarama kalitesi ölçülüyor"
     @Published private(set) var hasUsableRoomGeometry = false
+    @Published private(set) var isScanReady = false
     @Published private(set) var isProcessing = false
     @Published private(set) var exportSucceeded = false
     @Published private(set) var failureMessage: String?
@@ -14512,7 +15005,11 @@ final class RoomScannerController: NSObject, ObservableObject {
     let roomJSONURL: URL
 
     private let roomStore: CapturedRoomStore
-    private let configuration = RoomCaptureSession.Configuration()
+    private let configuration: RoomCaptureSession.Configuration = {
+        var configuration = RoomCaptureSession.Configuration()
+        configuration.isCoachingEnabled = true
+        return configuration
+    }()
     private let preservesSharedARSession: Bool
     private var shouldExport = true
     private var isSessionRunning = false
@@ -14521,6 +15018,20 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var scanGeneration: UInt64 = 0
     private var stagingTask: Task<CapturedRoomStageOutcome, Never>?
     private var lastScanSummaryUpdateTime: TimeInterval = 0
+    private var lastFrameQualityUpdateTime: TimeInterval = 0
+    private var scanStartedAt: TimeInterval = 0
+    private var geometryStableSince: TimeInterval?
+    private var lastWallMeasurements: [UUID: RoomScanGeometryMetrics.WallMeasurement] = [:]
+    private var latestFrameQuality = RoomScanFrameQuality(
+        lighting: .unknown,
+        trackingIsNormal: false,
+        trackingGuidance: "Dünya takibi hazırlanıyor"
+    )
+    private var lastMeasuredLighting = RoomScanLightingState.unknown
+    private var lightingMeasurementStreak = 0
+    private var roomPlanGuidance: String?
+    private var roomPlanGuidanceBlocksCompletion = false
+    private var roomPlanGuidanceExpiresAt: TimeInterval = 0
 
     init(
         exportURL: URL,
@@ -14561,6 +15072,20 @@ final class RoomScannerController: NSObject, ObservableObject {
 
         scanGeneration &+= 1
         lastScanSummaryUpdateTime = 0
+        lastFrameQualityUpdateTime = 0
+        scanStartedAt = 0
+        geometryStableSince = nil
+        lastWallMeasurements.removeAll(keepingCapacity: true)
+        latestFrameQuality = RoomScanFrameQuality(
+            lighting: .unknown,
+            trackingIsNormal: false,
+            trackingGuidance: "Dünya takibi hazırlanıyor"
+        )
+        lastMeasuredLighting = .unknown
+        lightingMeasurementStreak = 0
+        roomPlanGuidance = nil
+        roomPlanGuidanceBlocksCompletion = false
+        roomPlanGuidanceExpiresAt = 0
         let isRetryingAfterFailure = failureMessage != nil
         stagingTask?.cancel()
         stagingTask = nil
@@ -14569,7 +15094,9 @@ final class RoomScannerController: NSObject, ObservableObject {
         exportSucceeded = false
         failureMessage = nil
         scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
+        scanQualityText = "Tarama kalitesi ölçülüyor"
         hasUsableRoomGeometry = false
+        isScanReady = false
         statusText = "Dünya takibi hazırlanıyor…"
         isProcessing = true
         if isRetryingAfterFailure,
@@ -14581,8 +15108,8 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
-        guard hasUsableRoomGeometry else {
-            statusText = "Bitirmeden önce en az bir zemin ve bir duvar tara"
+        guard isScanReady else {
+            statusText = "Bitirmeden önce sarı kalite uyarısını gider"
             return
         }
 
@@ -14620,6 +15147,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         shouldExport = false
         discardPendingExport()
         exportSucceeded = false
+        isScanReady = false
         isProcessing = false
         isSessionRunning = false
         failureMessage = message
@@ -14637,6 +15165,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         if case .normal? = trackingState {
             isProcessing = false
             isSessionRunning = true
+            scanStartedAt = ProcessInfo.processInfo.systemUptime
             statusText = "Önce zemini, sonra duvarları yavaşça tarayın"
             captureView.captureSession.run(configuration: configuration)
             return
@@ -14703,6 +15232,137 @@ final class RoomScannerController: NSObject, ObservableObject {
         self.pendingArtifacts = nil
     }
 
+    private func wallGeometryChanged(
+        from previous: [UUID: RoomScanGeometryMetrics.WallMeasurement],
+        to current: [UUID: RoomScanGeometryMetrics.WallMeasurement]
+    ) -> Bool {
+        guard Set(previous.keys) == Set(current.keys) else { return true }
+        for (identifier, measurement) in current {
+            guard let old = previous[identifier] else { return true }
+            if abs(old.width - measurement.width) >= 0.06
+                || abs(old.height - measurement.height) >= 0.06 {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func refreshScanQuality(
+        metrics: RoomScanGeometryMetrics,
+        now: TimeInterval
+    ) {
+        if roomPlanGuidanceExpiresAt > 0, now >= roomPlanGuidanceExpiresAt {
+            roomPlanGuidance = nil
+            roomPlanGuidanceBlocksCompletion = false
+            roomPlanGuidanceExpiresAt = 0
+        }
+        let geometryChanged = wallGeometryChanged(
+            from: lastWallMeasurements,
+            to: metrics.walls
+        )
+        if geometryChanged {
+            lastWallMeasurements = metrics.walls
+            geometryStableSince = now
+        } else if geometryStableSince == nil, !metrics.walls.isEmpty {
+            geometryStableSince = now
+        }
+
+        let geometryIsStable = geometryStableSince.map { now - $0 >= 1.1 } ?? false
+        let scanHasSettled = scanStartedAt > 0 && now - scanStartedAt >= 4
+        let hasCornerCoverage = metrics.directionCount >= 2
+        let hasEnoughWallSpan = metrics.totalWallSpan >= 2.4
+        let wallsFormRoomOutline = metrics.connectedEndpointRatio >= 0.72
+        let hasWallCoverage = metrics.substantialWallCount >= 3
+            && hasCornerCoverage
+            && hasEnoughWallSpan
+            && wallsFormRoomOutline
+
+        hasUsableRoomGeometry = metrics.floorCount > 0 && metrics.wallCount > 0
+
+        let lightingIsSuitable: Bool
+        switch latestFrameQuality.lighting {
+        case .tooDark, .strongGlare:
+            lightingIsSuitable = false
+        case .unknown, .suitable:
+            lightingIsSuitable = true
+        }
+
+        isScanReady = hasUsableRoomGeometry
+            && hasWallCoverage
+            && geometryIsStable
+            && scanHasSettled
+            && latestFrameQuality.trackingIsNormal
+            && lightingIsSuitable
+            && !roomPlanGuidanceBlocksCompletion
+
+        if let trackingGuidance = latestFrameQuality.trackingGuidance {
+            statusText = trackingGuidance
+            scanQualityText = "Takip kararsız • Ölçüm bekletiliyor"
+            return
+        }
+        if let roomPlanGuidance {
+            statusText = roomPlanGuidance
+            scanQualityText = "RoomPlan yönlendirmesini tamamla"
+            return
+        }
+        switch latestFrameQuality.lighting {
+        case .strongGlare:
+            statusText = "Parlama algılandı; perdeyi kapat veya ışığı arkana al"
+            scanQualityText = "Aşırı parlak ve koyu bölgeler • Duvar ölçümü bekletiliyor"
+            return
+        case .tooDark:
+            statusText = "Ortam çok karanlık; yaygın oda ışığını artır"
+            scanQualityText = "Yetersiz ışık • Duvar ölçümü bekletiliyor"
+            return
+        case .unknown, .suitable:
+            break
+        }
+        if metrics.floorCount == 0 {
+            statusText = "Kamerayı aşağı eğip zemini yavaşça tara"
+            scanQualityText = "Zemin henüz doğrulanmadı"
+        } else if metrics.substantialWallCount == 0 {
+            statusText = "Zemin bulundu; duvara 1–3 metre mesafeden yaklaş"
+            scanQualityText = "Tam boy bir duvar bekleniyor"
+        } else if !hasWallCoverage {
+            statusText = "Duvarın iki ucunu ve komşu köşeyi çapraz açıyla tara"
+            let cornerPercent = Int((metrics.connectedEndpointRatio * 100).rounded())
+            scanQualityText = "Duvar çevrimi eksik • Köşe bağlantısı %"
+                + String(cornerPercent)
+        } else if !geometryIsStable || !scanHasSettled {
+            statusText = "Ölçünün tamamlanması için telefonu kısa süre sabit tut"
+            scanQualityText = "Duvarlar bulundu • Ölçüler kararlı hale geliyor"
+        } else {
+            statusText = "Tarama kararlı; istersen eksik alanları tamamla veya bitir"
+            scanQualityText = "Işık, takip ve duvar kapsaması uygun"
+        }
+    }
+
+    private func acceptFrameQualityMeasurement(_ measurement: RoomScanFrameQuality) {
+        if measurement.lighting == lastMeasuredLighting {
+            lightingMeasurementStreak += 1
+        } else {
+            lastMeasuredLighting = measurement.lighting
+            lightingMeasurementStreak = 1
+        }
+
+        var acceptedLighting = latestFrameQuality.lighting
+        switch measurement.lighting {
+        case .unknown:
+            break
+        case .suitable, .tooDark, .strongGlare:
+            // Two consecutive readings suppress warnings caused by a hand, a fast
+            // turn past a lamp or one camera auto-exposure transition.
+            if lightingMeasurementStreak >= 2 {
+                acceptedLighting = measurement.lighting
+            }
+        }
+        latestFrameQuality = RoomScanFrameQuality(
+            lighting: acceptedLighting,
+            trackingIsNormal: measurement.trackingIsNormal,
+            trackingGuidance: measurement.trackingGuidance
+        )
+    }
+
     func teardownForDismissal(discardPendingExport shouldDiscard: Bool = true) {
         guard !isTornDown else { return }
         isTornDown = true
@@ -14740,24 +15400,69 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
         let now = ProcessInfo.processInfo.systemUptime
         guard now - lastScanSummaryUpdateTime >= 0.25 else { return }
         lastScanSummaryUpdateTime = now
-        let floorCount = room.floors.count
-        let wallCount = room.walls.count
-        let objectCount = room.objects.count
+        let metrics = RoomScanGeometryMetrics(room: room)
+        if now - lastFrameQualityUpdateTime >= 0.75,
+           let frame = session.arSession.currentFrame {
+            lastFrameQualityUpdateTime = now
+            acceptFrameQualityMeasurement(RoomScanFrameQuality.measure(frame: frame))
+        }
         let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
             guard let self,
                   self.scanGeneration == generation,
                   self.shouldExport,
                   self.isSessionRunning else { return }
-            let wasUsable = self.hasUsableRoomGeometry
-            self.hasUsableRoomGeometry = floorCount > 0 && wallCount > 0
-            self.scanSummaryText = "Zemin \(floorCount) • Duvar \(wallCount) • Nesne \(objectCount)"
-            if floorCount == 0 {
-                self.statusText = "Kamerayı aşağı eğip zemini yavaşça tara"
-            } else if wallCount == 0 {
-                self.statusText = "Zemin bulundu; şimdi duvar ve köşeleri tara"
-            } else if !wasUsable {
-                self.statusText = "Zemin ve duvar bulundu; eksik alanları tamamla"
+            self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
+            self.refreshScanQuality(metrics: metrics, now: now)
+        }
+    }
+
+    func captureSession(
+        _ session: RoomCaptureSession,
+        didProvide instruction: RoomCaptureSession.Instruction
+    ) {
+        let guidance: String?
+        let blocksCompletion: Bool
+        switch instruction {
+        case .normal:
+            guidance = nil
+            blocksCompletion = false
+        case .moveCloseToWall:
+            guidance = "Duvar ayrıntısı için biraz yaklaş; yaklaşık 1–3 metre uzakta kal"
+            blocksCompletion = true
+        case .moveAwayFromWall:
+            guidance = "Duvarın tamamını görebilmek için biraz geri çekil"
+            blocksCompletion = true
+        case .turnOnLight:
+            guidance = "RoomPlan daha fazla ışık istiyor; yaygın oda ışığını artır"
+            blocksCompletion = true
+        case .slowDown:
+            guidance = "Telefonu yavaşlat; her duvar ve köşede kısa süre dur"
+            blocksCompletion = true
+        case .lowTexture:
+            guidance = "Düz yüzeyde özellik az; duvarı köşe veya kapıyla birlikte çaprazdan tara"
+            blocksCompletion = true
+        @unknown default:
+            guidance = "Tarama açısını değiştirip telefonu yavaşça hareket ettir"
+            blocksCompletion = true
+        }
+
+        let generation = scanGeneration
+        let expiresAt = guidance == nil
+            ? 0
+            : ProcessInfo.processInfo.systemUptime + 2.5
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  self.scanGeneration == generation,
+                  self.shouldExport,
+                  self.isSessionRunning else { return }
+            self.roomPlanGuidance = guidance
+            self.roomPlanGuidanceBlocksCompletion = blocksCompletion
+            self.roomPlanGuidanceExpiresAt = expiresAt
+            if let guidance {
+                self.statusText = guidance
+                self.scanQualityText = "RoomPlan yönlendirmesi etkin"
+                self.isScanReady = false
             }
         }
     }
@@ -14801,9 +15506,22 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
     func captureView(didPresent processedResult: CapturedRoom, error: Error?) {
         guard shouldExport, isProcessing, !isSessionRunning, !isTornDown else { return }
 
+        let callbackError = error?.localizedDescription
+        let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
+        let processedWallCoverage = processedMetrics.substantialWallCount >= 3
+            && processedMetrics.directionCount >= 2
+            && processedMetrics.totalWallSpan >= 2.4
+            && processedMetrics.connectedEndpointRatio >= 0.72
+        guard callbackError != nil
+                || (processedMetrics.floorCount > 0 && processedWallCoverage) else {
+            recordFailure(
+                "İşleme sonrası duvar kapsaması yetersiz kaldı. Eksik duvarı ve iki komşu köşeyi yeniden tara"
+            )
+            return
+        }
+
         let modelURL = roomStore.modelURL
         let roomJSONURL = roomStore.roomJSONURL
-        let callbackError = error?.localizedDescription
         scanGeneration &+= 1
         let generation = scanGeneration
         stagingTask?.cancel()
@@ -14926,12 +15644,20 @@ struct RoomScannerScreen: View {
                     }
                     Label(
                         scanner.scanSummaryText,
-                        systemImage: scanner.hasUsableRoomGeometry
+                        systemImage: scanner.isScanReady
                             ? "checkmark.circle.fill"
                             : "viewfinder.circle"
                     )
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(scanner.hasUsableRoomGeometry ? .green : .yellow)
+                    .foregroundStyle(scanner.isScanReady ? .green : .yellow)
+                    Label(
+                        scanner.scanQualityText,
+                        systemImage: scanner.isScanReady
+                            ? "checkmark.shield.fill"
+                            : "exclamationmark.triangle.fill"
+                    )
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(scanner.isScanReady ? .green : .yellow)
                 }
                 .padding(12)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -14966,7 +15692,7 @@ struct RoomScannerScreen: View {
                     .disabled(
                         scanner.isProcessing
                             || !RoomScannerController.isSupported
-                            || !scanner.hasUsableRoomGeometry
+                            || !scanner.isScanReady
                     )
                     .buttonStyle(CineARPrimaryButtonStyle(color: .blue))
                 }
@@ -15173,6 +15899,7 @@ struct PlacementRecord: Codable, Identifiable {
     var assetFileName: String?
     var transform: StoredTransform
     var lightSettings: VirtualLightSettings? = nil
+    var wallCladding: WallCladdingLayout? = nil
 }
 
 struct VirtualLightSettings: Codable, Equatable {
@@ -16201,6 +16928,12 @@ final class SceneProjectStore {
                     throw SceneProjectStoreError.invalidLightSettings(placement.id)
                 }
             }
+            if let layout = placement.wallCladding {
+                guard placement.kind.isWallCladding, layout.isValid,
+                      placement.transform.scale.allSatisfy({ abs($0 - 1) < 0.0001 }) else {
+                    throw SceneProjectStoreError.invalidTransform(placement.id)
+                }
+            }
         }
     }
 
@@ -16223,6 +16956,296 @@ final class SceneProjectStore {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 }
+````
+
+## `CineAR/WallCladdingGeometry.swift`
+
+````swift
+import Foundation
+
+/// Metre coordinates relative to the wall-centred AR anchor, independent of the
+/// current room.json. Optional in PlacementRecord for older saved scenes.
+struct WallCladdingLayout: Codable {
+    struct Cutout: Codable {
+        var minX: Float
+        var maxX: Float
+        var minY: Float
+        var maxY: Float
+    }
+
+    let wallID: UUID
+    let width: Float
+    let height: Float
+    let outline: [SIMD2<Float>]
+    let cutouts: [Cutout]
+
+    var isValid: Bool {
+        (0.1...20).contains(width) && (0.1...10).contains(height)
+            && (3...256).contains(outline.count) && cutouts.count <= 72
+            && outline.allSatisfy {
+                $0.x.isFinite && $0.y.isFinite
+                    && abs($0.x) <= width * 0.5 + 0.02
+                    && abs($0.y) <= height * 0.5 + 0.02
+            }
+            && cutouts.allSatisfy {
+                [$0.minX, $0.maxX, $0.minY, $0.maxY].allSatisfy(\.isFinite)
+                    && $0.maxX > $0.minX && $0.maxY > $0.minY
+                    && max(abs($0.minX), abs($0.maxX)) <= width * 0.5 + 0.02
+                    && max(abs($0.minY), abs($0.maxY)) <= height * 0.5 + 0.02
+            }
+    }
+}
+
+enum WallCladdingGeometryError: Error {
+    case invalidLayout
+    case invalidPolygon
+    case geometryBudgetExceeded
+    case emptySurface
+}
+
+/// Pure geometry, also exercised by Tools/test_wall_cladding_geometry.swift.
+/// Triangulate the wall, then subtract each aperture from the convex pieces.
+/// No bounding box spanning a door/window is ever used as a visible fallback.
+enum WallCladdingGeometry {
+    static let maximumPieces = 512
+    static let epsilon: Float = 0.000_001
+
+    static func cross(_ a: SIMD2<Float>, _ b: SIMD2<Float>) -> Float {
+        a.x * b.y - a.y * b.x
+    }
+
+    static func signedArea(_ polygon: [SIMD2<Float>]) -> Float {
+        guard polygon.count >= 3 else { return 0 }
+        return polygon.indices.reduce(Float(0)) {
+            $0 + cross(polygon[$1], polygon[($1 + 1) % polygon.count]) * 0.5
+        }
+    }
+
+    static func contains(_ point: SIMD2<Float>, polygon: [SIMD2<Float>]) -> Bool {
+        guard polygon.count >= 3 else { return false }
+        var inside = false
+        for index in polygon.indices {
+            let a = polygon[index]
+            let b = polygon[(index + 1) % polygon.count]
+            let edge = b - a
+            let toPoint = point - a
+            if abs(cross(edge, toPoint)) < epsilon,
+               point.x >= min(a.x, b.x) - epsilon, point.x <= max(a.x, b.x) + epsilon,
+               point.y >= min(a.y, b.y) - epsilon, point.y <= max(a.y, b.y) + epsilon {
+                return true
+            }
+            if (a.y > point.y) != (b.y > point.y),
+               point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x {
+                inside.toggle()
+            }
+        }
+        return inside
+    }
+
+    static func textureCoordinate(_ point: SIMD2<Float>, tileMeters: Float) -> SIMD2<Float> {
+        // Same origin for every cut piece: no stretching or seams at aperture edges.
+        point / tileMeters
+    }
+
+    static func pieces(for layout: WallCladdingLayout) throws -> [[SIMD2<Float>]] {
+        guard layout.isValid else { throw WallCladdingGeometryError.invalidLayout }
+        var pieces = try triangulate(layout.outline)
+        for cutout in layout.cutouts {
+            var remaining: [[SIMD2<Float>]] = []
+            for piece in pieces {
+                var inside = piece
+                // At each boundary retain the outside, then process only the inside.
+                // Thus overlapping cutouts never double-count visible area.
+                for (axis, value, keepGreater) in [
+                    (0, cutout.minX, true), (0, cutout.maxX, false),
+                    (1, cutout.minY, true), (1, cutout.maxY, false)
+                ] {
+                    let outside = clip(inside, axis: axis, value: value, keepGreater: !keepGreater)
+                    if abs(signedArea(outside)) > epsilon { remaining.append(outside) }
+                    inside = clip(inside, axis: axis, value: value, keepGreater: keepGreater)
+                    if inside.count < 3 { break }
+                }
+                guard remaining.count <= maximumPieces else {
+                    throw WallCladdingGeometryError.geometryBudgetExceeded
+                }
+            }
+            pieces = remaining
+        }
+        guard !pieces.isEmpty else { throw WallCladdingGeometryError.emptySurface }
+        return pieces
+    }
+
+    private static func clip(
+        _ polygon: [SIMD2<Float>], axis: Int, value: Float, keepGreater: Bool
+    ) -> [SIMD2<Float>] {
+        guard let last = polygon.last else { return [] }
+        var output: [SIMD2<Float>] = []
+        var previous = last
+        var previousInside = keepGreater ? previous[axis] >= value : previous[axis] <= value
+        for current in polygon {
+            let currentInside = keepGreater ? current[axis] >= value : current[axis] <= value
+            if currentInside != previousInside {
+                let t = (value - previous[axis]) / (current[axis] - previous[axis])
+                output.append(previous + (current - previous) * t)
+            }
+            if currentInside { output.append(current) }
+            previous = current
+            previousInside = currentInside
+        }
+        return cleaned(output)
+    }
+
+    private static func cleaned(_ polygon: [SIMD2<Float>]) -> [SIMD2<Float>] {
+        var result: [SIMD2<Float>] = []
+        for point in polygon {
+            if let last = result.last, abs(point.x - last.x) + abs(point.y - last.y) < epsilon { continue }
+            result.append(point)
+        }
+        if let first = result.first, let last = result.last, result.count > 1,
+           abs(first.x - last.x) + abs(first.y - last.y) < epsilon { result.removeLast() }
+        // RoomPlan often includes collinear corners; removing them avoids stalled ears.
+        var changed = true
+        while changed && result.count > 3 {
+            changed = false
+            for i in result.indices {
+                let a = result[(i + result.count - 1) % result.count]
+                let b = result[i]
+                let c = result[(i + 1) % result.count]
+                if abs(cross(b - a, c - b)) < epsilon {
+                    result.remove(at: i)
+                    changed = true
+                    break
+                }
+            }
+        }
+        return result
+    }
+
+    private static func triangulate(_ outline: [SIMD2<Float>]) throws -> [[SIMD2<Float>]] {
+        var polygon = cleaned(outline)
+        guard abs(signedArea(polygon)) > epsilon else { throw WallCladdingGeometryError.invalidPolygon }
+        // Reject self-crossing outlines instead of producing overlapping fill.
+        for i in polygon.indices {
+            let a = polygon[i]
+            let b = polygon[(i + 1) % polygon.count]
+            for j in polygon.indices where j > i {
+                if j == (i + 1) % polygon.count || (j + 1) % polygon.count == i { continue }
+                let c = polygon[j]
+                let d = polygon[(j + 1) % polygon.count]
+                let denominator = cross(b - a, d - c)
+                if abs(denominator) <= epsilon { continue }
+                let t = cross(c - a, d - c) / denominator
+                let u = cross(c - a, b - a) / denominator
+                if t >= 0 && t <= 1 && u >= 0 && u <= 1 {
+                    throw WallCladdingGeometryError.invalidPolygon
+                }
+            }
+        }
+        if signedArea(polygon) < 0 { polygon.reverse() }
+        var result: [[SIMD2<Float>]] = []
+        while polygon.count > 3 {
+            var found = false
+            for i in polygon.indices {
+                let previous = (i + polygon.count - 1) % polygon.count
+                let next = (i + 1) % polygon.count
+                let triangle = [polygon[previous], polygon[i], polygon[next]]
+                guard cross(triangle[1] - triangle[0], triangle[2] - triangle[1]) > epsilon else { continue }
+                let containsCorner = polygon.indices.contains {
+                    $0 != previous && $0 != i && $0 != next && contains(polygon[$0], polygon: triangle)
+                }
+                if containsCorner { continue }
+                result.append(triangle)
+                polygon.remove(at: i)
+                found = true
+                break
+            }
+            guard found else { throw WallCladdingGeometryError.invalidPolygon }
+        }
+        if abs(signedArea(polygon)) > epsilon { result.append(polygon) }
+        return result
+    }
+}
+
+#if canImport(RealityKit) && !WALL_GEOMETRY_TESTS
+import RealityKit
+import simd
+
+@MainActor
+enum WallCladdingMeshFactory {
+    static func make(
+        layout: WallCladdingLayout, tileMeters: Float, materialSource: Entity
+    ) throws -> ModelEntity {
+        let pieces = try WallCladdingGeometry.pieces(for: layout)
+        guard let material = firstMaterial(in: materialSource), tileMeters > 0 else {
+            throw WallCladdingGeometryError.invalidLayout
+        }
+        var positions: [SIMD3<Float>] = []
+        var normals: [SIMD3<Float>] = []
+        var uv: [SIMD2<Float>] = []
+        var indices: [UInt32] = []
+        var shapes: [ShapeResource] = []
+        let front: Float = 0.006
+        let back: Float = -0.054
+
+        func appendFace(_ points: [SIMD3<Float>], normal: SIMD3<Float>, coordinates: [SIMD2<Float>]) {
+            let start = UInt32(positions.count)
+            positions.append(contentsOf: points)
+            normals.append(contentsOf: Array(repeating: normal, count: points.count))
+            uv.append(contentsOf: coordinates)
+            for i in 1..<(points.count - 1) {
+                indices.append(contentsOf: [start, start + UInt32(i), start + UInt32(i + 1)])
+            }
+        }
+
+        for piece in pieces {
+            // Convex CCW pieces share one material and mesh for the entire wall.
+            let face = piece.map { SIMD3<Float>($0.x, $0.y, front) }
+            let coordinates = piece.map { WallCladdingGeometry.textureCoordinate($0, tileMeters: tileMeters) }
+            appendFace(face, normal: [0, 0, 1], coordinates: coordinates)
+            appendFace(piece.reversed().map { [$0.x, $0.y, back] }, normal: [0, 0, -1],
+                       coordinates: Array(coordinates.reversed()))
+            for i in piece.indices {
+                let a = piece[i]
+                let b = piece[(i + 1) % piece.count]
+                let edge = b - a
+                guard simd_length_squared(edge) > 0.000_000_01 else { continue }
+                let normal = simd_normalize(SIMD3<Float>(edge.y, -edge.x, 0))
+                appendFace([
+                    [a.x, a.y, front], [a.x, a.y, back],
+                    [b.x, b.y, back], [b.x, b.y, front]
+                ], normal: normal, coordinates: [
+                    [0, front / tileMeters], [0, back / tileMeters],
+                    [simd_length(edge) / tileMeters, back / tileMeters],
+                    [simd_length(edge) / tileMeters, front / tileMeters]
+                ])
+            }
+            // Separate collision hulls keep touches through windows/doors open.
+            let hitPoints = piece.flatMap { point in
+                [SIMD3<Float>(point.x, point.y, front), SIMD3<Float>(point.x, point.y, front + 0.004)]
+            }
+            shapes.append(ShapeResource.generateConvex(from: hitPoints))
+        }
+        var descriptor = MeshDescriptor(name: "cinear.fitted-wall")
+        descriptor.positions = MeshBuffers.Positions(positions)
+        descriptor.normals = MeshBuffers.Normals(normals)
+        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(uv)
+        descriptor.primitives = .triangles(indices)
+        let mesh = try MeshResource.generate(from: [descriptor])
+        let root = ModelEntity(mesh: mesh, materials: [material])
+        root.name = "cinear.contact-pivot.fitted-wall"
+        root.collision = CollisionComponent(shapes: shapes)
+        return root
+    }
+
+    private static func firstMaterial(in entity: Entity) -> (any Material)? {
+        if let material = entity.components[ModelComponent.self]?.materials.first { return material }
+        for child in entity.children {
+            if let material = firstMaterial(in: child) { return material }
+        }
+        return nil
+    }
+}
+#endif
 ````
 
 ## `codemagic.yaml`
@@ -16304,6 +17327,17 @@ workflows:
             echo "Bundle ID mismatch. Project: ${project_bundle_id:-not found}; workflow: $BUNDLE_ID" >&2
             exit 1
           fi
+
+      - name: Test wall cladding geometry
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          wall_test_dir="$(mktemp -d)"
+          xcrun swiftc -D WALL_GEOMETRY_TESTS \
+            CineAR/WallCladdingGeometry.swift Tools/test_wall_cladding_geometry.swift \
+            -o "$wall_test_dir/wall-cladding-tests"
+          "$wall_test_dir/wall-cladding-tests"
 
       - name: Apply provisioning profile
         script: xcode-project use-profiles
@@ -16475,7 +17509,10 @@ incelemesine uygulama gondermesi mumkun degildir.
    Odayi RoomPlan ile tamamen tara; `room.json` olustugunu ve `Taramayi Bitir`
    sonrasinda uygulamanin kapanmadigini dogrula.
    Canli sayacta zemin, duvar ve nesne adetleri artmali; zemin veya duvar sifirken
-   `Taramayi Bitir` pasif kalmali ve her ikisi de bulundugunda etkinlesmeli.
+   `Taramayi Bitir` pasif kalmali. Tek, kisa bir duvar parcasi bulundugunda da dugme
+   pasif kalmali; en az uc anlamli duvar, komsu duvar yonleri, birbirine baglanan
+   kose cevrimi ve kararlilasma suresi tamamlandiginda kalite satiri yesil olup
+   dugme etkinlesmeli.
    Tarama acilirken RoomPlan baslamadan once dunya takibinin hazirlanmasini bekledigini
    ve `World tracking failure` ham hata metninin gorunmedigini kontrol et. Takibi
    bilerek zayiflatip `Tekrar Tara`ya basinca paylasilan AR oturumu yeniden calismali.
@@ -16485,6 +17522,12 @@ incelemesine uygulama gondermesi mumkun degildir.
    insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
    Ana gorunume dondukten sonra AR durumu en gec 10 saniye icinde hazir olmali;
    yeni bir tracking callback'i gelmese de kutuphane ve yerlestirme kullanilabilmeli.
+   Pencereyi veya guclu lambayi dogrudan kadraja alip parlama uyarisi verildigini ve
+   bitirme dugmesinin pasif kaldigini kontrol et. Perdeyi kapatip/isigi arkaya alip
+   iki ardisik kalite olcumunden sonra uyarinin kalktigini dogrula. Karanlik odada
+   RoomPlan `isigi artir`, duz ve dokusuz duvarda `dusuk dokulu yuzey`, hizli kamera
+   hareketinde `yavasla` yonlendirmesi Turkce gorunmeli. Bu kontrol sirasinda kamera
+   onizlemesinde gozle gorulur kare dusmesi olmamali.
 4. `Beyaz Hatlar`i ac; duvar, zemin, kapi/pencere ve taninan buyuk objelerin yalniz
    ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
    butun hatlarin kayboldugunu dogrula.
@@ -16494,7 +17537,7 @@ incelemesine uygulama gondermesi mumkun degildir.
    zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
    durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
-6. 30 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Duvar, Isik ve
+6. 38 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
    gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
@@ -16503,6 +17546,31 @@ incelemesine uygulama gondermesi mumkun degildir.
    Gecerli modellerde `olcusu okunamadi` mesaji ve katalog boyutunda mavi kutu
    kalmamali; sahneye henuz anchor edilmemis USDZ hiyerarsisi da olculebilmeli.
    Yerlesimden sonra buyuk panel yerine dort dugmeli kompakt dock gorunmeli.
+   Deri Koltuk, Vintage Chester Koltuk, Modern Deri Berjer, Mermer Orta Sehpa,
+   Modern Ahsap Konsol ve Saksili Sukulent modellerini sirayla ac. Yukleme sirasinda
+   kamera takilmamali; dokuzdan fazla farkli gercekci model acildiginda eski onbellek
+   girdileri atilmali, sahneye yerlestirilmis nesneler ise gorunur kalmali.
+   Kapi ve pencereli bir odayi tara. `Tugla Duvar Kaplama` ve `Ahsap Duvar Kaplama`
+   icin duvarin farkli noktalarina dokun; her seferinde ayni duvarin tum olcusune
+   oturmali, kapi/pencere/acikliklar hem yukleme yedeginde hem son malzemede acik
+   kalmali. Baska duvarin acikligi yanlis kesilmemeli; dogrudan pencere veya acik
+   kapiya dokunmak o boslugun onune kaplama yerlestirmemeli.
+   6 cm govdenin 54 mm'si duvarin icinde, on yuz 6 mm onde olmali. Yedek modelden
+   USDZ materyaline geciste boyut/konum veya kesimler degismemeli.
+   2 m ve 4 m genisligindeki iki duvari kapla: tugla/ahsap desenlerinin metre olcusu
+   ayni kalmali, genis duvarda daha fazla tekrar gorunmeli; kesimlerde desen atlamamali.
+   Kaplamayi sec; olcek dugmeleri kapali olmali, dondurme kaplamayi cevirmemeli.
+   Kaydet, kapat/ac ve relocalization sonrasi olculer, kesimler ve materyal korunmali.
+   Eski kayitli moduler kaplamanin eski transformuyla yuklendigini de kontrol et.
+   Taramasiz veya egri duvarda anlamli uyari gorunmeli. Capraz/egimli ust sinirda
+   poligon disina tasma olmamali; cok karmasik/bozuk veride kati dikdortgen yedek
+   cizilmemeli. Beyaz Hatlar acik/kapali ve duvarin iki yonunde secimi dene.
+   Duvar onunden bir kisi gecsin, onune sandalye koy: kisi/mobilya kaplamanin
+   onunde kalmali. Acili gorus, farkli isik ve puruzlu duvarda kesilme/titreme,
+   FPS ve isinmayi kaydet. 6 mm pay sensor gurultusune karsi garanti degildir.
+   Taramada hic algilanmayan bir pencere otomatik kesilemez; eksik tarama varsa
+   yeniden tara. Eski Duvar ve Ankesorlu Telefon
+   modellerinin onceki duvar-onu yerlestirmesini korudugunu da kontrol et.
 7. Zemin nesnesini zemine, dizustu bilgisayari masa tablasina, kamerayi duvara ve
    kafesli armaturu tavana yerlestir. Yanlis yuzey turundeki ilk carpismayi atlayip
    dogru yuzeyi buldugunu; RoomPlan kaydindan sonra uzak zemin ve tavan noktalarinda
@@ -16748,6 +17816,13 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
 - Tarama ekraninda canli zemin/duvar/nesne sayaci; en az bir zemin ve bir duvar
   bulunmadan hatali veya bos taramayi bitirmeyi engelleme
+- RoomPlan'in yerel yaklas/uzaklas, yavasla, isigi artir ve dusuk dokulu yuzey
+  yonlendirmelerini Turkce gosterme; AR takip sinirliyken olcumu tamamlanmis saymama
+- Her 750 ms'de 32 x 24 luma ornegiyle dusuk maliyetli karanlik/parlama denetimi;
+  pencere veya dogrudan lamba kaynakli yuksek dinamik aralikta perde/isik yonu uyarisi
+- Duvarlari yalniz saymak yerine en az uc anlamli duvar parcasi, farkli duvar yonleri,
+  birbirine baglanan kose cevrimi, toplam genislik ve 1,1 saniyelik olcu kararliligi
+  isteyen tarama kalite kapisi
 - RoomPlan acikken ana AR denetleyicisindeki yerlestirme, efekt, projektor, AI ve
   LiDAR siniflandirma islerini durdurma; bilgi sayacini 250 ms aralikla yenileyerek
   kamera ve beyaz tarama cizgilerine kare butcesini birakma
@@ -16759,7 +17834,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
-- Poly Haven kaynakli 1K PBR dokulu 30 fotogercekci CC0 USDZ dekor; mobilya,
+- Poly Haven kaynakli 1K PBR dokulu 38 fotogercekci CC0 USDZ dekor; mobilya,
   depolama, ekipman, duvar/tavan elemanlari, aydinlatma ve elektronik kategorileri
 - Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
@@ -16768,7 +17843,26 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   10 saniye zaman asimi ve oturum ici model onbellegiyle sonsuz `yukleniyor` durumunu
   engelleme; dosya hazir olunca ayni dunya anchor'inda gercek modelle degisim
 - Anchor edilmeden yapilan USDZ olcumunde inactive cocuklari da hesaba katma; RealityKit'in
-  sifir boyut dondurup 30 modelin tamamini mavi yedek kutuya dusurmesini engelleme
+  sifir boyut dondurup katalog modellerini mavi yedek kutuya dusurmesini engelleme
+- Iki gercek deri/vintage koltuk, modern deri berjer, mermer orta sehpa, ahsap konsol
+  ve saksili sukulent iceren yeni mobil dekor paketi; model basina 1K doku, 60 bin
+  ucgen ve 8 MB dogrulama butcesi
+- Ayni oturumda yalniz son kullanilan sekiz fotogercekci modeli tutan LRU onbellek;
+  aktif sahne nesnelerini bozmadan kullanilmayan kaynak klonlarini bellekten cikarma
+- Duvar kategorisindeki tugla ve ahsap kaplamalar tek dokunusla taranan duvarin
+  genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
+  RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
+  yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
+  On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
+  tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
+  Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.
+  Duvar olcusu, poligon ve kesimler scene.json'a kaydedilir; eski moduler kaplama
+  kayitlari degistirilmez. Yeni kaplama icin tamamlanmis, hizalanmis oda taramasi gerekir.
+  Egri duvarlar desteklenmez; karmasik geometri butceyi asarsa kapali panel uretilmez.
+  Iki kaynak USDZ sablonu toplam 2,53 MiB, sablon basina 12 ucgendir; otomatik
+  kaplama tek mesh/materyal ve en fazla 512 disbukey parca kullanir. Geometri sadece
+  yerlestirme/yukleme sirasinda uretilir. LiDAR ve insan occlusion'i acik kalir;
+  taramada bulunmayan bosluklar ve sensor kaynakli kesilmeler cihazda kontrol edilmelidir.
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Canli kamera ve sanal dekorlari birlikte etkileyen Dogal, Sinema, Teal & Orange,
   Noir, Gerilim ve Ruya film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
@@ -16867,7 +17961,11 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    kapi/pencereleri ve odadaki buyuk objeleri tarayin. AR henuz hazir degilse dugme
    uzerinde bekleme nedeni gorunur; tamamlanmis tarama varsa dugme `Odayi Yeniden Tara`
    olarak degisir. Tarama ekranindaki `Zemin / Duvar / Nesne` sayacinda en az bir
-   zemin ve bir duvar gorulmeden `Taramayi Bitir` etkinlesmez.
+   zemin ve yeterli duvar kapsama alani gorulmeden `Taramayi Bitir` etkinlesmez.
+   Sari kalite satiri parlama, karanlik, hizli hareket, dusuk dokulu yuzey, eksik
+   duvar kosesi veya degismeye devam eden olcuyu bildirir. Pencere/lambayi dogrudan
+   kadraja almak yerine isigi arkaya alip duvarin iki ucunu ve komsu kosesini capraz
+   acidan tarayin; kalite satiri yesile donunce taramayi bitirin.
    `Koordinat` dugmesiyle olceri acin. Uygulama siniflandirilmis LiDAR/ARKit zemini ve
    tavani yeterince kararli gorurse kotlari otomatik kilitler. Gerekirse `Zemini Bul · Y97`ye basip telefonu ekrani
    zemine, arka kamerasi tavana bakacak sekilde bir saniye sabit birakin; bu fiziksel
@@ -16880,7 +17978,7 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
-   `Hazir 3B Nesne Kutuphanesi` icindeki 30 fotogercekci parcadan
+   `Hazir 3B Nesne Kutuphanesi` icindeki 38 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
    Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
@@ -16996,7 +18094,8 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde Poly Haven'dan donusturulmus 30 CC0, 1K PBR USDZ model vardir.
+Bu surumde Poly Haven'dan donusturulmus 36 CC0 model ve fotografik dokularla
+uretilmis 2 duvar paneli olmak uzere 38 adet 1K PBR USDZ katalog varligi vardir.
 Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
 boyutlarina normalize edilir, sahne listesinde `genislik x yukseklik x derinlik`
 olarak gosterilir ve olculmus katalog modellerinin olcegi kilitlenir. Eski projeler icin
@@ -17011,6 +18110,34 @@ zekayla silip arka plani tamamlama (video inpainting) bu surumde yoktur; sanal
 yuzeyler, RoomPlan mobilya derinlik vekilleri ve derinlik/insan occlusion'i kullanilir.
 
 Ayrintili kabul kriterleri icin `Docs/DEVICE_TEST.md` dosyasina bakin.
+
+### Duvar kaplamalarini yeniden uretme
+
+`Tools/fetch_wall_textures.ps1` resmi Poly Haven 1K dokularini MD5 kontroluyle
+indirir (Powered by Poly Haven: https://polyhaven.com). Blender 4.5+ ile:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Tools/fetch_wall_textures.ps1
+blender --background --factory-startup --python-exit-code 1 --python Tools/generate_wall_assets.py -- .asset-cache/wall-textures CineAR/RoomAssets
+blender --background --factory-startup --python-exit-code 1 --python Tools/validate_usdz_assets.py -- CineAR/RoomAssets wall_cladding_brick wall_cladding_wood
+```
+
+USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidir.
+
+### Otomatik duvar kaplama testleri
+
+`WallCladdingGeometry.swift` oda poligonunu ucgenleyip acikliklari cikarir;
+kesimler arasinda ortak metre tabanli doku koordinatlari kullanir. Hesaplama
+testleri kapilar, pencereler, ust uste binen acikliklar, ters duvar yonu, icbukey
+ve egimli sinirlar, kaydet/yukle ve doku tekrarini kapsar. Swift kurulu bir ortamda:
+
+```sh
+swiftc -D WALL_GEOMETRY_TESTS CineAR/WallCladdingGeometry.swift Tools/test_wall_cladding_geometry.swift -o /tmp/cinear-wall-tests
+/tmp/cinear-wall-tests
+```
+
+Codemagic ayni testi IPA derlemesinden once calistirir. Bu test RoomPlan/RealityKit
+cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedir.
 ````
 
 ## `Tools/convert_kenney_to_usdz.py`
@@ -17147,6 +18274,8 @@ if __name__ == "__main__":
 Run with Blender 4.5 or newer:
   blender --background --factory-startup --python Tools/convert_polyhaven_to_usdz.py -- \
     ".asset-cache/polyhaven" "CineAR/RoomAssets"
+
+Append one or more asset IDs to convert only those assets.
 """
 
 from pathlib import Path
@@ -17186,10 +18315,16 @@ ASSET_IDS = (
     "classic_laptop",
     "television_02",
     "boombox",
+    "sofa_02",
+    "sofa_03",
+    "modern_arm_chair_01",
+    "coffee_table_round_01",
+    "modern_wooden_cabinet",
+    "potted_plant_04",
 )
 
 
-def arguments() -> tuple[Path, Path]:
+def arguments() -> tuple[Path, Path, tuple[str, ...]]:
     try:
         separator = sys.argv.index("--")
         source_value, output_value = sys.argv[separator + 1 : separator + 3]
@@ -17201,7 +18336,11 @@ def arguments() -> tuple[Path, Path]:
     if not source.is_dir():
         raise SystemExit(f"Source directory does not exist: {source}")
     output.mkdir(parents=True, exist_ok=True)
-    return source, output
+    requested_ids = tuple(sys.argv[separator + 3 :])
+    unknown_ids = sorted(set(requested_ids) - set(ASSET_IDS))
+    if unknown_ids:
+        raise SystemExit("Unknown asset IDs: " + ", ".join(unknown_ids))
+    return source, output, requested_ids or ASSET_IDS
 
 
 def convert(source: Path, output: Path, asset_id: str) -> None:
@@ -17226,6 +18365,12 @@ def convert(source: Path, output: Path, asset_id: str) -> None:
         if item.type in {"CAMERA", "LIGHT"}:
             bpy.data.objects.remove(item, do_unlink=True)
 
+    export_mobile_usdz(output_url)
+    print(f"CINEAR_USDZ {asset_id} {output_url.stat().st_size}")
+
+
+def export_mobile_usdz(output_url: Path) -> None:
+    """Export the current scene with the shared mobile material/geometry settings."""
     exported = bpy.ops.wm.usd_export(
         filepath=str(output_url),
         selected_objects_only=False,
@@ -17275,12 +18420,11 @@ def convert(source: Path, output: Path, asset_id: str) -> None:
         raise RuntimeError(f"USDZ export failed: {output_url}")
     if output_url.stat().st_size < 1024:
         raise RuntimeError(f"USDZ output is unexpectedly small: {output_url}")
-    print(f"CINEAR_USDZ {asset_id} {output_url.stat().st_size}")
 
 
 def main() -> None:
-    source, output = arguments()
-    for asset_id in ASSET_IDS:
+    source, output, asset_ids = arguments()
+    for asset_id in asset_ids:
         convert(source, output, asset_id)
 
 
@@ -17329,7 +18473,13 @@ $assetIDs = @(
     "desk_lamp_arm_01",
     "classic_laptop",
     "television_02",
-    "boombox"
+    "boombox",
+    "sofa_02",
+    "sofa_03",
+    "modern_arm_chair_01",
+    "coffee_table_round_01",
+    "modern_wooden_cabinet",
+    "potted_plant_04"
 )
 
 function Save-VerifiedFile {
@@ -17378,6 +18528,40 @@ foreach ($assetID in $assetIDs) {
 }
 
 Write-Host "CINEAR_FETCH_COMPLETE $($assetIDs.Count) $root"
+````
+
+## `Tools/fetch_wall_textures.ps1`
+
+````powershell
+param(
+    [string]$OutputDirectory = ".asset-cache/wall-textures"
+)
+
+$ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+# Powered by Poly Haven: https://polyhaven.com
+$root = [IO.Path]::GetFullPath($OutputDirectory)
+foreach ($assetID in @("brick_wall_001", "wood_plank_wall")) {
+    $metadata = Invoke-RestMethod -Uri "https://api.polyhaven.com/files/$assetID"
+    $directory = Join-Path $root $assetID
+    New-Item -ItemType Directory -Force -Path $directory | Out-Null
+    foreach ($map in @("Diffuse", "nor_gl", "Rough")) {
+        $entry = $metadata.$map."1k".jpg
+        if (!$entry -or ([Uri]$entry.url).Host -ne "dl.polyhaven.org") {
+            throw "Missing or unexpected official 1K texture: $assetID/$map"
+        }
+        $destination = Join-Path $directory "$map.jpg"
+        if ((Test-Path -LiteralPath $destination) -and
+            (Get-FileHash -LiteralPath $destination -Algorithm MD5).Hash -eq $entry.md5) {
+            continue
+        }
+        Invoke-WebRequest -Uri $entry.url -OutFile $destination -UseBasicParsing
+        if ((Get-FileHash -LiteralPath $destination -Algorithm MD5).Hash -ne $entry.md5) {
+            throw "Texture checksum mismatch: $assetID/$map"
+        }
+    }
+    Write-Host "CINEAR_WALL_TEXTURES_OK $assetID"
+}
 ````
 
 ## `Tools/generate_all_in_one_markdown.ps1`
@@ -17434,13 +18618,30 @@ $sensitiveExtensions = [System.Collections.Generic.HashSet[string]]::new(
     ".p8", ".p12", ".pem", ".key", ".cer", ".mobileprovision"
 ) | ForEach-Object { [void]$sensitiveExtensions.Add($_) }
 
-$candidatePaths = @(
-    & git -C $repoRoot ls-files --cached --others --exclude-standard
-) + @($sourceRelativePath)
-
-if ($LASTEXITCODE -ne 0) {
-    throw "git ls-files failed with exit code $LASTEXITCODE"
+$hasGitMetadata = (Test-Path -LiteralPath (Join-Path $repoRoot ".git")) -and
+    ($null -ne (Get-Command git -ErrorAction SilentlyContinue))
+if ($hasGitMetadata) {
+    $candidatePaths = @(& git -C $repoRoot ls-files --cached --others --exclude-standard)
+    if ($LASTEXITCODE -ne 0) {
+        throw "git ls-files failed with exit code $LASTEXITCODE"
+    }
+} else {
+    if ($null -eq (Get-Command rg -ErrorAction SilentlyContinue)) {
+        throw "Source folders without Git metadata require ripgrep (rg) to respect .gitignore."
+    }
+    Push-Location $repoRoot
+    try {
+        $candidatePaths = @(& rg --files --hidden --no-require-git `
+            -g '!.git/**' -g '!.codex/**' -g '!.agents/**' `
+            -g '!.github-sync-*/**' -g '!.video-review-*/**')
+        if ($LASTEXITCODE -ne 0) {
+            throw "Source enumeration failed with exit code $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
+    }
 }
+$candidatePaths += @($sourceRelativePath)
 
 $projectPaths = $candidatePaths |
     ForEach-Object { $_.Replace("\", "/") } |
@@ -17523,10 +18724,14 @@ function Get-CodeFence([string]$Content) {
     return ([char]96).ToString() * $length
 }
 
-$headCommit = (& git -C $repoRoot rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0) { $headCommit = "unavailable" }
-$branchName = (& git -C $repoRoot rev-parse --abbrev-ref HEAD).Trim()
-if ($LASTEXITCODE -ne 0) { $branchName = "unavailable" }
+$headCommit = "unavailable"
+$branchName = "unavailable"
+if ($hasGitMetadata) {
+    $commitOutput = & git -C $repoRoot rev-parse HEAD
+    if ($LASTEXITCODE -eq 0) { $headCommit = "$commitOutput".Trim() }
+    $branchOutput = & git -C $repoRoot rev-parse --abbrev-ref HEAD
+    if ($LASTEXITCODE -eq 0) { $branchName = "$branchOutput".Trim() }
+}
 $generatedAt = [DateTimeOffset]::Now.ToString("yyyy-MM-dd HH:mm:ss zzz")
 
 $projectFile = Join-Path $repoRoot "CineAR.xcodeproj/project.pbxproj"
@@ -17566,7 +18771,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Projenin amacı")
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 30 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
+[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 38 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Teknoloji ve ana yetenekler")
 [void]$builder.AppendLine()
@@ -17577,7 +18782,8 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
-[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 30 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi")
 [void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
 [void]$builder.AppendLine("- USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok")
 [void]$builder.AppendLine("- Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli")
@@ -17608,10 +18814,11 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("| ``ARSessionController`` | ARSession yaşam döngüsü, raycast, manuel dekorlar, gesture'lar, kayıt ve proje koordinasyonu |")
 [void]$builder.AppendLine("| ``RoomScannerController`` | RoomPlan taraması, arka planda güvenli JSON staging ve explicit teardown |")
 [void]$builder.AppendLine("| ``RoomRealityRenderer`` | Düşük maliyetli beyaz oda hatları, görünmez yüzey collider'ları ve deneysel tema renderer'ı |")
+[void]$builder.AppendLine("| ``WallCladdingGeometry`` | Duvar poligonundan açıklıkları çıkarma, tek materyalli kaplama mesh'i, metre tabanlı UV ve boşlukları koruyan dokunma geometrisi |")
 [void]$builder.AppendLine("| ``BundledRoomRealityAssetProvider`` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |")
 [void]$builder.AppendLine("| ``SceneProjectStore`` | ``scene.json``, ``room.json``, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |")
 [void]$builder.AppendLine("| ``ProfessionalRecorder`` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |")
-[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri ve 19 manuel dekor türü |")
+[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri, 38 fotogerçekçi dekor ve eski kayıt uyumluluğu |")
 [void]$builder.AppendLine("| ``codemagic.yaml`` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Temel kullanıcı akışı")
@@ -17620,7 +18827,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.")
 [void]$builder.AppendLine("3. Sonuç compact ``room.json`` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.")
 [void]$builder.AppendLine("4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.")
-[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 30 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
+[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 38 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
 [void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.")
 [void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
 [void]$builder.AppendLine("8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.")
@@ -17651,6 +18858,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine('````')
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("Belgenin kendisi sonsuz iç içe geçmeyi önlemek için kaynak listesine alınmaz. Git metadata'sı ve yerel/ignore edilmiş dosyalar dahil edilmez. Sertifika, private key veya provisioning profile uzantıları bulunursa içerikleri gömülmez.")
+[void]$builder.AppendLine("Git metadata'sı olmayan kaynak kopyalarında ripgrep (``rg``) gerekir; ``.gitignore`` kuralları uygulanır ve Git dalı/commit bilgisi ``unavailable`` olarak gösterilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Proje dosya envanteri")
 [void]$builder.AppendLine()
@@ -17732,6 +18940,91 @@ Write-Host "Text sources: $($textPaths.Count)"
 Write-Host "Binary assets: $($binaryPaths.Count)"
 Write-Host "Sensitive files omitted: $($sensitivePaths.Count)"
 `````
+
+## `Tools/generate_wall_assets.py`
+
+````python
+"""Build two 12-triangle wall panels from official CC0 1K PBR textures.
+
+blender --background --factory-startup --python Tools/generate_wall_assets.py -- \
+    .asset-cache/wall-textures CineAR/RoomAssets
+
+Blender Z-up panels become Y-up in USDZ; local +Z faces the room in RealityKit.
+The runtime contact pivot aligns the FRONT face, leaving thickness in the wall.
+"""
+
+from pathlib import Path
+import sys
+
+import bpy
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from convert_polyhaven_to_usdz import export_mobile_usdz
+
+ASSETS = (
+    ("brick_wall_001", "wall_cladding_brick", 1.5),
+    # Wood source has no published physical scale; use a 2 m design tile.
+    ("wood_plank_wall", "wall_cladding_wood", 2.0),
+)
+
+
+def build(source: Path, output: Path, texture_id: str, name: str, tile_meters: float) -> None:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.mesh.primitive_cube_add(size=1)
+    panel = bpy.context.object
+    panel.name = name
+    panel.dimensions = (2.4, 0.06, 2.5)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+    # Metre-based UVs retain believable brick/plank size without extra geometry.
+    uv_layer = panel.data.uv_layers.active
+    for polygon in panel.data.polygons:
+        for loop_index in polygon.loop_indices:
+            vertex = panel.data.vertices[panel.data.loops[loop_index].vertex_index].co
+            if abs(polygon.normal.y) > 0.5:
+                uv = (vertex.x / tile_meters, vertex.z / tile_meters)
+            elif abs(polygon.normal.x) > 0.5:
+                uv = (vertex.y / tile_meters, vertex.z / tile_meters)
+            else:
+                uv = (vertex.x / tile_meters, vertex.y / tile_meters)
+            uv_layer.data[loop_index].uv = uv
+
+    material = bpy.data.materials.new(name + "_PBR")
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    shader = nodes.get("Principled BSDF")
+    for map_name, input_name in (("Diffuse", "Base Color"), ("Rough", "Roughness"), ("nor_gl", "Normal")):
+        texture = nodes.new("ShaderNodeTexImage")
+        texture.image = bpy.data.images.load(str(source / texture_id / f"{map_name}.jpg"))
+        texture.extension = "REPEAT"
+        if map_name != "Diffuse":
+            texture.image.colorspace_settings.name = "Non-Color"
+        if map_name == "nor_gl":
+            normal = nodes.new("ShaderNodeNormalMap")
+            links.new(texture.outputs["Color"], normal.inputs["Color"])
+            links.new(normal.outputs["Normal"], shader.inputs["Normal"])
+        else:
+            links.new(texture.outputs["Color"], shader.inputs[input_name])
+    panel.data.materials.append(material)
+    output_url = output / f"{name}.usdz"
+    export_mobile_usdz(output_url)
+    print(f"CINEAR_WALL_ASSET_OK {name} bytes={output_url.stat().st_size}")
+
+
+def main() -> None:
+    args = sys.argv[sys.argv.index("--") + 1:]
+    if len(args) != 2:
+        raise SystemExit("Expected: -- <texture directory> <RoomAssets directory>")
+    source, output = (Path(value).resolve() for value in args)
+    output.mkdir(parents=True, exist_ok=True)
+    for texture_id, name, tile_meters in ASSETS:
+        build(source, output, texture_id, name, tile_meters)
+
+
+if __name__ == "__main__":
+    main()
+````
 
 ## `Tools/render_usdz_thumbnails.py`
 
@@ -17835,6 +19128,117 @@ if __name__ == "__main__":
     main()
 ````
 
+## `Tools/test_wall_cladding_geometry.swift`
+
+````swift
+// Run on a Swift host (no iPhone or RealityKit required):
+// swiftc -D WALL_GEOMETRY_TESTS CineAR/WallCladdingGeometry.swift \
+//   Tools/test_wall_cladding_geometry.swift -o /tmp/cinear-wall-tests
+// /tmp/cinear-wall-tests
+import Foundation
+
+@main
+struct WallCladdingGeometryTests {
+    static let wallID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+    static var checks = 0
+
+    static func check(_ condition: @autoclosure () -> Bool, _ message: String) {
+        precondition(condition(), message)
+        checks += 1
+    }
+
+    static func rectangle(_ width: Float, _ height: Float) -> [SIMD2<Float>] {
+        [[-width / 2, -height / 2], [width / 2, -height / 2],
+         [width / 2, height / 2], [-width / 2, height / 2]]
+    }
+
+    static func layout(
+        width: Float = 4, height: Float = 3, outline: [SIMD2<Float>]? = nil,
+        cutouts: [WallCladdingLayout.Cutout] = []
+    ) -> WallCladdingLayout {
+        .init(wallID: wallID, width: width, height: height,
+              outline: outline ?? rectangle(width, height), cutouts: cutouts)
+    }
+
+    static func verify(_ layout: WallCladdingLayout, area expected: Float) throws {
+        let pieces = try WallCladdingGeometry.pieces(for: layout)
+        let area = pieces.reduce(Float(0)) { $0 + WallCladdingGeometry.signedArea($1) }
+        check(abs(area - expected) < 0.0001, "Incorrect visible area: \(area), expected \(expected)")
+        check(pieces.count <= WallCladdingGeometry.maximumPieces, "Unbounded geometry")
+        // Sample interiors throughout the wall: prove holes are empty and no valid
+        // wall area is lost. Offset samples avoid diagonal and aperture boundaries.
+        for x in 0..<67 {
+            for y in 0..<53 {
+                let point = SIMD2<Float>(
+                    -layout.width / 2 + layout.width * (Float(x) + 0.371) / 67,
+                    -layout.height / 2 + layout.height * (Float(y) + 0.613) / 53
+                )
+                let inCutout = layout.cutouts.contains {
+                    point.x > $0.minX && point.x < $0.maxX && point.y > $0.minY && point.y < $0.maxY
+                }
+                let expectedVisible = WallCladdingGeometry.contains(point, polygon: layout.outline) && !inCutout
+                let visible = pieces.contains { WallCladdingGeometry.contains(point, polygon: $0) }
+                check(visible == expectedVisible, "Opening or outline leak at \(point)")
+            }
+        }
+        for piece in pieces {
+            check(WallCladdingGeometry.signedArea(piece) > 0, "Reversed face winding")
+        }
+    }
+
+    static func main() throws {
+        try verify(layout(), area: 12)
+        let door = WallCladdingLayout.Cutout(minX: -0.5, maxX: 0.5, minY: -1.5, maxY: 0.5)
+        let window = WallCladdingLayout.Cutout(minX: 0.8, maxX: 1.8, minY: 0, maxY: 1)
+        try verify(layout(cutouts: [door]), area: 10)
+        try verify(layout(cutouts: [door, window]), area: 9)
+        try verify(layout(cutouts: [door, door, window]), area: 9)
+        let overlap = WallCladdingLayout.Cutout(minX: 0, maxX: 1, minY: -1, maxY: 1)
+        try verify(layout(cutouts: [door, overlap]), area: 8.75)
+        let fullHeight = WallCladdingLayout.Cutout(minX: -0.5, maxX: 0.5, minY: -1.5, maxY: 1.5)
+        try verify(layout(cutouts: [fullHeight]), area: 9)
+
+        // Concave wall, clockwise/mirrored orientation and sloped upper edge.
+        let concave: [SIMD2<Float>] = [[-2, -1.5], [2, -1.5], [2, 0], [0, 0], [0, 1.5], [-2, 1.5]]
+        try verify(layout(outline: concave), area: 9)
+        try verify(layout(outline: Array(concave.reversed())), area: 9)
+        let sloped: [SIMD2<Float>] = [[-2, -1.5], [2, -1.5], [2, 0.5], [-2, 1.5]]
+        try verify(layout(outline: sloped, cutouts: [door]), area: 8)
+        let original = layout(cutouts: [door, window])
+        let mirrored = layout(outline: original.outline.map { [-$0.x, $0.y] }, cutouts: original.cutouts.map {
+            .init(minX: -$0.maxX, maxX: -$0.minX, minY: $0.minY, maxY: $0.maxY)
+        })
+        try verify(mirrored, area: 9)
+        let restored = try JSONDecoder().decode(WallCladdingLayout.self, from: JSONEncoder().encode(original))
+        check(restored.wallID == original.wallID, "Wall identity lost on reload")
+        try verify(restored, area: 9)
+
+        // A larger wall adds repeats instead of stretching the same texture.
+        for tile in [Float(1.5), Float(2)] {
+            let delta = WallCladdingGeometry.textureCoordinate([1, 0], tileMeters: tile)
+                - WallCladdingGeometry.textureCoordinate([0, 0], tileMeters: tile)
+            check(abs(delta.x - 1 / tile) < 0.00001, "Metre-based UV scale changed")
+            let repeatDelta = WallCladdingGeometry.textureCoordinate([tile, tile], tileMeters: tile)
+            check(repeatDelta == SIMD2<Float>(1, 1), "Texture does not repeat at tile size")
+        }
+        try verify(layout(width: 8, height: 3, cutouts: [door]), area: 22)
+        check(!layout(width: .nan).isValid, "NaN accepted")
+        check(!layout(cutouts: [.init(minX: 1, maxX: -1, minY: 0, maxY: 1)]).isValid, "Inverted opening accepted")
+        do {
+            _ = try WallCladdingGeometry.pieces(for: layout(cutouts: [
+                .init(minX: -2, maxX: 2, minY: -1.5, maxY: 1.5)
+            ]))
+            preconditionFailure("A fully open wall must not produce a solid fallback")
+        } catch WallCladdingGeometryError.emptySurface { checks += 1 }
+        do {
+            _ = try WallCladdingGeometry.pieces(for: layout(outline: [[-2, -1.5], [2, 1.5], [-2, 1.5], [2, -1.5]]))
+            preconditionFailure("Self-crossing wall accepted")
+        } catch WallCladdingGeometryError.invalidPolygon { checks += 1 }
+        print("WALL_CLADDING_GEOMETRY_OK: \(checks) checks")
+    }
+}
+````
+
 ## `Tools/validate_usdz_assets.py`
 
 ````python
@@ -17847,6 +19251,11 @@ import sys
 import bpy
 from mathutils import Vector
 
+MAX_USDZ_BYTES = 8 * 1024 * 1024
+MAX_TRIANGLES = 60_000
+MAX_MATERIAL_SLOTS = 24
+MAX_TEXTURE_EDGE = 1024
+
 
 def asset_directory() -> Path:
     try:
@@ -17857,6 +19266,10 @@ def asset_directory() -> Path:
 
 
 def validate(url: Path) -> None:
+    if url.stat().st_size > MAX_USDZ_BYTES:
+        raise RuntimeError(
+            f"USDZ exceeds mobile bundle budget ({url.stat().st_size} bytes): {url}"
+        )
     bpy.ops.wm.read_factory_settings(use_empty=True)
     imported = bpy.ops.wm.usd_import(filepath=str(url))
     if "FINISHED" not in imported:
@@ -17877,10 +19290,25 @@ def validate(url: Path) -> None:
     size = maximum - minimum
     if vertices <= 0 or triangles <= 0:
         raise RuntimeError(f"Empty geometry in USDZ: {url}")
+    if triangles > MAX_TRIANGLES:
+        raise RuntimeError(f"Triangle budget exceeded ({triangles}): {url}")
     if not all(isfinite(value) and value > 0.0001 for value in size):
         raise RuntimeError(f"Invalid visual bounds in USDZ: {url}, size={tuple(size)}")
     if material_slots <= 0:
         raise RuntimeError(f"No material slots in USDZ: {url}")
+    if material_slots > MAX_MATERIAL_SLOTS:
+        raise RuntimeError(f"Material slot budget exceeded ({material_slots}): {url}")
+
+    texture_sizes = [
+        tuple(int(value) for value in image.size)
+        for image in bpy.data.images
+        if image.type != "RENDER_RESULT" and min(image.size) > 0
+    ]
+    oversized_textures = [
+        size for size in texture_sizes if max(size) > MAX_TEXTURE_EDGE
+    ]
+    if oversized_textures:
+        raise RuntimeError(f"Texture budget exceeded {oversized_textures}: {url}")
 
     print(
         "CINEAR_USDZ_OK",
@@ -17889,15 +19317,25 @@ def validate(url: Path) -> None:
         f"vertices={vertices}",
         f"triangles={triangles}",
         f"materials={material_slots}",
+        f"textures={len(texture_sizes)}",
         "size=" + "x".join(f"{value:.4f}" for value in size),
     )
 
 
 def main() -> None:
     directory = asset_directory()
-    urls = sorted(directory.glob("*.usdz"))
+    separator = sys.argv.index("--")
+    requested_names = tuple(sys.argv[separator + 2 :])
+    urls = (
+        [directory / f"{name}.usdz" for name in requested_names]
+        if requested_names
+        else sorted(directory.glob("*.usdz"))
+    )
     if not urls:
         raise SystemExit(f"No USDZ files found: {directory}")
+    missing = [str(url) for url in urls if not url.is_file()]
+    if missing:
+        raise SystemExit("Missing USDZ files: " + ", ".join(missing))
     for url in urls:
         validate(url)
 

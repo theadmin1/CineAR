@@ -815,6 +815,7 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
                 .font(.caption.weight(.bold))
             }
+            .disabled(session.selectedObjectFitsScannedWall)
 
             HStack(spacing: 8) {
                 Label("Gölge", systemImage: "circle.lefthalf.filled")
@@ -835,7 +836,9 @@ struct ContentView: View {
                     .frame(minWidth: 42)
             }
 
-            Text("Boyut %25–%300 arasında sınırlıdır; yüzeye temas noktası ve dünya anchor'ı değişmez.")
+            Text(session.selectedObjectFitsScannedWall
+                 ? "Duvar ölçüsü otomatik uygulanır. Kapı/pencere boşlukları ve tuğla/ahşap doku ölçüsü korunur."
+                 : "Boyut %25–%300 arasında sınırlıdır; yüzeye temas noktası ve dünya anchor'ı değişmez.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -1395,6 +1398,11 @@ struct ContentView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(category.title)
                                     .font(.headline)
+                                if category == .wall {
+                                    Text("Odayı tara, tuğla veya ahşap seç ve duvara dokun. Kaplama duvara sığar; taramada bulunan kapı, pencere ve açıklıklar açık kalır. Desen ölçüsü değişmez.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 LazyVGrid(
                                     columns: Array(
                                         repeating: GridItem(.flexible(), spacing: 10),
@@ -1430,7 +1438,7 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationTitle("30 Gerçekçi 3B Nesne")
+            .navigationTitle("\(PropKind.photorealCases.count) Gerçekçi 3B Nesne")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

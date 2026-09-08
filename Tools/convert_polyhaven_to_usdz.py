@@ -3,6 +3,8 @@
 Run with Blender 4.5 or newer:
   blender --background --factory-startup --python Tools/convert_polyhaven_to_usdz.py -- \
     ".asset-cache/polyhaven" "CineAR/RoomAssets"
+
+Append one or more asset IDs to convert only those assets.
 """
 
 from pathlib import Path
@@ -42,10 +44,16 @@ ASSET_IDS = (
     "classic_laptop",
     "television_02",
     "boombox",
+    "sofa_02",
+    "sofa_03",
+    "modern_arm_chair_01",
+    "coffee_table_round_01",
+    "modern_wooden_cabinet",
+    "potted_plant_04",
 )
 
 
-def arguments() -> tuple[Path, Path]:
+def arguments() -> tuple[Path, Path, tuple[str, ...]]:
     try:
         separator = sys.argv.index("--")
         source_value, output_value = sys.argv[separator + 1 : separator + 3]
@@ -57,7 +65,11 @@ def arguments() -> tuple[Path, Path]:
     if not source.is_dir():
         raise SystemExit(f"Source directory does not exist: {source}")
     output.mkdir(parents=True, exist_ok=True)
-    return source, output
+    requested_ids = tuple(sys.argv[separator + 3 :])
+    unknown_ids = sorted(set(requested_ids) - set(ASSET_IDS))
+    if unknown_ids:
+        raise SystemExit("Unknown asset IDs: " + ", ".join(unknown_ids))
+    return source, output, requested_ids or ASSET_IDS
 
 
 def convert(source: Path, output: Path, asset_id: str) -> None:
@@ -82,6 +94,12 @@ def convert(source: Path, output: Path, asset_id: str) -> None:
         if item.type in {"CAMERA", "LIGHT"}:
             bpy.data.objects.remove(item, do_unlink=True)
 
+    export_mobile_usdz(output_url)
+    print(f"CINEAR_USDZ {asset_id} {output_url.stat().st_size}")
+
+
+def export_mobile_usdz(output_url: Path) -> None:
+    """Export the current scene with the shared mobile material/geometry settings."""
     exported = bpy.ops.wm.usd_export(
         filepath=str(output_url),
         selected_objects_only=False,
@@ -131,12 +149,11 @@ def convert(source: Path, output: Path, asset_id: str) -> None:
         raise RuntimeError(f"USDZ export failed: {output_url}")
     if output_url.stat().st_size < 1024:
         raise RuntimeError(f"USDZ output is unexpectedly small: {output_url}")
-    print(f"CINEAR_USDZ {asset_id} {output_url.stat().st_size}")
 
 
 def main() -> None:
-    source, output = arguments()
-    for asset_id in ASSET_IDS:
+    source, output, asset_ids = arguments()
+    for asset_id in asset_ids:
         convert(source, output, asset_id)
 
 
