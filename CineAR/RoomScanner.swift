@@ -321,13 +321,29 @@ private struct RoomScanGeometryMetrics: Sendable {
     let connectedEndpointRatio: Float
     let walls: [UUID: WallMeasurement]
 
+    var hasUsableGeometry: Bool { floorCount > 0 && substantialWallCount > 0 }
+    var hasCoverage: Bool {
+        RoomScanCompletionPolicy.hasCoverage(walls: substantialWallCount, directions: directionCount,
+                                             span: totalWallSpan, connections: connectedEndpointRatio)
+    }
+
     init(room: CapturedRoom) {
-        floorCount = room.floors.count
+        floorCount = room.floors.filter { floor in
+            let dimensions = [floor.dimensions.x, floor.dimensions.y, floor.dimensions.z]
+            return dimensions.allSatisfy(\.isFinite) && dimensions.filter { $0 >= 0.1 }.count >= 2
+                && (0..<4).allSatisfy { column in
+                    (0..<4).allSatisfy { row in floor.transform[column][row].isFinite }
+                }
+        }.count
         wallCount = room.walls.count
         objectCount = room.objects.count
 
-        let substantialWalls = room.walls.filter {
-            $0.dimensions.x >= 0.55 && $0.dimensions.y >= 1.0
+        let substantialWalls = room.walls.filter { wall in
+            wall.dimensions.x.isFinite && wall.dimensions.y.isFinite
+                && wall.dimensions.x >= 0.55 && wall.dimensions.y >= 1.0
+                && (0..<4).allSatisfy { column in
+                    (0..<4).allSatisfy { row in wall.transform[column][row].isFinite }
+                }
         }
         substantialWallCount = substantialWalls.count
         totalWallSpan = substantialWalls.reduce(0) { $0 + $1.dimensions.x }
@@ -412,6 +428,7 @@ final class RoomScannerController: NSObject, ObservableObject {
     @Published private(set) var isScanReady = false
     @Published private(set) var isProcessing = false
     @Published private(set) var exportSucceeded = false
+    @Published private(set) var isUsingApprovedLiveScan = false
     @Published private(set) var failureMessage: String?
 
     let captureView: RoomCaptureView
@@ -434,6 +451,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var lastFrameQualityUpdateTime: TimeInterval = 0
     private var scanStartedAt: TimeInterval = 0
     private var geometryStableSince: TimeInterval?
+    private var latestReadyRoom: CapturedRoom?
+    private var approvedRoomAtFinish: CapturedRoom?
     private var lastWallMeasurements: [UUID: RoomScanGeometryMetrics.WallMeasurement] = [:]
     private var latestFrameQuality = RoomScanFrameQuality(
         lighting: .unknown,
@@ -488,6 +507,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         lastFrameQualityUpdateTime = 0
         scanStartedAt = 0
         geometryStableSince = nil
+        latestReadyRoom = nil
+        approvedRoomAtFinish = nil
         lastWallMeasurements.removeAll(keepingCapacity: true)
         latestFrameQuality = RoomScanFrameQuality(
             lighting: .unknown,
@@ -505,6 +526,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         shouldExport = true
         discardPendingExport()
         exportSucceeded = false
+        isUsingApprovedLiveScan = false
         failureMessage = nil
         scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
         scanQualityText = "Tarama kalitesi ölçülüyor"
@@ -521,11 +543,12 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
-        guard isScanReady else {
+        guard isScanReady, let latestReadyRoom else {
             statusText = "Bitirmeden önce sarı kalite uyarısını gider"
             return
         }
 
+        approvedRoomAtFinish = latestReadyRoom
         shouldExport = true
         isProcessing = true
         statusText = "3B oda modeli işleniyor..."
@@ -554,6 +577,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     }
 
     private func recordFailure(_ message: String) {
+        latestReadyRoom = nil
+        approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
         stagingTask = nil
@@ -682,15 +707,9 @@ final class RoomScannerController: NSObject, ObservableObject {
 
         let geometryIsStable = geometryStableSince.map { now - $0 >= 1.1 } ?? false
         let scanHasSettled = scanStartedAt > 0 && now - scanStartedAt >= 4
-        let hasCornerCoverage = metrics.directionCount >= 2
-        let hasEnoughWallSpan = metrics.totalWallSpan >= 2.4
-        let wallsFormRoomOutline = metrics.connectedEndpointRatio >= 0.72
-        let hasWallCoverage = metrics.substantialWallCount >= 3
-            && hasCornerCoverage
-            && hasEnoughWallSpan
-            && wallsFormRoomOutline
+        let hasWallCoverage = metrics.hasCoverage
 
-        hasUsableRoomGeometry = metrics.floorCount > 0 && metrics.wallCount > 0
+        hasUsableRoomGeometry = metrics.hasUsableGeometry
 
         let lightingIsSuitable: Bool
         switch latestFrameQuality.lighting {
@@ -779,6 +798,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     func teardownForDismissal(discardPendingExport shouldDiscard: Bool = true) {
         guard !isTornDown else { return }
         isTornDown = true
+        latestReadyRoom = nil
+        approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
         stagingTask = nil
@@ -827,6 +848,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
                   self.isSessionRunning else { return }
             self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
             self.refreshScanQuality(metrics: metrics, now: now)
+            self.latestReadyRoom = self.isScanReady ? room : nil
         }
     }
 
@@ -919,19 +941,40 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
     func captureView(didPresent processedResult: CapturedRoom, error: Error?) {
         guard shouldExport, isProcessing, !isSessionRunning, !isTornDown else { return }
 
-        let callbackError = error?.localizedDescription
-        let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
-        let processedWallCoverage = processedMetrics.substantialWallCount >= 3
-            && processedMetrics.directionCount >= 2
-            && processedMetrics.totalWallSpan >= 2.4
-            && processedMetrics.connectedEndpointRatio >= 0.72
-        guard callbackError != nil
-                || (processedMetrics.floorCount > 0 && processedWallCoverage) else {
-            recordFailure(
-                "İşleme sonrası duvar kapsaması yetersiz kaldı. Eksik duvarı ve iki komşu köşeyi yeniden tara"
-            )
+        if let error {
+            recordFailure(scanFailureMessage(for: error))
             return
         }
+        let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
+        let approvedMetrics = approvedRoomAtFinish.map { RoomScanGeometryMetrics(room: $0) }
+        let choice = RoomScanCompletionPolicy.output(
+            approvedAtFinish: approvedRoomAtFinish != nil,
+            processedUsable: processedMetrics.hasUsableGeometry
+                && RoomScanCompletionPolicy.preservesWallSpan(processed: processedMetrics.totalWallSpan,
+                                                              approved: approvedMetrics?.totalWallSpan ?? 0),
+            liveUsable: approvedMetrics?.hasUsableGeometry ?? false
+        )
+        let roomToSave: CapturedRoom
+        let completionMessage: String
+        switch choice {
+        case .processed:
+            roomToSave = processedResult
+            completionMessage = processedMetrics.hasCoverage
+                ? "Oda modeli ve mekân verisi hazır"
+                : "Oda kullanılabilir; işleme sonrası bazı sınırlar değişti. Kullanmadan önce önizlemeyi kontrol et"
+        case .approvedLive:
+            guard let approvedRoomAtFinish else { return }
+            roomToSave = approvedRoomAtFinish
+            completionMessage = "İşlenmiş model eksik; bitirirken onayladığın canlı tarama korunuyor. Önizleme farklı olabilir"
+        case .reject:
+            recordFailure("Kaydedilebilir zemin ve duvar verisi yok; önceki kayıt değiştirilmedi")
+            return
+        }
+        isUsingApprovedLiveScan = choice == .approvedLive
+        let savedMetrics = RoomScanGeometryMetrics(room: roomToSave)
+        scanSummaryText = "Zemin \(savedMetrics.floorCount) • Duvar \(savedMetrics.wallCount) • Nesne \(savedMetrics.objectCount)"
+        isScanReady = choice == .processed && processedMetrics.hasCoverage
+        scanQualityText = isScanReady ? "Onaylanan oda hazır" : completionMessage
 
         let modelURL = roomStore.modelURL
         let roomJSONURL = roomStore.roomJSONURL
@@ -944,18 +987,12 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
             guard !Task.isCancelled else {
                 return CapturedRoomStageOutcome(artifacts: nil, failureMessage: nil)
             }
-            if let callbackError {
-                return CapturedRoomStageOutcome(
-                    artifacts: nil,
-                    failureMessage: callbackError
-                )
-            }
             do {
                 let store = CapturedRoomStore(
                     modelURL: modelURL,
                     roomJSONURL: roomJSONURL
                 )
-                let artifacts = try store.stage(processedResult)
+                let artifacts = try store.stage(roomToSave)
                 guard !Task.isCancelled else {
                     store.discard(artifacts)
                     return CapturedRoomStageOutcome(artifacts: nil, failureMessage: nil)
@@ -997,7 +1034,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
             self.discardPendingExport()
             if let artifacts = outcome.artifacts {
                 self.pendingArtifacts = artifacts
-                self.statusText = "Oda modeli ve mekân verisi hazır"
+                self.statusText = completionMessage
                 self.exportSucceeded = true
                 self.failureMessage = nil
                 self.isProcessing = false
@@ -1078,7 +1115,7 @@ struct RoomScannerScreen: View {
                 Spacer()
 
                 if scanner.exportSucceeded {
-                    Button("Taramayı Kullan") {
+                    Button(scanner.isUsingApprovedLiveScan ? "Onaylanan Canlı Taramayı Kullan" : "Taramayı Kullan") {
                         guard let url = scanner.commitExport() else { return }
                         reportAndDismiss(.success(url))
                     }

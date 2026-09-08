@@ -1,4 +1,40 @@
 workflows:
+  cinear-preflight:
+    name: CineAR - Unsigned Preflight (No TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    # Intentionally manual: no push trigger, Apple integration, signing or publishing.
+    environment:
+      xcode: 26.4
+    scripts:
+      - name: Run Swift regressions in Debug and Release
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          mkdir -p build/preflight
+          python3 Tools/run_swift_regressions.py --swiftc "$(xcrun --find swiftc)" \
+            2>&1 | tee build/preflight/swift-tests.log
+
+      - name: Build Release for iPhone without signing
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          xcodebuild build \
+            -project CineAR.xcodeproj \
+            -scheme CineAR \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/preflight/DerivedData \
+            -resultBundlePath build/preflight/iOSBuild.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build/preflight/ios-build.log
+    artifacts:
+      - build/preflight/*.log
+      - build/preflight/*.xcresult
+
   cinear-testflight:
     name: CineAR - TestFlight
     instance_type: mac_mini_m2
@@ -95,6 +131,16 @@ workflows:
           xcrun swiftc CineAR/LiveDepthGeometry.swift Tools/test_live_depth_geometry.swift \
             -o "$depth_test_dir/live-depth-tests"
           "$depth_test_dir/live-depth-tests"
+
+      - name: Test scan approval and wall contact
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          spatial_test_dir="$(mktemp -d)"
+          xcrun swiftc CineAR/SpatialValidation.swift Tools/test_spatial_validation.swift \
+            -o "$spatial_test_dir/spatial-tests"
+          "$spatial_test_dir/spatial-tests"
 
       - name: Apply provisioning profile
         script: xcode-project use-profiles

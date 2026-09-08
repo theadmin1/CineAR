@@ -242,7 +242,7 @@ final class RoomRealityRenderer {
     }
 
     /// Resolve the measured touch to one scanned wall, retaining openings in that
-    /// wall's coordinates. Only the plane's depth is refined by the live LiDAR hit.
+    /// wall's coordinates. Depth validates the touch, but never moves this plane.
     func fittedCladdingPlacement(
         at position: SIMD3<Float>, normal measuredNormal: SIMD3<Float>,
         cameraPosition: SIMD3<Float>
@@ -283,9 +283,7 @@ final class RoomRealityRenderer {
                     && local.y >= $0.minY && local.y <= $0.maxY
             }) else { continue }
             let center = bounds.center
-            // A foreground cabinet must not pull the entire wall into the room.
-            let depthRefinement = min(max(local.z, -0.015), 0.015)
-            let worldCenter = world * SIMD4<Float>(center.x, center.y, depthRefinement, 1)
+            let worldCenter = world * SIMD4<Float>(center.x, center.y, 0, 1)
             let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
             let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
             var transform = world

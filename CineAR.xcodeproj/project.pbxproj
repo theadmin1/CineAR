@@ -23,6 +23,7 @@
 		A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* WallCladdingGeometry.swift */; };
 		A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* LiveDepthGeometry.swift */; };
 		A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */; };
+		A10000000000000000000012 /* SpatialValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* SpatialValidation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 		B10000000000000000000011 /* WallCladdingGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallCladdingGeometry.swift; sourceTree = "<group>"; };
 		B10000000000000000000012 /* LiveDepthGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthGeometry.swift; sourceTree = "<group>"; };
 		B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthOcclusionRenderer.swift; sourceTree = "<group>"; };
+		B10000000000000000000014 /* SpatialValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpatialValidation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +85,7 @@
 				B10000000000000000000011 /* WallCladdingGeometry.swift */,
 				B10000000000000000000012 /* LiveDepthGeometry.swift */,
 				B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */,
+				B10000000000000000000014 /* SpatialValidation.swift */,
 				B1000000000000000000000F /* RoomAssets */,
 				B10000000000000000000006 /* Assets.xcassets */,
 				B10000000000000000000007 /* Info.plist */,
@@ -174,6 +177,7 @@
 				A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */,
 				A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */,
 				A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */,
+				A10000000000000000000012 /* SpatialValidation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -221,13 +225,13 @@
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.5;
+				MARKETING_VERSION = 0.17.6;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -244,12 +248,12 @@
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.5;
+				MARKETING_VERSION = 0.17.6;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -6,6 +6,34 @@ grubunda otomatik dagitim etkin olmalidir; islenen build'i gruba Apple atar. Is
 akisi manuel baslatilir; depoya her kod gonderildiginde kendiliginden yayin
 yapmaz.
 
+## Dagitimdan once imzasiz on kontrol
+
+`cinear-preflight` / `CineAR - Unsigned Preflight (No TestFlight)` is akisi,
+Apple hesabi, sertifika, provisioning profile veya `cinear_config` gerektirmez.
+Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncellenmez.
+
+1. Yeni kod GitHub'a gonderildikten sonra Codemagic'te **Start new build** ac.
+2. Denetlenecek dal/commit'i ve `cinear-preflight` akisini sec.
+3. Ilk adim uc Swift geometri/politika testini Debug ve Release olarak derleyip
+   calistirir, ardindan tum uygulama Swift dosyalarinin sozdizimini kontrol eder.
+4. Ikinci adim gercek iPhone SDK'si ile Release uygulamasini imzasiz derler.
+   ARKit/RealityKit API ve Swift tur denetimi bu adimda yapilir. Simulator testi degildir.
+5. Hata varsa `swift-tests.log`, `ios-build.log` ve `.xcresult` ciktisini incele.
+   Yalnizca on kontrolu gecen **ayni commit** icin `cinear-testflight` baslat.
+
+Bu akis IPA export, imzalama, App Store Connect build numarasi sorgusu, yukleme
+ve Apple'in TestFlight isleme adimlarini atlar. Ilk derleme yine zaman alabilir;
+bir dakika/sure garantisi yoktur. 30 dakika ust siniri vardir. Unsigned build
+iPhone'a yuklenemez ve fiziksel LiDAR/anchor davranisini test etmez.
+
+Yerel Swift derleyicisi bulunan Mac veya Linux icin ayni regresyonlar:
+
+```sh
+python3 Tools/run_swift_regressions.py --swiftc /tam/yol/swiftc
+```
+
+Resmi dayanak: [Codemagic unsigned iOS build](https://docs.codemagic.io/yaml-quick-start/first-signed-build/).
+
 ## Apple tarafinda bir kez yapilacaklar
 
 Bu adimlari Apple Developer Program uyesi olan hesap sahibi veya gerekli

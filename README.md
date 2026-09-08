@@ -17,8 +17,22 @@ Mac olmadan dagitim icin depo kokundeki `codemagic.yaml` kullanilabilir. Apple
 Developer ekibinin bir kez yapacagi kurulum `Docs/CODEMAGIC.md` dosyasindadir.
 Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur.
 
+Dagitimdan once `cinear-preflight` imzasiz iPhone Release derlemesi ve Swift
+regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
+[Codemagic on kontrol](Docs/CODEMAGIC.md) ve [yerel test kaydi](Docs/PREFLIGHT_AUDIT.md).
+
 ## Mevcut sistem
 
+- 0.17.6: `Taramayi Bitir` aninda onaylanan canli oda korunur. Isleme sonrasi
+  kose/duvar parcasi sayisinin degismesi tek basina taramayi reddettirmez.
+  Gecerli zemin/duvar kaybolur veya toplam duvar uzunlugunun %10'undan fazlasi
+  kaybedilirse onaylanan canli veri, acik uyari ve ayri kullanma dugmesiyle sunulur.
+  Gercek RoomPlan hatalari basari sayilmaz; `Taramayi Kullan` oncesi eski kayit korunur.
+- Duvar dekorlari tek ham LiDAR pikseline degil sonlu ARKit/RoomPlan duvar duzlemine
+  baglanir. Derinlik yalniz on engeli/duzlem uyumunu kontrol eder; karisik kenar
+  pikselleri arka duvarla ortalanmaz. Kilit sirasinda farkli yuzey kaynaklari
+  karistirilmaz ve temas noktasi son duzleme izduser. Kurtarmada guncel AR anchor
+  donusumu korunur; mevcut hatali konumlu nesneler otomatik tasinmaz.
 - Yatay/dikey yuzey algilama ve dunya koordinatlarina AR anchor yerlestirme
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
@@ -93,8 +107,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
   RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
   yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
-  Dokunma duvar duzleminden en fazla 5 cm sapabilir; duzlem derinlik duzeltmesi
-  1,5 cm ile sinirlidir. Eski kayitli kaplamalar bu degisiklikle tasinmaz.
+  Kaplama duzlemi taranan duvarla aynidir; dokunma derinligi tum duvari one cekmez.
+  Eski kayitli kaplamalar bu degisiklikle tasinmaz; hatali olanlar yeniden yerlestirilmelidir.
   On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
   tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
   Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.
@@ -111,9 +125,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   ayarlari ReplayKit HEVC kaydina da islenir
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
-- Duvar kataloglari gorunur beyaz hatlara bagli kalmadan sonlu RoomPlan/ARKit/LiDAR
-  duvarina yerlesir; varsa dokunulan derinlik pikseli uyusmazligi reddeder, gecici
-  derinlik kesintisi yerlestirmeyi kilitlemez. Fiziksel olcek ve duvar golgesi korunur
+- Duvar kataloglari gorunur beyaz hatlara bagli kalmadan sonlu RoomPlan/ARKit/mesh
+  duvarina yerlesir; olculemeyen veya duzlemle uyusmayan mevcut derinlik pikseli
+  reddedilir. Derinlik akisinin tamamen yoklugunda sonlu duvar yedegi kullanilir.
+  Fiziksel olcek ve duvar golgesi korunur
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
   8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar

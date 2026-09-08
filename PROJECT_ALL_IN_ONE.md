@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.5`
-- Proje build numarası: `39`
+- Uygulama sürümü: `0.17.6`
+- Proje build numarası: `40`
 - Git dalı: `unavailable`
 - Kaynak commit: `unavailable`
-- Oluşturulma zamanı: `2026-09-08 15:09:10 +03:00`
+- Oluşturulma zamanı: `2026-09-08 17:32:35 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -192,11 +192,13 @@ CineAR/RoomAssets/wooden_stool_01.usdz
 CineAR/RoomRealityRenderer.swift
 CineAR/RoomScanner.swift
 CineAR/SceneProjectStore.swift
+CineAR/SpatialValidation.swift
 CineAR/WallCladdingGeometry.swift
 codemagic.yaml
 Docs/CODEMAGIC.md
 Docs/DEVICE_TEST.md
 Docs/ICON_PROMPT.md
+Docs/PREFLIGHT_AUDIT.md
 README.md
 Tools/convert_kenney_to_usdz.py
 Tools/convert_polyhaven_to_usdz.py
@@ -205,7 +207,9 @@ Tools/fetch_wall_textures.ps1
 Tools/generate_all_in_one_markdown.ps1
 Tools/generate_wall_assets.py
 Tools/render_usdz_thumbnails.py
+Tools/run_swift_regressions.py
 Tools/test_live_depth_geometry.swift
+Tools/test_spatial_validation.swift
 Tools/test_wall_cladding_geometry.swift
 Tools/validate_usdz_assets.py
 ````
@@ -286,10 +290,10 @@ Yok.
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
-| `CineAR.xcodeproj/project.pbxproj` | 288 | 14804 |
+| `CineAR.xcodeproj/project.pbxproj` | 292 | 15276 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 6914 | 290976 |
+| `CineAR/ARSessionController.swift` | 6907 | 292712 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -306,15 +310,17 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
-| `CineAR/RoomRealityRenderer.swift` | 2238 | 87768 |
-| `CineAR/RoomScanner.swift` | 1177 | 44411 |
+| `CineAR/RoomRealityRenderer.swift` | 2236 | 87604 |
+| `CineAR/RoomScanner.swift` | 1214 | 46702 |
 | `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
+| `CineAR/SpatialValidation.swift` | 53 | 2632 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
-| `codemagic.yaml` | 159 | 5414 |
-| `Docs/CODEMAGIC.md` | 86 | 4708 |
-| `Docs/DEVICE_TEST.md` | 278 | 19717 |
+| `codemagic.yaml` | 205 | 7093 |
+| `Docs/CODEMAGIC.md` | 114 | 6193 |
+| `Docs/DEVICE_TEST.md` | 302 | 21147 |
 | `Docs/ICON_PROMPT.md` | 25 | 1421 |
-| `README.md` | 383 | 25763 |
+| `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
+| `README.md` | 398 | 26859 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
@@ -322,7 +328,9 @@ Yok.
 | `Tools/generate_all_in_one_markdown.ps1` | 374 | 20265 |
 | `Tools/generate_wall_assets.py` | 81 | 3290 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
+| `Tools/run_swift_regressions.py` | 46 | 2055 |
 | `Tools/test_live_depth_geometry.swift` | 73 | 3746 |
+| `Tools/test_spatial_validation.swift` | 59 | 4464 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
 | `Tools/validate_usdz_assets.py` | 101 | 3573 |
 
@@ -1320,6 +1328,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* WallCladdingGeometry.swift */; };
 		A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* LiveDepthGeometry.swift */; };
 		A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */; };
+		A10000000000000000000012 /* SpatialValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* SpatialValidation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -1342,6 +1351,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		B10000000000000000000011 /* WallCladdingGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallCladdingGeometry.swift; sourceTree = "<group>"; };
 		B10000000000000000000012 /* LiveDepthGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthGeometry.swift; sourceTree = "<group>"; };
 		B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthOcclusionRenderer.swift; sourceTree = "<group>"; };
+		B10000000000000000000014 /* SpatialValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpatialValidation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1380,6 +1390,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				B10000000000000000000011 /* WallCladdingGeometry.swift */,
 				B10000000000000000000012 /* LiveDepthGeometry.swift */,
 				B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */,
+				B10000000000000000000014 /* SpatialValidation.swift */,
 				B1000000000000000000000F /* RoomAssets */,
 				B10000000000000000000006 /* Assets.xcassets */,
 				B10000000000000000000007 /* Info.plist */,
@@ -1471,6 +1482,7 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				A1000000000000000000000F /* WallCladdingGeometry.swift in Sources */,
 				A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */,
 				A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */,
+				A10000000000000000000012 /* SpatialValidation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1518,13 +1530,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.5;
+				MARKETING_VERSION = 0.17.6;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1541,12 +1553,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.5;
+				MARKETING_VERSION = 0.17.6;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -4434,6 +4446,10 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
+        if request.prop.placementSurface == .wall,
+           let previous = request.samples.last, previous.source != solution.source {
+            request.samples.removeAll(keepingCapacity: true)
+        }
         request.samples.append(PlacementLockSample(
             position: solution.position,
             normal: solution.normal,
@@ -4513,6 +4529,9 @@ final class ARSessionController: NSObject, ObservableObject {
             pendingAlignmentRequest = request
             alignmentReferenceStatus = "Aynı dikey duvar noktası aranıyor"
             return
+        }
+        if let previous = request.samples.last, previous.source != solution.source {
+            request.samples.removeAll(keepingCapacity: true)
         }
         request.samples.append(PlacementLockSample(
             position: solution.position,
@@ -4673,9 +4692,20 @@ final class ARSessionController: NSObject, ObservableObject {
         guard alignedNormalCount >= max(5, Int(ceil(Double(inliers.count) * 0.78))),
               simd_length_squared(normalSum) > 0.000_001 else { return nil }
 
-        let lockedPosition = inliers.reduce(SIMD3<Float>.zero) { $0 + $1.position }
+        var lockedPosition = inliers.reduce(SIMD3<Float>.zero) { $0 + $1.position }
             / Float(inliers.count)
-        let lockedNormal = simd_normalize(normalSum)
+        var lockedNormal = simd_normalize(normalSum)
+        if prop.placementSurface == .wall, let latest = samples.last {
+            // Keep the contact on the latest fitted plane, not between old and new planes.
+            var latestNormal = simd_normalize(latest.normal)
+            if simd_dot(latestNormal, lockedNormal) < 0 { latestNormal = -latestNormal }
+            guard simd_dot(latestNormal, lockedNormal) >= 0.985,
+                  simd_distance(latest.position, lockedPosition) <= 0.025 else { return nil }
+            guard let contact = WallPlacementPolicy.projectContact(lockedPosition, onto: latest.position,
+                                                                   normal: latestNormal) else { return nil }
+            lockedPosition = contact
+            lockedNormal = latestNormal
+        }
         // `samples` and `inliers` are both proven non-empty above; keep the selected
         // source non-optional so this path is also unambiguous to older Swift compilers.
         let source = inliers[inliers.count - 1].source
@@ -4881,121 +4911,67 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
-    /// Every wall prop must be attached to the physical wall under the user's finger.
-    /// The live LiDAR pixel is deliberately preferred over the stored RoomPlan plane:
-    /// a small relocalization error in a restored room used to put every wall prop
-    /// several centimetres behind the wall and the polygon gate exposed only a tiny
-    /// tappable patch. Infinite planes and camera-relative guesses remain forbidden.
+    /// Depth validates a persistent finite wall; it must not define the wall plane.
+    /// In particular, a noisy vertical pixel can be a cabinet or a mixed depth edge.
     private func strictWallPlacementSolution(
         in arView: ARView,
         at point: CGPoint,
         for prop: PropKind
     ) -> PlacementSurfaceSolution? {
-        guard let frame = arView.session.currentFrame else { return nil }
+        guard let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState else { return nil }
         let depth = sceneDepthSample(frame: frame, in: arView, at: point).flatMap {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
+        // Missing stream may use a finite plane; an invalid available pixel must not
+        // allow placement through an unmeasurable foreground object.
+        if (frame.sceneDepth != nil || frame.smoothedSceneDepth != nil), depth == nil { return nil }
         let cameraPosition = arView.cameraTransform.translation
 
-        // A valid vertical normal reconstructed from the depth neighbourhood gives
-        // the exact physical pixel that the user touched. This avoids inheriting a
-        // stale RoomPlan plane offset after a saved scan has been reloaded.
-        if let depth,
-           let measuredNormal = depth.worldNormal,
-           wallSurfaceAccepts(normal: measuredNormal) {
-            return wallSolution(
-                position: depth.worldPoint,
-                normal: measuredNormal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .lidarDepth,
-                depth: depth
-            )
+        // Fitted cladding and its openings belong to the stored wall's coordinate
+        // system. Never shift the whole wall to a depth pixel or a furniture hit.
+        if prop.isWallCladding {
+            guard roomCoordinateSpaceIsActive,
+                  let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
+                  depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true
+            else { return nil }
+            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
         }
 
-        // Scene-understanding mesh is current-session geometry and is consequently a
-        // safer fallback than the persisted RoomPlan representation.
+        // ARPlane geometry is finite and its normal is fitted over many measurements.
+        for result in arView.raycast(from: point, allowing: .existingPlaneGeometry, alignment: .vertical) {
+            let position = SIMD3<Float>(result.worldTransform.columns.3.x,
+                                        result.worldTransform.columns.3.y,
+                                        result.worldTransform.columns.3.z)
+            let normal = SIMD3<Float>(result.worldTransform.columns.1.x,
+                                      result.worldTransform.columns.1.y,
+                                      result.worldTransform.columns.1.z)
+            guard wallSurfaceAccepts(normal: normal),
+                  depth.map({ wallDepthAgrees($0, position: position, normal: normal) }) ?? true
+            else { continue }
+            return wallSolution(position: position, normal: normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .arkitPlane, depth: depth)
+        }
+
+        if roomCoordinateSpaceIsActive,
+           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
+           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
+            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
+        }
+
+        // Native collision reconstruction is a finite fallback, not an arbitrary
+        // vertical LiDAR pixel. Synthetic room and prop colliders are excluded.
         if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
             entityID(from: hit.entity) == nil
                 && !belongsToRoomReality(hit.entity)
                 && !belongsToProjectorVisualization(hit.entity)
                 && wallSurfaceAccepts(normal: hit.normal)
-                && (depth.map { sample in
-                    wallDepthAgrees(sample, position: hit.position, normal: hit.normal)
-                } ?? true)
+                && (depth.map { wallDepthAgrees($0, position: hit.position, normal: hit.normal) } ?? true)
         }) {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .lidarMesh,
-                depth: depth
-            )
-        }
-
-        // A vertical raycast is already constrained to vertical ARPlane geometry.
-        // Requiring classification == .wall made a freshly scanned wall untappable
-        // until ARKit happened to classify that individual plane fragment.
-        let results = arView.raycast(
-            from: point,
-            allowing: .existingPlaneGeometry,
-            alignment: .vertical
-        )
-        for result in results {
-            let position = SIMD3<Float>(
-                result.worldTransform.columns.3.x,
-                result.worldTransform.columns.3.y,
-                result.worldTransform.columns.3.z
-            )
-            let normal = SIMD3<Float>(
-                result.worldTransform.columns.1.x,
-                result.worldTransform.columns.1.y,
-                result.worldTransform.columns.1.z
-            )
-            guard wallSurfaceAccepts(normal: normal),
-                  depth.map({ wallDepthAgrees($0, position: position, normal: normal) }) ?? true
-            else { continue }
-            return wallSolution(
-                position: position,
-                normal: normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .arkitPlane,
-                depth: depth
-            )
-        }
-
-        // Rendered replacement-room geometry is useful while a theme is visible,
-        // but must never override a more recent physical LiDAR/ARKit wall.
-        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
-           wallSurfaceAccepts(normal: hit.normal),
-           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
-                depth: depth
-            )
-        }
-
-        // The persisted RoomPlan wall is the final finite fallback. It remains useful
-        // when depth is temporarily unavailable, without masking live geometry.
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-           depth.map({
-               wallDepthAgrees($0, position: hit.position, normal: hit.normal)
-           }) ?? true {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
-                depth: depth
-            )
+            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .lidarMesh, depth: depth)
         }
         return nil
     }
@@ -5034,15 +5010,13 @@ final class ARSessionController: NSObject, ObservableObject {
     ) -> Bool {
         guard simd_length_squared(normal) > 0.000_001 else { return false }
         let candidateNormal = simd_normalize(normal)
-        let maximumSeparation = min(max(0.075 + depth.depthMeters * 0.020, 0.10), 0.18)
+        let delta = depth.worldPoint - position
+        let separation = simd_dot(delta, candidateNormal)
+        let lateralError = simd_length(delta - candidateNormal * separation)
         guard abs(candidateNormal.y) <= 0.38,
-              simd_distance(depth.worldPoint, position) <= maximumSeparation else { return false }
-        if let depthNormal = depth.worldNormal {
-            guard simd_length_squared(depthNormal) > 0.000_001 else { return false }
-            let measuredNormal = simd_normalize(depthNormal)
-            return abs(measuredNormal.y) <= 0.48
-                && abs(simd_dot(candidateNormal, measuredNormal)) >= 0.76
-        }
+              WallPlacementPolicy.agreesWithPlane(separation: separation,
+                                                   lateralError: lateralError,
+                                                   depth: depth.depthMeters) else { return false }
         return true
     }
 
@@ -5685,11 +5659,12 @@ final class ARSessionController: NSObject, ObservableObject {
         at viewPoint: CGPoint
     ) -> SceneDepthSurfaceSample? {
         guard arView.bounds.width > 1, arView.bounds.height > 1,
-              let sceneDepth = frame.smoothedSceneDepth ?? frame.sceneDepth else { return nil }
+              let sceneDepth = frame.sceneDepth ?? frame.smoothedSceneDepth else { return nil }
         let depthMap = sceneDepth.depthMap
         let depthWidth = CVPixelBufferGetWidth(depthMap)
         let depthHeight = CVPixelBufferGetHeight(depthMap)
-        guard depthWidth > 4, depthHeight > 4 else { return nil }
+        guard depthWidth > 4, depthHeight > 4,
+              CVPixelBufferGetPixelFormatType(depthMap) == kCVPixelFormatType_DepthFloat32 else { return nil }
 
         let orientation = arView.window?.windowScene?.interfaceOrientation ?? .portrait
         let normalizedViewPoint = CGPoint(
@@ -5705,19 +5680,31 @@ final class ARSessionController: NSObject, ObservableObject {
         guard imagePoint.x.isFinite, imagePoint.y.isFinite,
               (0...1).contains(imagePoint.x), (0...1).contains(imagePoint.y) else { return nil }
 
-        let centerX = min(max(Int(imagePoint.x * CGFloat(depthWidth - 1)), 2), depthWidth - 3)
-        let centerY = min(max(Int(imagePoint.y * CGFloat(depthHeight - 1)), 2), depthHeight - 3)
+        let pixelX = Float(imagePoint.x) * Float(depthWidth) - 0.5
+        let pixelY = Float(imagePoint.y) * Float(depthHeight) - 0.5
+        let centerX = Int(pixelX.rounded()), centerY = Int(pixelY.rounded())
+        guard centerX >= 2, centerX < depthWidth - 2,
+              centerY >= 2, centerY < depthHeight - 2 else { return nil }
         let confidenceMap = sceneDepth.confidenceMap
+        if let confidenceMap {
+            guard CVPixelBufferGetWidth(confidenceMap) == depthWidth,
+                  CVPixelBufferGetHeight(confidenceMap) == depthHeight,
+                  CVPixelBufferGetPixelFormatType(confidenceMap) == kCVPixelFormatType_OneComponent8
+            else { return nil }
+        }
 
-        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
-        if let confidenceMap { CVPixelBufferLockBaseAddress(confidenceMap, .readOnly) }
+        guard CVPixelBufferLockBaseAddress(depthMap, .readOnly) == kCVReturnSuccess else { return nil }
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        if let confidenceMap {
+            guard CVPixelBufferLockBaseAddress(confidenceMap, .readOnly) == kCVReturnSuccess else { return nil }
+        }
         defer {
             if let confidenceMap { CVPixelBufferUnlockBaseAddress(confidenceMap, .readOnly) }
-            CVPixelBufferUnlockBaseAddress(depthMap, .readOnly)
         }
         guard let depthBase = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
         let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
         let confidenceBase = confidenceMap.flatMap { CVPixelBufferGetBaseAddress($0) }
+        if confidenceMap != nil && confidenceBase == nil { return nil }
         let confidenceBytesPerRow = confidenceMap.map { CVPixelBufferGetBytesPerRow($0) } ?? 0
 
         func confidenceIsUsable(x: Int, y: Int) -> Bool {
@@ -5725,7 +5712,7 @@ final class ARSessionController: NSObject, ObservableObject {
             let value = confidenceBase
                 .advanced(by: y * confidenceBytesPerRow + x)
                 .assumingMemoryBound(to: UInt8.self).pointee
-            return value >= UInt8(ARConfidenceLevel.medium.rawValue)
+            return value == 1 || value == 2
         }
 
         func depthValue(x: Int, y: Int) -> Float? {
@@ -5743,11 +5730,17 @@ final class ARSessionController: NSObject, ObservableObject {
                 if let value = depthValue(x: x, y: y) { neighborhood.append(value) }
             }
         }
-        guard neighborhood.count >= 9 else { return nil }
-        neighborhood.sort()
-        let medianDepth = neighborhood[neighborhood.count / 2]
+        guard let medianDepth = WallPlacementPolicy.robustDepth(
+            center: depthValue(x: centerX, y: centerY), neighbors: neighborhood
+        ) else { return nil }
+        let imageSize = frame.camera.imageResolution
+        let intrinsic = frame.camera.intrinsics
+        guard imageSize.width > 0, imageSize.height > 0,
+              intrinsic.columns.0.x.isFinite, intrinsic.columns.0.x > 0,
+              intrinsic.columns.1.y.isFinite, intrinsic.columns.1.y > 0,
+              intrinsic.columns.2.x.isFinite, intrinsic.columns.2.y.isFinite else { return nil }
 
-        func unproject(x: Int, y: Int, depth: Float) -> SIMD3<Float> {
+        func unproject(x: Int, y: Int, depth: Float, preciseTouch: Bool = false) -> SIMD3<Float> {
             let imageResolution = frame.camera.imageResolution
             let scaleX = Float(depthWidth) / Float(imageResolution.width)
             let scaleY = Float(depthHeight) / Float(imageResolution.height)
@@ -5757,8 +5750,8 @@ final class ARSessionController: NSObject, ObservableObject {
             let cx = intrinsics.columns.2.x * scaleX
             let cy = intrinsics.columns.2.y * scaleY
             let cameraPoint = SIMD4<Float>(
-                (Float(x) - cx) / fx * depth,
-                -(Float(y) - cy) / fy * depth,
+                ((preciseTouch ? pixelX : Float(x)) - cx) / fx * depth,
+                -((preciseTouch ? pixelY : Float(y)) - cy) / fy * depth,
                 -depth,
                 1
             )
@@ -5766,12 +5759,15 @@ final class ARSessionController: NSObject, ObservableObject {
             return SIMD3(worldPoint.x, worldPoint.y, worldPoint.z)
         }
 
-        let worldPoint = unproject(x: centerX, y: centerY, depth: medianDepth)
+        let worldPoint = unproject(x: centerX, y: centerY, depth: medianDepth, preciseTouch: true)
         var worldNormal: SIMD3<Float>?
         if let leftDepth = depthValue(x: centerX - 2, y: centerY),
            let rightDepth = depthValue(x: centerX + 2, y: centerY),
            let upperDepth = depthValue(x: centerX, y: centerY - 2),
-           let lowerDepth = depthValue(x: centerX, y: centerY + 2) {
+           let lowerDepth = depthValue(x: centerX, y: centerY + 2),
+           [leftDepth, rightDepth, upperDepth, lowerDepth].allSatisfy({
+               abs($0 - medianDepth) <= max(0.025, medianDepth * 0.025)
+           }) {
             let horizontal = unproject(x: centerX + 2, y: centerY, depth: rightDepth)
                 - unproject(x: centerX - 2, y: centerY, depth: leftDepth)
             let vertical = unproject(x: centerX, y: centerY + 2, depth: lowerDepth)
@@ -8396,6 +8392,15 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
 
     func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         guard !isRoomScanActive else { return }
+        // ARKit refines user-anchor poses as mapping improves. Recovery must use
+        // that pose, not the original placement frame cached by didAdd.
+        for anchor in anchors {
+            guard let descriptor = PropKind.descriptor(from: anchor.name),
+                  !supersededPropAnchorIDs.contains(anchor.identifier),
+                  managedPropAnchorsByPlacementID[descriptor.id]?.identifier == anchor.identifier
+            else { continue }
+            managedPropAnchorsByPlacementID[descriptor.id] = anchor
+        }
         updateKnownFloor(from: anchors)
     }
 
@@ -12950,7 +12955,7 @@ final class RoomRealityRenderer {
     }
 
     /// Resolve the measured touch to one scanned wall, retaining openings in that
-    /// wall's coordinates. Only the plane's depth is refined by the live LiDAR hit.
+    /// wall's coordinates. Depth validates the touch, but never moves this plane.
     func fittedCladdingPlacement(
         at position: SIMD3<Float>, normal measuredNormal: SIMD3<Float>,
         cameraPosition: SIMD3<Float>
@@ -12991,9 +12996,7 @@ final class RoomRealityRenderer {
                     && local.y >= $0.minY && local.y <= $0.maxY
             }) else { continue }
             let center = bounds.center
-            // A foreground cabinet must not pull the entire wall into the room.
-            let depthRefinement = min(max(local.z, -0.015), 0.015)
-            let worldCenter = world * SIMD4<Float>(center.x, center.y, depthRefinement, 1)
+            let worldCenter = world * SIMD4<Float>(center.x, center.y, 0, 1)
             let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
             let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
             var transform = world
@@ -15271,13 +15274,29 @@ private struct RoomScanGeometryMetrics: Sendable {
     let connectedEndpointRatio: Float
     let walls: [UUID: WallMeasurement]
 
+    var hasUsableGeometry: Bool { floorCount > 0 && substantialWallCount > 0 }
+    var hasCoverage: Bool {
+        RoomScanCompletionPolicy.hasCoverage(walls: substantialWallCount, directions: directionCount,
+                                             span: totalWallSpan, connections: connectedEndpointRatio)
+    }
+
     init(room: CapturedRoom) {
-        floorCount = room.floors.count
+        floorCount = room.floors.filter { floor in
+            let dimensions = [floor.dimensions.x, floor.dimensions.y, floor.dimensions.z]
+            return dimensions.allSatisfy(\.isFinite) && dimensions.filter { $0 >= 0.1 }.count >= 2
+                && (0..<4).allSatisfy { column in
+                    (0..<4).allSatisfy { row in floor.transform[column][row].isFinite }
+                }
+        }.count
         wallCount = room.walls.count
         objectCount = room.objects.count
 
-        let substantialWalls = room.walls.filter {
-            $0.dimensions.x >= 0.55 && $0.dimensions.y >= 1.0
+        let substantialWalls = room.walls.filter { wall in
+            wall.dimensions.x.isFinite && wall.dimensions.y.isFinite
+                && wall.dimensions.x >= 0.55 && wall.dimensions.y >= 1.0
+                && (0..<4).allSatisfy { column in
+                    (0..<4).allSatisfy { row in wall.transform[column][row].isFinite }
+                }
         }
         substantialWallCount = substantialWalls.count
         totalWallSpan = substantialWalls.reduce(0) { $0 + $1.dimensions.x }
@@ -15362,6 +15381,7 @@ final class RoomScannerController: NSObject, ObservableObject {
     @Published private(set) var isScanReady = false
     @Published private(set) var isProcessing = false
     @Published private(set) var exportSucceeded = false
+    @Published private(set) var isUsingApprovedLiveScan = false
     @Published private(set) var failureMessage: String?
 
     let captureView: RoomCaptureView
@@ -15384,6 +15404,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var lastFrameQualityUpdateTime: TimeInterval = 0
     private var scanStartedAt: TimeInterval = 0
     private var geometryStableSince: TimeInterval?
+    private var latestReadyRoom: CapturedRoom?
+    private var approvedRoomAtFinish: CapturedRoom?
     private var lastWallMeasurements: [UUID: RoomScanGeometryMetrics.WallMeasurement] = [:]
     private var latestFrameQuality = RoomScanFrameQuality(
         lighting: .unknown,
@@ -15438,6 +15460,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         lastFrameQualityUpdateTime = 0
         scanStartedAt = 0
         geometryStableSince = nil
+        latestReadyRoom = nil
+        approvedRoomAtFinish = nil
         lastWallMeasurements.removeAll(keepingCapacity: true)
         latestFrameQuality = RoomScanFrameQuality(
             lighting: .unknown,
@@ -15455,6 +15479,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         shouldExport = true
         discardPendingExport()
         exportSucceeded = false
+        isUsingApprovedLiveScan = false
         failureMessage = nil
         scanSummaryText = "Zemin bekleniyor • Duvar bekleniyor"
         scanQualityText = "Tarama kalitesi ölçülüyor"
@@ -15471,11 +15496,12 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
-        guard isScanReady else {
+        guard isScanReady, let latestReadyRoom else {
             statusText = "Bitirmeden önce sarı kalite uyarısını gider"
             return
         }
 
+        approvedRoomAtFinish = latestReadyRoom
         shouldExport = true
         isProcessing = true
         statusText = "3B oda modeli işleniyor..."
@@ -15504,6 +15530,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     }
 
     private func recordFailure(_ message: String) {
+        latestReadyRoom = nil
+        approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
         stagingTask = nil
@@ -15632,15 +15660,9 @@ final class RoomScannerController: NSObject, ObservableObject {
 
         let geometryIsStable = geometryStableSince.map { now - $0 >= 1.1 } ?? false
         let scanHasSettled = scanStartedAt > 0 && now - scanStartedAt >= 4
-        let hasCornerCoverage = metrics.directionCount >= 2
-        let hasEnoughWallSpan = metrics.totalWallSpan >= 2.4
-        let wallsFormRoomOutline = metrics.connectedEndpointRatio >= 0.72
-        let hasWallCoverage = metrics.substantialWallCount >= 3
-            && hasCornerCoverage
-            && hasEnoughWallSpan
-            && wallsFormRoomOutline
+        let hasWallCoverage = metrics.hasCoverage
 
-        hasUsableRoomGeometry = metrics.floorCount > 0 && metrics.wallCount > 0
+        hasUsableRoomGeometry = metrics.hasUsableGeometry
 
         let lightingIsSuitable: Bool
         switch latestFrameQuality.lighting {
@@ -15729,6 +15751,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     func teardownForDismissal(discardPendingExport shouldDiscard: Bool = true) {
         guard !isTornDown else { return }
         isTornDown = true
+        latestReadyRoom = nil
+        approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
         stagingTask = nil
@@ -15777,6 +15801,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
                   self.isSessionRunning else { return }
             self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
             self.refreshScanQuality(metrics: metrics, now: now)
+            self.latestReadyRoom = self.isScanReady ? room : nil
         }
     }
 
@@ -15869,19 +15894,40 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
     func captureView(didPresent processedResult: CapturedRoom, error: Error?) {
         guard shouldExport, isProcessing, !isSessionRunning, !isTornDown else { return }
 
-        let callbackError = error?.localizedDescription
-        let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
-        let processedWallCoverage = processedMetrics.substantialWallCount >= 3
-            && processedMetrics.directionCount >= 2
-            && processedMetrics.totalWallSpan >= 2.4
-            && processedMetrics.connectedEndpointRatio >= 0.72
-        guard callbackError != nil
-                || (processedMetrics.floorCount > 0 && processedWallCoverage) else {
-            recordFailure(
-                "İşleme sonrası duvar kapsaması yetersiz kaldı. Eksik duvarı ve iki komşu köşeyi yeniden tara"
-            )
+        if let error {
+            recordFailure(scanFailureMessage(for: error))
             return
         }
+        let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
+        let approvedMetrics = approvedRoomAtFinish.map { RoomScanGeometryMetrics(room: $0) }
+        let choice = RoomScanCompletionPolicy.output(
+            approvedAtFinish: approvedRoomAtFinish != nil,
+            processedUsable: processedMetrics.hasUsableGeometry
+                && RoomScanCompletionPolicy.preservesWallSpan(processed: processedMetrics.totalWallSpan,
+                                                              approved: approvedMetrics?.totalWallSpan ?? 0),
+            liveUsable: approvedMetrics?.hasUsableGeometry ?? false
+        )
+        let roomToSave: CapturedRoom
+        let completionMessage: String
+        switch choice {
+        case .processed:
+            roomToSave = processedResult
+            completionMessage = processedMetrics.hasCoverage
+                ? "Oda modeli ve mekân verisi hazır"
+                : "Oda kullanılabilir; işleme sonrası bazı sınırlar değişti. Kullanmadan önce önizlemeyi kontrol et"
+        case .approvedLive:
+            guard let approvedRoomAtFinish else { return }
+            roomToSave = approvedRoomAtFinish
+            completionMessage = "İşlenmiş model eksik; bitirirken onayladığın canlı tarama korunuyor. Önizleme farklı olabilir"
+        case .reject:
+            recordFailure("Kaydedilebilir zemin ve duvar verisi yok; önceki kayıt değiştirilmedi")
+            return
+        }
+        isUsingApprovedLiveScan = choice == .approvedLive
+        let savedMetrics = RoomScanGeometryMetrics(room: roomToSave)
+        scanSummaryText = "Zemin \(savedMetrics.floorCount) • Duvar \(savedMetrics.wallCount) • Nesne \(savedMetrics.objectCount)"
+        isScanReady = choice == .processed && processedMetrics.hasCoverage
+        scanQualityText = isScanReady ? "Onaylanan oda hazır" : completionMessage
 
         let modelURL = roomStore.modelURL
         let roomJSONURL = roomStore.roomJSONURL
@@ -15894,18 +15940,12 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
             guard !Task.isCancelled else {
                 return CapturedRoomStageOutcome(artifacts: nil, failureMessage: nil)
             }
-            if let callbackError {
-                return CapturedRoomStageOutcome(
-                    artifacts: nil,
-                    failureMessage: callbackError
-                )
-            }
             do {
                 let store = CapturedRoomStore(
                     modelURL: modelURL,
                     roomJSONURL: roomJSONURL
                 )
-                let artifacts = try store.stage(processedResult)
+                let artifacts = try store.stage(roomToSave)
                 guard !Task.isCancelled else {
                     store.discard(artifacts)
                     return CapturedRoomStageOutcome(artifacts: nil, failureMessage: nil)
@@ -15947,7 +15987,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
             self.discardPendingExport()
             if let artifacts = outcome.artifacts {
                 self.pendingArtifacts = artifacts
-                self.statusText = "Oda modeli ve mekân verisi hazır"
+                self.statusText = completionMessage
                 self.exportSucceeded = true
                 self.failureMessage = nil
                 self.isProcessing = false
@@ -16028,7 +16068,7 @@ struct RoomScannerScreen: View {
                 Spacer()
 
                 if scanner.exportSucceeded {
-                    Button("Taramayı Kullan") {
+                    Button(scanner.isUsingApprovedLiveScan ? "Onaylanan Canlı Taramayı Kullan" : "Taramayı Kullan") {
                         guard let url = scanner.commitExport() else { return }
                         reportAndDismiss(.success(url))
                     }
@@ -17321,6 +17361,63 @@ final class SceneProjectStore {
 }
 ````
 
+## `CineAR/SpatialValidation.swift`
+
+````swift
+import Foundation
+
+/// Finishing a scan is a transaction: approval belongs to the live snapshot that
+/// the user accepted, not to endpoint counts that processing may change.
+enum RoomScanCompletionPolicy {
+    enum Output: Equatable { case processed, approvedLive, reject }
+
+    static func hasCoverage(walls: Int, directions: Int, span: Float, connections: Float) -> Bool {
+        walls >= 3 && directions >= 2 && span.isFinite && span >= 2.4
+            && connections.isFinite && (0.72...1).contains(connections)
+    }
+
+    static func output(approvedAtFinish: Bool, processedUsable: Bool, liveUsable: Bool) -> Output {
+        guard approvedAtFinish else { return .reject }
+        if processedUsable { return .processed }
+        return liveUsable ? .approvedLive : .reject
+    }
+
+    static func preservesWallSpan(processed: Float, approved: Float) -> Bool {
+        processed.isFinite && approved.isFinite && approved > 0 && processed >= approved * 0.90
+    }
+}
+
+enum WallPlacementPolicy {
+    static func projectContact(_ point: SIMD3<Float>, onto origin: SIMD3<Float>, normal: SIMD3<Float>) -> SIMD3<Float>? {
+        guard [point.x, point.y, point.z, origin.x, origin.y, origin.z,
+               normal.x, normal.y, normal.z].allSatisfy(\.isFinite) else { return nil }
+        let lengthSquared = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z
+        guard lengthSquared.isFinite, lengthSquared > 0.000_001 else { return nil }
+        let delta = point - origin
+        let separation = (delta.x * normal.x + delta.y * normal.y + delta.z * normal.z) / lengthSquared
+        let result = point - normal * separation
+        guard [result.x, result.y, result.z].allSatisfy(\.isFinite) else { return nil }
+        return result
+    }
+
+    /// Do not replace a touched foreground pixel with the background median.
+    static func robustDepth(center: Float?, neighbors: [Float]) -> Float? {
+        guard let center, center.isFinite, (0.15...8).contains(center) else { return nil }
+        let tolerance = min(0.015 + center * 0.01, 0.045)
+        let cluster = neighbors.filter { $0.isFinite && abs($0 - center) <= tolerance }.sorted()
+        guard cluster.count >= 9 else { return nil }
+        return cluster[cluster.count / 2]
+    }
+
+    static func agreesWithPlane(separation: Float, lateralError: Float, depth: Float) -> Bool {
+        guard separation.isFinite, lateralError.isFinite, lateralError >= 0,
+              depth.isFinite, depth > 0 else { return false }
+        return abs(separation) <= min(0.025 + depth * 0.005, 0.045)
+            && lateralError <= max(0.025, depth * 0.015)
+    }
+}
+````
+
 ## `CineAR/WallCladdingGeometry.swift`
 
 ````swift
@@ -17615,6 +17712,42 @@ enum WallCladdingMeshFactory {
 
 ````yaml
 workflows:
+  cinear-preflight:
+    name: CineAR - Unsigned Preflight (No TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    # Intentionally manual: no push trigger, Apple integration, signing or publishing.
+    environment:
+      xcode: 26.4
+    scripts:
+      - name: Run Swift regressions in Debug and Release
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          mkdir -p build/preflight
+          python3 Tools/run_swift_regressions.py --swiftc "$(xcrun --find swiftc)" \
+            2>&1 | tee build/preflight/swift-tests.log
+
+      - name: Build Release for iPhone without signing
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          xcodebuild build \
+            -project CineAR.xcodeproj \
+            -scheme CineAR \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/preflight/DerivedData \
+            -resultBundlePath build/preflight/iOSBuild.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build/preflight/ios-build.log
+    artifacts:
+      - build/preflight/*.log
+      - build/preflight/*.xcresult
+
   cinear-testflight:
     name: CineAR - TestFlight
     instance_type: mac_mini_m2
@@ -17712,6 +17845,16 @@ workflows:
             -o "$depth_test_dir/live-depth-tests"
           "$depth_test_dir/live-depth-tests"
 
+      - name: Test scan approval and wall contact
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          spatial_test_dir="$(mktemp -d)"
+          xcrun swiftc CineAR/SpatialValidation.swift Tools/test_spatial_validation.swift \
+            -o "$spatial_test_dir/spatial-tests"
+          "$spatial_test_dir/spatial-tests"
+
       - name: Apply provisioning profile
         script: xcode-project use-profiles
 
@@ -17784,6 +17927,34 @@ uretir ve basarili IPA'yi App Store Connect'e yukler. `CineAR Internal Testers`
 grubunda otomatik dagitim etkin olmalidir; islenen build'i gruba Apple atar. Is
 akisi manuel baslatilir; depoya her kod gonderildiginde kendiliginden yayin
 yapmaz.
+
+## Dagitimdan once imzasiz on kontrol
+
+`cinear-preflight` / `CineAR - Unsigned Preflight (No TestFlight)` is akisi,
+Apple hesabi, sertifika, provisioning profile veya `cinear_config` gerektirmez.
+Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncellenmez.
+
+1. Yeni kod GitHub'a gonderildikten sonra Codemagic'te **Start new build** ac.
+2. Denetlenecek dal/commit'i ve `cinear-preflight` akisini sec.
+3. Ilk adim uc Swift geometri/politika testini Debug ve Release olarak derleyip
+   calistirir, ardindan tum uygulama Swift dosyalarinin sozdizimini kontrol eder.
+4. Ikinci adim gercek iPhone SDK'si ile Release uygulamasini imzasiz derler.
+   ARKit/RealityKit API ve Swift tur denetimi bu adimda yapilir. Simulator testi degildir.
+5. Hata varsa `swift-tests.log`, `ios-build.log` ve `.xcresult` ciktisini incele.
+   Yalnizca on kontrolu gecen **ayni commit** icin `cinear-testflight` baslat.
+
+Bu akis IPA export, imzalama, App Store Connect build numarasi sorgusu, yukleme
+ve Apple'in TestFlight isleme adimlarini atlar. Ilk derleme yine zaman alabilir;
+bir dakika/sure garantisi yoktur. 30 dakika ust siniri vardir. Unsigned build
+iPhone'a yuklenemez ve fiziksel LiDAR/anchor davranisini test etmez.
+
+Yerel Swift derleyicisi bulunan Mac veya Linux icin ayni regresyonlar:
+
+```sh
+python3 Tools/run_swift_regressions.py --swiftc /tam/yol/swiftc
+```
+
+Resmi dayanak: [Codemagic unsigned iOS build](https://docs.codemagic.io/yaml-quick-start/first-signed-build/).
 
 ## Apple tarafinda bir kez yapilacaklar
 
@@ -18121,6 +18292,30 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
+0.17.6 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+
+- Tarama yesilken bitir; islenmis duvarlarin parca/kose sayisi degisse de kullanilabilir
+  sonuc `Taramayi Kullan` sunmali. Zemin/duvar kaybi veya duvar uzunlugunda %10'dan
+  fazla kayip varsa `Onaylanan Canli Taramayi Kullan` ve acik uyari gorulmeli.
+  Kullan/iptal yollarini, art arda taramalari, gercek RoomPlan hatasini ve isleme
+  sirasinda kapatmayi dene; onceki oda kullanici kabul etmeden degismemeli.
+- Hatali eski kaplamayi sil, yeni taramada bos duvara tek dokunusla yeniden koy.
+  0.7, 1.5 ve 3 metreye uzaklas, saga/sola yuru: panelin kose ve kapi kesimleri
+  fiziksel duvarla hizada kalmali. Saat/telefonun arka yuzu duvara 3 mm toleransla
+  oturmali. Olcum kamera mesafesine bagli buyuyen bir bosluk gostermemeli.
+- Duvar onundeki kettle/dolap kenarina dokun: karisik veya guvensiz olcumde
+  yerlestirme reddedilmeli, arka duvarin derinligiyle hayali bir on yuz uretilmemeli.
+  Iki farkli yuzeye hizlica cevirirken tek dokunus iki nesne olusturmamali.
+- Arka plana al/geri don, kaydet/yukle ve tekrar tara; anchor kurtarmasi eski
+  yerlestirme pozuna sicrama yapmamali. Takip kaymasini ve ortme kaynakli gorunurluk
+  degisimini ayri kaydet. Gercek cihaz dogrulamasi olmadan kayma tamamen giderildi
+  kabul edilmemeli.
+
+```sh
+swiftc CineAR/SpatialValidation.swift Tools/test_spatial_validation.swift -o /tmp/cinear-spatial-tests
+/tmp/cinear-spatial-tests
+```
+
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
 - Elde relocalization hatasi: 5 cm'den az
 - Manuel dekor anchor'i ile dokunulan gercek yuzey hizasi: referans noktalarda 2 cm'den az
@@ -18175,6 +18370,49 @@ Dosya 1024 x 1024 piksele yeniden örneklendi; sRGB, 8-bit RGB ve şeffaflıksı
 PNG olarak kaydedildi. iOS yuvarlatılmış köşe maskesini kurulum sırasında uygular.
 ````
 
+## `Docs/PREFLIGHT_AUDIT.md`
+
+````markdown
+# 0.17.6 yerel on kontrol kaydi
+
+Tarih: 2026-09-08. Bu belge cihaz kabul testi veya iOS build basarisi belgesi degildir.
+
+## Gercekten calistirilan kontroller
+
+- Resmi Swift 6.0.3 Ubuntu 24.04 x86_64 arsivinin Swift imzasi dogrulandi.
+  Sistem Swift kurulumu degistirilmedi; derleyici gecici test klasorunde kullanildi.
+- `Tools/run_swift_regressions.py`: Swift 5 dil modu, uyarilar hata kabul edilerek
+  uc paket hem `-Onone` hem `-O` ile derlendi ve calistirildi. Alti calistirma da gecti.
+- Duvar kaplama geometrisi: her modda `WALL_CLADDING_GEOMETRY_OK: 42722 checks`.
+- Anlik derinlik geometrisi: her iki modda basarili.
+- Tarama onayi / duvar temas politikasi: her iki modda basarili; 360 duvar yonunde
+  duzleme izdusus, bozuk olcum, on/arka derinlik ayrimi ve isleme sonrasi kayip dahil.
+- Uygulamanin 16 Swift kaynak dosyasi Swift derleyicisinin parse kontrolunden gecti.
+- Codemagic YAML parse edildi; on kontrol akisi manuel, Release/iPhone hedefli,
+  imzasiz ve Apple entegrasyonu/yayinlama/degisken grubu olmadan tanimlandi.
+
+## Bu incelemede eklenen korumalar
+
+- Islenmis odada kabul edilebilen duvar uzunlugu kaybi %35'ten %10'a indirildi;
+  daha buyuk kayipta onaylanmis canli tarama acik uyariyla korunur.
+- Duzleme izdusus fonksiyonuna tasma/sonlu sayi kontrolleri eklendi.
+- `cinear-preflight` akisi dagitim is akisindan ayrildi. Imza, IPA export,
+  App Store Connect ve TestFlight adimlarini calistirmaz.
+
+## Henuz dogrulanmayanlar
+
+- Xcode 26.4 ve iPhone SDK'si ile API/tur denetimi, link ve kaynak derlemesi.
+  Linux parse kontrolu Apple framework'lerini tur denetiminden gecirmez.
+- iPhone 15 Pro Max'te taramayi bitir/kullan akisi ve duvar anchor kaymasi.
+- LiDAR ortmesinin hareket, termal yuk ve ReplayKit kaydi altindaki performansi.
+
+Sonraki adim: [Codemagic on kontrol akisini](CODEMAGIC.md) ayni aday commit uzerinde
+calistir. Basarili olmadan TestFlight dagitimi icin hazir kabul etme. Imzasiz build
+basarisi da [fiziksel cihaz testlerinin](DEVICE_TEST.md) yerine gecmez.
+
+Bu inceleme sirasinda GitHub push veya uzak Codemagic build baslatilmadi.
+````
+
 ## `README.md`
 
 ````markdown
@@ -18197,8 +18435,22 @@ Mac olmadan dagitim icin depo kokundeki `codemagic.yaml` kullanilabilir. Apple
 Developer ekibinin bir kez yapacagi kurulum `Docs/CODEMAGIC.md` dosyasindadir.
 Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur.
 
+Dagitimdan once `cinear-preflight` imzasiz iPhone Release derlemesi ve Swift
+regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
+[Codemagic on kontrol](Docs/CODEMAGIC.md) ve [yerel test kaydi](Docs/PREFLIGHT_AUDIT.md).
+
 ## Mevcut sistem
 
+- 0.17.6: `Taramayi Bitir` aninda onaylanan canli oda korunur. Isleme sonrasi
+  kose/duvar parcasi sayisinin degismesi tek basina taramayi reddettirmez.
+  Gecerli zemin/duvar kaybolur veya toplam duvar uzunlugunun %10'undan fazlasi
+  kaybedilirse onaylanan canli veri, acik uyari ve ayri kullanma dugmesiyle sunulur.
+  Gercek RoomPlan hatalari basari sayilmaz; `Taramayi Kullan` oncesi eski kayit korunur.
+- Duvar dekorlari tek ham LiDAR pikseline degil sonlu ARKit/RoomPlan duvar duzlemine
+  baglanir. Derinlik yalniz on engeli/duzlem uyumunu kontrol eder; karisik kenar
+  pikselleri arka duvarla ortalanmaz. Kilit sirasinda farkli yuzey kaynaklari
+  karistirilmaz ve temas noktasi son duzleme izduser. Kurtarmada guncel AR anchor
+  donusumu korunur; mevcut hatali konumlu nesneler otomatik tasinmaz.
 - Yatay/dikey yuzey algilama ve dunya koordinatlarina AR anchor yerlestirme
 - LiDAR cihazlarda mesh reconstruction ve scene depth
 - Person segmentation with depth ile scene depth'i birlikte kullanip insan ve gercek
@@ -18273,8 +18525,8 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
   RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
   yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
-  Dokunma duvar duzleminden en fazla 5 cm sapabilir; duzlem derinlik duzeltmesi
-  1,5 cm ile sinirlidir. Eski kayitli kaplamalar bu degisiklikle tasinmaz.
+  Kaplama duzlemi taranan duvarla aynidir; dokunma derinligi tum duvari one cekmez.
+  Eski kayitli kaplamalar bu degisiklikle tasinmaz; hatali olanlar yeniden yerlestirilmelidir.
   On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
   tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
   Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.
@@ -18291,9 +18543,10 @@ Varsayilan Bundle ID `com.cinear.virtualproduction` ve hedef yalnizca iPhone'dur
   ayarlari ReplayKit HEVC kaydina da islenir
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
-- Duvar kataloglari gorunur beyaz hatlara bagli kalmadan sonlu RoomPlan/ARKit/LiDAR
-  duvarina yerlesir; varsa dokunulan derinlik pikseli uyusmazligi reddeder, gecici
-  derinlik kesintisi yerlestirmeyi kilitlemez. Fiziksel olcek ve duvar golgesi korunur
+- Duvar kataloglari gorunur beyaz hatlara bagli kalmadan sonlu RoomPlan/ARKit/mesh
+  duvarina yerlesir; olculemeyen veya duzlemle uyusmayan mevcut derinlik pikseli
+  reddedilir. Derinlik akisinin tamamen yoklugunda sonlu duvar yedegi kullanilir.
+  Fiziksel olcek ve duvar golgesi korunur
 - Tavan/duvar/masa lambalarinda ac-kapat, 0-12000 lumen, 2000-6500 K renk
   sicakligi, -180/+180 derece yatay yon, -75/+75 derece dikey egim,
   8-90 derece huzme ve kenar yumusakligi; yeni isiklar dar 18 derece spotla baslar
@@ -19551,6 +19804,56 @@ if __name__ == "__main__":
     main()
 ````
 
+## `Tools/run_swift_regressions.py`
+
+````python
+"""Compile real Swift kernels, run Debug/Release regressions, then parse app sources.
+
+Works on Linux or macOS. Parsing does NOT type-check ARKit/RealityKit; the separate
+unsigned iOS build in Codemagic is required for that check.
+"""
+import argparse
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
+
+def run(command, cwd):
+    print("+ " + " ".join(map(str, command)), flush=True)
+    subprocess.run(list(map(str, command)), cwd=cwd, check=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--swiftc", default=shutil.which("swiftc"))
+    args = parser.parse_args()
+    if not args.swiftc:
+        parser.error("Swift compiler missing; supply --swiftc /path/to/swiftc")
+    root = Path(__file__).resolve().parents[1]
+    suites = [
+        ("wall", ["-D", "WALL_GEOMETRY_TESTS"], "CineAR/WallCladdingGeometry.swift", "Tools/test_wall_cladding_geometry.swift"),
+        ("depth", [], "CineAR/LiveDepthGeometry.swift", "Tools/test_live_depth_geometry.swift"),
+        ("spatial", [], "CineAR/SpatialValidation.swift", "Tools/test_spatial_validation.swift"),
+    ]
+    run([args.swiftc, "--version"], root)
+    with tempfile.TemporaryDirectory(prefix="cinear-swift-tests-") as output:
+        for mode, optimization in [("Debug", "-Onone"), ("Release", "-O")]:
+            for name, definitions, source, test in suites:
+                executable = Path(output) / (name + "-" + mode)
+                run([args.swiftc, "-swift-version", "5", "-warnings-as-errors", optimization,
+                     *definitions, source, test, "-o", executable], root)
+                run([executable], root)
+        sources = sorted((root / "CineAR").glob("*.swift"))
+        run([args.swiftc, "-frontend", "-parse", "-swift-version", "5", *sources], root)
+    print(f"PASS: {len(suites) * 2} compiled test runs; {len(sources)} app files parsed.", flush=True)
+    print("iOS SDK type-check and physical-device behavior remain separate checks.", flush=True)
+
+
+if __name__ == "__main__":
+    main()
+````
+
 ## `Tools/test_live_depth_geometry.swift`
 
 ````swift
@@ -19624,6 +19927,69 @@ struct LiveDepthGeometryTests {
         precondition(!LiveDepthGeometry.isFresh(capturedAt: 2, now: 1))
         precondition(!LiveDepthGeometry.isFresh(capturedAt: .nan, now: 1))
         print("Live depth geometry tests passed")
+    }
+}
+````
+
+## `Tools/test_spatial_validation.swift`
+
+````swift
+import Foundation
+
+@main
+struct SpatialValidationTests {
+    static func main() {
+        precondition(RoomScanCompletionPolicy.hasCoverage(walls: 4, directions: 2, span: 12, connections: 1))
+        precondition(!RoomScanCompletionPolicy.hasCoverage(walls: 2, directions: 2, span: 12, connections: 1))
+        precondition(!RoomScanCompletionPolicy.hasCoverage(walls: 4, directions: 2, span: .nan, connections: 1))
+        precondition(RoomScanCompletionPolicy.preservesWallSpan(processed: 9, approved: 10))
+        precondition(!RoomScanCompletionPolicy.preservesWallSpan(processed: 8.9, approved: 10))
+        precondition(!RoomScanCompletionPolicy.preservesWallSpan(processed: 3, approved: 10))
+        precondition(!RoomScanCompletionPolicy.preservesWallSpan(processed: .nan, approved: 10))
+        // A usable final room is accepted even when processing changes wall topology.
+        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: true, liveUsable: true) == .processed)
+        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: true) == .approvedLive)
+        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: false) == .reject)
+        for processed in [false, true] {
+            for live in [false, true] {
+                precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: processed, liveUsable: live) == .reject)
+            }
+        }
+        precondition(WallPlacementPolicy.robustDepth(center: 2, neighbors: Array(repeating: 2, count: 25)) == 2)
+        let mixed = Array(repeating: Float(1), count: 9) + Array(repeating: Float(3), count: 16)
+        precondition(WallPlacementPolicy.robustDepth(center: 1, neighbors: mixed) == 1)
+        precondition(WallPlacementPolicy.robustDepth(center: 2, neighbors: mixed) == nil)
+        precondition(WallPlacementPolicy.robustDepth(center: nil, neighbors: mixed) == nil)
+        precondition(WallPlacementPolicy.robustDepth(center: .nan, neighbors: mixed) == nil)
+        precondition(WallPlacementPolicy.robustDepth(center: 1, neighbors: Array(repeating: 1, count: 8)) == nil)
+        precondition(WallPlacementPolicy.agreesWithPlane(separation: 0.01, lateralError: 0.01, depth: 2))
+        precondition(!WallPlacementPolicy.agreesWithPlane(separation: 0.12, lateralError: 0, depth: 2))
+        precondition(!WallPlacementPolicy.agreesWithPlane(separation: -0.12, lateralError: 0, depth: 2))
+        precondition(!WallPlacementPolicy.agreesWithPlane(separation: 0, lateralError: 0.2, depth: 2))
+        precondition(!WallPlacementPolicy.agreesWithPlane(separation: .nan, lateralError: 0, depth: 2))
+        // No camera distance appears in contact projection: the fitted plane is fixed.
+        let contact = WallPlacementPolicy.projectContact([1, 2, 0.02], onto: [0, 0, 0], normal: [0, 0, 1])!
+        precondition(contact == SIMD3<Float>(1, 2, 0))
+        let reverse = WallPlacementPolicy.projectContact([1, 2, 0.02], onto: [0, 0, 0], normal: [0, 0, -2])!
+        precondition(reverse == contact)
+        let angled = WallPlacementPolicy.projectContact([1, 2, 3], onto: .zero, normal: [1, 0, 1])!
+        precondition(abs(angled.x + angled.z) < 0.00001 && angled.y == 2)
+        precondition(WallPlacementPolicy.projectContact(.zero, onto: .zero, normal: .zero) == nil)
+        precondition(WallPlacementPolicy.projectContact(.zero, onto: .zero, normal: [.greatestFiniteMagnitude, 0, 0]) == nil)
+        precondition(!WallPlacementPolicy.agreesWithPlane(separation: 0, lateralError: -1, depth: 2))
+        precondition(!RoomScanCompletionPolicy.hasCoverage(walls: 4, directions: 2, span: 10, connections: 2))
+        // Deterministic projection checks over walls at many positions/orientations.
+        for step in 0..<360 {
+            let radians = Float(step) * .pi / 180
+            let normal = SIMD3<Float>(cos(radians), 0, sin(radians))
+            let origin = SIMD3<Float>(2, 1, -3)
+            let point = origin + normal * 0.024 + SIMD3<Float>(0, 0.5, 0)
+            let projected = WallPlacementPolicy.projectContact(point, onto: origin, normal: normal)!
+            let delta = projected - origin
+            precondition(abs(delta.x * normal.x + delta.z * normal.z) < 0.00001)
+            precondition(abs(projected.y - 1.5) < 0.00001)
+        }
+        print("Spatial validation tests passed")
     }
 }
 ````

@@ -2348,6 +2348,10 @@ final class ARSessionController: NSObject, ObservableObject {
             return
         }
 
+        if request.prop.placementSurface == .wall,
+           let previous = request.samples.last, previous.source != solution.source {
+            request.samples.removeAll(keepingCapacity: true)
+        }
         request.samples.append(PlacementLockSample(
             position: solution.position,
             normal: solution.normal,
@@ -2427,6 +2431,9 @@ final class ARSessionController: NSObject, ObservableObject {
             pendingAlignmentRequest = request
             alignmentReferenceStatus = "Aynı dikey duvar noktası aranıyor"
             return
+        }
+        if let previous = request.samples.last, previous.source != solution.source {
+            request.samples.removeAll(keepingCapacity: true)
         }
         request.samples.append(PlacementLockSample(
             position: solution.position,
@@ -2587,9 +2594,20 @@ final class ARSessionController: NSObject, ObservableObject {
         guard alignedNormalCount >= max(5, Int(ceil(Double(inliers.count) * 0.78))),
               simd_length_squared(normalSum) > 0.000_001 else { return nil }
 
-        let lockedPosition = inliers.reduce(SIMD3<Float>.zero) { $0 + $1.position }
+        var lockedPosition = inliers.reduce(SIMD3<Float>.zero) { $0 + $1.position }
             / Float(inliers.count)
-        let lockedNormal = simd_normalize(normalSum)
+        var lockedNormal = simd_normalize(normalSum)
+        if prop.placementSurface == .wall, let latest = samples.last {
+            // Keep the contact on the latest fitted plane, not between old and new planes.
+            var latestNormal = simd_normalize(latest.normal)
+            if simd_dot(latestNormal, lockedNormal) < 0 { latestNormal = -latestNormal }
+            guard simd_dot(latestNormal, lockedNormal) >= 0.985,
+                  simd_distance(latest.position, lockedPosition) <= 0.025 else { return nil }
+            guard let contact = WallPlacementPolicy.projectContact(lockedPosition, onto: latest.position,
+                                                                   normal: latestNormal) else { return nil }
+            lockedPosition = contact
+            lockedNormal = latestNormal
+        }
         // `samples` and `inliers` are both proven non-empty above; keep the selected
         // source non-optional so this path is also unambiguous to older Swift compilers.
         let source = inliers[inliers.count - 1].source
@@ -2795,121 +2813,67 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
-    /// Every wall prop must be attached to the physical wall under the user's finger.
-    /// The live LiDAR pixel is deliberately preferred over the stored RoomPlan plane:
-    /// a small relocalization error in a restored room used to put every wall prop
-    /// several centimetres behind the wall and the polygon gate exposed only a tiny
-    /// tappable patch. Infinite planes and camera-relative guesses remain forbidden.
+    /// Depth validates a persistent finite wall; it must not define the wall plane.
+    /// In particular, a noisy vertical pixel can be a cabinet or a mixed depth edge.
     private func strictWallPlacementSolution(
         in arView: ARView,
         at point: CGPoint,
         for prop: PropKind
     ) -> PlacementSurfaceSolution? {
-        guard let frame = arView.session.currentFrame else { return nil }
+        guard let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState else { return nil }
         let depth = sceneDepthSample(frame: frame, in: arView, at: point).flatMap {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
+        // Missing stream may use a finite plane; an invalid available pixel must not
+        // allow placement through an unmeasurable foreground object.
+        if (frame.sceneDepth != nil || frame.smoothedSceneDepth != nil), depth == nil { return nil }
         let cameraPosition = arView.cameraTransform.translation
 
-        // A valid vertical normal reconstructed from the depth neighbourhood gives
-        // the exact physical pixel that the user touched. This avoids inheriting a
-        // stale RoomPlan plane offset after a saved scan has been reloaded.
-        if let depth,
-           let measuredNormal = depth.worldNormal,
-           wallSurfaceAccepts(normal: measuredNormal) {
-            return wallSolution(
-                position: depth.worldPoint,
-                normal: measuredNormal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .lidarDepth,
-                depth: depth
-            )
+        // Fitted cladding and its openings belong to the stored wall's coordinate
+        // system. Never shift the whole wall to a depth pixel or a furniture hit.
+        if prop.isWallCladding {
+            guard roomCoordinateSpaceIsActive,
+                  let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
+                  depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true
+            else { return nil }
+            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
         }
 
-        // Scene-understanding mesh is current-session geometry and is consequently a
-        // safer fallback than the persisted RoomPlan representation.
+        // ARPlane geometry is finite and its normal is fitted over many measurements.
+        for result in arView.raycast(from: point, allowing: .existingPlaneGeometry, alignment: .vertical) {
+            let position = SIMD3<Float>(result.worldTransform.columns.3.x,
+                                        result.worldTransform.columns.3.y,
+                                        result.worldTransform.columns.3.z)
+            let normal = SIMD3<Float>(result.worldTransform.columns.1.x,
+                                      result.worldTransform.columns.1.y,
+                                      result.worldTransform.columns.1.z)
+            guard wallSurfaceAccepts(normal: normal),
+                  depth.map({ wallDepthAgrees($0, position: position, normal: normal) }) ?? true
+            else { continue }
+            return wallSolution(position: position, normal: normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .arkitPlane, depth: depth)
+        }
+
+        if roomCoordinateSpaceIsActive,
+           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
+           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
+            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
+        }
+
+        // Native collision reconstruction is a finite fallback, not an arbitrary
+        // vertical LiDAR pixel. Synthetic room and prop colliders are excluded.
         if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
             entityID(from: hit.entity) == nil
                 && !belongsToRoomReality(hit.entity)
                 && !belongsToProjectorVisualization(hit.entity)
                 && wallSurfaceAccepts(normal: hit.normal)
-                && (depth.map { sample in
-                    wallDepthAgrees(sample, position: hit.position, normal: hit.normal)
-                } ?? true)
+                && (depth.map { wallDepthAgrees($0, position: hit.position, normal: hit.normal) } ?? true)
         }) {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .lidarMesh,
-                depth: depth
-            )
-        }
-
-        // A vertical raycast is already constrained to vertical ARPlane geometry.
-        // Requiring classification == .wall made a freshly scanned wall untappable
-        // until ARKit happened to classify that individual plane fragment.
-        let results = arView.raycast(
-            from: point,
-            allowing: .existingPlaneGeometry,
-            alignment: .vertical
-        )
-        for result in results {
-            let position = SIMD3<Float>(
-                result.worldTransform.columns.3.x,
-                result.worldTransform.columns.3.y,
-                result.worldTransform.columns.3.z
-            )
-            let normal = SIMD3<Float>(
-                result.worldTransform.columns.1.x,
-                result.worldTransform.columns.1.y,
-                result.worldTransform.columns.1.z
-            )
-            guard wallSurfaceAccepts(normal: normal),
-                  depth.map({ wallDepthAgrees($0, position: position, normal: normal) }) ?? true
-            else { continue }
-            return wallSolution(
-                position: position,
-                normal: normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .arkitPlane,
-                depth: depth
-            )
-        }
-
-        // Rendered replacement-room geometry is useful while a theme is visible,
-        // but must never override a more recent physical LiDAR/ARKit wall.
-        if let hit = roomRealityRenderer.placementHit(in: arView, at: point),
-           wallSurfaceAccepts(normal: hit.normal),
-           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
-                depth: depth
-            )
-        }
-
-        // The persisted RoomPlan wall is the final finite fallback. It remains useful
-        // when depth is temporarily unavailable, without masking live geometry.
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-           depth.map({
-               wallDepthAgrees($0, position: hit.position, normal: hit.normal)
-           }) ?? true {
-            return wallSolution(
-                position: hit.position,
-                normal: hit.normal,
-                prop: prop,
-                cameraPosition: cameraPosition,
-                source: .roomPlanGeometry,
-                depth: depth
-            )
+            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
+                                cameraPosition: cameraPosition, source: .lidarMesh, depth: depth)
         }
         return nil
     }
@@ -2948,15 +2912,13 @@ final class ARSessionController: NSObject, ObservableObject {
     ) -> Bool {
         guard simd_length_squared(normal) > 0.000_001 else { return false }
         let candidateNormal = simd_normalize(normal)
-        let maximumSeparation = min(max(0.075 + depth.depthMeters * 0.020, 0.10), 0.18)
+        let delta = depth.worldPoint - position
+        let separation = simd_dot(delta, candidateNormal)
+        let lateralError = simd_length(delta - candidateNormal * separation)
         guard abs(candidateNormal.y) <= 0.38,
-              simd_distance(depth.worldPoint, position) <= maximumSeparation else { return false }
-        if let depthNormal = depth.worldNormal {
-            guard simd_length_squared(depthNormal) > 0.000_001 else { return false }
-            let measuredNormal = simd_normalize(depthNormal)
-            return abs(measuredNormal.y) <= 0.48
-                && abs(simd_dot(candidateNormal, measuredNormal)) >= 0.76
-        }
+              WallPlacementPolicy.agreesWithPlane(separation: separation,
+                                                   lateralError: lateralError,
+                                                   depth: depth.depthMeters) else { return false }
         return true
     }
 
@@ -3599,11 +3561,12 @@ final class ARSessionController: NSObject, ObservableObject {
         at viewPoint: CGPoint
     ) -> SceneDepthSurfaceSample? {
         guard arView.bounds.width > 1, arView.bounds.height > 1,
-              let sceneDepth = frame.smoothedSceneDepth ?? frame.sceneDepth else { return nil }
+              let sceneDepth = frame.sceneDepth ?? frame.smoothedSceneDepth else { return nil }
         let depthMap = sceneDepth.depthMap
         let depthWidth = CVPixelBufferGetWidth(depthMap)
         let depthHeight = CVPixelBufferGetHeight(depthMap)
-        guard depthWidth > 4, depthHeight > 4 else { return nil }
+        guard depthWidth > 4, depthHeight > 4,
+              CVPixelBufferGetPixelFormatType(depthMap) == kCVPixelFormatType_DepthFloat32 else { return nil }
 
         let orientation = arView.window?.windowScene?.interfaceOrientation ?? .portrait
         let normalizedViewPoint = CGPoint(
@@ -3619,19 +3582,31 @@ final class ARSessionController: NSObject, ObservableObject {
         guard imagePoint.x.isFinite, imagePoint.y.isFinite,
               (0...1).contains(imagePoint.x), (0...1).contains(imagePoint.y) else { return nil }
 
-        let centerX = min(max(Int(imagePoint.x * CGFloat(depthWidth - 1)), 2), depthWidth - 3)
-        let centerY = min(max(Int(imagePoint.y * CGFloat(depthHeight - 1)), 2), depthHeight - 3)
+        let pixelX = Float(imagePoint.x) * Float(depthWidth) - 0.5
+        let pixelY = Float(imagePoint.y) * Float(depthHeight) - 0.5
+        let centerX = Int(pixelX.rounded()), centerY = Int(pixelY.rounded())
+        guard centerX >= 2, centerX < depthWidth - 2,
+              centerY >= 2, centerY < depthHeight - 2 else { return nil }
         let confidenceMap = sceneDepth.confidenceMap
+        if let confidenceMap {
+            guard CVPixelBufferGetWidth(confidenceMap) == depthWidth,
+                  CVPixelBufferGetHeight(confidenceMap) == depthHeight,
+                  CVPixelBufferGetPixelFormatType(confidenceMap) == kCVPixelFormatType_OneComponent8
+            else { return nil }
+        }
 
-        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
-        if let confidenceMap { CVPixelBufferLockBaseAddress(confidenceMap, .readOnly) }
+        guard CVPixelBufferLockBaseAddress(depthMap, .readOnly) == kCVReturnSuccess else { return nil }
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        if let confidenceMap {
+            guard CVPixelBufferLockBaseAddress(confidenceMap, .readOnly) == kCVReturnSuccess else { return nil }
+        }
         defer {
             if let confidenceMap { CVPixelBufferUnlockBaseAddress(confidenceMap, .readOnly) }
-            CVPixelBufferUnlockBaseAddress(depthMap, .readOnly)
         }
         guard let depthBase = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
         let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
         let confidenceBase = confidenceMap.flatMap { CVPixelBufferGetBaseAddress($0) }
+        if confidenceMap != nil && confidenceBase == nil { return nil }
         let confidenceBytesPerRow = confidenceMap.map { CVPixelBufferGetBytesPerRow($0) } ?? 0
 
         func confidenceIsUsable(x: Int, y: Int) -> Bool {
@@ -3639,7 +3614,7 @@ final class ARSessionController: NSObject, ObservableObject {
             let value = confidenceBase
                 .advanced(by: y * confidenceBytesPerRow + x)
                 .assumingMemoryBound(to: UInt8.self).pointee
-            return value >= UInt8(ARConfidenceLevel.medium.rawValue)
+            return value == 1 || value == 2
         }
 
         func depthValue(x: Int, y: Int) -> Float? {
@@ -3657,11 +3632,17 @@ final class ARSessionController: NSObject, ObservableObject {
                 if let value = depthValue(x: x, y: y) { neighborhood.append(value) }
             }
         }
-        guard neighborhood.count >= 9 else { return nil }
-        neighborhood.sort()
-        let medianDepth = neighborhood[neighborhood.count / 2]
+        guard let medianDepth = WallPlacementPolicy.robustDepth(
+            center: depthValue(x: centerX, y: centerY), neighbors: neighborhood
+        ) else { return nil }
+        let imageSize = frame.camera.imageResolution
+        let intrinsic = frame.camera.intrinsics
+        guard imageSize.width > 0, imageSize.height > 0,
+              intrinsic.columns.0.x.isFinite, intrinsic.columns.0.x > 0,
+              intrinsic.columns.1.y.isFinite, intrinsic.columns.1.y > 0,
+              intrinsic.columns.2.x.isFinite, intrinsic.columns.2.y.isFinite else { return nil }
 
-        func unproject(x: Int, y: Int, depth: Float) -> SIMD3<Float> {
+        func unproject(x: Int, y: Int, depth: Float, preciseTouch: Bool = false) -> SIMD3<Float> {
             let imageResolution = frame.camera.imageResolution
             let scaleX = Float(depthWidth) / Float(imageResolution.width)
             let scaleY = Float(depthHeight) / Float(imageResolution.height)
@@ -3671,8 +3652,8 @@ final class ARSessionController: NSObject, ObservableObject {
             let cx = intrinsics.columns.2.x * scaleX
             let cy = intrinsics.columns.2.y * scaleY
             let cameraPoint = SIMD4<Float>(
-                (Float(x) - cx) / fx * depth,
-                -(Float(y) - cy) / fy * depth,
+                ((preciseTouch ? pixelX : Float(x)) - cx) / fx * depth,
+                -((preciseTouch ? pixelY : Float(y)) - cy) / fy * depth,
                 -depth,
                 1
             )
@@ -3680,12 +3661,15 @@ final class ARSessionController: NSObject, ObservableObject {
             return SIMD3(worldPoint.x, worldPoint.y, worldPoint.z)
         }
 
-        let worldPoint = unproject(x: centerX, y: centerY, depth: medianDepth)
+        let worldPoint = unproject(x: centerX, y: centerY, depth: medianDepth, preciseTouch: true)
         var worldNormal: SIMD3<Float>?
         if let leftDepth = depthValue(x: centerX - 2, y: centerY),
            let rightDepth = depthValue(x: centerX + 2, y: centerY),
            let upperDepth = depthValue(x: centerX, y: centerY - 2),
-           let lowerDepth = depthValue(x: centerX, y: centerY + 2) {
+           let lowerDepth = depthValue(x: centerX, y: centerY + 2),
+           [leftDepth, rightDepth, upperDepth, lowerDepth].allSatisfy({
+               abs($0 - medianDepth) <= max(0.025, medianDepth * 0.025)
+           }) {
             let horizontal = unproject(x: centerX + 2, y: centerY, depth: rightDepth)
                 - unproject(x: centerX - 2, y: centerY, depth: leftDepth)
             let vertical = unproject(x: centerX, y: centerY + 2, depth: lowerDepth)
@@ -6310,6 +6294,15 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
 
     func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         guard !isRoomScanActive else { return }
+        // ARKit refines user-anchor poses as mapping improves. Recovery must use
+        // that pose, not the original placement frame cached by didAdd.
+        for anchor in anchors {
+            guard let descriptor = PropKind.descriptor(from: anchor.name),
+                  !supersededPropAnchorIDs.contains(anchor.identifier),
+                  managedPropAnchorsByPlacementID[descriptor.id]?.identifier == anchor.identifier
+            else { continue }
+            managedPropAnchorsByPlacementID[descriptor.id] = anchor
+        }
         updateKnownFloor(from: anchors)
     }
 

@@ -252,6 +252,30 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
+0.17.6 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+
+- Tarama yesilken bitir; islenmis duvarlarin parca/kose sayisi degisse de kullanilabilir
+  sonuc `Taramayi Kullan` sunmali. Zemin/duvar kaybi veya duvar uzunlugunda %10'dan
+  fazla kayip varsa `Onaylanan Canli Taramayi Kullan` ve acik uyari gorulmeli.
+  Kullan/iptal yollarini, art arda taramalari, gercek RoomPlan hatasini ve isleme
+  sirasinda kapatmayi dene; onceki oda kullanici kabul etmeden degismemeli.
+- Hatali eski kaplamayi sil, yeni taramada bos duvara tek dokunusla yeniden koy.
+  0.7, 1.5 ve 3 metreye uzaklas, saga/sola yuru: panelin kose ve kapi kesimleri
+  fiziksel duvarla hizada kalmali. Saat/telefonun arka yuzu duvara 3 mm toleransla
+  oturmali. Olcum kamera mesafesine bagli buyuyen bir bosluk gostermemeli.
+- Duvar onundeki kettle/dolap kenarina dokun: karisik veya guvensiz olcumde
+  yerlestirme reddedilmeli, arka duvarin derinligiyle hayali bir on yuz uretilmemeli.
+  Iki farkli yuzeye hizlica cevirirken tek dokunus iki nesne olusturmamali.
+- Arka plana al/geri don, kaydet/yukle ve tekrar tara; anchor kurtarmasi eski
+  yerlestirme pozuna sicrama yapmamali. Takip kaymasini ve ortme kaynakli gorunurluk
+  degisimini ayri kaydet. Gercek cihaz dogrulamasi olmadan kayma tamamen giderildi
+  kabul edilmemeli.
+
+```sh
+swiftc CineAR/SpatialValidation.swift Tools/test_spatial_validation.swift -o /tmp/cinear-spatial-tests
+/tmp/cinear-spatial-tests
+```
+
 - Tripod konum kaymasi: 10 dakikada 2 cm'den az
 - Elde relocalization hatasi: 5 cm'den az
 - Manuel dekor anchor'i ile dokunulan gercek yuzey hizasi: referans noktalarda 2 cm'den az
