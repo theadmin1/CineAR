@@ -25,13 +25,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Gercek mekani taramak ve sanal seti goruntulemek icin kamera kullanilir.</string>
+	<string>Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>AR cekimi sirasinda ses kaydetmek ve canli CGI komutlarini algilamak icin mikrofon kullanilir.</string>
+	<string>Mikrofon, AR çekimi sırasında ses kaydetmek ve canlı CGI komutlarını algılamak için kullanılır.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Elma ve kan selalesi gibi canli CGI efektlerini Turkce sesli komutlarla yonetmek icin konusma tanima kullanilir.</string>
+	<string>Konuşma tanıma, elma ve kan şelalesi gibi canlı CGI efektlerini Türkçe sesli komutlarla yönetmek için kullanılır.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>SAM 2 ve Depth Anything derinlik servisine ayni Wi-Fi agindaki bilgisayardan baglanmak icin yerel ag kullanilir.</string>
+	<string>Yerel ağ, SAM 2 ve Depth Anything derinlik servisine aynı Wi-Fi ağındaki bilgisayardan bağlanmak için kullanılır.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_cinear-ai._tcp</string>

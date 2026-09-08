@@ -13,6 +13,10 @@ workflows:
           set -euo pipefail
           cd "$CM_BUILD_DIR"
           mkdir -p build/preflight
+          python3 Tools/test_privacy_plist.py
+          python3 Tools/validate_privacy_plist.py \
+            --plist CineAR/Info.plist \
+            --expected-bundle-id com.cinear.virtualproduction
           python3 Tools/run_swift_regressions.py --swiftc "$(xcrun --find swiftc)" \
             2>&1 | tee build/preflight/swift-tests.log
 
@@ -31,6 +35,16 @@ workflows:
             -resultBundlePath build/preflight/iOSBuild.xcresult \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             2>&1 | tee build/preflight/ios-build.log
+
+          app_plist="$(find build/preflight/DerivedData/Build/Products/Release-iphoneos \
+            -path '*/CineAR.app/Info.plist' -print -quit)"
+          if [[ -z "$app_plist" ]]; then
+            echo "Unsigned CineAR.app Info.plist not found" >&2
+            exit 1
+          fi
+          python3 Tools/validate_privacy_plist.py \
+            --plist "$app_plist" \
+            --expected-bundle-id com.cinear.virtualproduction
     artifacts:
       - build/preflight/*.log
       - build/preflight/*.xcresult
@@ -111,6 +125,11 @@ workflows:
             exit 1
           fi
 
+          python3 "$CM_BUILD_DIR/Tools/test_privacy_plist.py"
+          python3 "$CM_BUILD_DIR/Tools/validate_privacy_plist.py" \
+            --plist "$info_plist" \
+            --expected-bundle-id "$BUNDLE_ID"
+
       - name: Test wall cladding geometry
         script: |
           #!/bin/bash
@@ -189,6 +208,39 @@ workflows:
             --scheme "$XCODE_SCHEME" \
             --config Release \
             --clean
+
+      - name: Verify privacy descriptions in archive and IPA
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+
+          archive_plist="$(find build/ios/xcarchive \
+            -path '*/Products/Applications/CineAR.app/Info.plist' -print -quit)"
+          if [[ -z "$archive_plist" ]]; then
+            echo "Archived CineAR.app Info.plist not found" >&2
+            exit 1
+          fi
+          python3 Tools/validate_privacy_plist.py \
+            --plist "$archive_plist" \
+            --expected-bundle-id "$BUNDLE_ID"
+
+          ipa_path="$(find build/ios/ipa -name '*.ipa' -print -quit)"
+          if [[ -z "$ipa_path" ]]; then
+            echo "CineAR IPA not found" >&2
+            exit 1
+          fi
+          ipa_check_dir="$(mktemp -d)"
+          unzip -q "$ipa_path" -d "$ipa_check_dir"
+          ipa_plist="$(find "$ipa_check_dir/Payload" \
+            -path '*/CineAR.app/Info.plist' -print -quit)"
+          if [[ -z "$ipa_plist" ]]; then
+            echo "Packaged CineAR.app Info.plist not found in IPA" >&2
+            exit 1
+          fi
+          python3 Tools/validate_privacy_plist.py \
+            --plist "$ipa_plist" \
+            --expected-bundle-id "$BUNDLE_ID"
 
     artifacts:
       - build/ios/ipa/*.ipa

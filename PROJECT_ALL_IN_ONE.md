@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.6`
-- Proje build numarası: `40`
+- Uygulama sürümü: `0.17.7`
+- Proje build numarası: `41`
 - Git dalı: `unavailable`
 - Kaynak commit: `unavailable`
-- Oluşturulma zamanı: `2026-09-08 17:32:35 +03:00`
+- Oluşturulma zamanı: `2026-09-08 20:16:02 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -209,8 +209,10 @@ Tools/generate_wall_assets.py
 Tools/render_usdz_thumbnails.py
 Tools/run_swift_regressions.py
 Tools/test_live_depth_geometry.swift
+Tools/test_privacy_plist.py
 Tools/test_spatial_validation.swift
 Tools/test_wall_cladding_geometry.swift
+Tools/validate_privacy_plist.py
 Tools/validate_usdz_assets.py
 ````
 
@@ -290,7 +292,7 @@ Yok.
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
-| `CineAR.xcodeproj/project.pbxproj` | 292 | 15276 |
+| `CineAR.xcodeproj/project.pbxproj` | 294 | 15654 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
 | `CineAR/ARSessionController.swift` | 6907 | 292712 |
@@ -301,7 +303,7 @@ Yok.
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 180 | 6728 |
 | `CineAR/ContentView.swift` | 1478 | 62936 |
-| `CineAR/Info.plist` | 62 | 2153 |
+| `CineAR/Info.plist` | 62 | 2252 |
 | `CineAR/LiveDepthGeometry.swift` | 91 | 4027 |
 | `CineAR/LiveDepthOcclusionRenderer.swift` | 214 | 10898 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
@@ -315,12 +317,12 @@ Yok.
 | `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
 | `CineAR/SpatialValidation.swift` | 53 | 2632 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
-| `codemagic.yaml` | 205 | 7093 |
-| `Docs/CODEMAGIC.md` | 114 | 6193 |
+| `codemagic.yaml` | 257 | 9177 |
+| `Docs/CODEMAGIC.md` | 120 | 6548 |
 | `Docs/DEVICE_TEST.md` | 302 | 21147 |
 | `Docs/ICON_PROMPT.md` | 25 | 1421 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 398 | 26859 |
+| `README.md` | 402 | 27182 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
@@ -330,8 +332,10 @@ Yok.
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/run_swift_regressions.py` | 46 | 2055 |
 | `Tools/test_live_depth_geometry.swift` | 73 | 3746 |
+| `Tools/test_privacy_plist.py` | 37 | 1416 |
 | `Tools/test_spatial_validation.swift` | 59 | 4464 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
+| `Tools/validate_privacy_plist.py` | 56 | 1953 |
 | `Tools/validate_usdz_assets.py` | 101 | 3573 |
 
 # Metin tabanlı proje dosyalarının tam içeriği
@@ -1530,13 +1534,14 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 40;
+				CURRENT_PROJECT_VERSION = 41;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.6;
+				MARKETING_VERSION = 0.17.7;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1553,12 +1558,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 40;
+				CURRENT_PROJECT_VERSION = 41;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.6;
+				MARKETING_VERSION = 0.17.7;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -11139,13 +11145,13 @@ struct ContentView: View {
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Gercek mekani taramak ve sanal seti goruntulemek icin kamera kullanilir.</string>
+	<string>Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>AR cekimi sirasinda ses kaydetmek ve canli CGI komutlarini algilamak icin mikrofon kullanilir.</string>
+	<string>Mikrofon, AR çekimi sırasında ses kaydetmek ve canlı CGI komutlarını algılamak için kullanılır.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Elma ve kan selalesi gibi canli CGI efektlerini Turkce sesli komutlarla yonetmek icin konusma tanima kullanilir.</string>
+	<string>Konuşma tanıma, elma ve kan şelalesi gibi canlı CGI efektlerini Türkçe sesli komutlarla yönetmek için kullanılır.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>SAM 2 ve Depth Anything derinlik servisine ayni Wi-Fi agindaki bilgisayardan baglanmak icin yerel ag kullanilir.</string>
+	<string>Yerel ağ, SAM 2 ve Depth Anything derinlik servisine aynı Wi-Fi ağındaki bilgisayardan bağlanmak için kullanılır.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_cinear-ai._tcp</string>
@@ -17726,6 +17732,10 @@ workflows:
           set -euo pipefail
           cd "$CM_BUILD_DIR"
           mkdir -p build/preflight
+          python3 Tools/test_privacy_plist.py
+          python3 Tools/validate_privacy_plist.py \
+            --plist CineAR/Info.plist \
+            --expected-bundle-id com.cinear.virtualproduction
           python3 Tools/run_swift_regressions.py --swiftc "$(xcrun --find swiftc)" \
             2>&1 | tee build/preflight/swift-tests.log
 
@@ -17744,6 +17754,16 @@ workflows:
             -resultBundlePath build/preflight/iOSBuild.xcresult \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             2>&1 | tee build/preflight/ios-build.log
+
+          app_plist="$(find build/preflight/DerivedData/Build/Products/Release-iphoneos \
+            -path '*/CineAR.app/Info.plist' -print -quit)"
+          if [[ -z "$app_plist" ]]; then
+            echo "Unsigned CineAR.app Info.plist not found" >&2
+            exit 1
+          fi
+          python3 Tools/validate_privacy_plist.py \
+            --plist "$app_plist" \
+            --expected-bundle-id com.cinear.virtualproduction
     artifacts:
       - build/preflight/*.log
       - build/preflight/*.xcresult
@@ -17824,6 +17844,11 @@ workflows:
             exit 1
           fi
 
+          python3 "$CM_BUILD_DIR/Tools/test_privacy_plist.py"
+          python3 "$CM_BUILD_DIR/Tools/validate_privacy_plist.py" \
+            --plist "$info_plist" \
+            --expected-bundle-id "$BUNDLE_ID"
+
       - name: Test wall cladding geometry
         script: |
           #!/bin/bash
@@ -17903,6 +17928,39 @@ workflows:
             --config Release \
             --clean
 
+      - name: Verify privacy descriptions in archive and IPA
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+
+          archive_plist="$(find build/ios/xcarchive \
+            -path '*/Products/Applications/CineAR.app/Info.plist' -print -quit)"
+          if [[ -z "$archive_plist" ]]; then
+            echo "Archived CineAR.app Info.plist not found" >&2
+            exit 1
+          fi
+          python3 Tools/validate_privacy_plist.py \
+            --plist "$archive_plist" \
+            --expected-bundle-id "$BUNDLE_ID"
+
+          ipa_path="$(find build/ios/ipa -name '*.ipa' -print -quit)"
+          if [[ -z "$ipa_path" ]]; then
+            echo "CineAR IPA not found" >&2
+            exit 1
+          fi
+          ipa_check_dir="$(mktemp -d)"
+          unzip -q "$ipa_path" -d "$ipa_check_dir"
+          ipa_plist="$(find "$ipa_check_dir/Payload" \
+            -path '*/CineAR.app/Info.plist' -print -quit)"
+          if [[ -z "$ipa_plist" ]]; then
+            echo "Packaged CineAR.app Info.plist not found in IPA" >&2
+            exit 1
+          fi
+          python3 Tools/validate_privacy_plist.py \
+            --plist "$ipa_plist" \
+            --expected-bundle-id "$BUNDLE_ID"
+
     artifacts:
       - build/ios/ipa/*.ipa
       - build/ios/xcarchive/*.xcarchive
@@ -17940,6 +17998,8 @@ Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncelle
    calistirir, ardindan tum uygulama Swift dosyalarinin sozdizimini kontrol eder.
 4. Ikinci adim gercek iPhone SDK'si ile Release uygulamasini imzasiz derler.
    ARKit/RealityKit API ve Swift tur denetimi bu adimda yapilir. Simulator testi degildir.
+   Kaynak ve uretilmis `.app` icindeki kamera/mikrofon/konusma/yerel ag izin
+   aciklamalari da okunup dogrulanir.
 5. Hata varsa `swift-tests.log`, `ios-build.log` ve `.xcresult` ciktisini incele.
    Yalnizca on kontrolu gecen **ayni commit** icin `cinear-testflight` baslat.
 
@@ -17955,6 +18015,10 @@ python3 Tools/run_swift_regressions.py --swiftc /tam/yol/swiftc
 ```
 
 Resmi dayanak: [Codemagic unsigned iOS build](https://docs.codemagic.io/yaml-quick-start/first-signed-build/).
+
+TestFlight akisinda ayni denetim kaynak plist'ten sonra arsivlenmis `.app` ve
+son IPA icinde tekrar yapilir. Son pakette `NSCameraUsageDescription` yoksa veya
+aciklama amaci belirtmiyorsa App Store Connect yuklemesi baslamadan akis durur.
 
 ## Apple tarafinda bir kez yapilacaklar
 
@@ -18441,6 +18505,10 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.7: Kamera izin aciklamasi LiDAR oda taramasi ve sanal dekor kullanimi
+  acikca belirtilerek yenilendi. Codemagic kaynak `Info.plist`, imzasiz `.app`,
+  imzali `.xcarchive` ve son IPA icindeki gercek paket icin gizlilik anahtarlarini
+  dogrular; eksik veya belirsiz metinde TestFlight yuklemesinden once build durur.
 - 0.17.6: `Taramayi Bitir` aninda onaylanan canli oda korunur. Isleme sonrasi
   kose/duvar parcasi sayisinin degismesi tek basina taramayi reddettirmez.
   Gecerli zemin/duvar kaybolur veya toplam duvar uzunlugunun %10'undan fazlasi
@@ -19931,6 +19999,47 @@ struct LiveDepthGeometryTests {
 }
 ````
 
+## `Tools/test_privacy_plist.py`
+
+````python
+import plistlib
+from pathlib import Path
+import tempfile
+
+from validate_privacy_plist import validate
+
+
+VALID = {
+    "CFBundleIdentifier": "com.cinear.virtualproduction",
+    "NSCameraUsageDescription": "Kamera, odanızı LiDAR ile taramak ve sanal dekorları göstermek için kullanılır.",
+    "NSMicrophoneUsageDescription": "Mikrofon, AR çekimi sırasında ses kaydetmek için kullanılır.",
+    "NSSpeechRecognitionUsageDescription": "Konuşma tanıma, sesli CGI komutlarını anlamak için kullanılır.",
+    "NSLocalNetworkUsageDescription": "Yerel ağ, aynı ağdaki derinlik sunucusuna bağlanmak için kullanılır.",
+}
+
+
+with tempfile.TemporaryDirectory(prefix="cinear-plist-tests-") as directory:
+    path = Path(directory) / "Info.plist"
+    with path.open("wb") as handle:
+        plistlib.dump(VALID, handle, fmt=plistlib.FMT_BINARY)
+    assert validate(path, "com.cinear.virtualproduction") == []
+
+    for key in VALID:
+        broken = dict(VALID)
+        broken.pop(key)
+        with path.open("wb") as handle:
+            plistlib.dump(broken, handle)
+        assert validate(path, "com.cinear.virtualproduction"), key
+
+    vague = dict(VALID)
+    vague["NSCameraUsageDescription"] = "Kamera gerekir."
+    with path.open("wb") as handle:
+        plistlib.dump(vague, handle)
+    assert any("NSCameraUsageDescription" in error for error in validate(path))
+
+print("Privacy plist tests passed")
+````
+
 ## `Tools/test_spatial_validation.swift`
 
 ````swift
@@ -20103,6 +20212,66 @@ struct WallCladdingGeometryTests {
         print("WALL_CLADDING_GEOMETRY_OK: \(checks) checks")
     }
 }
+````
+
+## `Tools/validate_privacy_plist.py`
+
+````python
+"""Fail a build if its actual Info.plist lacks required privacy explanations."""
+import argparse
+from pathlib import Path
+import plistlib
+import sys
+
+
+REQUIRED = {
+    "NSCameraUsageDescription": ("kamera", "LiDAR", "sanal dekor"),
+    "NSMicrophoneUsageDescription": ("mikrofon",),
+    "NSSpeechRecognitionUsageDescription": ("konuşma",),
+    "NSLocalNetworkUsageDescription": ("yerel ağ",),
+}
+
+
+def validate(path: Path, expected_bundle_id: str | None = None) -> list[str]:
+    try:
+        with path.open("rb") as handle:
+            values = plistlib.load(handle)
+    except Exception as error:
+        return [f"Info.plist okunamadı: {error}"]
+    errors = []
+    for key, required_words in REQUIRED.items():
+        value = values.get(key)
+        if not isinstance(value, str) or len(value.strip()) < 24:
+            errors.append(f"{key} eksik, boş veya yeterince açıklayıcı değil")
+            continue
+        folded = value.casefold()
+        for word in required_words:
+            if word.casefold() not in folded:
+                errors.append(f"{key}, '{word}' amacını açıkça belirtmiyor")
+    if expected_bundle_id:
+        bundle_id = values.get("CFBundleIdentifier")
+        # Source plists legitimately contain the Xcode substitution variable.
+        if bundle_id not in (expected_bundle_id, "$(PRODUCT_BUNDLE_IDENTIFIER)"):
+            errors.append(f"Bundle ID uyuşmuyor: {bundle_id!r}")
+    return errors
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--plist", required=True, type=Path)
+    parser.add_argument("--expected-bundle-id")
+    args = parser.parse_args()
+    errors = validate(args.plist, args.expected_bundle_id)
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+    print(f"PASS: privacy descriptions verified in {args.plist}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 ````
 
 ## `Tools/validate_usdz_assets.py`

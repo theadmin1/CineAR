@@ -18,6 +18,8 @@ Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncelle
    calistirir, ardindan tum uygulama Swift dosyalarinin sozdizimini kontrol eder.
 4. Ikinci adim gercek iPhone SDK'si ile Release uygulamasini imzasiz derler.
    ARKit/RealityKit API ve Swift tur denetimi bu adimda yapilir. Simulator testi degildir.
+   Kaynak ve uretilmis `.app` icindeki kamera/mikrofon/konusma/yerel ag izin
+   aciklamalari da okunup dogrulanir.
 5. Hata varsa `swift-tests.log`, `ios-build.log` ve `.xcresult` ciktisini incele.
    Yalnizca on kontrolu gecen **ayni commit** icin `cinear-testflight` baslat.
 
@@ -33,6 +35,10 @@ python3 Tools/run_swift_regressions.py --swiftc /tam/yol/swiftc
 ```
 
 Resmi dayanak: [Codemagic unsigned iOS build](https://docs.codemagic.io/yaml-quick-start/first-signed-build/).
+
+TestFlight akisinda ayni denetim kaynak plist'ten sonra arsivlenmis `.app` ve
+son IPA icinde tekrar yapilir. Son pakette `NSCameraUsageDescription` yoksa veya
+aciklama amaci belirtmiyorsa App Store Connect yuklemesi baslamadan akis durur.
 
 ## Apple tarafinda bir kez yapilacaklar
 

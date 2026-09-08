@@ -23,6 +23,10 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.7: Kamera izin aciklamasi LiDAR oda taramasi ve sanal dekor kullanimi
+  acikca belirtilerek yenilendi. Codemagic kaynak `Info.plist`, imzasiz `.app`,
+  imzali `.xcarchive` ve son IPA icindeki gercek paket icin gizlilik anahtarlarini
+  dogrular; eksik veya belirsiz metinde TestFlight yuklemesinden once build durur.
 - 0.17.6: `Taramayi Bitir` aninda onaylanan canli oda korunur. Isleme sonrasi
   kose/duvar parcasi sayisinin degismesi tek basina taramayi reddettirmez.
   Gecerli zemin/duvar kaybolur veya toplam duvar uzunlugunun %10'undan fazlasi
