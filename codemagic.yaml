@@ -161,8 +161,10 @@ workflows:
             -o "$spatial_test_dir/spatial-tests"
           "$spatial_test_dir/spatial-tests"
 
-      - name: Apply provisioning profile
-        script: xcode-project use-profiles
+      - name: Apply provisioning profile for internal TestFlight
+        script: |
+          xcode-project use-profiles \
+            --custom-export-options='{"testFlightInternalTestingOnly": true}'
 
       - name: Increment build number from App Store Connect
         script: |
@@ -251,6 +253,9 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        # The internal group uses App Store Connect automatic distribution.
-        # Publishing uploads the IPA; Apple assigns processed builds to the group.
+        # Keep App Store production review disabled, but explicitly publish every
+        # manually started build to the internal TestFlight group.
+        submit_to_testflight: true
+        beta_groups:
+          - CineAR Internal Testers
         submit_to_app_store: false
