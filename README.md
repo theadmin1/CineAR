@@ -23,6 +23,15 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.8: RoomPlan taramasi artik yalniz tahmin edilen duvar boyutuna guvenmez;
+  kameranin her duvarin sol/orta/sag ve alt/ust bolgelerine gercekten baktigini
+  ayri olarak izler. Dort anlamli duvar, en az 12 saniyelik gozlem ve konum/acisi
+  kararlı duvarlar olmadan tarama tamamlanmaz. Taramaya girerken canli occlusion,
+  scene-depth ve insan segmentasyonu sensor isleri kapatilir; ayni dunya koordinati
+  korunarak RoomPlan'a temiz LiDAR/kamera butcesi birakilir. Kamera piksel tamponunu
+  kilitleyen ozel isik analizi kaldirildi ve RoomPlan'in kendi yonlendirmesi kullanildi.
+  Son isleme duvar sayisini, yonunu veya kose baglantisini bozarsa onaylanan canli
+  sonuc korunur.
 - 0.17.7: Kamera izin aciklamasi LiDAR oda taramasi ve sanal dekor kullanimi
   acikca belirtilerek yenilendi. Codemagic kaynak `Info.plist`, imzasiz `.app`,
   imzali `.xcarchive` ve son IPA icindeki gercek paket icin gizlilik anahtarlarini

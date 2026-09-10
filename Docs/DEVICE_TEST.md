@@ -14,9 +14,11 @@
    sonrasinda uygulamanin kapanmadigini dogrula.
    Canli sayacta zemin, duvar ve nesne adetleri artmali; zemin veya duvar sifirken
    `Taramayi Bitir` pasif kalmali. Tek, kisa bir duvar parcasi bulundugunda da dugme
-   pasif kalmali; en az uc anlamli duvar, komsu duvar yonleri, birbirine baglanan
-   kose cevrimi ve kararlilasma suresi tamamlandiginda kalite satiri yesil olup
-   dugme etkinlesmeli.
+   pasif kalmali; en az dort anlamli duvar, komsu duvar yonleri, birbirine baglanan
+   kose cevrimi ve en az 12 saniyelik kararlilasma suresi tamamlanmalidir. Her
+   duvarin sol/orta/sag ve alt/ust bolgelerine gercekten bakilmadan kalite satiri
+   yesil olmamali; `Gercek gorus` yuzdesi ve `Dogrulanan duvar 0/4...4/4`
+   ilerlemesi gorunmelidir.
    Tarama acilirken RoomPlan baslamadan once dunya takibinin hazirlanmasini bekledigini
    ve `World tracking failure` ham hata metninin gorunmedigini kontrol et. Takibi
    bilerek zayiflatip `Tekrar Tara`ya basinca paylasilan AR oturumu yeniden calismali.
@@ -26,12 +28,10 @@
    insanlarin ve mobilyalarin tamamen gorunur kaldigini kontrol et.
    Ana gorunume dondukten sonra AR durumu en gec 10 saniye icinde hazir olmali;
    yeni bir tracking callback'i gelmese de kutuphane ve yerlestirme kullanilabilmeli.
-   Pencereyi veya guclu lambayi dogrudan kadraja alip parlama uyarisi verildigini ve
-   bitirme dugmesinin pasif kaldigini kontrol et. Perdeyi kapatip/isigi arkaya alip
-   iki ardisik kalite olcumunden sonra uyarinin kalktigini dogrula. Karanlik odada
-   RoomPlan `isigi artir`, duz ve dokusuz duvarda `dusuk dokulu yuzey`, hizli kamera
-   hareketinde `yavasla` yonlendirmesi Turkce gorunmeli. Bu kontrol sirasinda kamera
-   onizlemesinde gozle gorulur kare dusmesi olmamali.
+   Karanlik odada RoomPlan `isigi artir`, duz ve dokusuz duvarda `dusuk dokulu yuzey`,
+   hizli kamera hareketinde `yavasla` yonlendirmesi Turkce gorunmeli. Uygulama tarama
+   sirasinda kamera piksel tamponunu ayri bir isik analizi icin kilitlememeli; pencere
+   veya guclu lambadan gecerken kamera onizlemesinde gozle gorulur kare dusmesi olmamali.
 4. `Beyaz Hatlar`i ac; duvar, zemin, kapi/pencere ve taninan buyuk objelerin yalniz
    ince seffaf hatlarla gorundugunu, kameranin kapanmadigini ve `Gercek` secilince
    butun hatlarin kayboldugunu dogrula.
@@ -252,11 +252,14 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
-0.17.6 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+0.17.8 ek regresyonlari (ozellikle iPhone 15 Pro Max):
 
-- Tarama yesilken bitir; islenmis duvarlarin parca/kose sayisi degisse de kullanilabilir
-  sonuc `Taramayi Kullan` sunmali. Zemin/duvar kaybi veya duvar uzunlugunda %10'dan
-  fazla kayip varsa `Onaylanan Canli Taramayi Kullan` ve acik uyari gorulmeli.
+- Ilk duvarin yalniz ortasina bak: RoomPlan beyaz yuzeyi tamamlasa bile tarama yesile
+  donmemeli. Dort duvarin sol/orta/sag ve alt/ust bolgelerini gez; onceki duvarin
+  konumu veya acisi yeni duvara donerken degisirse kararlilik sayaci yeniden baslamali.
+- Tarama yesilken bitir; islenmis duvarlarin parca/kose sayisi en fazla bir azalabilir
+  ve yon/kose baglantisi korunuyorsa `Taramayi Kullan` sunulmali. Daha buyuk geometri
+  kaybinda `Onaylanan Canli Taramayi Kullan` ve acik uyari gorulmeli.
   Kullan/iptal yollarini, art arda taramalari, gercek RoomPlan hatasini ve isleme
   sirasinda kapatmayi dene; onceki oda kullanici kabul etmeden degismemeli.
 - Hatali eski kaplamayi sil, yeni taramada bos duvara tek dokunusla yeniden koy.

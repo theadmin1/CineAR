@@ -1,9 +1,9 @@
 import ARKit
-import CoreVideo
 import Foundation
 import RoomPlan
 import SwiftUI
 import UIKit
+import simd
 
 enum RoomScanResult: Equatable, Sendable {
     case success(URL)
@@ -195,22 +195,11 @@ private struct CapturedRoomStageOutcome: Sendable {
     let failureMessage: String?
 }
 
-private enum RoomScanLightingState: Equatable, Sendable {
-    case unknown
-    case suitable
-    case tooDark
-    case strongGlare
-}
-
 private struct RoomScanFrameQuality: Sendable {
-    let lighting: RoomScanLightingState
     let trackingIsNormal: Bool
     let trackingGuidance: String?
 
-    /// Samples fewer than 1,000 luma pixels from ARKit's full-range Y plane. This is
-    /// deliberately much cheaper than creating a CIImage or running a vision model and
-    /// is sufficient to spot clipped windows, direct lamps and severely dark frames.
-    static func measure(frame: ARFrame) -> RoomScanFrameQuality {
+    static func measureTracking(frame: ARFrame) -> RoomScanFrameQuality {
         let trackingIsNormal: Bool
         let trackingGuidance: String?
         switch frame.camera.trackingState {
@@ -237,72 +226,9 @@ private struct RoomScanFrameQuality: Sendable {
         }
 
         return RoomScanFrameQuality(
-            lighting: measureLighting(
-                in: frame.capturedImage,
-                ambientIntensity: frame.lightEstimate?.ambientIntensity
-            ),
             trackingIsNormal: trackingIsNormal,
             trackingGuidance: trackingGuidance
         )
-    }
-
-    private static func measureLighting(
-        in pixelBuffer: CVPixelBuffer,
-        ambientIntensity: CGFloat?
-    ) -> RoomScanLightingState {
-        guard CVPixelBufferGetPlaneCount(pixelBuffer) > 0,
-              CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly) == kCVReturnSuccess else {
-            return .unknown
-        }
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-
-        let width = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
-        let height = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
-        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
-        guard width > 0,
-              height > 0,
-              let baseAddress = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) else {
-            return .unknown
-        }
-
-        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
-        let xStep = max(1, width / 32)
-        let yStep = max(1, height / 24)
-        var sampleCount = 0
-        var lumaTotal = 0
-        var darkCount = 0
-        var clippedHighlightCount = 0
-
-        var y = yStep / 2
-        while y < height {
-            let row = bytes.advanced(by: y * bytesPerRow)
-            var x = xStep / 2
-            while x < width {
-                let luma = Int(row[x])
-                sampleCount += 1
-                lumaTotal += luma
-                if luma <= 25 { darkCount += 1 }
-                if luma >= 248 { clippedHighlightCount += 1 }
-                x += xStep
-            }
-            y += yStep
-        }
-
-        guard sampleCount > 0 else { return .unknown }
-        let averageLuma = Double(lumaTotal) / Double(sampleCount)
-        let darkRatio = Double(darkCount) / Double(sampleCount)
-        let clippedRatio = Double(clippedHighlightCount) / Double(sampleCount)
-
-        // A bright wall alone should not trigger this warning. The mixed very-dark and
-        // clipped regions are the signature of a window/spotlight that exceeds the
-        // camera's useful dynamic range and commonly disrupts feature tracking.
-        if clippedRatio >= 0.18 || (clippedRatio >= 0.08 && darkRatio >= 0.22) {
-            return .strongGlare
-        }
-        if averageLuma < 42 || darkRatio >= 0.68 || (ambientIntensity ?? 1_000) < 120 {
-            return .tooDark
-        }
-        return .suitable
     }
 }
 
@@ -310,6 +236,8 @@ private struct RoomScanGeometryMetrics: Sendable {
     struct WallMeasurement: Equatable, Sendable {
         let width: Float
         let height: Float
+        let center: SIMD3<Float>
+        let normal: SIMD3<Float>
     }
 
     let floorCount: Int
@@ -348,9 +276,25 @@ private struct RoomScanGeometryMetrics: Sendable {
         substantialWallCount = substantialWalls.count
         totalWallSpan = substantialWalls.reduce(0) { $0 + $1.dimensions.x }
         walls = Dictionary(uniqueKeysWithValues: substantialWalls.map {
-            (
+            let rawNormal = SIMD3<Float>(
+                $0.transform.columns.2.x,
+                $0.transform.columns.2.y,
+                $0.transform.columns.2.z
+            )
+            let normalLength = simd_length(rawNormal)
+            let normal = normalLength > 0.000_001 ? rawNormal / normalLength : .zero
+            return (
                 $0.identifier,
-                WallMeasurement(width: $0.dimensions.x, height: $0.dimensions.y)
+                WallMeasurement(
+                    width: $0.dimensions.x,
+                    height: $0.dimensions.y,
+                    center: SIMD3<Float>(
+                        $0.transform.columns.3.x,
+                        $0.transform.columns.3.y,
+                        $0.transform.columns.3.z
+                    ),
+                    normal: normal
+                )
             )
         })
         directionCount = Self.distinctDirectionCount(in: substantialWalls)
@@ -379,7 +323,7 @@ private struct RoomScanGeometryMetrics: Sendable {
     }
 
     /// A complete room outline has wall endpoints that meet other wall endpoints at
-    /// corners. This catches the common "three walls look present, fourth wall is only
+    /// corners. This catches the common "four walls look present, one wall is only
     /// half scanned" case without assuming that every room is rectangular.
     private static func connectedEndpointRatio(
         in walls: [CapturedRoom.Surface]
@@ -417,6 +361,35 @@ private struct RoomScanGeometryMetrics: Sendable {
     }
 }
 
+private struct RoomScanWallObservation {
+    let referenceWidth: Float
+    let referenceHeight: Float
+    let referenceCenter: SIMD3<Float>
+    let referenceNormal: SIMD3<Float>
+    var bins: Set<Int>
+}
+
+private struct RoomScanObservationProgress {
+    let completeWallCount: Int
+    let wallCount: Int
+    let observedBinCount: Int
+    let totalBinCount: Int
+
+    var percentage: Int {
+        guard totalBinCount > 0 else { return 0 }
+        return min(100, Int((Float(observedBinCount) / Float(totalBinCount) * 100).rounded()))
+    }
+
+    var isComplete: Bool {
+        RoomScanCompletionPolicy.hasObservedCoverage(
+            completeWalls: completeWallCount,
+            totalWalls: wallCount,
+            observedBins: observedBinCount,
+            totalBins: totalBinCount
+        )
+    }
+}
+
 @MainActor
 final class RoomScannerController: NSObject, ObservableObject {
     static var isSupported: Bool { RoomCaptureSession.isSupported }
@@ -441,6 +414,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         return configuration
     }()
     private let preservesSharedARSession: Bool
+    private let minimumARFrameTimestamp: TimeInterval?
     private var shouldExport = true
     private var isSessionRunning = false
     private var isTornDown = false
@@ -454,13 +428,11 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var latestReadyRoom: CapturedRoom?
     private var approvedRoomAtFinish: CapturedRoom?
     private var lastWallMeasurements: [UUID: RoomScanGeometryMetrics.WallMeasurement] = [:]
+    private var wallObservations: [UUID: RoomScanWallObservation] = [:]
     private var latestFrameQuality = RoomScanFrameQuality(
-        lighting: .unknown,
         trackingIsNormal: false,
         trackingGuidance: "Dünya takibi hazırlanıyor"
     )
-    private var lastMeasuredLighting = RoomScanLightingState.unknown
-    private var lightingMeasurementStreak = 0
     private var roomPlanGuidance: String?
     private var roomPlanGuidanceBlocksCompletion = false
     private var roomPlanGuidanceExpiresAt: TimeInterval = 0
@@ -468,7 +440,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     init(
         exportURL: URL,
         roomJSONURL: URL? = nil,
-        arSession: ARSession? = nil
+        arSession: ARSession? = nil,
+        minimumARFrameTimestamp: TimeInterval? = nil
     ) {
         let store = CapturedRoomStore(
             modelURL: exportURL,
@@ -477,6 +450,7 @@ final class RoomScannerController: NSObject, ObservableObject {
         self.roomStore = store
         self.roomJSONURL = store.roomJSONURL
         self.preservesSharedARSession = arSession != nil
+        self.minimumARFrameTimestamp = minimumARFrameTimestamp
         if let arSession {
             self.captureView = RoomCaptureView(frame: .zero, arSession: arSession)
         } else {
@@ -510,13 +484,11 @@ final class RoomScannerController: NSObject, ObservableObject {
         latestReadyRoom = nil
         approvedRoomAtFinish = nil
         lastWallMeasurements.removeAll(keepingCapacity: true)
+        wallObservations.removeAll(keepingCapacity: true)
         latestFrameQuality = RoomScanFrameQuality(
-            lighting: .unknown,
             trackingIsNormal: false,
             trackingGuidance: "Dünya takibi hazırlanıyor"
         )
-        lastMeasuredLighting = .unknown
-        lightingMeasurementStreak = 0
         roomPlanGuidance = nil
         roomPlanGuidanceBlocksCompletion = false
         roomPlanGuidanceExpiresAt = 0
@@ -599,8 +571,13 @@ final class RoomScannerController: NSObject, ObservableObject {
               isProcessing,
               !isSessionRunning else { return }
 
-        let trackingState = captureView.captureSession.arSession.currentFrame?.camera.trackingState
-        if case .normal? = trackingState {
+        let currentFrame = captureView.captureSession.arSession.currentFrame
+        let trackingState = currentFrame?.camera.trackingState
+        let hasFreshFrame = RoomScanStartPolicy.hasFreshFrame(
+            current: currentFrame?.timestamp,
+            minimum: minimumARFrameTimestamp
+        )
+        if case .normal? = trackingState, hasFreshFrame {
             isProcessing = false
             isSessionRunning = true
             scanStartedAt = ProcessInfo.processInfo.systemUptime
@@ -678,11 +655,135 @@ final class RoomScannerController: NSObject, ObservableObject {
         for (identifier, measurement) in current {
             guard let old = previous[identifier] else { return true }
             if abs(old.width - measurement.width) >= 0.06
-                || abs(old.height - measurement.height) >= 0.06 {
+                || abs(old.height - measurement.height) >= 0.06
+                || simd_distance(old.center, measurement.center) >= 0.04
+                || abs(simd_dot(old.normal, measurement.normal)) < cos(Float.pi / 60) {
                 return true
             }
         }
         return false
+    }
+
+    private func updateWallObservation(
+        room: CapturedRoom,
+        cameraTransform: simd_float4x4?
+    ) {
+        guard let cameraTransform, latestFrameQuality.trackingIsNormal else { return }
+        let cameraPosition = SIMD3<Float>(
+            cameraTransform.columns.3.x,
+            cameraTransform.columns.3.y,
+            cameraTransform.columns.3.z
+        )
+        let rawForward = SIMD3<Float>(
+            -cameraTransform.columns.2.x,
+            -cameraTransform.columns.2.y,
+            -cameraTransform.columns.2.z
+        )
+        let forwardLength = simd_length(rawForward)
+        guard forwardLength > 0.000_001 else { return }
+        let cameraForward = rawForward / forwardLength
+
+        var nearest: (
+            id: UUID,
+            bin: Int,
+            distance: Float,
+            width: Float,
+            height: Float,
+            center: SIMD3<Float>,
+            normal: SIMD3<Float>
+        )?
+
+        for wall in room.walls {
+            let width = wall.dimensions.x
+            let height = wall.dimensions.y
+            guard width.isFinite, height.isFinite, width >= 0.55, height >= 1 else { continue }
+
+            let center = SIMD3<Float>(
+                wall.transform.columns.3.x,
+                wall.transform.columns.3.y,
+                wall.transform.columns.3.z
+            )
+            let rawNormal = SIMD3<Float>(
+                wall.transform.columns.2.x,
+                wall.transform.columns.2.y,
+                wall.transform.columns.2.z
+            )
+            let normalLength = simd_length(rawNormal)
+            guard normalLength > 0.000_001 else { continue }
+            let normal = rawNormal / normalLength
+            let denominator = simd_dot(cameraForward, normal)
+            guard abs(denominator) >= 0.28 else { continue }
+
+            let distance = simd_dot(center - cameraPosition, normal) / denominator
+            guard distance.isFinite, (0.35...5.5).contains(distance) else { continue }
+            let worldHit = cameraPosition + cameraForward * distance
+            let localHit = wall.transform.inverse * SIMD4<Float>(worldHit.x, worldHit.y, worldHit.z, 1)
+            guard localHit.x.isFinite, localHit.y.isFinite,
+                  abs(localHit.x) <= width * 0.52,
+                  abs(localHit.y) <= height * 0.52 else { continue }
+
+            let normalizedX = min(1, max(0, localHit.x / width + 0.5))
+            let normalizedY = min(1, max(0, localHit.y / height + 0.5))
+            guard let bin = RoomScanObservationPolicy.bin(
+                normalizedX: normalizedX,
+                normalizedY: normalizedY
+            ) else { continue }
+
+            if let nearest, distance >= nearest.distance { continue }
+            nearest = (wall.identifier, bin, distance, width, height, center, normal)
+        }
+
+        guard let nearest else { return }
+        if let existing = wallObservations[nearest.id] {
+            let widthChange = abs(existing.referenceWidth - nearest.width)
+                / max(existing.referenceWidth, nearest.width)
+            let heightChange = abs(existing.referenceHeight - nearest.height)
+                / max(existing.referenceHeight, nearest.height)
+            let centerShift = simd_distance(existing.referenceCenter, nearest.center)
+            let orientationAgreement = abs(simd_dot(existing.referenceNormal, nearest.normal))
+            if widthChange > 0.25 || heightChange > 0.25 || centerShift > 0.25
+                || orientationAgreement < cos(Float.pi / 18) {
+                wallObservations[nearest.id] = RoomScanWallObservation(
+                    referenceWidth: nearest.width,
+                    referenceHeight: nearest.height,
+                    referenceCenter: nearest.center,
+                    referenceNormal: nearest.normal,
+                    bins: [nearest.bin]
+                )
+            } else {
+                var updated = existing
+                updated.bins.insert(nearest.bin)
+                wallObservations[nearest.id] = updated
+            }
+        } else {
+            wallObservations[nearest.id] = RoomScanWallObservation(
+                referenceWidth: nearest.width,
+                referenceHeight: nearest.height,
+                referenceCenter: nearest.center,
+                referenceNormal: nearest.normal,
+                bins: [nearest.bin]
+            )
+        }
+    }
+
+    private func observationProgress(
+        metrics: RoomScanGeometryMetrics
+    ) -> RoomScanObservationProgress {
+        var completeWallCount = 0
+        var observedBinCount = 0
+        for identifier in metrics.walls.keys {
+            let bins = wallObservations[identifier]?.bins ?? []
+            observedBinCount += min(6, bins.count)
+            if RoomScanObservationPolicy.wallIsComplete(bins: bins) {
+                completeWallCount += 1
+            }
+        }
+        return RoomScanObservationProgress(
+            completeWallCount: completeWallCount,
+            wallCount: metrics.walls.count,
+            observedBinCount: observedBinCount,
+            totalBinCount: metrics.walls.count * 6
+        )
     }
 
     private func refreshScanQuality(
@@ -705,26 +806,19 @@ final class RoomScannerController: NSObject, ObservableObject {
             geometryStableSince = now
         }
 
-        let geometryIsStable = geometryStableSince.map { now - $0 >= 1.1 } ?? false
-        let scanHasSettled = scanStartedAt > 0 && now - scanStartedAt >= 4
+        let geometryIsStable = geometryStableSince.map { now - $0 >= 1.5 } ?? false
+        let scanHasSettled = scanStartedAt > 0 && now - scanStartedAt >= 12
         let hasWallCoverage = metrics.hasCoverage
+        let observedProgress = observationProgress(metrics: metrics)
 
         hasUsableRoomGeometry = metrics.hasUsableGeometry
 
-        let lightingIsSuitable: Bool
-        switch latestFrameQuality.lighting {
-        case .tooDark, .strongGlare:
-            lightingIsSuitable = false
-        case .unknown, .suitable:
-            lightingIsSuitable = true
-        }
-
         isScanReady = hasUsableRoomGeometry
             && hasWallCoverage
+            && observedProgress.isComplete
             && geometryIsStable
             && scanHasSettled
             && latestFrameQuality.trackingIsNormal
-            && lightingIsSuitable
             && !roomPlanGuidanceBlocksCompletion
 
         if let trackingGuidance = latestFrameQuality.trackingGuidance {
@@ -737,18 +831,6 @@ final class RoomScannerController: NSObject, ObservableObject {
             scanQualityText = "RoomPlan yönlendirmesini tamamla"
             return
         }
-        switch latestFrameQuality.lighting {
-        case .strongGlare:
-            statusText = "Parlama algılandı; perdeyi kapat veya ışığı arkana al"
-            scanQualityText = "Aşırı parlak ve koyu bölgeler • Duvar ölçümü bekletiliyor"
-            return
-        case .tooDark:
-            statusText = "Ortam çok karanlık; yaygın oda ışığını artır"
-            scanQualityText = "Yetersiz ışık • Duvar ölçümü bekletiliyor"
-            return
-        case .unknown, .suitable:
-            break
-        }
         if metrics.floorCount == 0 {
             statusText = "Kamerayı aşağı eğip zemini yavaşça tara"
             scanQualityText = "Zemin henüz doğrulanmadı"
@@ -760,6 +842,9 @@ final class RoomScannerController: NSObject, ObservableObject {
             let cornerPercent = Int((metrics.connectedEndpointRatio * 100).rounded())
             scanQualityText = "Duvar çevrimi eksik • Köşe bağlantısı %"
                 + String(cornerPercent)
+        } else if !observedProgress.isComplete {
+            statusText = "Her duvarın sol, orta, sağ; alt ve üst bölgelerine yavaşça bak"
+            scanQualityText = "Doğrulanan duvar \(observedProgress.completeWallCount)/4 • Gerçek görüş %\(observedProgress.percentage)"
         } else if !geometryIsStable || !scanHasSettled {
             statusText = "Ölçünün tamamlanması için telefonu kısa süre sabit tut"
             scanQualityText = "Duvarlar bulundu • Ölçüler kararlı hale geliyor"
@@ -770,29 +855,7 @@ final class RoomScannerController: NSObject, ObservableObject {
     }
 
     private func acceptFrameQualityMeasurement(_ measurement: RoomScanFrameQuality) {
-        if measurement.lighting == lastMeasuredLighting {
-            lightingMeasurementStreak += 1
-        } else {
-            lastMeasuredLighting = measurement.lighting
-            lightingMeasurementStreak = 1
-        }
-
-        var acceptedLighting = latestFrameQuality.lighting
-        switch measurement.lighting {
-        case .unknown:
-            break
-        case .suitable, .tooDark, .strongGlare:
-            // Two consecutive readings suppress warnings caused by a hand, a fast
-            // turn past a lamp or one camera auto-exposure transition.
-            if lightingMeasurementStreak >= 2 {
-                acceptedLighting = measurement.lighting
-            }
-        }
-        latestFrameQuality = RoomScanFrameQuality(
-            lighting: acceptedLighting,
-            trackingIsNormal: measurement.trackingIsNormal,
-            trackingGuidance: measurement.trackingGuidance
-        )
+        latestFrameQuality = measurement
     }
 
     func teardownForDismissal(discardPendingExport shouldDiscard: Bool = true) {
@@ -835,17 +898,20 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
         guard now - lastScanSummaryUpdateTime >= 0.25 else { return }
         lastScanSummaryUpdateTime = now
         let metrics = RoomScanGeometryMetrics(room: room)
+        let currentFrame = session.arSession.currentFrame
         if now - lastFrameQualityUpdateTime >= 0.75,
-           let frame = session.arSession.currentFrame {
+           let frame = currentFrame {
             lastFrameQualityUpdateTime = now
-            acceptFrameQualityMeasurement(RoomScanFrameQuality.measure(frame: frame))
+            acceptFrameQualityMeasurement(RoomScanFrameQuality.measureTracking(frame: frame))
         }
+        let cameraTransform = currentFrame?.camera.transform
         let generation = scanGeneration
         DispatchQueue.main.async { [weak self] in
             guard let self,
                   self.scanGeneration == generation,
                   self.shouldExport,
                   self.isSessionRunning else { return }
+            self.updateWallObservation(room: room, cameraTransform: cameraTransform)
             self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
             self.refreshScanQuality(metrics: metrics, now: now)
             self.latestReadyRoom = self.isScanReady ? room : nil
@@ -947,11 +1013,22 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         }
         let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
         let approvedMetrics = approvedRoomAtFinish.map { RoomScanGeometryMetrics(room: $0) }
+        let processedPreservesApprovedRoom = approvedMetrics.map {
+            RoomScanCompletionPolicy.preservesRoomShape(
+                processedWalls: processedMetrics.substantialWallCount,
+                approvedWalls: $0.substantialWallCount,
+                processedDirections: processedMetrics.directionCount,
+                approvedDirections: $0.directionCount,
+                processedSpan: processedMetrics.totalWallSpan,
+                approvedSpan: $0.totalWallSpan,
+                processedConnections: processedMetrics.connectedEndpointRatio,
+                approvedConnections: $0.connectedEndpointRatio
+            )
+        } ?? false
         let choice = RoomScanCompletionPolicy.output(
             approvedAtFinish: approvedRoomAtFinish != nil,
             processedUsable: processedMetrics.hasUsableGeometry
-                && RoomScanCompletionPolicy.preservesWallSpan(processed: processedMetrics.totalWallSpan,
-                                                              approved: approvedMetrics?.totalWallSpan ?? 0),
+                && processedPreservesApprovedRoom,
             liveUsable: approvedMetrics?.hasUsableGeometry ?? false
         )
         let roomToSave: CapturedRoom
@@ -1057,6 +1134,7 @@ struct RoomScannerScreen: View {
         exportURL: URL,
         roomJSONURL: URL? = nil,
         arSession: ARSession? = nil,
+        minimumARFrameTimestamp: TimeInterval? = nil,
         onComplete: @escaping (RoomScanResult) -> Void = { _ in }
     ) {
         self.onComplete = onComplete
@@ -1064,7 +1142,8 @@ struct RoomScannerScreen: View {
             wrappedValue: RoomScannerController(
                 exportURL: exportURL,
                 roomJSONURL: roomJSONURL,
-                arSession: arSession
+                arSession: arSession,
+                minimumARFrameTimestamp: minimumARFrameTimestamp
             )
         )
     }

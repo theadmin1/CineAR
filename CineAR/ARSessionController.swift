@@ -265,6 +265,7 @@ final class ARSessionController: NSObject, ObservableObject {
     var roomModelURL: URL { projectStore.roomModelURL }
     var roomDataURL: URL { projectStore.roomDataURL }
     var sharedARSession: ARSession? { arView?.session }
+    private(set) var minimumRoomScanFrameTimestamp: TimeInterval?
     private var roomAlignmentTransform: simd_float4x4 {
         projectStore.project.roomAlignment?.realityKitTransform.matrix
             ?? matrix_identity_float4x4
@@ -538,14 +539,24 @@ final class ARSessionController: NSObject, ObservableObject {
             floorMeterColor = .yellow
         }
         arView?.isHidden = true
-        // Keep the already-stable world-tracking configuration untouched. Re-running
-        // the shared ARSession here creates an initializing gap just as RoomPlan starts,
-        // which RoomPlan reports as `worldTrackingFailure`. RoomPlan preserves the
-        // settings of a supplied, already-running ARSession.
         do {
             try persistAllEntityTransforms()
         } catch {
             publishStatus("Dekor konumları kaydedilemedi: \(error.localizedDescription)", color: .red)
+        }
+        // RoomPlan preserves every setting of a supplied ARSession. The normal CineAR
+        // session requests reconstruction, depth and person segmentation together;
+        // leaving those enabled makes RoomPlan compete for the same LiDAR/camera budget.
+        // Apply a lean configuration without resetting tracking, then let the scanner
+        // wait for a fresh normal frame before starting capture.
+        if let arView {
+            minimumRoomScanFrameTimestamp = arView.session.currentFrame?.timestamp
+            arView.session.run(
+                configuration(enableAdvancedOcclusion: false),
+                options: []
+            )
+        } else {
+            minimumRoomScanFrameTimestamp = nil
         }
         publishStatus("Oda taraması açılıyor; aynı dünya koordinatları korunuyor", color: .yellow)
     }
@@ -860,6 +871,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
         liveDepthRenderer.clear()
+        minimumRoomScanFrameTimestamp = nil
         isRoomScanActive = false
         isARReady = false
         didAttemptSessionFailureRecovery = false
