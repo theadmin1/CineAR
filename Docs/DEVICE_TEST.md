@@ -252,15 +252,28 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
-0.17.11 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+0.17.12 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+
+- Dort duvari sirayla tara ve canli sayacin `Duvar 4` oldugunu gor. Son duvara
+  donerken RoomPlan gecici olarak `Duvar 1` gosterse bile bitir; kullanima sunulan
+  `room.json` toplam duvar kapsaminin en az %85'ini korumali. Islenmis sonuc dort
+  duvari gercekten tek collinear parcaya birlestiriyorsa sayi azalabilir, toplam
+  metre belirgin bicimde azalmamalidir.
+- Duvar kaplamasi, saat ve ankesorlu telefonu taranmis her duvarda dene. Tek dokunus
+  sonrasi telefonu 2.25 saniyeye kadar sabit tut; dusuk guvenli/eksik depth karesi
+  `Yuzey kilitlenemedi` uretmemeli. Duvarin onune 10 cm'den kalin kutu veya insan
+  girdiginde arka duvar secimi yine reddedilmelidir.
+- Cok bolmeli/duzensiz mekanda 24'ten fazla duvar parcasi uret ve ilk, orta, son
+  parcalara dokun. En fazla 256 RoomPlan duvari secilebilir olmali; seyrek duvar
+  poligonu metrik duvar zarfina gore kaplanirken kapi ve pencere bosluklari korunmali.
 
 - Uygulamayi acip AR takibi yesil oldugunda `Oda Tara`ya bas. Tarama acilirken
   ikinci bir `Dunya takibi hazirlaniyor` gecisi olmamali; ilk duvar sabit kalmali.
 - Zemin-duvar alt kenarindan basla, ilk koseyi kadrajda tutarak ikinci duvara yavasca
   don. Ilk duvar ikinci duvara geciste sifirlanmamali veya kamera ile birlikte kaymamali.
 - Birbirine yakin iki duvar parcasi tarayip bitir. RoomPlan son islemede parcalari
-  birlestirip toplam duvar uzunlugunu azaltirsa islenmis/birlestirilmis sonuc korunmali;
-  eski parcalanmis canli sonuc yalniz islenmis sonuc tamamen bossa kullanilmalidir.
+  birlestirirken toplam duvar uzunlugunun en az %85'ini korursa islenmis sonuc
+  kullanilmali; duvar kapsaminin buyuk bolumunu silerse en kapsamli canli kare kalmalidir.
 - Tarama calismaya baslar baslamaz, hicbir yuzey henuz bulunmamis olsa dahi
   `Taramayi Bitir` etkin olmali ve dokununca tarama ekrani sonlandirilmalidir.
   Kaydedilebilir geometri yoksa onceki kayit korunarak acik hata gosterilmelidir.

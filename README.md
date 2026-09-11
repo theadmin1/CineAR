@@ -23,6 +23,14 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.12: Tarama boyunca gorulen en genis duvar kapsami artik yuksek-su-izi
+  olarak korunur; RoomPlan kose birlestirirken gecici olarak 4 duvari 1 duvara
+  dusururse bu kare onceki taramayi silemez. Bitis islemi de islenmis sonuc canli
+  duvar uzunlugunun buyuk bolumunu kaybetmisse kapsami yuksek canli sonucu saklar.
+  Kayitli sonlu duvar, iPhone 15 Pro Max'te tek bir dusuk guvenli depth pikseli
+  yuzunden reddedilmez; yalniz gercekten daha yakinda olculen bir on nesne secimi
+  engeller. RoomPlan/ARPlane/LiDAR ayni duvari tarif ediyorsa cok kareli kilit
+  sifirlanmaz, kilit suresi 2.25 saniyedir ve 256 duvar parcasi desteklenir.
 - 0.17.11: Eski guvenilir RoomPlan sensor akisi geri getirildi. Tarama dugmesine
   basildiginda kararlı ortak `ARSession` yeniden yapilandirilmadan dogrudan RoomPlan'a
   devredilir; 50 ms'lik ilk kare bekleme zinciri kaldirildi. Her canli geometri
@@ -58,9 +66,9 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   kaybedilirse onaylanan canli veri, acik uyari ve ayri kullanma dugmesiyle sunulur.
   Gercek RoomPlan hatalari basari sayilmaz; `Taramayi Kullan` oncesi eski kayit korunur.
 - Duvar dekorlari tek ham LiDAR pikseline degil sonlu ARKit/RoomPlan duvar duzlemine
-  baglanir. Derinlik yalniz on engeli/duzlem uyumunu kontrol eder; karisik kenar
-  pikselleri arka duvarla ortalanmaz. Kilit sirasinda farkli yuzey kaynaklari
-  karistirilmaz ve temas noktasi son duzleme izduser. Kurtarmada guncel AR anchor
+  baglanir. Eksik/dusuk guvenli derinlik kayitli duvari reddetmez; belirgin bicimde
+  daha yakinda olculen on nesne arka duvar secimini engeller. Ayni fiziksel duvari
+  gosteren RoomPlan/ARPlane/LiDAR kareleri birlikte kilitlenir ve temas noktasi son duzleme izduser. Kurtarmada guncel AR anchor
   donusumu korunur; mevcut hatali konumlu nesneler otomatik tasinmaz.
 - Yatay/dikey yuzey algilama ve dunya koordinatlarina AR anchor yerlestirme
 - LiDAR cihazlarda mesh reconstruction ve scene depth
@@ -97,15 +105,15 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   merkez piksel derinligi, gorus-cizgisi zemin mesafesi, kamera yuksekligi, egim,
   X/Y/Z koordinatlari ve 25 cm aralikli 4 x 4 metre saydam dunya grid'i
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
-- Tarama ekraninda canli zemin/duvar/nesne sayaci; en az bir zemin ve bir duvar
-  bulunmadan hatali veya bos taramayi bitirmeyi engelleme
+- Tarama ekraninda canli zemin/duvar/nesne sayaci; hic geometri olmasa bile taramayi
+  sonlandirma ve bulunan tek duvar, zemin veya nesneyi kismi sonuc olarak kullanabilme
 - RoomPlan'in yerel yaklas/uzaklas, yavasla, isigi artir ve dusuk dokulu yuzey
   yonlendirmelerini Turkce gosterme; AR takip sinirliyken olcumu tamamlanmis saymama
 - Her 750 ms'de 32 x 24 luma ornegiyle dusuk maliyetli karanlik/parlama denetimi;
   pencere veya dogrudan lamba kaynakli yuksek dinamik aralikta perde/isik yonu uyarisi
-- Duvarlari yalniz saymak yerine en az uc anlamli duvar parcasi, farkli duvar yonleri,
-  birbirine baglanan kose cevrimi, toplam genislik ve 1,1 saniyelik olcu kararliligi
-  isteyen tarama kalite kapisi
+- RoomPlan kose/duvarlari birlestirirken gecici olarak eksilen karelerin onceki genis
+  taramayi silmesini engelleyen toplam-duvar-uzunlugu yuksek-su-izi; son islenmis
+  sonuc kapsamin %85'inden azini tutarsa onaylanan canli geometriyi koruma
 - RoomPlan acikken ana AR denetleyicisindeki yerlestirme, efekt, projektor, AI ve
   LiDAR siniflandirma islerini durdurma; bilgi sayacini 250 ms aralikla yenileyerek
   kamera ve beyaz tarama cizgilerine kare butcesini birakma

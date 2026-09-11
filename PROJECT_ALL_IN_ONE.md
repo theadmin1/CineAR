@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.11`
-- Proje build numarası: `45`
+- Uygulama sürümü: `0.17.12`
+- Proje build numarası: `46`
 - Git dalı: `main`
-- Kaynak commit: `c19228088492e2984f5a1f2ce07244e0b09cf559`
-- Oluşturulma zamanı: `2026-09-11 16:26:08 +03:00`
+- Kaynak commit: `12f8942edf7e992fb06ba78ed83c425199d0e6e9`
+- Oluşturulma zamanı: `2026-09-11 17:57:10 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -21,13 +21,14 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
 - Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma
 - Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i
-- RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi `room.json` üretimi ve her zaman sonlandırılabilen tarama akışı
+- RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi `room.json` üretimi, tarama boyunca en geniş duvar kapsamını koruyan yüksek-su-izi ve her zaman sonlandırılabilen tarama akışı
 - Tarama başında ARSession'ı yeniden yapılandırmadan kararlı ortak dünya takibini RoomPlan'a devreden; uygulama çizim/AI işlerini tarama boyunca askıya alan sensör akışı
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
 - Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
 - Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi
+- 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi
 - Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı
 - USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok
 - Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli
@@ -296,7 +297,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 294 | 15656 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 6907 | 292743 |
+| `CineAR/ARSessionController.swift` | 6928 | 293561 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -313,28 +314,28 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
-| `CineAR/RoomRealityRenderer.swift` | 2236 | 87604 |
-| `CineAR/RoomScanner.swift` | 978 | 37075 |
+| `CineAR/RoomRealityRenderer.swift` | 2247 | 88394 |
+| `CineAR/RoomScanner.swift` | 999 | 38097 |
 | `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
-| `CineAR/SpatialValidation.swift` | 49 | 2387 |
+| `CineAR/SpatialValidation.swift` | 142 | 7019 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
 | `codemagic.yaml` | 262 | 9368 |
 | `Docs/CODEMAGIC.md` | 120 | 6576 |
-| `Docs/DEVICE_TEST.md` | 317 | 22387 |
+| `Docs/DEVICE_TEST.md` | 330 | 23302 |
 | `Docs/ICON_PROMPT.md` | 25 | 1421 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 427 | 29163 |
+| `README.md` | 435 | 29931 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
 | `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
-| `Tools/generate_all_in_one_markdown.ps1` | 375 | 20552 |
+| `Tools/generate_all_in_one_markdown.ps1` | 376 | 20852 |
 | `Tools/generate_wall_assets.py` | 81 | 3290 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/run_swift_regressions.py` | 46 | 2055 |
 | `Tools/test_live_depth_geometry.swift` | 73 | 3746 |
 | `Tools/test_privacy_plist.py` | 37 | 1416 |
-| `Tools/test_spatial_validation.swift` | 53 | 4150 |
+| `Tools/test_spatial_validation.swift` | 110 | 7299 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
 | `Tools/validate_privacy_plist.py` | 56 | 1953 |
 | `Tools/validate_usdz_assets.py` | 101 | 3573 |
@@ -1535,13 +1536,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.11;
+				MARKETING_VERSION = 0.17.12;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1559,12 +1560,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.11;
+				MARKETING_VERSION = 0.17.12;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -4426,7 +4427,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         let elapsed = frame.timestamp - request.startedAt
-        if elapsed > 1.35 {
+        if elapsed > 2.25 {
             pendingPlacementRequest = nil
             placementSurfaceMessage = "Kırmızı: yüzey kararlı ölçülemedi • tekrar dokun"
             placementSurfaceColor = .red
@@ -4454,7 +4455,14 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         if request.prop.placementSurface == .wall,
-           let previous = request.samples.last, previous.source != solution.source {
+           let previous = request.samples.last,
+           previous.source != solution.source,
+           !WallPlacementPolicy.samePhysicalSurface(
+                firstPosition: previous.position,
+                firstNormal: previous.normal,
+                secondPosition: solution.position,
+                secondNormal: solution.normal
+           ) {
             request.samples.removeAll(keepingCapacity: true)
         }
         request.samples.append(PlacementLockSample(
@@ -4537,7 +4545,14 @@ final class ARSessionController: NSObject, ObservableObject {
             alignmentReferenceStatus = "Aynı dikey duvar noktası aranıyor"
             return
         }
-        if let previous = request.samples.last, previous.source != solution.source {
+        if let previous = request.samples.last,
+           previous.source != solution.source,
+           !WallPlacementPolicy.samePhysicalSurface(
+                firstPosition: previous.position,
+                firstNormal: previous.normal,
+                secondPosition: solution.position,
+                secondNormal: solution.normal
+           ) {
             request.samples.removeAll(keepingCapacity: true)
         }
         request.samples.append(PlacementLockSample(
@@ -4918,8 +4933,8 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
-    /// Depth validates a persistent finite wall; it must not define the wall plane.
-    /// In particular, a noisy vertical pixel can be a cabinet or a mixed depth edge.
+    /// A saved finite wall is preferred. Without one, a confident current LiDAR
+    /// normal may define contact; a noisy or missing depth pixel never fabricates it.
     private func strictWallPlacementSolution(
         in arView: ARView,
         at point: CGPoint,
@@ -4930,20 +4945,34 @@ final class ARSessionController: NSObject, ObservableObject {
         let depth = sceneDepthSample(frame: frame, in: arView, at: point).flatMap {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
-        // Missing stream may use a finite plane; an invalid available pixel must not
-        // allow placement through an unmeasurable foreground object.
-        if (frame.sceneDepth != nil || frame.smoothedSceneDepth != nil), depth == nil { return nil }
         let cameraPosition = arView.cameraTransform.translation
 
-        // Fitted cladding and its openings belong to the stored wall's coordinate
-        // system. Never shift the whole wall to a depth pixel or a furniture hit.
-        if prop.isWallCladding {
-            guard roomCoordinateSpaceIsActive,
-                  let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-                  depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true
-            else { return nil }
+        // A completed RoomPlan wall is the most stable finite placement source. Raw
+        // scene depth is intermittent on plain/dark walls, so a missing low-confidence
+        // pixel cannot veto it. Positive foreground depth still prevents selecting the
+        // wall through a person or piece of furniture.
+        if roomCoordinateSpaceIsActive,
+           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point) {
+            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distanceMeters
+            ) else { return nil }
             return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
                                 cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
+        }
+
+        // Fitted cladding belongs to a particular stored wall and must never be
+        // fabricated from a transient pixel or infinite plane.
+        if prop.isWallCladding { return nil }
+
+        // Without a matching saved wall, a confident current LiDAR normal is an exact
+        // physical contact and keeps ordinary wall props usable on newly seen walls.
+        if let depth,
+           let measuredNormal = depth.worldNormal,
+           wallSurfaceAccepts(normal: measuredNormal) {
+            return wallSolution(position: depth.worldPoint, normal: measuredNormal, prop: prop,
+                                cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
         }
 
         // ARPlane geometry is finite and its normal is fitted over many measurements.
@@ -4959,13 +4988,6 @@ final class ARSessionController: NSObject, ObservableObject {
             else { continue }
             return wallSolution(position: position, normal: normal, prop: prop,
                                 cameraPosition: cameraPosition, source: .arkitPlane, depth: depth)
-        }
-
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
-            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
-                                cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
         }
 
         // Native collision reconstruction is a finite fallback, not an arbitrary
@@ -12803,7 +12825,10 @@ final class RoomRealityRenderer {
     /// hard upper bound prevents a malformed or unusually detailed scan from exhausting
     /// the device while RealityKit is creating the replacement room.
     private static let maximumGeneratedBoxCount = 600
-    private static let maximumWalls = 24
+    // RoomPlan may split irregular, interrupted or highly detailed rooms into many
+    // finite wall surfaces. Keep them selectable/renderable; the independent box
+    // budget below still bounds RealityKit memory and draw-work.
+    private static let maximumWalls = 256
     private static let maximumFloors = 8
     private static let maximumPortalsPerKind = 24
     private static let maximumObjects = 48
@@ -12980,12 +13005,20 @@ final class RoomRealityRenderer {
                   let reportedBounds = Self.surfaceBounds(wall) else { continue }
             var bounds = reportedBounds
             var polygon = Self.localPolygon(for: wall) ?? Self.rectanglePolygon(bounds)
-            if Self.isAxisAlignedRectangle(polygon), let size = Self.planarDimensions(wall.dimensions) {
+            if let size = Self.planarDimensions(wall.dimensions) {
                 bounds = PlanarBounds(
                     minX: min(bounds.minX, -size.x * 0.5), maxX: max(bounds.maxX, size.x * 0.5),
                     minY: min(bounds.minY, -size.y * 0.5), maxY: max(bounds.maxY, size.y * 0.5)
                 )
-                polygon = Self.rectanglePolygon(bounds)
+                let polygonIsSparse = reportedBounds.width < bounds.width * 0.85
+                    || reportedBounds.height < bounds.height * 0.85
+                if Self.isAxisAlignedRectangle(polygon) || polygonIsSparse {
+                    // During scanning polygonCorners can describe only the confident
+                    // patch while dimensions already carries the finite wall envelope.
+                    // Use that envelope for flat sparse walls so the whole measured
+                    // wall remains replaceable; door/window cutouts are still applied.
+                    polygon = Self.rectanglePolygon(bounds)
+                }
             }
             let world = lastAlignmentTransform * wall.transform
             let local = simd_inverse(world) * SIMD4<Float>(position, 1)
@@ -15198,6 +15231,10 @@ private struct RoomScanGeometryMetrics: Sendable {
     let usableWallCount: Int
     let totalWallSpan: Float
 
+    var semanticElementCount: Int {
+        floorCount + wallCount + objectCount
+    }
+
     var hasUsableGeometry: Bool {
         RoomScanCompletionPolicy.hasUsablePartialScan(
             floors: floorCount,
@@ -15265,6 +15302,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var lastScanSummaryUpdateTime: TimeInterval = 0
     private var lastFrameQualityUpdateTime: TimeInterval = 0
     private var latestReadyRoom: CapturedRoom?
+    private var latestReadyMetrics: RoomScanGeometryMetrics?
+    private var retainedWallSpanHighWater: Float = 0
     private var approvedRoomAtFinish: CapturedRoom?
     private var latestFrameQuality = RoomScanFrameQuality(
         trackingIsNormal: false,
@@ -15314,6 +15353,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         lastScanSummaryUpdateTime = 0
         lastFrameQualityUpdateTime = 0
         latestReadyRoom = nil
+        latestReadyMetrics = nil
+        retainedWallSpanHighWater = 0
         approvedRoomAtFinish = nil
         latestFrameQuality = RoomScanFrameQuality(
             trackingIsNormal: false,
@@ -15376,6 +15417,8 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     private func recordFailure(_ message: String) {
         latestReadyRoom = nil
+        latestReadyMetrics = nil
+        retainedWallSpanHighWater = 0
         approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
@@ -15525,6 +15568,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         guard !isTornDown else { return }
         isTornDown = true
         latestReadyRoom = nil
+        latestReadyMetrics = nil
+        retainedWallSpanHighWater = 0
         approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
@@ -15565,26 +15610,33 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
             lastFrameQualityUpdateTime = now
             acceptFrameQualityMeasurement(RoomScanFrameQuality.measureTracking(frame: frame))
         }
-        let generation = scanGeneration
-        DispatchQueue.main.async { [weak self] in
-            guard let self,
-                  self.scanGeneration == generation,
-                  self.shouldExport,
-                  self.isSessionRunning else { return }
-            // Do not throw away the last valid partial scan when RoomPlan emits a
-            // transient snapshot while it is joining or revising adjacent walls.
-            if metrics.hasUsableGeometry {
-                self.latestReadyRoom = room
-            }
-            // Preserve every geometry snapshot, but throttle only Published UI text.
-            // This avoids starving RoomPlan's main-thread renderer without saving a
-            // stale wall revision when the user finishes between UI refreshes.
-            guard shouldRefreshPublishedState else { return }
-            if metrics.hasUsableGeometry || self.latestReadyRoom == nil {
-                self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
-            }
-            self.refreshScanQuality(metrics: metrics, now: now)
+        guard shouldExport, isSessionRunning else { return }
+
+        let retainedElementCount = latestReadyMetrics?.semanticElementCount ?? 0
+        if RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: latestReadyMetrics?.hasUsableGeometry ?? false,
+            retainedWallSpanHighWater: retainedWallSpanHighWater,
+            retainedElementCount: retainedElementCount,
+            candidateUsable: metrics.hasUsableGeometry,
+            candidateWallSpan: metrics.totalWallSpan,
+            candidateElementCount: metrics.semanticElementCount
+        ) {
+            // Keep the richest wall snapshot seen so far. RoomPlan legitimately emits
+            // short-lived reduced rooms while joining a corner; those must not erase
+            // three already measured walls just before the Finish tap is handled.
+            latestReadyRoom = room
+            latestReadyMetrics = metrics
+            retainedWallSpanHighWater = max(retainedWallSpanHighWater, metrics.totalWallSpan)
         }
+
+        // Geometry retention above is unthrottled and synchronous with Finish. Only
+        // user-facing Published strings are limited to protect RoomPlan's renderer.
+        guard shouldRefreshPublishedState else { return }
+        let displayedMetrics = latestReadyMetrics ?? metrics
+        if displayedMetrics.hasUsableGeometry || latestReadyRoom == nil {
+            scanSummaryText = "Zemin \(displayedMetrics.floorCount) • Duvar \(displayedMetrics.wallCount) • Nesne \(displayedMetrics.objectCount)"
+        }
+        refreshScanQuality(metrics: displayedMetrics, now: now)
     }
 
     func captureSession(
@@ -15677,7 +15729,9 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         let choice = RoomScanCompletionPolicy.output(
             approvedAtFinish: approvedRoomAtFinish != nil,
             processedUsable: processedMetrics.hasUsableGeometry,
-            liveUsable: approvedMetrics?.hasUsableGeometry ?? false
+            liveUsable: approvedMetrics?.hasUsableGeometry ?? false,
+            processedWallSpan: processedMetrics.totalWallSpan,
+            liveWallSpan: approvedMetrics?.totalWallSpan ?? 0
         )
         let roomToSave: CapturedRoom
         let completionMessage: String
@@ -17143,18 +17197,111 @@ import Foundation
 enum RoomScanCompletionPolicy {
     enum Output: Equatable { case processed, approvedLive, reject }
 
+    /// RoomPlan can temporarily withdraw wall segments while it joins corners. Keep
+    /// a high-water snapshot instead of allowing a floor-only or much smaller update
+    /// to erase wall geometry that was already observed.
+    static func shouldReplaceRetainedSnapshot(
+        retainedUsable: Bool,
+        retainedWallSpanHighWater: Float,
+        retainedElementCount: Int,
+        candidateUsable: Bool,
+        candidateWallSpan: Float,
+        candidateElementCount: Int
+    ) -> Bool {
+        guard candidateUsable,
+              candidateWallSpan.isFinite,
+              retainedWallSpanHighWater.isFinite,
+              candidateWallSpan >= 0,
+              retainedWallSpanHighWater >= 0 else { return false }
+        guard retainedUsable else { return true }
+
+        let retainedHasWalls = retainedWallSpanHighWater >= 0.10
+        let candidateHasWalls = candidateWallSpan >= 0.10
+        if retainedHasWalls && !candidateHasWalls { return false }
+        if candidateHasWalls && !retainedHasWalls { return true }
+        if retainedHasWalls && candidateHasWalls {
+            // A two-percent allowance lets RoomPlan refine dimensions without making
+            // repeated small reductions ratchet the retained high-water mark down.
+            guard candidateWallSpan + 0.02 >= retainedWallSpanHighWater * 0.98 else {
+                return false
+            }
+            if candidateWallSpan > retainedWallSpanHighWater + 0.02 { return true }
+            // For nearly equal wall coverage retain the snapshot with more semantic
+            // information. A temporary wall merge must not also erase floor/objects.
+            return candidateElementCount >= retainedElementCount
+        }
+        return candidateElementCount >= retainedElementCount
+    }
+
     static func hasUsablePartialScan(floors: Int, walls: Int, objects: Int) -> Bool {
         floors > 0 || walls > 0 || objects > 0
     }
 
-    static func output(approvedAtFinish: Bool, processedUsable: Bool, liveUsable: Bool) -> Output {
-        if processedUsable { return .processed }
+    static func output(
+        approvedAtFinish: Bool,
+        processedUsable: Bool,
+        liveUsable: Bool,
+        processedWallSpan: Float,
+        liveWallSpan: Float
+    ) -> Output {
+        if processedUsable {
+            if approvedAtFinish, liveUsable, liveWallSpan >= 0.10 {
+                // Processing may merge collinear fragments, so wall count is not a
+                // useful comparison. It may not, however, discard most of the measured
+                // wall span (the observed four-walls-to-one-wall regression).
+                guard processedWallSpan.isFinite,
+                      processedWallSpan >= liveWallSpan * 0.85 else {
+                    return .approvedLive
+                }
+            }
+            return .processed
+        }
         return approvedAtFinish && liveUsable ? .approvedLive : .reject
     }
 
 }
 
 enum WallPlacementPolicy {
+    /// Missing/low-confidence depth is not evidence that a finite saved wall is bad.
+    /// A saved wall is rejected only when LiDAR positively measures a foreground
+    /// surface a meaningful distance in front of it.
+    static func persistentWallIsVisible(measuredDistance: Float?, wallDistance: Float) -> Bool {
+        guard wallDistance.isFinite, wallDistance > 0 else { return false }
+        guard let measuredDistance else { return true }
+        guard measuredDistance.isFinite, measuredDistance > 0 else { return true }
+        let foregroundClearance = min(max(0.10, wallDistance * 0.025), 0.16)
+        return measuredDistance + foregroundClearance >= wallDistance
+    }
+
+    /// ARPlane, RoomPlan and LiDAR mesh can all describe the same wall on adjacent
+    /// frames. Treat a source switch as continuous when their fitted planes agree.
+    static func samePhysicalSurface(
+        firstPosition: SIMD3<Float>,
+        firstNormal: SIMD3<Float>,
+        secondPosition: SIMD3<Float>,
+        secondNormal: SIMD3<Float>
+    ) -> Bool {
+        let firstLengthSquared = firstNormal.x * firstNormal.x
+            + firstNormal.y * firstNormal.y + firstNormal.z * firstNormal.z
+        let secondLengthSquared = secondNormal.x * secondNormal.x
+            + secondNormal.y * secondNormal.y + secondNormal.z * secondNormal.z
+        guard firstLengthSquared.isFinite, secondLengthSquared.isFinite,
+              firstLengthSquared > 0.000_001, secondLengthSquared > 0.000_001 else { return false }
+        let firstLength = sqrt(firstLengthSquared)
+        let secondLength = sqrt(secondLengthSquared)
+        let normalAgreement = abs(
+            (firstNormal.x * secondNormal.x + firstNormal.y * secondNormal.y
+                + firstNormal.z * secondNormal.z) / (firstLength * secondLength)
+        )
+        let delta = secondPosition - firstPosition
+        let planeSeparation = abs(
+            (delta.x * firstNormal.x + delta.y * firstNormal.y + delta.z * firstNormal.z)
+                / firstLength
+        )
+        let distanceSquared = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z
+        return normalAgreement >= 0.92 && planeSeparation <= 0.08 && distanceSquared <= 0.0225
+    }
+
     static func projectContact(_ point: SIMD3<Float>, onto origin: SIMD3<Float>, normal: SIMD3<Float>) -> SIMD3<Float>? {
         guard [point.x, point.y, point.z, origin.x, origin.y, origin.z,
                normal.x, normal.y, normal.z].allSatisfy(\.isFinite) else { return nil }
@@ -18122,15 +18269,28 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
-0.17.11 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+0.17.12 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+
+- Dort duvari sirayla tara ve canli sayacin `Duvar 4` oldugunu gor. Son duvara
+  donerken RoomPlan gecici olarak `Duvar 1` gosterse bile bitir; kullanima sunulan
+  `room.json` toplam duvar kapsaminin en az %85'ini korumali. Islenmis sonuc dort
+  duvari gercekten tek collinear parcaya birlestiriyorsa sayi azalabilir, toplam
+  metre belirgin bicimde azalmamalidir.
+- Duvar kaplamasi, saat ve ankesorlu telefonu taranmis her duvarda dene. Tek dokunus
+  sonrasi telefonu 2.25 saniyeye kadar sabit tut; dusuk guvenli/eksik depth karesi
+  `Yuzey kilitlenemedi` uretmemeli. Duvarin onune 10 cm'den kalin kutu veya insan
+  girdiginde arka duvar secimi yine reddedilmelidir.
+- Cok bolmeli/duzensiz mekanda 24'ten fazla duvar parcasi uret ve ilk, orta, son
+  parcalara dokun. En fazla 256 RoomPlan duvari secilebilir olmali; seyrek duvar
+  poligonu metrik duvar zarfina gore kaplanirken kapi ve pencere bosluklari korunmali.
 
 - Uygulamayi acip AR takibi yesil oldugunda `Oda Tara`ya bas. Tarama acilirken
   ikinci bir `Dunya takibi hazirlaniyor` gecisi olmamali; ilk duvar sabit kalmali.
 - Zemin-duvar alt kenarindan basla, ilk koseyi kadrajda tutarak ikinci duvara yavasca
   don. Ilk duvar ikinci duvara geciste sifirlanmamali veya kamera ile birlikte kaymamali.
 - Birbirine yakin iki duvar parcasi tarayip bitir. RoomPlan son islemede parcalari
-  birlestirip toplam duvar uzunlugunu azaltirsa islenmis/birlestirilmis sonuc korunmali;
-  eski parcalanmis canli sonuc yalniz islenmis sonuc tamamen bossa kullanilmalidir.
+  birlestirirken toplam duvar uzunlugunun en az %85'ini korursa islenmis sonuc
+  kullanilmali; duvar kapsaminin buyuk bolumunu silerse en kapsamli canli kare kalmalidir.
 - Tarama calismaya baslar baslamaz, hicbir yuzey henuz bulunmamis olsa dahi
   `Taramayi Bitir` etkin olmali ve dokununca tarama ekrani sonlandirilmalidir.
   Kaydedilebilir geometri yoksa onceki kayit korunarak acik hata gosterilmelidir.
@@ -18286,6 +18446,14 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.12: Tarama boyunca gorulen en genis duvar kapsami artik yuksek-su-izi
+  olarak korunur; RoomPlan kose birlestirirken gecici olarak 4 duvari 1 duvara
+  dusururse bu kare onceki taramayi silemez. Bitis islemi de islenmis sonuc canli
+  duvar uzunlugunun buyuk bolumunu kaybetmisse kapsami yuksek canli sonucu saklar.
+  Kayitli sonlu duvar, iPhone 15 Pro Max'te tek bir dusuk guvenli depth pikseli
+  yuzunden reddedilmez; yalniz gercekten daha yakinda olculen bir on nesne secimi
+  engeller. RoomPlan/ARPlane/LiDAR ayni duvari tarif ediyorsa cok kareli kilit
+  sifirlanmaz, kilit suresi 2.25 saniyedir ve 256 duvar parcasi desteklenir.
 - 0.17.11: Eski guvenilir RoomPlan sensor akisi geri getirildi. Tarama dugmesine
   basildiginda kararlı ortak `ARSession` yeniden yapilandirilmadan dogrudan RoomPlan'a
   devredilir; 50 ms'lik ilk kare bekleme zinciri kaldirildi. Her canli geometri
@@ -18321,9 +18489,9 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   kaybedilirse onaylanan canli veri, acik uyari ve ayri kullanma dugmesiyle sunulur.
   Gercek RoomPlan hatalari basari sayilmaz; `Taramayi Kullan` oncesi eski kayit korunur.
 - Duvar dekorlari tek ham LiDAR pikseline degil sonlu ARKit/RoomPlan duvar duzlemine
-  baglanir. Derinlik yalniz on engeli/duzlem uyumunu kontrol eder; karisik kenar
-  pikselleri arka duvarla ortalanmaz. Kilit sirasinda farkli yuzey kaynaklari
-  karistirilmaz ve temas noktasi son duzleme izduser. Kurtarmada guncel AR anchor
+  baglanir. Eksik/dusuk guvenli derinlik kayitli duvari reddetmez; belirgin bicimde
+  daha yakinda olculen on nesne arka duvar secimini engeller. Ayni fiziksel duvari
+  gosteren RoomPlan/ARPlane/LiDAR kareleri birlikte kilitlenir ve temas noktasi son duzleme izduser. Kurtarmada guncel AR anchor
   donusumu korunur; mevcut hatali konumlu nesneler otomatik tasinmaz.
 - Yatay/dikey yuzey algilama ve dunya koordinatlarina AR anchor yerlestirme
 - LiDAR cihazlarda mesh reconstruction ve scene depth
@@ -18360,15 +18528,15 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   merkez piksel derinligi, gorus-cizgisi zemin mesafesi, kamera yuksekligi, egim,
   X/Y/Z koordinatlari ve 25 cm aralikli 4 x 4 metre saydam dunya grid'i
 - RoomPlan ile ayni AR oturumunda semantik oda taramasi; mobil bellek dostu `room.json` cikisi
-- Tarama ekraninda canli zemin/duvar/nesne sayaci; en az bir zemin ve bir duvar
-  bulunmadan hatali veya bos taramayi bitirmeyi engelleme
+- Tarama ekraninda canli zemin/duvar/nesne sayaci; hic geometri olmasa bile taramayi
+  sonlandirma ve bulunan tek duvar, zemin veya nesneyi kismi sonuc olarak kullanabilme
 - RoomPlan'in yerel yaklas/uzaklas, yavasla, isigi artir ve dusuk dokulu yuzey
   yonlendirmelerini Turkce gosterme; AR takip sinirliyken olcumu tamamlanmis saymama
 - Her 750 ms'de 32 x 24 luma ornegiyle dusuk maliyetli karanlik/parlama denetimi;
   pencere veya dogrudan lamba kaynakli yuksek dinamik aralikta perde/isik yonu uyarisi
-- Duvarlari yalniz saymak yerine en az uc anlamli duvar parcasi, farkli duvar yonleri,
-  birbirine baglanan kose cevrimi, toplam genislik ve 1,1 saniyelik olcu kararliligi
-  isteyen tarama kalite kapisi
+- RoomPlan kose/duvarlari birlestirirken gecici olarak eksilen karelerin onceki genis
+  taramayi silmesini engelleyen toplam-duvar-uzunlugu yuksek-su-izi; son islenmis
+  sonuc kapsamin %85'inden azini tutarsa onaylanan canli geometriyi koruma
 - RoomPlan acikken ana AR denetleyicisindeki yerlestirme, efekt, projektor, AI ve
   LiDAR siniflandirma islerini durdurma; bilgi sayacini 250 ms aralikla yenileyerek
   kamera ve beyaz tarama cizgilerine kare butcesini birakma
@@ -19328,13 +19496,14 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
 [void]$builder.AppendLine("- Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma")
 [void]$builder.AppendLine("- Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i")
-[void]$builder.AppendLine("- RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi ``room.json`` üretimi ve her zaman sonlandırılabilen tarama akışı")
+[void]$builder.AppendLine("- RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi ``room.json`` üretimi, tarama boyunca en geniş duvar kapsamını koruyan yüksek-su-izi ve her zaman sonlandırılabilen tarama akışı")
 [void]$builder.AppendLine("- Tarama başında ARSession'ı yeniden yapılandırmadan kararlı ortak dünya takibini RoomPlan'a devreden; uygulama çizim/AI işlerini tarama boyunca askıya alan sensör akışı")
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
 [void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
 [void]$builder.AppendLine("- Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi")
+[void]$builder.AppendLine("- 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi")
 [void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
 [void]$builder.AppendLine("- USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok")
 [void]$builder.AppendLine("- Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli")
@@ -19860,12 +20029,69 @@ struct SpatialValidationTests {
         precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 1, objects: 0))
         precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 1))
         precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 0))
-        // A usable final room is accepted even when processing changes wall topology.
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: true, liveUsable: true) == .processed)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: true) == .approvedLive)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: false) == .reject)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: true, liveUsable: false) == .processed)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: false, liveUsable: true) == .reject)
+        // A transient one-wall callback cannot erase a previously observed four-wall room.
+        precondition(!RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 3, candidateElementCount: 2
+        ))
+        // A nearly equal but semantically reduced transient snapshot is also retained;
+        // a genuinely wider candidate is allowed to advance the high-water mark.
+        precondition(!RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 11.9, candidateElementCount: 2
+        ))
+        precondition(RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 12.5, candidateElementCount: 2
+        ))
+        precondition(!RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 0, candidateElementCount: 8
+        ))
+        precondition(RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: false, retainedWallSpanHighWater: 0, retainedElementCount: 0,
+            candidateUsable: true, candidateWallSpan: 2, candidateElementCount: 1
+        ))
+        // Processed topology wins only while it preserves the approved live wall span.
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: true, liveUsable: true,
+            processedWallSpan: 11, liveWallSpan: 12
+        ) == .processed)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: true, liveUsable: true,
+            processedWallSpan: 3, liveWallSpan: 12
+        ) == .approvedLive)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: false, liveUsable: true,
+            processedWallSpan: 0, liveWallSpan: 12
+        ) == .approvedLive)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: false, liveUsable: false,
+            processedWallSpan: 0, liveWallSpan: 0
+        ) == .reject)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: false, processedUsable: true, liveUsable: false,
+            processedWallSpan: 2, liveWallSpan: 0
+        ) == .processed)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: false, processedUsable: false, liveUsable: true,
+            processedWallSpan: 0, liveWallSpan: 2
+        ) == .reject)
+
+        // Low-confidence/missing LiDAR cannot veto a finite saved wall. A clearly
+        // closer measured object still protects foreground occlusion.
+        precondition(WallPlacementPolicy.persistentWallIsVisible(measuredDistance: nil, wallDistance: 3))
+        precondition(WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.92, wallDistance: 3))
+        precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.70, wallDistance: 3))
+        precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: nil, wallDistance: .nan))
+        precondition(WallPlacementPolicy.samePhysicalSurface(
+            firstPosition: [0, 1, 0], firstNormal: [0, 0, 1],
+            secondPosition: [0.04, 1.01, 0.02], secondNormal: [0.05, 0, 0.998]
+        ))
+        precondition(!WallPlacementPolicy.samePhysicalSurface(
+            firstPosition: [0, 1, 0], firstNormal: [0, 0, 1],
+            secondPosition: [0, 1, 0], secondNormal: [1, 0, 0]
+        ))
         precondition(WallPlacementPolicy.robustDepth(center: 2, neighbors: Array(repeating: 2, count: 25)) == 2)
         let mixed = Array(repeating: Float(1), count: 9) + Array(repeating: Float(3), count: 16)
         precondition(WallPlacementPolicy.robustDepth(center: 1, neighbors: mixed) == 1)

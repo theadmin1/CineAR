@@ -8,12 +8,69 @@ struct SpatialValidationTests {
         precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 1, objects: 0))
         precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 1))
         precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 0))
-        // A usable final room is accepted even when processing changes wall topology.
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: true, liveUsable: true) == .processed)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: true) == .approvedLive)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: false) == .reject)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: true, liveUsable: false) == .processed)
-        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: false, liveUsable: true) == .reject)
+        // A transient one-wall callback cannot erase a previously observed four-wall room.
+        precondition(!RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 3, candidateElementCount: 2
+        ))
+        // A nearly equal but semantically reduced transient snapshot is also retained;
+        // a genuinely wider candidate is allowed to advance the high-water mark.
+        precondition(!RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 11.9, candidateElementCount: 2
+        ))
+        precondition(RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 12.5, candidateElementCount: 2
+        ))
+        precondition(!RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: true, retainedWallSpanHighWater: 12, retainedElementCount: 5,
+            candidateUsable: true, candidateWallSpan: 0, candidateElementCount: 8
+        ))
+        precondition(RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: false, retainedWallSpanHighWater: 0, retainedElementCount: 0,
+            candidateUsable: true, candidateWallSpan: 2, candidateElementCount: 1
+        ))
+        // Processed topology wins only while it preserves the approved live wall span.
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: true, liveUsable: true,
+            processedWallSpan: 11, liveWallSpan: 12
+        ) == .processed)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: true, liveUsable: true,
+            processedWallSpan: 3, liveWallSpan: 12
+        ) == .approvedLive)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: false, liveUsable: true,
+            processedWallSpan: 0, liveWallSpan: 12
+        ) == .approvedLive)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: true, processedUsable: false, liveUsable: false,
+            processedWallSpan: 0, liveWallSpan: 0
+        ) == .reject)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: false, processedUsable: true, liveUsable: false,
+            processedWallSpan: 2, liveWallSpan: 0
+        ) == .processed)
+        precondition(RoomScanCompletionPolicy.output(
+            approvedAtFinish: false, processedUsable: false, liveUsable: true,
+            processedWallSpan: 0, liveWallSpan: 2
+        ) == .reject)
+
+        // Low-confidence/missing LiDAR cannot veto a finite saved wall. A clearly
+        // closer measured object still protects foreground occlusion.
+        precondition(WallPlacementPolicy.persistentWallIsVisible(measuredDistance: nil, wallDistance: 3))
+        precondition(WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.92, wallDistance: 3))
+        precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.70, wallDistance: 3))
+        precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: nil, wallDistance: .nan))
+        precondition(WallPlacementPolicy.samePhysicalSurface(
+            firstPosition: [0, 1, 0], firstNormal: [0, 0, 1],
+            secondPosition: [0.04, 1.01, 0.02], secondNormal: [0.05, 0, 0.998]
+        ))
+        precondition(!WallPlacementPolicy.samePhysicalSurface(
+            firstPosition: [0, 1, 0], firstNormal: [0, 0, 1],
+            secondPosition: [0, 1, 0], secondNormal: [1, 0, 0]
+        ))
         precondition(WallPlacementPolicy.robustDepth(center: 2, neighbors: Array(repeating: 2, count: 25)) == 2)
         let mixed = Array(repeating: Float(1), count: 9) + Array(repeating: Float(3), count: 16)
         precondition(WallPlacementPolicy.robustDepth(center: 1, neighbors: mixed) == 1)

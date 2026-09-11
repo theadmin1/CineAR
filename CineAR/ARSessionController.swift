@@ -2321,7 +2321,7 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         let elapsed = frame.timestamp - request.startedAt
-        if elapsed > 1.35 {
+        if elapsed > 2.25 {
             pendingPlacementRequest = nil
             placementSurfaceMessage = "Kırmızı: yüzey kararlı ölçülemedi • tekrar dokun"
             placementSurfaceColor = .red
@@ -2349,7 +2349,14 @@ final class ARSessionController: NSObject, ObservableObject {
         }
 
         if request.prop.placementSurface == .wall,
-           let previous = request.samples.last, previous.source != solution.source {
+           let previous = request.samples.last,
+           previous.source != solution.source,
+           !WallPlacementPolicy.samePhysicalSurface(
+                firstPosition: previous.position,
+                firstNormal: previous.normal,
+                secondPosition: solution.position,
+                secondNormal: solution.normal
+           ) {
             request.samples.removeAll(keepingCapacity: true)
         }
         request.samples.append(PlacementLockSample(
@@ -2432,7 +2439,14 @@ final class ARSessionController: NSObject, ObservableObject {
             alignmentReferenceStatus = "Aynı dikey duvar noktası aranıyor"
             return
         }
-        if let previous = request.samples.last, previous.source != solution.source {
+        if let previous = request.samples.last,
+           previous.source != solution.source,
+           !WallPlacementPolicy.samePhysicalSurface(
+                firstPosition: previous.position,
+                firstNormal: previous.normal,
+                secondPosition: solution.position,
+                secondNormal: solution.normal
+           ) {
             request.samples.removeAll(keepingCapacity: true)
         }
         request.samples.append(PlacementLockSample(
@@ -2813,8 +2827,8 @@ final class ARSessionController: NSObject, ObservableObject {
         return nil
     }
 
-    /// Depth validates a persistent finite wall; it must not define the wall plane.
-    /// In particular, a noisy vertical pixel can be a cabinet or a mixed depth edge.
+    /// A saved finite wall is preferred. Without one, a confident current LiDAR
+    /// normal may define contact; a noisy or missing depth pixel never fabricates it.
     private func strictWallPlacementSolution(
         in arView: ARView,
         at point: CGPoint,
@@ -2825,20 +2839,34 @@ final class ARSessionController: NSObject, ObservableObject {
         let depth = sceneDepthSample(frame: frame, in: arView, at: point).flatMap {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
-        // Missing stream may use a finite plane; an invalid available pixel must not
-        // allow placement through an unmeasurable foreground object.
-        if (frame.sceneDepth != nil || frame.smoothedSceneDepth != nil), depth == nil { return nil }
         let cameraPosition = arView.cameraTransform.translation
 
-        // Fitted cladding and its openings belong to the stored wall's coordinate
-        // system. Never shift the whole wall to a depth pixel or a furniture hit.
-        if prop.isWallCladding {
-            guard roomCoordinateSpaceIsActive,
-                  let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-                  depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true
-            else { return nil }
+        // A completed RoomPlan wall is the most stable finite placement source. Raw
+        // scene depth is intermittent on plain/dark walls, so a missing low-confidence
+        // pixel cannot veto it. Positive foreground depth still prevents selecting the
+        // wall through a person or piece of furniture.
+        if roomCoordinateSpaceIsActive,
+           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point) {
+            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distanceMeters
+            ) else { return nil }
             return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
                                 cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
+        }
+
+        // Fitted cladding belongs to a particular stored wall and must never be
+        // fabricated from a transient pixel or infinite plane.
+        if prop.isWallCladding { return nil }
+
+        // Without a matching saved wall, a confident current LiDAR normal is an exact
+        // physical contact and keeps ordinary wall props usable on newly seen walls.
+        if let depth,
+           let measuredNormal = depth.worldNormal,
+           wallSurfaceAccepts(normal: measuredNormal) {
+            return wallSolution(position: depth.worldPoint, normal: measuredNormal, prop: prop,
+                                cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
         }
 
         // ARPlane geometry is finite and its normal is fitted over many measurements.
@@ -2854,13 +2882,6 @@ final class ARSessionController: NSObject, ObservableObject {
             else { continue }
             return wallSolution(position: position, normal: normal, prop: prop,
                                 cameraPosition: cameraPosition, source: .arkitPlane, depth: depth)
-        }
-
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point),
-           depth.map({ wallDepthAgrees($0, position: hit.position, normal: hit.normal) }) ?? true {
-            return wallSolution(position: hit.position, normal: hit.normal, prop: prop,
-                                cameraPosition: cameraPosition, source: .roomPlanGeometry, depth: depth)
         }
 
         // Native collision reconstruction is a finite fallback, not an arbitrary

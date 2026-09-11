@@ -238,6 +238,10 @@ private struct RoomScanGeometryMetrics: Sendable {
     let usableWallCount: Int
     let totalWallSpan: Float
 
+    var semanticElementCount: Int {
+        floorCount + wallCount + objectCount
+    }
+
     var hasUsableGeometry: Bool {
         RoomScanCompletionPolicy.hasUsablePartialScan(
             floors: floorCount,
@@ -305,6 +309,8 @@ final class RoomScannerController: NSObject, ObservableObject {
     private var lastScanSummaryUpdateTime: TimeInterval = 0
     private var lastFrameQualityUpdateTime: TimeInterval = 0
     private var latestReadyRoom: CapturedRoom?
+    private var latestReadyMetrics: RoomScanGeometryMetrics?
+    private var retainedWallSpanHighWater: Float = 0
     private var approvedRoomAtFinish: CapturedRoom?
     private var latestFrameQuality = RoomScanFrameQuality(
         trackingIsNormal: false,
@@ -354,6 +360,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         lastScanSummaryUpdateTime = 0
         lastFrameQualityUpdateTime = 0
         latestReadyRoom = nil
+        latestReadyMetrics = nil
+        retainedWallSpanHighWater = 0
         approvedRoomAtFinish = nil
         latestFrameQuality = RoomScanFrameQuality(
             trackingIsNormal: false,
@@ -416,6 +424,8 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     private func recordFailure(_ message: String) {
         latestReadyRoom = nil
+        latestReadyMetrics = nil
+        retainedWallSpanHighWater = 0
         approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
@@ -565,6 +575,8 @@ final class RoomScannerController: NSObject, ObservableObject {
         guard !isTornDown else { return }
         isTornDown = true
         latestReadyRoom = nil
+        latestReadyMetrics = nil
+        retainedWallSpanHighWater = 0
         approvedRoomAtFinish = nil
         scanGeneration &+= 1
         stagingTask?.cancel()
@@ -605,26 +617,33 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
             lastFrameQualityUpdateTime = now
             acceptFrameQualityMeasurement(RoomScanFrameQuality.measureTracking(frame: frame))
         }
-        let generation = scanGeneration
-        DispatchQueue.main.async { [weak self] in
-            guard let self,
-                  self.scanGeneration == generation,
-                  self.shouldExport,
-                  self.isSessionRunning else { return }
-            // Do not throw away the last valid partial scan when RoomPlan emits a
-            // transient snapshot while it is joining or revising adjacent walls.
-            if metrics.hasUsableGeometry {
-                self.latestReadyRoom = room
-            }
-            // Preserve every geometry snapshot, but throttle only Published UI text.
-            // This avoids starving RoomPlan's main-thread renderer without saving a
-            // stale wall revision when the user finishes between UI refreshes.
-            guard shouldRefreshPublishedState else { return }
-            if metrics.hasUsableGeometry || self.latestReadyRoom == nil {
-                self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
-            }
-            self.refreshScanQuality(metrics: metrics, now: now)
+        guard shouldExport, isSessionRunning else { return }
+
+        let retainedElementCount = latestReadyMetrics?.semanticElementCount ?? 0
+        if RoomScanCompletionPolicy.shouldReplaceRetainedSnapshot(
+            retainedUsable: latestReadyMetrics?.hasUsableGeometry ?? false,
+            retainedWallSpanHighWater: retainedWallSpanHighWater,
+            retainedElementCount: retainedElementCount,
+            candidateUsable: metrics.hasUsableGeometry,
+            candidateWallSpan: metrics.totalWallSpan,
+            candidateElementCount: metrics.semanticElementCount
+        ) {
+            // Keep the richest wall snapshot seen so far. RoomPlan legitimately emits
+            // short-lived reduced rooms while joining a corner; those must not erase
+            // three already measured walls just before the Finish tap is handled.
+            latestReadyRoom = room
+            latestReadyMetrics = metrics
+            retainedWallSpanHighWater = max(retainedWallSpanHighWater, metrics.totalWallSpan)
         }
+
+        // Geometry retention above is unthrottled and synchronous with Finish. Only
+        // user-facing Published strings are limited to protect RoomPlan's renderer.
+        guard shouldRefreshPublishedState else { return }
+        let displayedMetrics = latestReadyMetrics ?? metrics
+        if displayedMetrics.hasUsableGeometry || latestReadyRoom == nil {
+            scanSummaryText = "Zemin \(displayedMetrics.floorCount) • Duvar \(displayedMetrics.wallCount) • Nesne \(displayedMetrics.objectCount)"
+        }
+        refreshScanQuality(metrics: displayedMetrics, now: now)
     }
 
     func captureSession(
@@ -717,7 +736,9 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         let choice = RoomScanCompletionPolicy.output(
             approvedAtFinish: approvedRoomAtFinish != nil,
             processedUsable: processedMetrics.hasUsableGeometry,
-            liveUsable: approvedMetrics?.hasUsableGeometry ?? false
+            liveUsable: approvedMetrics?.hasUsableGeometry ?? false,
+            processedWallSpan: processedMetrics.totalWallSpan,
+            liveWallSpan: approvedMetrics?.totalWallSpan ?? 0
         )
         let roomToSave: CapturedRoom
         let completionMessage: String

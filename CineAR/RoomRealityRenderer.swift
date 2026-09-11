@@ -83,7 +83,10 @@ final class RoomRealityRenderer {
     /// hard upper bound prevents a malformed or unusually detailed scan from exhausting
     /// the device while RealityKit is creating the replacement room.
     private static let maximumGeneratedBoxCount = 600
-    private static let maximumWalls = 24
+    // RoomPlan may split irregular, interrupted or highly detailed rooms into many
+    // finite wall surfaces. Keep them selectable/renderable; the independent box
+    // budget below still bounds RealityKit memory and draw-work.
+    private static let maximumWalls = 256
     private static let maximumFloors = 8
     private static let maximumPortalsPerKind = 24
     private static let maximumObjects = 48
@@ -260,12 +263,20 @@ final class RoomRealityRenderer {
                   let reportedBounds = Self.surfaceBounds(wall) else { continue }
             var bounds = reportedBounds
             var polygon = Self.localPolygon(for: wall) ?? Self.rectanglePolygon(bounds)
-            if Self.isAxisAlignedRectangle(polygon), let size = Self.planarDimensions(wall.dimensions) {
+            if let size = Self.planarDimensions(wall.dimensions) {
                 bounds = PlanarBounds(
                     minX: min(bounds.minX, -size.x * 0.5), maxX: max(bounds.maxX, size.x * 0.5),
                     minY: min(bounds.minY, -size.y * 0.5), maxY: max(bounds.maxY, size.y * 0.5)
                 )
-                polygon = Self.rectanglePolygon(bounds)
+                let polygonIsSparse = reportedBounds.width < bounds.width * 0.85
+                    || reportedBounds.height < bounds.height * 0.85
+                if Self.isAxisAlignedRectangle(polygon) || polygonIsSparse {
+                    // During scanning polygonCorners can describe only the confident
+                    // patch while dimensions already carries the finite wall envelope.
+                    // Use that envelope for flat sparse walls so the whole measured
+                    // wall remains replaceable; door/window cutouts are still applied.
+                    polygon = Self.rectanglePolygon(bounds)
+                }
             }
             let world = lastAlignmentTransform * wall.transform
             let local = simd_inverse(world) * SIMD4<Float>(position, 1)
