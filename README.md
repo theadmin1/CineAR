@@ -23,6 +23,12 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.9: RoomPlan artik kapali bir oda cevrimi, dort duvar, kose baglantisi,
+  alti bolgeli gorus veya bekleme suresi istemez. En az bir gecerli zemin ve bir
+  duvar bulundugunda taranan kisim hemen kullanilabilir; RoomPlan'in yaklas, isigi
+  ac veya yavasla onerileri bitirme dugmesini kilitlemez. Duvar degistirirken gelen
+  gecici bos kare son gecerli taramayi silmez. Son isleme duvar uzunlugunun %10'undan
+  fazlasini kaybederse bitirme anindaki canli tarama korunur.
 - 0.17.8: RoomPlan taramasi artik yalniz tahmin edilen duvar boyutuna guvenmez;
   kameranin her duvarin sol/orta/sag ve alt/ust bolgelerine gercekten baktigini
   ayri olarak izler. Dort anlamli duvar, en az 12 saniyelik gozlem ve konum/acisi

@@ -1,23 +1,13 @@
 import Foundation
 
-/// Finishing a scan is a transaction: approval belongs to the live snapshot that
-/// the user accepted, not to endpoint counts that processing may change.
+/// Finishing a scan is a transaction: approval belongs to the usable live
+/// snapshot that the user accepted. A partial RoomPlan result is valid data; it
+/// must not be rejected merely because the walls do not form a closed outline.
 enum RoomScanCompletionPolicy {
     enum Output: Equatable { case processed, approvedLive, reject }
 
-    static func hasCoverage(walls: Int, directions: Int, span: Float, connections: Float) -> Bool {
-        walls >= 4 && directions >= 2 && span.isFinite && span >= 2.4
-            && connections.isFinite && (0.72...1).contains(connections)
-    }
-
-    static func hasObservedCoverage(
-        completeWalls: Int,
-        totalWalls: Int,
-        observedBins: Int,
-        totalBins: Int
-    ) -> Bool {
-        guard totalWalls >= 4, totalBins == totalWalls * 6 else { return false }
-        return completeWalls >= 4 && observedBins * 100 >= totalBins * 55
+    static func hasUsablePartialScan(floors: Int, walls: Int) -> Bool {
+        floors > 0 && walls > 0
     }
 
     static func output(approvedAtFinish: Bool, processedUsable: Bool, liveUsable: Bool) -> Output {
@@ -30,41 +20,6 @@ enum RoomScanCompletionPolicy {
         processed.isFinite && approved.isFinite && approved > 0 && processed >= approved * 0.90
     }
 
-    static func preservesRoomShape(
-        processedWalls: Int,
-        approvedWalls: Int,
-        processedDirections: Int,
-        approvedDirections: Int,
-        processedSpan: Float,
-        approvedSpan: Float,
-        processedConnections: Float,
-        approvedConnections: Float
-    ) -> Bool {
-        guard approvedWalls >= 4,
-              processedWalls + 1 >= approvedWalls,
-              processedDirections >= approvedDirections,
-              preservesWallSpan(processed: processedSpan, approved: approvedSpan),
-              processedConnections.isFinite,
-              approvedConnections.isFinite else { return false }
-        return processedConnections >= max(0.60, approvedConnections - 0.15)
-    }
-}
-
-enum RoomScanObservationPolicy {
-    static func bin(normalizedX: Float, normalizedY: Float) -> Int? {
-        guard normalizedX.isFinite, normalizedY.isFinite,
-              (0...1).contains(normalizedX), (0...1).contains(normalizedY) else { return nil }
-        let column = min(2, Int(min(normalizedX, 0.999_999) * 3))
-        let row = min(1, Int(min(normalizedY, 0.999_999) * 2))
-        return row * 3 + column
-    }
-
-    static func wallIsComplete(bins: Set<Int>) -> Bool {
-        let validBins = bins.filter { (0..<6).contains($0) }
-        let columns = Set(validBins.map { $0 % 3 })
-        let rows = Set(validBins.map { $0 / 3 })
-        return validBins.count >= 4 && columns.count == 3 && rows.count == 2
-    }
 }
 
 enum RoomScanStartPolicy {

@@ -3,26 +3,11 @@ import Foundation
 @main
 struct SpatialValidationTests {
     static func main() {
-        precondition(RoomScanCompletionPolicy.hasCoverage(walls: 4, directions: 2, span: 12, connections: 1))
-        precondition(!RoomScanCompletionPolicy.hasCoverage(walls: 3, directions: 2, span: 12, connections: 1))
-        precondition(!RoomScanCompletionPolicy.hasCoverage(walls: 2, directions: 2, span: 12, connections: 1))
-        precondition(!RoomScanCompletionPolicy.hasCoverage(walls: 4, directions: 2, span: .nan, connections: 1))
-        precondition(RoomScanCompletionPolicy.hasObservedCoverage(
-            completeWalls: 4, totalWalls: 4, observedBins: 16, totalBins: 24
-        ))
-        precondition(!RoomScanCompletionPolicy.hasObservedCoverage(
-            completeWalls: 3, totalWalls: 4, observedBins: 24, totalBins: 24
-        ))
-        precondition(!RoomScanCompletionPolicy.hasObservedCoverage(
-            completeWalls: 4, totalWalls: 4, observedBins: 12, totalBins: 24
-        ))
-        precondition(RoomScanObservationPolicy.bin(normalizedX: 0, normalizedY: 0) == 0)
-        precondition(RoomScanObservationPolicy.bin(normalizedX: 0.5, normalizedY: 0.25) == 1)
-        precondition(RoomScanObservationPolicy.bin(normalizedX: 1, normalizedY: 1) == 5)
-        precondition(RoomScanObservationPolicy.bin(normalizedX: .nan, normalizedY: 0) == nil)
-        precondition(RoomScanObservationPolicy.wallIsComplete(bins: [0, 1, 2, 4]))
-        precondition(!RoomScanObservationPolicy.wallIsComplete(bins: [0, 1, 2]))
-        precondition(!RoomScanObservationPolicy.wallIsComplete(bins: [0, 1, 2, 9]))
+        // Partial scans are intentional: a closed four-wall outline is never required.
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 1))
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 2, walls: 3))
+        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 1))
+        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 0))
         precondition(RoomScanStartPolicy.hasFreshFrame(current: 10.051, minimum: 10))
         precondition(!RoomScanStartPolicy.hasFreshFrame(current: 10.049, minimum: 10))
         precondition(!RoomScanStartPolicy.hasFreshFrame(current: nil, minimum: 10))
@@ -32,24 +17,6 @@ struct SpatialValidationTests {
         precondition(!RoomScanCompletionPolicy.preservesWallSpan(processed: 8.9, approved: 10))
         precondition(!RoomScanCompletionPolicy.preservesWallSpan(processed: 3, approved: 10))
         precondition(!RoomScanCompletionPolicy.preservesWallSpan(processed: .nan, approved: 10))
-        precondition(RoomScanCompletionPolicy.preservesRoomShape(
-            processedWalls: 4, approvedWalls: 4,
-            processedDirections: 2, approvedDirections: 2,
-            processedSpan: 9, approvedSpan: 10,
-            processedConnections: 0.8, approvedConnections: 0.9
-        ))
-        precondition(!RoomScanCompletionPolicy.preservesRoomShape(
-            processedWalls: 2, approvedWalls: 4,
-            processedDirections: 2, approvedDirections: 2,
-            processedSpan: 10, approvedSpan: 10,
-            processedConnections: 0.9, approvedConnections: 0.9
-        ))
-        precondition(!RoomScanCompletionPolicy.preservesRoomShape(
-            processedWalls: 4, approvedWalls: 4,
-            processedDirections: 1, approvedDirections: 2,
-            processedSpan: 10, approvedSpan: 10,
-            processedConnections: 0.9, approvedConnections: 0.9
-        ))
         // A usable final room is accepted even when processing changes wall topology.
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: true, liveUsable: true) == .processed)
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: true) == .approvedLive)
@@ -81,7 +48,6 @@ struct SpatialValidationTests {
         precondition(WallPlacementPolicy.projectContact(.zero, onto: .zero, normal: .zero) == nil)
         precondition(WallPlacementPolicy.projectContact(.zero, onto: .zero, normal: [.greatestFiniteMagnitude, 0, 0]) == nil)
         precondition(!WallPlacementPolicy.agreesWithPlane(separation: 0, lateralError: -1, depth: 2))
-        precondition(!RoomScanCompletionPolicy.hasCoverage(walls: 4, directions: 2, span: 10, connections: 2))
         // Deterministic projection checks over walls at many positions/orientations.
         for step in 0..<360 {
             let radians = Float(step) * .pi / 180

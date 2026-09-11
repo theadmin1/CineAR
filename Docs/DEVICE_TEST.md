@@ -252,14 +252,17 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
-0.17.8 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+0.17.9 ek regresyonlari (ozellikle iPhone 15 Pro Max):
 
-- Ilk duvarin yalniz ortasina bak: RoomPlan beyaz yuzeyi tamamlasa bile tarama yesile
-  donmemeli. Dort duvarin sol/orta/sag ve alt/ust bolgelerini gez; onceki duvarin
-  konumu veya acisi yeni duvara donerken degisirse kararlilik sayaci yeniden baslamali.
-- Tarama yesilken bitir; islenmis duvarlarin parca/kose sayisi en fazla bir azalabilir
-  ve yon/kose baglantisi korunuyorsa `Taramayi Kullan` sunulmali. Daha buyuk geometri
-  kaybinda `Onaylanan Canli Taramayi Kullan` ve acik uyari gorulmeli.
+- Yalnizca zemin ve tek bir duvari tara. Kapali oda veya kose baglantisi olmadan
+  tarama yesile donmeli ve `Taramayi Bitir` etkinlesmeli. Sonuc kullanildiginda bu
+  tek duvar `room.json` icinde korunmali.
+- Birinci duvardan ikinci duvara donerken RoomPlan gecici olarak duvar sayisini
+  azaltirsa bitirme dugmesi yeniden kilitlenmemeli. `yaklas`, `uzaklas`, `yavasla`
+  ve `isigi ac` onerileri gorunebilir ancak daha once taranan kismi gecersiz kilmamali.
+- Tarama yesilken bitir. Son isleme gecerli zemin/duvari veya canli duvar
+  uzunlugunun %10'undan fazlasini kaybederse `Onaylanan Canli Taramayi Kullan`
+  sunulmali; aksi durumda islenmis sonuc kullanilabilmeli.
   Kullan/iptal yollarini, art arda taramalari, gercek RoomPlan hatasini ve isleme
   sirasinda kapatmayi dene; onceki oda kullanici kabul etmeden degismemeli.
 - Hatali eski kaplamayi sil, yeni taramada bos duvara tek dokunusla yeniden koy.
