@@ -23,6 +23,10 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.10: `Taramayi Bitir` artik tam oda, zemin+duvar veya kalite onayi
+  beklemeden calisir. RoomPlan'in buldugu tek bir duvar, zemin ya da nesne bile
+  kismi tarama olarak saklanabilir. Henuz hic geometri yoksa tarama yine sonlanir;
+  onceki kayit korunur ve kullanici kilitli bir tarama dongusunde birakilmaz.
 - 0.17.9: RoomPlan artik kapali bir oda cevrimi, dort duvar, kose baglantisi,
   alti bolgeli gorus veya bekleme suresi istemez. En az bir gecerli zemin ve bir
   duvar bulundugunda taranan kisim hemen kullanilabilir; RoomPlan'in yaklas, isigi

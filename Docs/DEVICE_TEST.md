@@ -252,11 +252,13 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
-0.17.9 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+0.17.10 ek regresyonlari (ozellikle iPhone 15 Pro Max):
 
-- Yalnizca zemin ve tek bir duvari tara. Kapali oda veya kose baglantisi olmadan
-  tarama yesile donmeli ve `Taramayi Bitir` etkinlesmeli. Sonuc kullanildiginda bu
-  tek duvar `room.json` icinde korunmali.
+- Tarama calismaya baslar baslamaz, hicbir yuzey henuz bulunmamis olsa dahi
+  `Taramayi Bitir` etkin olmali ve dokununca tarama ekrani sonlandirilmalidir.
+  Kaydedilebilir geometri yoksa onceki kayit korunarak acik hata gosterilmelidir.
+- Yalnizca tek duvari veya zeminin bir bolumunu tara. Kapali oda/kose baglantisi
+  olmadan bitirilebilmeli ve bulunan tek yuzey `room.json` icinde korunmalidir.
 - Birinci duvardan ikinci duvara donerken RoomPlan gecici olarak duvar sayisini
   azaltirsa bitirme dugmesi yeniden kilitlenmemeli. `yaklas`, `uzaklas`, `yavasla`
   ve `isigi ac` onerileri gorunebilir ancak daha once taranan kismi gecersiz kilmamali.

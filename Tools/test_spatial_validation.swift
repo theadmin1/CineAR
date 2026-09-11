@@ -4,10 +4,10 @@ import Foundation
 struct SpatialValidationTests {
     static func main() {
         // Partial scans are intentional: a closed four-wall outline is never required.
-        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 1))
-        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 2, walls: 3))
-        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 1))
-        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 0))
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 0, objects: 0))
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 1, objects: 0))
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 1))
+        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 0))
         precondition(RoomScanStartPolicy.hasFreshFrame(current: 10.051, minimum: 10))
         precondition(!RoomScanStartPolicy.hasFreshFrame(current: 10.049, minimum: 10))
         precondition(!RoomScanStartPolicy.hasFreshFrame(current: nil, minimum: 10))
@@ -21,11 +21,8 @@ struct SpatialValidationTests {
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: true, liveUsable: true) == .processed)
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: true) == .approvedLive)
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: false) == .reject)
-        for processed in [false, true] {
-            for live in [false, true] {
-                precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: processed, liveUsable: live) == .reject)
-            }
-        }
+        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: true, liveUsable: false) == .processed)
+        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: false, liveUsable: true) == .reject)
         precondition(WallPlacementPolicy.robustDepth(center: 2, neighbors: Array(repeating: 2, count: 25)) == 2)
         let mixed = Array(repeating: Float(1), count: 9) + Array(repeating: Float(3), count: 16)
         precondition(WallPlacementPolicy.robustDepth(center: 1, neighbors: mixed) == 1)

@@ -6,14 +6,13 @@ import Foundation
 enum RoomScanCompletionPolicy {
     enum Output: Equatable { case processed, approvedLive, reject }
 
-    static func hasUsablePartialScan(floors: Int, walls: Int) -> Bool {
-        floors > 0 && walls > 0
+    static func hasUsablePartialScan(floors: Int, walls: Int, objects: Int) -> Bool {
+        floors > 0 || walls > 0 || objects > 0
     }
 
     static func output(approvedAtFinish: Bool, processedUsable: Bool, liveUsable: Bool) -> Output {
-        guard approvedAtFinish else { return .reject }
         if processedUsable { return .processed }
-        return liveUsable ? .approvedLive : .reject
+        return approvedAtFinish && liveUsable ? .approvedLive : .reject
     }
 
     static func preservesWallSpan(processed: Float, approved: Float) -> Bool {

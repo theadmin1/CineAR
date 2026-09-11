@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.9`
-- Proje build numarası: `43`
+- Uygulama sürümü: `0.17.10`
+- Proje build numarası: `44`
 - Git dalı: `main`
-- Kaynak commit: `28007f411c12a1cc5a851b36134d48bd7843b287`
-- Oluşturulma zamanı: `2026-09-11 15:03:57 +03:00`
+- Kaynak commit: `495b2c5df0a17d7b9013219e5cc8b25766c1428d`
+- Oluşturulma zamanı: `2026-09-11 15:42:15 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -21,7 +21,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
 - Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma
 - Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i
-- RoomPlan ile semantik oda taraması; kapalı oda veya köşe bağlantısı zorunluluğu olmadan bir zemin ve bir duvardan itibaren kısmi `room.json` üretimi
+- RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi `room.json` üretimi ve her zaman sonlandırılabilen tarama akışı
 - Tarama sırasında ek scene-depth/person-segmentation işlerini ve özel piksel ışık analizini kapatan, dünya koordinatını sıfırlamayan yalın RoomPlan sensör modu
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
@@ -293,7 +293,7 @@ Yok.
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
-| `CineAR.xcodeproj/project.pbxproj` | 294 | 15654 |
+| `CineAR.xcodeproj/project.pbxproj` | 294 | 15656 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
 | `CineAR/ARSessionController.swift` | 6919 | 293233 |
@@ -314,27 +314,27 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
 | `CineAR/RoomRealityRenderer.swift` | 2236 | 87604 |
-| `CineAR/RoomScanner.swift` | 993 | 37838 |
+| `CineAR/RoomScanner.swift` | 994 | 37983 |
 | `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
-| `CineAR/SpatialValidation.swift` | 62 | 2881 |
+| `CineAR/SpatialValidation.swift` | 61 | 2875 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
 | `codemagic.yaml` | 262 | 9368 |
 | `Docs/CODEMAGIC.md` | 120 | 6576 |
-| `Docs/DEVICE_TEST.md` | 308 | 21600 |
+| `Docs/DEVICE_TEST.md` | 310 | 21793 |
 | `Docs/ICON_PROMPT.md` | 25 | 1421 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 417 | 28339 |
+| `README.md` | 421 | 28653 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
 | `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
-| `Tools/generate_all_in_one_markdown.ps1` | 375 | 20519 |
+| `Tools/generate_all_in_one_markdown.ps1` | 375 | 20543 |
 | `Tools/generate_wall_assets.py` | 81 | 3290 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/run_swift_regressions.py` | 46 | 2055 |
 | `Tools/test_live_depth_geometry.swift` | 73 | 3746 |
 | `Tools/test_privacy_plist.py` | 37 | 1416 |
-| `Tools/test_spatial_validation.swift` | 65 | 4889 |
+| `Tools/test_spatial_validation.swift` | 62 | 4954 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
 | `Tools/validate_privacy_plist.py` | 56 | 1953 |
 | `Tools/validate_usdz_assets.py` | 101 | 3573 |
@@ -1535,13 +1535,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.9;
+				MARKETING_VERSION = 0.17.10;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1559,12 +1559,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.9;
+				MARKETING_VERSION = 0.17.10;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -15214,7 +15214,8 @@ private struct RoomScanGeometryMetrics: Sendable {
     var hasUsableGeometry: Bool {
         RoomScanCompletionPolicy.hasUsablePartialScan(
             floors: floorCount,
-            walls: usableWallCount
+            walls: usableWallCount,
+            objects: objectCount
         )
     }
     var hasCoverage: Bool {
@@ -15359,15 +15360,12 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
-        guard isScanReady, let latestReadyRoom else {
-            statusText = "Bitirmek için en az bir zemin ve bir duvar tara"
-            return
-        }
-
         approvedRoomAtFinish = latestReadyRoom
         shouldExport = true
         isProcessing = true
-        statusText = "3B oda modeli işleniyor..."
+        statusText = latestReadyRoom == nil
+            ? "Mevcut kısmi tarama sonlandırılıyor..."
+            : "Taranan kısımlar 3B modele işleniyor..."
         isSessionRunning = false
         stopCaptureSession()
     }
@@ -15695,13 +15693,17 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         }
         let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
         let approvedMetrics = approvedRoomAtFinish.map { RoomScanGeometryMetrics(room: $0) }
+        let processedPreservesScannedWalls = approvedMetrics.map { approved in
+            approved.totalWallSpan <= 0
+                || RoomScanCompletionPolicy.preservesWallSpan(
+                    processed: processedMetrics.totalWallSpan,
+                    approved: approved.totalWallSpan
+                )
+        } ?? true
         let choice = RoomScanCompletionPolicy.output(
             approvedAtFinish: approvedRoomAtFinish != nil,
             processedUsable: processedMetrics.hasUsableGeometry
-                && RoomScanCompletionPolicy.preservesWallSpan(
-                    processed: processedMetrics.totalWallSpan,
-                    approved: approvedMetrics?.totalWallSpan ?? 0
-                ),
+                && processedPreservesScannedWalls,
             liveUsable: approvedMetrics?.hasUsableGeometry ?? false
         )
         let roomToSave: CapturedRoom
@@ -15717,7 +15719,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
             roomToSave = approvedRoomAtFinish
             completionMessage = "İşlenmiş model eksik; bitirirken onayladığın canlı tarama korunuyor. Önizleme farklı olabilir"
         case .reject:
-            recordFailure("Kaydedilebilir zemin ve duvar verisi yok; önceki kayıt değiştirilmedi")
+            recordFailure("Tarama sonlandırıldı ancak kaydedilebilir bir yüzey veya nesne bulunamadı; önceki kayıt değiştirilmedi")
             return
         }
         isUsingApprovedLiveScan = choice == .approvedLive
@@ -15894,7 +15896,6 @@ struct RoomScannerScreen: View {
                     .disabled(
                         scanner.isProcessing
                             || !RoomScannerController.isSupported
-                            || !scanner.isScanReady
                     )
                     .buttonStyle(CineARPrimaryButtonStyle(color: .blue))
                 }
@@ -17171,14 +17172,13 @@ import Foundation
 enum RoomScanCompletionPolicy {
     enum Output: Equatable { case processed, approvedLive, reject }
 
-    static func hasUsablePartialScan(floors: Int, walls: Int) -> Bool {
-        floors > 0 && walls > 0
+    static func hasUsablePartialScan(floors: Int, walls: Int, objects: Int) -> Bool {
+        floors > 0 || walls > 0 || objects > 0
     }
 
     static func output(approvedAtFinish: Bool, processedUsable: Bool, liveUsable: Bool) -> Output {
-        guard approvedAtFinish else { return .reject }
         if processedUsable { return .processed }
-        return liveUsable ? .approvedLive : .reject
+        return approvedAtFinish && liveUsable ? .approvedLive : .reject
     }
 
     static func preservesWallSpan(processed: Float, approved: Float) -> Bool {
@@ -18163,11 +18163,13 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
-0.17.9 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+0.17.10 ek regresyonlari (ozellikle iPhone 15 Pro Max):
 
-- Yalnizca zemin ve tek bir duvari tara. Kapali oda veya kose baglantisi olmadan
-  tarama yesile donmeli ve `Taramayi Bitir` etkinlesmeli. Sonuc kullanildiginda bu
-  tek duvar `room.json` icinde korunmali.
+- Tarama calismaya baslar baslamaz, hicbir yuzey henuz bulunmamis olsa dahi
+  `Taramayi Bitir` etkin olmali ve dokununca tarama ekrani sonlandirilmalidir.
+  Kaydedilebilir geometri yoksa onceki kayit korunarak acik hata gosterilmelidir.
+- Yalnizca tek duvari veya zeminin bir bolumunu tara. Kapali oda/kose baglantisi
+  olmadan bitirilebilmeli ve bulunan tek yuzey `room.json` icinde korunmalidir.
 - Birinci duvardan ikinci duvara donerken RoomPlan gecici olarak duvar sayisini
   azaltirsa bitirme dugmesi yeniden kilitlenmemeli. `yaklas`, `uzaklas`, `yavasla`
   ve `isigi ac` onerileri gorunebilir ancak daha once taranan kismi gecersiz kilmamali.
@@ -18318,6 +18320,10 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.10: `Taramayi Bitir` artik tam oda, zemin+duvar veya kalite onayi
+  beklemeden calisir. RoomPlan'in buldugu tek bir duvar, zemin ya da nesne bile
+  kismi tarama olarak saklanabilir. Henuz hic geometri yoksa tarama yine sonlanir;
+  onceki kayit korunur ve kullanici kilitli bir tarama dongusunde birakilmaz.
 - 0.17.9: RoomPlan artik kapali bir oda cevrimi, dort duvar, kose baglantisi,
   alti bolgeli gorus veya bekleme suresi istemez. En az bir gecerli zemin ve bir
   duvar bulundugunda taranan kisim hemen kullanilabilir; RoomPlan'in yaklas, isigi
@@ -19350,7 +19356,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
 [void]$builder.AppendLine("- Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma")
 [void]$builder.AppendLine("- Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i")
-[void]$builder.AppendLine("- RoomPlan ile semantik oda taraması; kapalı oda veya köşe bağlantısı zorunluluğu olmadan bir zemin ve bir duvardan itibaren kısmi ``room.json`` üretimi")
+[void]$builder.AppendLine("- RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi ``room.json`` üretimi ve her zaman sonlandırılabilen tarama akışı")
 [void]$builder.AppendLine("- Tarama sırasında ek scene-depth/person-segmentation işlerini ve özel piksel ışık analizini kapatan, dünya koordinatını sıfırlamayan yalın RoomPlan sensör modu")
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
@@ -19878,10 +19884,10 @@ import Foundation
 struct SpatialValidationTests {
     static func main() {
         // Partial scans are intentional: a closed four-wall outline is never required.
-        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 1))
-        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 2, walls: 3))
-        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 1))
-        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 0))
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 1, walls: 0, objects: 0))
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 1, objects: 0))
+        precondition(RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 1))
+        precondition(!RoomScanCompletionPolicy.hasUsablePartialScan(floors: 0, walls: 0, objects: 0))
         precondition(RoomScanStartPolicy.hasFreshFrame(current: 10.051, minimum: 10))
         precondition(!RoomScanStartPolicy.hasFreshFrame(current: 10.049, minimum: 10))
         precondition(!RoomScanStartPolicy.hasFreshFrame(current: nil, minimum: 10))
@@ -19895,11 +19901,8 @@ struct SpatialValidationTests {
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: true, liveUsable: true) == .processed)
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: true) == .approvedLive)
         precondition(RoomScanCompletionPolicy.output(approvedAtFinish: true, processedUsable: false, liveUsable: false) == .reject)
-        for processed in [false, true] {
-            for live in [false, true] {
-                precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: processed, liveUsable: live) == .reject)
-            }
-        }
+        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: true, liveUsable: false) == .processed)
+        precondition(RoomScanCompletionPolicy.output(approvedAtFinish: false, processedUsable: false, liveUsable: true) == .reject)
         precondition(WallPlacementPolicy.robustDepth(center: 2, neighbors: Array(repeating: 2, count: 25)) == 2)
         let mixed = Array(repeating: Float(1), count: 9) + Array(repeating: Float(3), count: 16)
         precondition(WallPlacementPolicy.robustDepth(center: 1, neighbors: mixed) == 1)

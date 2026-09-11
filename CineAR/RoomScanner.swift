@@ -241,7 +241,8 @@ private struct RoomScanGeometryMetrics: Sendable {
     var hasUsableGeometry: Bool {
         RoomScanCompletionPolicy.hasUsablePartialScan(
             floors: floorCount,
-            walls: usableWallCount
+            walls: usableWallCount,
+            objects: objectCount
         )
     }
     var hasCoverage: Bool {
@@ -386,15 +387,12 @@ final class RoomScannerController: NSObject, ObservableObject {
 
     func finish() {
         guard isSessionRunning, !isProcessing else { return }
-        guard isScanReady, let latestReadyRoom else {
-            statusText = "Bitirmek için en az bir zemin ve bir duvar tara"
-            return
-        }
-
         approvedRoomAtFinish = latestReadyRoom
         shouldExport = true
         isProcessing = true
-        statusText = "3B oda modeli işleniyor..."
+        statusText = latestReadyRoom == nil
+            ? "Mevcut kısmi tarama sonlandırılıyor..."
+            : "Taranan kısımlar 3B modele işleniyor..."
         isSessionRunning = false
         stopCaptureSession()
     }
@@ -722,13 +720,17 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         }
         let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
         let approvedMetrics = approvedRoomAtFinish.map { RoomScanGeometryMetrics(room: $0) }
+        let processedPreservesScannedWalls = approvedMetrics.map { approved in
+            approved.totalWallSpan <= 0
+                || RoomScanCompletionPolicy.preservesWallSpan(
+                    processed: processedMetrics.totalWallSpan,
+                    approved: approved.totalWallSpan
+                )
+        } ?? true
         let choice = RoomScanCompletionPolicy.output(
             approvedAtFinish: approvedRoomAtFinish != nil,
             processedUsable: processedMetrics.hasUsableGeometry
-                && RoomScanCompletionPolicy.preservesWallSpan(
-                    processed: processedMetrics.totalWallSpan,
-                    approved: approvedMetrics?.totalWallSpan ?? 0
-                ),
+                && processedPreservesScannedWalls,
             liveUsable: approvedMetrics?.hasUsableGeometry ?? false
         )
         let roomToSave: CapturedRoom
@@ -744,7 +746,7 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
             roomToSave = approvedRoomAtFinish
             completionMessage = "İşlenmiş model eksik; bitirirken onayladığın canlı tarama korunuyor. Önizleme farklı olabilir"
         case .reject:
-            recordFailure("Kaydedilebilir zemin ve duvar verisi yok; önceki kayıt değiştirilmedi")
+            recordFailure("Tarama sonlandırıldı ancak kaydedilebilir bir yüzey veya nesne bulunamadı; önceki kayıt değiştirilmedi")
             return
         }
         isUsingApprovedLiveScan = choice == .approvedLive
@@ -921,7 +923,6 @@ struct RoomScannerScreen: View {
                     .disabled(
                         scanner.isProcessing
                             || !RoomScannerController.isSupported
-                            || !scanner.isScanReady
                     )
                     .buttonStyle(CineARPrimaryButtonStyle(color: .blue))
                 }
