@@ -252,8 +252,15 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
-0.17.10 ek regresyonlari (ozellikle iPhone 15 Pro Max):
+0.17.11 ek regresyonlari (ozellikle iPhone 15 Pro Max):
 
+- Uygulamayi acip AR takibi yesil oldugunda `Oda Tara`ya bas. Tarama acilirken
+  ikinci bir `Dunya takibi hazirlaniyor` gecisi olmamali; ilk duvar sabit kalmali.
+- Zemin-duvar alt kenarindan basla, ilk koseyi kadrajda tutarak ikinci duvara yavasca
+  don. Ilk duvar ikinci duvara geciste sifirlanmamali veya kamera ile birlikte kaymamali.
+- Birbirine yakin iki duvar parcasi tarayip bitir. RoomPlan son islemede parcalari
+  birlestirip toplam duvar uzunlugunu azaltirsa islenmis/birlestirilmis sonuc korunmali;
+  eski parcalanmis canli sonuc yalniz islenmis sonuc tamamen bossa kullanilmalidir.
 - Tarama calismaya baslar baslamaz, hicbir yuzey henuz bulunmamis olsa dahi
   `Taramayi Bitir` etkin olmali ve dokununca tarama ekrani sonlandirilmalidir.
   Kaydedilebilir geometri yoksa onceki kayit korunarak acik hata gosterilmelidir.

@@ -92,8 +92,7 @@ struct ContentView: View {
             RoomScannerScreen(
                 exportURL: session.roomModelURL,
                 roomJSONURL: session.roomDataURL,
-                arSession: session.sharedARSession,
-                minimumARFrameTimestamp: session.minimumRoomScanFrameTimestamp
+                arSession: session.sharedARSession
             ) { result in
                 roomScanResult = result
             }

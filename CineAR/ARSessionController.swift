@@ -265,7 +265,6 @@ final class ARSessionController: NSObject, ObservableObject {
     var roomModelURL: URL { projectStore.roomModelURL }
     var roomDataURL: URL { projectStore.roomDataURL }
     var sharedARSession: ARSession? { arView?.session }
-    private(set) var minimumRoomScanFrameTimestamp: TimeInterval?
     private var roomAlignmentTransform: simd_float4x4 {
         projectStore.project.roomAlignment?.realityKitTransform.matrix
             ?? matrix_identity_float4x4
@@ -544,20 +543,10 @@ final class ARSessionController: NSObject, ObservableObject {
         } catch {
             publishStatus("Dekor konumları kaydedilemedi: \(error.localizedDescription)", color: .red)
         }
-        // RoomPlan preserves every setting of a supplied ARSession. The normal CineAR
-        // session requests reconstruction, depth and person segmentation together;
-        // leaving those enabled makes RoomPlan compete for the same LiDAR/camera budget.
-        // Apply a lean configuration without resetting tracking, then let the scanner
-        // wait for a fresh normal frame before starting capture.
-        if let arView {
-            minimumRoomScanFrameTimestamp = arView.session.currentFrame?.timestamp
-            arView.session.run(
-                configuration(enableAdvancedOcclusion: false),
-                options: []
-            )
-        } else {
-            minimumRoomScanFrameTimestamp = nil
-        }
+        // Hand the already-stable shared ARSession directly to RoomPlan. Re-running
+        // it with a different configuration here creates an avoidable initialization
+        // transition exactly while the first wall and its coordinate frame are captured.
+        // Rendering/AI work is already suspended by isRoomScanActive and the clears above.
         publishStatus("Oda taraması açılıyor; aynı dünya koordinatları korunuyor", color: .yellow)
     }
 
@@ -871,7 +860,6 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
         liveDepthRenderer.clear()
-        minimumRoomScanFrameTimestamp = nil
         isRoomScanActive = false
         isARReady = false
         didAttemptSessionFailureRecovery = false

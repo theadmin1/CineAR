@@ -15,18 +15,6 @@ enum RoomScanCompletionPolicy {
         return approvedAtFinish && liveUsable ? .approvedLive : .reject
     }
 
-    static func preservesWallSpan(processed: Float, approved: Float) -> Bool {
-        processed.isFinite && approved.isFinite && approved > 0 && processed >= approved * 0.90
-    }
-
-}
-
-enum RoomScanStartPolicy {
-    static func hasFreshFrame(current: TimeInterval?, minimum: TimeInterval?) -> Bool {
-        guard let minimum else { return current != nil }
-        guard let current, current.isFinite, minimum.isFinite else { return false }
-        return current >= minimum + 0.05
-    }
 }
 
 enum WallPlacementPolicy {

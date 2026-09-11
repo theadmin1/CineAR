@@ -23,6 +23,12 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.11: Eski guvenilir RoomPlan sensor akisi geri getirildi. Tarama dugmesine
+  basildiginda kararlı ortak `ARSession` yeniden yapilandirilmadan dogrudan RoomPlan'a
+  devredilir; 50 ms'lik ilk kare bekleme zinciri kaldirildi. Her canli geometri
+  karesi kayit yedegi icin korunurken yalniz arayuz yazilari 250 ms aralikla yenilenir.
+  RoomPlan'in birlestirip sadelestirdigi kullanilabilir islenmis sonuc, toplam duvar
+  uzunlugu azaldi diye reddedilmez. Eksik taramayi her zaman bitirme davranisi korunur.
 - 0.17.10: `Taramayi Bitir` artik tam oda, zemin+duvar veya kalite onayi
   beklemeden calisir. RoomPlan'in buldugu tek bir duvar, zemin ya da nesne bile
   kismi tarama olarak saklanabilir. Henuz hic geometri yoksa tarama yine sonlanir;

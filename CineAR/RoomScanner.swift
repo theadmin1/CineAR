@@ -296,7 +296,6 @@ final class RoomScannerController: NSObject, ObservableObject {
         return configuration
     }()
     private let preservesSharedARSession: Bool
-    private let minimumARFrameTimestamp: TimeInterval?
     private var shouldExport = true
     private var isSessionRunning = false
     private var isTornDown = false
@@ -317,8 +316,7 @@ final class RoomScannerController: NSObject, ObservableObject {
     init(
         exportURL: URL,
         roomJSONURL: URL? = nil,
-        arSession: ARSession? = nil,
-        minimumARFrameTimestamp: TimeInterval? = nil
+        arSession: ARSession? = nil
     ) {
         let store = CapturedRoomStore(
             modelURL: exportURL,
@@ -327,7 +325,6 @@ final class RoomScannerController: NSObject, ObservableObject {
         self.roomStore = store
         self.roomJSONURL = store.roomJSONURL
         self.preservesSharedARSession = arSession != nil
-        self.minimumARFrameTimestamp = minimumARFrameTimestamp
         if let arSession {
             self.captureView = RoomCaptureView(frame: .zero, arSession: arSession)
         } else {
@@ -440,16 +437,11 @@ final class RoomScannerController: NSObject, ObservableObject {
               isProcessing,
               !isSessionRunning else { return }
 
-        let currentFrame = captureView.captureSession.arSession.currentFrame
-        let trackingState = currentFrame?.camera.trackingState
-        let hasFreshFrame = RoomScanStartPolicy.hasFreshFrame(
-            current: currentFrame?.timestamp,
-            minimum: minimumARFrameTimestamp
-        )
-        if case .normal? = trackingState, hasFreshFrame {
+        let trackingState = captureView.captureSession.arSession.currentFrame?.camera.trackingState
+        if case .normal? = trackingState {
             isProcessing = false
             isSessionRunning = true
-            statusText = "Önce zemini, sonra istediğin duvarları yavaşça tarayın"
+            statusText = "Zemin-duvar alt kenarını göster; köşeyi kadrajda tutarak yavaşça dön"
             captureView.captureSession.run(configuration: configuration)
             return
         }
@@ -601,13 +593,11 @@ final class RoomScannerController: NSObject, ObservableObject {
 
 extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
     func captureSession(_ session: RoomCaptureSession, didUpdate room: CapturedRoom) {
-        // RoomPlan can publish several semantic snapshots per video frame. Updating
-        // SwiftUI for every snapshot floods the main queue and makes the native white
-        // scan lines lag behind the camera. The geometry still updates at full speed;
-        // only the small text summary is throttled.
         let now = ProcessInfo.processInfo.systemUptime
-        guard now - lastScanSummaryUpdateTime >= 0.25 else { return }
-        lastScanSummaryUpdateTime = now
+        let shouldRefreshPublishedState = now - lastScanSummaryUpdateTime >= 0.25
+        if shouldRefreshPublishedState {
+            lastScanSummaryUpdateTime = now
+        }
         let metrics = RoomScanGeometryMetrics(room: room)
         let currentFrame = session.arSession.currentFrame
         if now - lastFrameQualityUpdateTime >= 0.75,
@@ -625,8 +615,12 @@ extension RoomScannerController: @preconcurrency RoomCaptureSessionDelegate {
             // transient snapshot while it is joining or revising adjacent walls.
             if metrics.hasUsableGeometry {
                 self.latestReadyRoom = room
-                self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
-            } else if self.latestReadyRoom == nil {
+            }
+            // Preserve every geometry snapshot, but throttle only Published UI text.
+            // This avoids starving RoomPlan's main-thread renderer without saving a
+            // stale wall revision when the user finishes between UI refreshes.
+            guard shouldRefreshPublishedState else { return }
+            if metrics.hasUsableGeometry || self.latestReadyRoom == nil {
                 self.scanSummaryText = "Zemin \(metrics.floorCount) • Duvar \(metrics.wallCount) • Nesne \(metrics.objectCount)"
             }
             self.refreshScanQuality(metrics: metrics, now: now)
@@ -720,17 +714,9 @@ extension RoomScannerController: @preconcurrency RoomCaptureViewDelegate {
         }
         let processedMetrics = RoomScanGeometryMetrics(room: processedResult)
         let approvedMetrics = approvedRoomAtFinish.map { RoomScanGeometryMetrics(room: $0) }
-        let processedPreservesScannedWalls = approvedMetrics.map { approved in
-            approved.totalWallSpan <= 0
-                || RoomScanCompletionPolicy.preservesWallSpan(
-                    processed: processedMetrics.totalWallSpan,
-                    approved: approved.totalWallSpan
-                )
-        } ?? true
         let choice = RoomScanCompletionPolicy.output(
             approvedAtFinish: approvedRoomAtFinish != nil,
-            processedUsable: processedMetrics.hasUsableGeometry
-                && processedPreservesScannedWalls,
+            processedUsable: processedMetrics.hasUsableGeometry,
             liveUsable: approvedMetrics?.hasUsableGeometry ?? false
         )
         let roomToSave: CapturedRoom
@@ -836,7 +822,6 @@ struct RoomScannerScreen: View {
         exportURL: URL,
         roomJSONURL: URL? = nil,
         arSession: ARSession? = nil,
-        minimumARFrameTimestamp: TimeInterval? = nil,
         onComplete: @escaping (RoomScanResult) -> Void = { _ in }
     ) {
         self.onComplete = onComplete
@@ -844,8 +829,7 @@ struct RoomScannerScreen: View {
             wrappedValue: RoomScannerController(
                 exportURL: exportURL,
                 roomJSONURL: roomJSONURL,
-                arSession: arSession,
-                minimumARFrameTimestamp: minimumARFrameTimestamp
+                arSession: arSession
             )
         )
     }
