@@ -26,6 +26,16 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
     case studioWhite
     case concrete
     case brick
+    case backrooms
+    case backrooms02
+    case backrooms03
+    case backrooms04
+    case backrooms05
+    case backrooms06
+    case backrooms07
+    case backrooms08
+    case backrooms09
+    case backroomsClassic
 
     var id: String { rawValue }
 
@@ -34,6 +44,54 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .studioWhite: "Stüdyo Beyazı"
         case .concrete: "Beton"
         case .brick: "Tuğla"
+        case .backrooms: "Backrooms Yasu 01"
+        case .backrooms02: "Backrooms Yasu 02"
+        case .backrooms03: "Backrooms Yasu 03"
+        case .backrooms04: "Backrooms Yasu 04"
+        case .backrooms05: "Backrooms Yasu 05"
+        case .backrooms06: "Backrooms Yasu 06"
+        case .backrooms07: "Backrooms Yasu 07"
+        case .backrooms08: "Backrooms Yasu 08"
+        case .backrooms09: "Backrooms Yasu 09"
+        case .backroomsClassic: "Backrooms Klasik CC0"
+        }
+    }
+
+    var isBackrooms: Bool {
+        switch self {
+        case .studioWhite, .concrete, .brick: false
+        default: true
+        }
+    }
+
+    var backroomsWallpaperAssetName: String? {
+        switch self {
+        case .backrooms: "backrooms_yasu_wall_01"
+        case .backrooms02: "backrooms_yasu_wall_02"
+        case .backrooms03: "backrooms_yasu_wall_03"
+        case .backrooms04: "backrooms_yasu_wall_04"
+        case .backrooms05: "backrooms_yasu_wall_05"
+        case .backrooms06: "backrooms_yasu_wall_06"
+        case .backrooms07: "backrooms_yasu_wall_07"
+        case .backrooms08: "backrooms_yasu_wall_08"
+        case .backrooms09: "backrooms_yasu_wall_09"
+        case .backroomsClassic: "wall_cladding_backrooms_001"
+        case .studioWhite, .concrete, .brick: nil
+        }
+    }
+
+    var backroomsCeilingAssetName: String? {
+        switch self {
+        case .backrooms, .backrooms05, .backrooms09, .backroomsClassic:
+            "backrooms_yasu_ceiling_01"
+        case .backrooms02, .backrooms06:
+            "backrooms_yasu_ceiling_02"
+        case .backrooms03, .backrooms07:
+            "backrooms_yasu_ceiling_03"
+        case .backrooms04, .backrooms08:
+            "backrooms_yasu_ceiling_04"
+        case .studioWhite, .concrete, .brick:
+            nil
         }
     }
 }
@@ -321,6 +379,11 @@ enum CustomARGeometry {
         // With u × v = up, a positive winding has its interior on up × direction.
         // Local forward is direction × up, the opposite side.
         return doubledSignedArea > 0 ? -1 : 1
+    }
+
+    static func inwardDoorOpenAngle(interiorSide: Float) -> Float {
+        let side: Float = interiorSide >= 0 ? 1 : -1
+        return -.pi * 0.52 * side
     }
 
     static func makeDesign(

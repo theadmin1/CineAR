@@ -23,6 +23,24 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.20.0: Ozel AR Backrooms kiti artik Yasu'nun dokuz duvar kagidi, dort tavan
+  ve bir hali PBR malzemesini; ayrica 3DTextures.me klasik CC0 duvar kaplamasini
+  1K mobil paketler olarak sunar. Malzeme menusu duvar varyantini ve ona eslesen
+  tavani degistirir; renk/normal/puruzluluk haritalari metre tabanli UV ile tekrar
+  eder ve arka planda yuklenirken sahneyi dondurmaz. Eskimis dolap, vintage bavul,
+  tasinabilir kasetcalar, vintage telsiz, eskimis ahsap koltuk, ofis not defterleri
+  ve guvenlik lambasi eklendi. Katalog 52 gercekci parcaya, cevrimdisi paket 80
+  USDZ'ye cikti. Yeni kaynaklar CC0 veya CC BY 4.0 lisanslidir.
+- 0.19.0: Ozel AR'a tek dokunuslu Backrooms kiti eklendi: sari yipranmis duvar,
+  koyu kirli hali, acik tavan ve `Backrooms Sari` sinematik filtresi birlikte
+  uygulanir. Tavana yerlestirilen yeni gercekci floresan 8000 lumen genis sicak
+  isikla baslar; dusuk poligonlu saydam huzmesi ve hedef izi LiDAR ortmesini korur.
+  Sanal duvar kapisi artik fiziksel arka plan derinligiyle yanlis reddedilmez,
+  cokgenin ic tarafinda olusur ve kanada dokununca animasyonlu acilip kapanir.
+  Uc yeni CC0 tablo ve Backrooms floresaniyla fotogercekci katalog 44 parcaya,
+  cevrimdisi paket 58 USDZ'ye cikti. Yeni ve onceki Ozel AR tablo/lamba USDZ'leri
+  iPhone RealityKit icin acik Y-up eksenine normalize edildi; yukleme sirasinda
+  her biri taninabilir prosedurel yedekle aninda gorunur.
 - 0.18.1: Ozel AR duvar ve tavanlari artik kendi sonlu, dunya koordinatina sabit
   collider'larinda tek dokunusla dekor kabul eder; fiziksel arka plani olcen LiDAR
   bu sanal yuzey secimini yanlislikla iptal etmez. Asili tablo ve modern tavan lambasi
@@ -69,7 +87,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik
   kaplamanin onunde kalir.
   Disaridan eklenen kok `Entity` hiyerarsili USDZ dosyalari da cihazda acilir;
-  yerel yukleme zaman asimi 25 saniyedir. Paketteki 54 cevrimdisi USDZ'nin ad,
+  yerel yukleme zaman asimi 25 saniyedir. Paketteki 58 cevrimdisi USDZ'nin ad,
   checksum, ZIP/USD sahne butunlugu ile uygulama ve IPA icine kopyalanmasi Codemagic
   tarafindan derlemeden once ve sonra dogrulanir; bu katalog PC baglantisi kullanmaz.
 - 0.17.13: RoomPlan taramasi biterken halen calisan ortak `ARSession` artik yeni
@@ -181,7 +199,8 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
-- Poly Haven kaynakli 1K PBR dokulu 40 fotogercekci CC0 USDZ dekor; mobilya,
+- 49 Poly Haven CC0 model, iki Poly Haven duvar kaplamasi ve bir 3DTextures.me
+  CC0 Backrooms kaplamasindan olusan 52 parcali gercekci 1K PBR katalog; mobilya,
   depolama, ekipman, duvar/tavan elemanlari, aydinlatma ve elektronik kategorileri
 - Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
@@ -196,25 +215,25 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   ucgen ve 8 MB dogrulama butcesi
 - Ayni oturumda yalniz son kullanilan sekiz fotogercekci modeli tutan LRU onbellek;
   aktif sahne nesnelerini bozmadan kullanilmayan kaynak klonlarini bellekten cikarma
-- Duvar kategorisindeki tugla ve ahsap kaplamalar tek dokunusla taranan duvarin
+- Duvar kategorisindeki tugla, ahsap ve Backrooms kaplamalar tek dokunusla taranan duvarin
   genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
   RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
   yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
   Kaplama duzlemi taranan duvarla aynidir; dokunma derinligi tum duvari one cekmez.
   Eski kayitli kaplamalar bu degisiklikle tasinmaz; hatali olanlar yeniden yerlestirilmelidir.
   On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
-  tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
+  tugla icin 1,5 m, ahsap icin 2 m, Backrooms icin 1,25 m tasarim karosu metre tabanli UV ile tekrar eder.
   Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.
   Duvar olcusu, poligon ve kesimler scene.json'a kaydedilir; eski moduler kaplama
   kayitlari degistirilmez. Yeni kaplama icin tamamlanmis, hizalanmis oda taramasi gerekir.
   Egri duvarlar desteklenmez; karmasik geometri butceyi asarsa kapali panel uretilmez.
-  Iki kaynak USDZ sablonu toplam 2,53 MiB, sablon basina 12 ucgendir; otomatik
+  Uc kaynak USDZ sablonu dusuk maliyetlidir; otomatik
   kaplama tek mesh/materyal ve en fazla 512 disbukey parca kullanir. Geometri sadece
   yerlestirme/yukleme sirasinda uretilir. LiDAR ve insan occlusion'i acik kalir;
   taramada bulunmayan bosluklar ve sensor kaynakli kesilmeler cihazda kontrol edilmelidir.
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Canli kamera ve sanal dekorlari birlikte etkileyen Dogal, Sinema, Teal & Orange,
-  Noir, Gerilim ve Ruya film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
+  Noir, Gerilim, Ruya ve Backrooms Sari film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
   ayarlari ReplayKit HEVC kaydina da islenir
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
@@ -328,7 +347,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
-   `Hazir 3B Nesne Kutuphanesi` icindeki 40 fotogercekci parcadan
+   `Hazir 3B Nesne Kutuphanesi` icindeki 52 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
    Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
@@ -444,14 +463,17 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde Poly Haven'dan alinmis 38 CC0 model ve fotografik dokularla
-uretilmis 2 duvar paneli olmak uzere 40 adet 1K PBR USDZ katalog varligi vardir.
+Bu surumde Poly Haven'dan alinmis 49 CC0 model, iki Poly Haven duvar paneli ve
+3DTextures.me kaynakli bir CC0 Backrooms paneli olmak uzere 52 adet 1K PBR katalog
+varligi vardir. Yasu'nun CC BY 4.0 Backrooms paketindeki dokuz duvar, dort tavan ve
+bir hali malzemesi Ozel AR tarafinda renderer sablonu olarak kullanilir.
 Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
 boyutlarina normalize edilir, sahne listesinde `genislik x yukseklik x derinlik`
 olarak gosterilir ve olculmus katalog modellerinin olcegi kilitlenir. Eski projeler icin
 Kenney Furniture Kit'ten 14 CC0 USDZ ve 4 hafif dekor kaynakta korunur.
 Kaynak/lisans `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` ve
-`CineAR/RoomAssets/LICENSE-KENNEY.txt`, tekrar uretim/dogrulama araclari `Tools/`
+`CineAR/RoomAssets/LICENSE-KENNEY.txt`, `CineAR/RoomAssets/LICENSE-BACKROOMS.txt`,
+tekrar uretim/dogrulama araclari `Tools/`
 altindadir. 1K doku siniri mobil bellek ve yukleme gecikmesini kontrol altinda tutar;
 2K/4K masaustu VFX paketi hedeflenmemistir. Eski opak oda tema renderer'i kaynakta deneysel
 olarak korunur; ana arayuzde onun yerine akici `Gercek` / `Beyaz Hatlar` gecisi vardir.
@@ -476,7 +498,8 @@ USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidi
 
 ### Ozel AR mimari varliklarini yeniden uretme
 
-Modern tavan lambasi ve asili sanat cercevesi Poly Haven'in resmi 1K native USD
+Modern tavan lambasi, Backrooms floresani, dort asili sanat cercevesi ve yedi yeni
+gercekci dekor Poly Haven'in resmi 1K native USD
 paketlerinden alinir. Indirilen ana sahne ve tum dokular API MD5 degerleriyle
 dogrulanir; OpenUSD olusturdugu USDZ'yi yeniden acmadan cikti kabul edilmez:
 
@@ -485,8 +508,17 @@ python3 -m pip install usd-core==26.8
 python3 Tools/package_polyhaven_usd_to_usdz.py --cache .asset-cache/polyhaven-usd --output CineAR/RoomAssets
 ```
 
-Her yeni mimari model icin 8 MiB kesin paket siniri vardir; bu iki varlik 1.9 MiB
-altinda kalir. Uygulama calisirken indirme yapmaz.
+Backrooms PBR sablonlari, resmi kaynak paketleri `.asset-cache/backrooms-materials`
+altindayken OpenUSD ve ImageMagick ile yeniden uretilebilir:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path '.tools-cache/usd-core').Path
+python Tools/generate_backrooms_material_assets.py --source .asset-cache/backrooms-materials --output CineAR/RoomAssets
+powershell -ExecutionPolicy Bypass -File Tools/update_asset_manifest.ps1
+```
+
+Her yeni mimari model icin 8 MiB kesin paket siniri vardir. Uygulama calisirken
+indirme yapmaz; tum modeller kaynakta ve uretilen uygulamada checksum ile dogrulanir.
 
 ### Otomatik duvar kaplama testleri
 
@@ -506,7 +538,7 @@ cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedi
 ### Cevrimdisi 3B katalog testi
 
 Hazir modeller uygulama paketinin icindedir ve PC ya da ag baglantisi kullanmaz.
-Kaynak katalog adlarini, 54 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
+Kaynak katalog adlarini, 80 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
 
 ```sh
 python3 Tools/test_bundled_assets.py --assets CineAR/RoomAssets --manifest CineAR/RoomAssets/MANIFEST.sha256 --prop-kind CineAR/PropKind.swift

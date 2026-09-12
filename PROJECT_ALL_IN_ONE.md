@@ -3,17 +3,17 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.18.1`
-- Proje build numarası: `53`
+- Uygulama sürümü: `0.20.0`
+- Proje build numarası: `55`
 - Git dalı: `main`
-- Kaynak commit: `03be1ac786d2cd6e0a0df922b0283d59a3d8d325`
-- Oluşturulma zamanı: `2026-09-12 15:37:54 +03:00`
+- Kaynak commit: `04376a5713daf5e24a1278b99c6a30f05e7ef8a2`
+- Oluşturulma zamanı: `2026-09-12 17:31:26 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
 ## Projenin amacı
 
-CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 40 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.
+CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 52 fotogerçekçi dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.
 
 ## Teknoloji ve ana yetenekler
 
@@ -28,8 +28,8 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
-- Poly Haven kaynaklı 1K PBR dokulu 40 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
-- PC/ağ gerektirmeyen toplam 54 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi
+- Poly Haven, 3DTextures.me ve Yasu kaynaklı mobil 1K PBR malzemeler; 52 parçalı fotogerçekçi katalog ve yüzey türüne göre yerleştirme
+- PC/ağ gerektirmeyen toplam 80 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi
 - Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi
 - 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi
 - Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı
@@ -66,7 +66,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 | `BundledRoomRealityAssetProvider` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |
 | `SceneProjectStore` | `scene.json`, `room.json`, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |
 | `ProfessionalRecorder` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |
-| `RealityTheme` / `PropKind` | Materyal tarifleri, oda rolleri, 40 fotogerçekçi dekor ve eski kayıt uyumluluğu |
+| `RealityTheme` / `PropKind` | Materyal tarifleri, oda rolleri, 52 fotogerçekçi dekor ve eski kayıt uyumluluğu |
 | `codemagic.yaml` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |
 
 ## Temel kullanıcı akışı
@@ -75,7 +75,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.
 3. Sonuç compact `room.json` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.
 4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.
-5. Kullanıcı kompakt dock'tan hızlı dekor, 40 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
+5. Kullanıcı kompakt dock'tan hızlı dekor, 52 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
 6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.
 7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.
 8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.
@@ -141,6 +141,20 @@ CineAR/LiveDepthOcclusionRenderer.swift
 CineAR/ProfessionalRecorder.swift
 CineAR/PropKind.swift
 CineAR/RealityTheme.swift
+CineAR/RoomAssets/backrooms_yasu_ceiling_01.usdz
+CineAR/RoomAssets/backrooms_yasu_ceiling_02.usdz
+CineAR/RoomAssets/backrooms_yasu_ceiling_03.usdz
+CineAR/RoomAssets/backrooms_yasu_ceiling_04.usdz
+CineAR/RoomAssets/backrooms_yasu_floor_01.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_01.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_02.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_03.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_04.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_05.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_06.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_07.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_08.usdz
+CineAR/RoomAssets/backrooms_yasu_wall_09.usdz
 CineAR/RoomAssets/Barrel_02.usdz
 CineAR/RoomAssets/bathroomSink.usdz
 CineAR/RoomAssets/bathtub.usdz
@@ -149,15 +163,19 @@ CineAR/RoomAssets/bookcaseClosedWide.usdz
 CineAR/RoomAssets/boombox.usdz
 CineAR/RoomAssets/caged_hanging_light.usdz
 CineAR/RoomAssets/cardboard_box_01.usdz
+CineAR/RoomAssets/cassette_player.usdz
 CineAR/RoomAssets/ceiling_fan.usdz
 CineAR/RoomAssets/chairModernCushion.usdz
 CineAR/RoomAssets/classic_laptop.usdz
 CineAR/RoomAssets/coffee_table_round_01.usdz
 CineAR/RoomAssets/desk_lamp_arm_01.usdz
 CineAR/RoomAssets/drawer_cabinet.usdz
+CineAR/RoomAssets/fancy_picture_frame_01.usdz
 CineAR/RoomAssets/hand_truck.usdz
 CineAR/RoomAssets/hanging_industrial_lamp.usdz
 CineAR/RoomAssets/hanging_picture_frame_01.usdz
+CineAR/RoomAssets/hanging_picture_frame_02.usdz
+CineAR/RoomAssets/hanging_picture_frame_03.usdz
 CineAR/RoomAssets/industrial_wall_lamp.usdz
 CineAR/RoomAssets/industrial_wall_sconce.usdz
 CineAR/RoomAssets/kitchenFridge.usdz
@@ -165,6 +183,7 @@ CineAR/RoomAssets/kitchenStove.usdz
 CineAR/RoomAssets/kitchenStoveElectric.usdz
 CineAR/RoomAssets/korean_fire_extinguisher_01.usdz
 CineAR/RoomAssets/korean_public_payphone_01.usdz
+CineAR/RoomAssets/LICENSE-BACKROOMS.txt
 CineAR/RoomAssets/LICENSE-KENNEY.txt
 CineAR/RoomAssets/LICENSE-POLYHAVEN.txt
 CineAR/RoomAssets/loungeDesignSofa.usdz
@@ -175,6 +194,10 @@ CineAR/RoomAssets/metal_trash_can.usdz
 CineAR/RoomAssets/modern_arm_chair_01.usdz
 CineAR/RoomAssets/modern_ceiling_lamp_01.usdz
 CineAR/RoomAssets/modern_wooden_cabinet.usdz
+CineAR/RoomAssets/mounted_fluorescent_lights.usdz
+CineAR/RoomAssets/office_notepads.usdz
+CineAR/RoomAssets/painted_wooden_cabinet_02.usdz
+CineAR/RoomAssets/painted_wooden_sofa.usdz
 CineAR/RoomAssets/plastic_crate_02.usdz
 CineAR/RoomAssets/plastic_monobloc_chair_01.usdz
 CineAR/RoomAssets/potted_plant_04.usdz
@@ -182,6 +205,7 @@ CineAR/RoomAssets/power_box_01.usdz
 CineAR/RoomAssets/SchoolChair_01.usdz
 CineAR/RoomAssets/SchoolDesk_01.usdz
 CineAR/RoomAssets/security_camera_01.usdz
+CineAR/RoomAssets/security_light.usdz
 CineAR/RoomAssets/sofa_02.usdz
 CineAR/RoomAssets/sofa_03.usdz
 CineAR/RoomAssets/stairs.usdz
@@ -190,7 +214,10 @@ CineAR/RoomAssets/table.usdz
 CineAR/RoomAssets/television_02.usdz
 CineAR/RoomAssets/televisionModern.usdz
 CineAR/RoomAssets/toilet.usdz
+CineAR/RoomAssets/vintage_radio_transceiver.usdz
+CineAR/RoomAssets/vintage_suitcase.usdz
 CineAR/RoomAssets/vintage_wooden_drawer_01.usdz
+CineAR/RoomAssets/wall_cladding_backrooms_001.usdz
 CineAR/RoomAssets/wall_cladding_brick.usdz
 CineAR/RoomAssets/wall_cladding_wood.usdz
 CineAR/RoomAssets/wall_clock.usdz
@@ -214,6 +241,7 @@ Tools/convert_polyhaven_to_usdz.py
 Tools/fetch_polyhaven_props.ps1
 Tools/fetch_wall_textures.ps1
 Tools/generate_all_in_one_markdown.ps1
+Tools/generate_backrooms_material_assets.py
 Tools/generate_wall_assets.py
 Tools/package_polyhaven_usd_to_usdz.py
 Tools/render_usdz_thumbnails.py
@@ -224,6 +252,7 @@ Tools/test_live_depth_geometry.swift
 Tools/test_privacy_plist.py
 Tools/test_spatial_validation.swift
 Tools/test_wall_cladding_geometry.swift
+Tools/update_asset_manifest.ps1
 Tools/validate_privacy_plist.py
 Tools/validate_usdz_assets.py
 ````
@@ -233,6 +262,20 @@ Tools/validate_usdz_assets.py
 | Dosya | Boyut (byte) | SHA-256 |
 | --- | ---: | --- |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/SynapMantis-AppIcon-1024.png` | 64466 | `f13b5ab4a1e73174546f2e1b5e8b0cdaf2e780653db4465d1bdb53d69acb2d20` |
+| `CineAR/RoomAssets/backrooms_yasu_ceiling_01.usdz` | 1796036 | `23ae2220337341653908a1f42e438fba3e00f04ed37cd6c43d103e25314af15f` |
+| `CineAR/RoomAssets/backrooms_yasu_ceiling_02.usdz` | 1817121 | `78040a7de31ae4bd7e6c9543735e30560aa02496adbef19f47d0ac47c2f90d4a` |
+| `CineAR/RoomAssets/backrooms_yasu_ceiling_03.usdz` | 416511 | `c1a91c0cd6505108baa6bf0dca904e4705d490a6d4721939166225b69bb110e6` |
+| `CineAR/RoomAssets/backrooms_yasu_ceiling_04.usdz` | 399051 | `8d75e9ee829d71feed92dfe9bc9832339e139782242bf55ed4317d08bbef3078` |
+| `CineAR/RoomAssets/backrooms_yasu_floor_01.usdz` | 865414 | `d937bdbb8208b8ba45b217e81093b95a405d3f7258007a1536ce43846c8487c1` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_01.usdz` | 360718 | `24793965828715012f13e78d05b2d537eb1f7f238f4b74cc7cae8a09c5343ee5` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_02.usdz` | 370180 | `d6be1c4dd86d9f10e912ee8072d18b0a2c5c7aecbd1140b59f4b24cf0dc632f4` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_03.usdz` | 371789 | `c430d64032a07376c414a80343e0ad74477986ab285f341418beb232a5e00062` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_04.usdz` | 378587 | `4717e5af7ef0231e346ac325f5bb708adca6650d1601b522b855d8acf3c9b354` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_05.usdz` | 358054 | `a1fe7fa2219f4c246ae3785c6136827429598ac5e42cb48afcb08b567afb2c40` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_06.usdz` | 341345 | `5faa5c871a91bdf709bb376d5ac235df828cf582c27eb2c12395d552215988bb` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_07.usdz` | 345257 | `986822109b19cd9779d1513a52c65bb25aa15d28a3c8db53d9694ea7223e12a9` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_08.usdz` | 338488 | `420ec200c3c28a1568ddfde761edf5fae7d73becf8c410c855e945ee9288eea9` |
+| `CineAR/RoomAssets/backrooms_yasu_wall_09.usdz` | 334294 | `474fdf3b15f28c15ada88df20a7f5d935f93195602b17fc1a95e5f83e7f4494c` |
 | `CineAR/RoomAssets/Barrel_02.usdz` | 537940 | `db44c3823a4313fcb39cc3363de427390b1126dbfccbaede42dfc4c62cc832fe` |
 | `CineAR/RoomAssets/bathroomSink.usdz` | 28447 | `2de87dbd39ec292d8575aaf526160310ac090659d6cba1fb0b9d7b231f0cc643` |
 | `CineAR/RoomAssets/bathtub.usdz` | 50915 | `3a24cebb0eac7b5dbf190958aeda8e3599b38a9d51c826cf349f703a2c44ce53` |
@@ -241,15 +284,19 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/boombox.usdz` | 3479128 | `23d131aee04991d1b89989b6d74e2e769b70aca2d1cdd17a990e768019310e0b` |
 | `CineAR/RoomAssets/caged_hanging_light.usdz` | 3952770 | `b4834b13750c18ee2ba3da62fe4392257f66d06330b47966b42c316d0e227025` |
 | `CineAR/RoomAssets/cardboard_box_01.usdz` | 2992902 | `f0968ac22285b3d7a9af0bfbe4576dc2f9074378dcfbbd2ec093064f9a5e48b0` |
+| `CineAR/RoomAssets/cassette_player.usdz` | 2032607 | `34baacc909e20784299888773bc497e811f7ca43980f5e68d7e50997f5066f01` |
 | `CineAR/RoomAssets/ceiling_fan.usdz` | 2535342 | `f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d` |
 | `CineAR/RoomAssets/chairModernCushion.usdz` | 10190 | `11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e` |
 | `CineAR/RoomAssets/classic_laptop.usdz` | 2745811 | `f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145` |
 | `CineAR/RoomAssets/coffee_table_round_01.usdz` | 1729283 | `d99f126b5a2af640d6ff40e9ce8c5da4b1bdc9cfea9bf6a94f0a620a7adcb0f8` |
 | `CineAR/RoomAssets/desk_lamp_arm_01.usdz` | 3902780 | `6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a` |
 | `CineAR/RoomAssets/drawer_cabinet.usdz` | 2219127 | `351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68` |
+| `CineAR/RoomAssets/fancy_picture_frame_01.usdz` | 4642509 | `6419e7cf694523fbed11258ccb39dcc4a883f7a6ac0dad05b166d115fa6c00a6` |
 | `CineAR/RoomAssets/hand_truck.usdz` | 3639690 | `fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486` |
 | `CineAR/RoomAssets/hanging_industrial_lamp.usdz` | 3604302 | `abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937` |
-| `CineAR/RoomAssets/hanging_picture_frame_01.usdz` | 1896408 | `43b901b41046e9fc969f18577fc905dd9298ba7a29340eb35f309719855d9a96` |
+| `CineAR/RoomAssets/hanging_picture_frame_01.usdz` | 1896914 | `2911ddd6c73e987e66f62655376501538d6c19e4d3fd8b286adccdfe57373033` |
+| `CineAR/RoomAssets/hanging_picture_frame_02.usdz` | 8372216 | `dc57c9272cf32a4fb7f78ebf91b9ccff291d039c16df733729b4cfaec6ceef18` |
+| `CineAR/RoomAssets/hanging_picture_frame_03.usdz` | 6058957 | `a5dac63f03979244a8fd91be8efcb96652f52b93216cd0f8cf3c492fe1541eb8` |
 | `CineAR/RoomAssets/industrial_wall_lamp.usdz` | 3955877 | `41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9` |
 | `CineAR/RoomAssets/industrial_wall_sconce.usdz` | 2264430 | `c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee` |
 | `CineAR/RoomAssets/kitchenFridge.usdz` | 24080 | `a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7` |
@@ -262,8 +309,12 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/metal_tool_chest.usdz` | 2896433 | `ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba` |
 | `CineAR/RoomAssets/metal_trash_can.usdz` | 5583572 | `d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871` |
 | `CineAR/RoomAssets/modern_arm_chair_01.usdz` | 3086703 | `9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c` |
-| `CineAR/RoomAssets/modern_ceiling_lamp_01.usdz` | 1545197 | `0a90110df54b6348403ee23c9fc43d4972cdf80890eede452262553e93cca210` |
+| `CineAR/RoomAssets/modern_ceiling_lamp_01.usdz` | 1545705 | `671a84a1bd13437de5585a9db2e1b70371b0db534df2be04cc942c1d5d53b461` |
 | `CineAR/RoomAssets/modern_wooden_cabinet.usdz` | 3599448 | `8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964` |
+| `CineAR/RoomAssets/mounted_fluorescent_lights.usdz` | 4628002 | `6f22c9b55f8694a7d4903f256318ab99b91efd41010b9e0f9cfb0329a0dadd63` |
+| `CineAR/RoomAssets/office_notepads.usdz` | 681456 | `3a8c0b44c264d5e655a1b6014dbd4ec158004e1899ec7879c82c9aee63cc5a74` |
+| `CineAR/RoomAssets/painted_wooden_cabinet_02.usdz` | 987695 | `93ac999464ba11fbcb6a7c33fed1dc7832b18ec3e33e10b0a38b12d108e26991` |
+| `CineAR/RoomAssets/painted_wooden_sofa.usdz` | 1283195 | `712c6ca6754787bc44a81775c36eb43ace482d7dcfc81502e097a2441d85a69a` |
 | `CineAR/RoomAssets/plastic_crate_02.usdz` | 2088182 | `c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9` |
 | `CineAR/RoomAssets/plastic_monobloc_chair_01.usdz` | 2086673 | `6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a` |
 | `CineAR/RoomAssets/potted_plant_04.usdz` | 2512941 | `22f20d0ddd99b10d3c96b97fd3cfabb4997d2991791a08ad9941a2f149afa34f` |
@@ -271,6 +322,7 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/SchoolChair_01.usdz` | 711033 | `738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6` |
 | `CineAR/RoomAssets/SchoolDesk_01.usdz` | 589809 | `b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596` |
 | `CineAR/RoomAssets/security_camera_01.usdz` | 2355175 | `ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a` |
+| `CineAR/RoomAssets/security_light.usdz` | 1513358 | `8d29d3c4a1ffa2fe540e064b1d8cc016616bbbbad3c8499a6060065bafe8d3bb` |
 | `CineAR/RoomAssets/sofa_02.usdz` | 548337 | `a0033e27a6e82cd725159e85066b8aa6539ef45c9acf96118231ca7793e46890` |
 | `CineAR/RoomAssets/sofa_03.usdz` | 1014368 | `63ca8d488b487ac6abc9f7589ebe464bf66f4c6de10b58298dfb855a845de2e8` |
 | `CineAR/RoomAssets/stairs.usdz` | 27638 | `683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b` |
@@ -279,7 +331,10 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/television_02.usdz` | 1332571 | `dc44f800926690dc281aed2f7fccb9340d70e253395c26ee59a80af3e097eaea` |
 | `CineAR/RoomAssets/televisionModern.usdz` | 8484 | `a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819` |
 | `CineAR/RoomAssets/toilet.usdz` | 22209 | `b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9` |
+| `CineAR/RoomAssets/vintage_radio_transceiver.usdz` | 4615206 | `58dc3cdde1509a4e1689428d4be78f93dcd50b99479e7597c20997b1ba323bff` |
+| `CineAR/RoomAssets/vintage_suitcase.usdz` | 3960891 | `a2c2941418109b5d35d9a23152fdc516eed4ee85115d170f220d0f69aa04ec43` |
 | `CineAR/RoomAssets/vintage_wooden_drawer_01.usdz` | 952403 | `e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe` |
+| `CineAR/RoomAssets/wall_cladding_backrooms_001.usdz` | 203926 | `113f45bb64393934b097a49dd6d24e0fac30a2e02709506315884780c15a434b` |
 | `CineAR/RoomAssets/wall_cladding_brick.usdz` | 1085268 | `120420d91647a5567356e933d10c02a41f5b151080b26e5eeeb94dbff23d2b6d` |
 | `CineAR/RoomAssets/wall_cladding_wood.usdz` | 1571074 | `55b869a26454816f1f0ddd71c7674fd2243c1cee22074f4d71012d3f48fa0001` |
 | `CineAR/RoomAssets/wall_clock.usdz` | 1702023 | `9b83332d0db22eab9b514ee5a727acad1d846545785f763c558786e5bc165767` |
@@ -309,51 +364,54 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 302 | 16574 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19590 |
-| `CineAR/ARSessionController.swift` | 7811 | 332467 |
+| `CineAR/ARSessionController.swift` | 7970 | 338897 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 228 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 180 | 6748 |
-| `CineAR/ContentView.swift` | 1777 | 76745 |
-| `CineAR/CustomARDesign.swift` | 578 | 23511 |
-| `CineAR/CustomARRenderer.swift` | 457 | 18081 |
+| `CineAR/ContentView.swift` | 1825 | 79141 |
+| `CineAR/CustomARDesign.swift` | 641 | 25668 |
+| `CineAR/CustomARRenderer.swift` | 750 | 30534 |
 | `CineAR/Info.plist` | 62 | 2253 |
 | `CineAR/LiveDepthGeometry.swift` | 95 | 4350 |
 | `CineAR/LiveDepthOcclusionRenderer.swift` | 217 | 11113 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
-| `CineAR/PropKind.swift` | 431 | 18219 |
+| `CineAR/PropKind.swift` | 496 | 22437 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
+| `CineAR/RoomAssets/LICENSE-BACKROOMS.txt` | 32 | 1330 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
-| `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 75 | 2431 |
-| `CineAR/RoomAssets/MANIFEST.sha256` | 55 | 4730 |
+| `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 87 | 2754 |
+| `CineAR/RoomAssets/MANIFEST.sha256` | 81 | 7255 |
 | `CineAR/RoomRealityRenderer.swift` | 2287 | 90626 |
 | `CineAR/RoomScanner.swift` | 999 | 38097 |
-| `CineAR/SceneProjectStore.swift` | 1244 | 50393 |
+| `CineAR/SceneProjectStore.swift` | 1265 | 51121 |
 | `CineAR/SpatialValidation.swift` | 191 | 9611 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
 | `codemagic.yaml` | 289 | 10742 |
 | `Docs/CODEMAGIC.md` | 123 | 6841 |
-| `Docs/DEVICE_TEST.md` | 426 | 30140 |
+| `Docs/DEVICE_TEST.md` | 442 | 31431 |
 | `Docs/ICON_PROMPT.md` | 25 | 1846 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 514 | 35283 |
+| `README.md` | 546 | 37521 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
 | `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
-| `Tools/generate_all_in_one_markdown.ps1` | 379 | 21516 |
+| `Tools/generate_all_in_one_markdown.ps1` | 379 | 21544 |
+| `Tools/generate_backrooms_material_assets.py` | 229 | 9307 |
 | `Tools/generate_wall_assets.py` | 81 | 3290 |
-| `Tools/package_polyhaven_usd_to_usdz.py` | 203 | 7651 |
+| `Tools/package_polyhaven_usd_to_usdz.py` | 312 | 12434 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/run_swift_regressions.py` | 47 | 2152 |
-| `Tools/test_bundled_assets.py` | 119 | 5022 |
-| `Tools/test_custom_ar_geometry.swift` | 164 | 7107 |
+| `Tools/test_bundled_assets.py` | 130 | 5551 |
+| `Tools/test_custom_ar_geometry.swift` | 187 | 8447 |
 | `Tools/test_live_depth_geometry.swift` | 76 | 3977 |
 | `Tools/test_privacy_plist.py` | 37 | 1416 |
 | `Tools/test_spatial_validation.swift` | 130 | 8367 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
+| `Tools/update_asset_manifest.ps1` | 21 | 799 |
 | `Tools/validate_privacy_plist.py` | 56 | 1953 |
 | `Tools/validate_usdz_assets.py` | 101 | 3573 |
 
@@ -1561,13 +1619,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 53;
+				CURRENT_PROJECT_VERSION = 55;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.18.1;
+				MARKETING_VERSION = 0.20.0;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1585,12 +1643,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 53;
+				CURRENT_PROJECT_VERSION = 55;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.18.1;
+				MARKETING_VERSION = 0.20.0;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -2340,6 +2398,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var renderedLights: [UUID: SpotLight] = [:]
     private var renderedLightEmitters: [UUID: ModelEntity] = [:]
+    private var renderedLightBeams: [UUID: ModelEntity] = [:]
     private var renderedLightFootprints: [UUID: AnchorEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
@@ -2619,6 +2678,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
+        renderedLightBeams.removeAll()
         renderedLightFootprints.removeAll()
         bloodWaterfallParticles.removeAll()
         loadingEntityIDs.removeAll()
@@ -4588,6 +4648,26 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    func applyCustomARBackroomsPreset() {
+        customARWallStyle = .backrooms
+        customARWallHeight = 2.55
+        customARWallThickness = 0.10
+        customARCeilingEnabled = true
+        selectFilmLook(.backrooms)
+        if activeCustomARAreaID != nil {
+            applyCustomARWallSettings()
+            setCustomARStatus(
+                "Backrooms kiti uygulandı: sarı duvar, kirli halı, açık tavan ve film filtresi",
+                color: .green
+            )
+        } else {
+            setCustomARStatus(
+                "Backrooms kiti hazır; şimdi zeminde alanın köşelerini çiz",
+                color: .blue
+            )
+        }
+    }
+
     func deleteActiveCustomARArea() {
         guard let id = activeCustomARAreaID else {
             setCustomARStatus("Silinecek özel AR alanı yok", color: .yellow)
@@ -4735,18 +4815,9 @@ final class ARSessionController: NSObject, ObservableObject {
             setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
             return
         }
-        if let frame = arView.session.currentFrame,
-           let depth = sceneDepthSample(frame: frame, in: arView, at: point) {
-            let cameraPosition = arView.cameraTransform.translation
-            let measuredDistance = simd_distance(cameraPosition, depth.worldPoint)
-            guard WallPlacementPolicy.persistentWallIsVisible(
-                measuredDistance: measuredDistance,
-                wallDistance: hit.distance
-            ) else {
-                setCustomARStatus("Duvarın önündeki gerçek nesne kapı noktasını kapatıyor", color: .yellow)
-                return
-            }
-        }
+        // This hit comes from the exact Custom AR wall collider. Comparing it with
+        // physical scene depth incorrectly rejected virtual walls whenever the
+        // scanned real wall/furniture sat in front of or behind the designed room.
         var designs = projectStore.project.effectiveCustomARDesigns
         guard let location = customARWallLocation(id: wallID, designs: designs) else {
             setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
@@ -5059,12 +5130,17 @@ final class ARSessionController: NSObject, ObservableObject {
             wallCladding = fitted.layout
         }
         let id = UUID()
+        let defaultLightSettings: VirtualLightSettings? = prop.emitsVirtualLight
+            ? ((prop == .backroomsFluorescentLight || activeFilmLook == .backrooms)
+                ? .backroomsFixture
+                : .defaultFixture)
+            : nil
         let placement = PlacementRecord(
             id: id,
             kind: prop,
             assetFileName: prop == .custom ? selectedAssetURL?.lastPathComponent : nil,
             transform: StoredTransform(defaultTransform(for: prop)),
-            lightSettings: prop.emitsVirtualLight ? .defaultFixture : nil,
+            lightSettings: defaultLightSettings,
             wallCladding: wallCladding
         )
         do {
@@ -6677,6 +6753,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
+        renderedLightBeams.removeAll()
         renderedLightFootprints.removeAll()
         selectedEntityID = nil
         selectedLightSettings = nil
@@ -6957,6 +7034,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
+        renderedLightBeams[id] = nil
         bloodWaterfallParticles[id] = nil
         if let footprint = renderedLightFootprints.removeValue(forKey: id) {
             footprint.scene?.removeAnchor(footprint)
@@ -7737,6 +7815,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
+        renderedLightBeams[id] = nil
         current.removeFromParent()
 
         entity.name = id.uuidString
@@ -7939,6 +8018,7 @@ final class ARSessionController: NSObject, ObservableObject {
         settings: VirtualLightSettings
     ) {
         renderedLights[id]?.removeFromParent()
+        renderedLightBeams[id] = nil
         let light = SpotLight()
         light.name = "cinear.virtual-light.\(id.uuidString)"
         light.shadow = SpotLightComponent.Shadow()
@@ -7957,7 +8037,12 @@ final class ARSessionController: NSObject, ObservableObject {
         var emitterMaterial = UnlitMaterial()
         emitterMaterial.color = .init(tint: .white)
         let emitter: ModelEntity
-        if prop == .cagedCeilingLight || prop == .lightPanel {
+        if prop == .backroomsFluorescentLight {
+            emitter = ModelEntity(
+                mesh: .generateBox(size: [0.78, 0.018, 0.48], cornerRadius: 0.009),
+                materials: [emitterMaterial]
+            )
+        } else if prop == .cagedCeilingLight || prop == .lightPanel {
             emitter = ModelEntity(
                 mesh: .generateBox(size: [0.58, 0.018, 0.07], cornerRadius: 0.009),
                 materials: [emitterMaterial]
@@ -7971,7 +8056,44 @@ final class ARSessionController: NSObject, ObservableObject {
         emitter.name = "cinear.virtual-light.emitter"
         light.addChild(emitter)
         renderedLightEmitters[id] = emitter
+
+        var beamMaterial = UnlitMaterial()
+        beamMaterial.color = .init(tint: .white)
+        beamMaterial.blending = .transparent(opacity: .init(floatLiteral: 0.035))
+        if let beam = makeVisibleLightBeam(id: id, material: beamMaterial) {
+            light.addChild(beam)
+            renderedLightBeams[id] = beam
+        }
         apply(settings: settings, to: light, prop: prop)
+    }
+
+    private func makeVisibleLightBeam(
+        id: UUID,
+        material: UnlitMaterial
+    ) -> ModelEntity? {
+        let segments = 24
+        var positions: [SIMD3<Float>] = [.zero]
+        positions.reserveCapacity(segments + 1)
+        for segment in 0..<segments {
+            let angle = Float(segment) / Float(segments) * 2 * .pi
+            positions.append([cos(angle), sin(angle), -1])
+        }
+        var indices: [UInt32] = []
+        indices.reserveCapacity(segments * 6)
+        for segment in 0..<segments {
+            let current = UInt32(segment + 1)
+            let next = UInt32((segment + 1) % segments + 1)
+            // Both windings keep the volumetric shell visible when the iPhone is
+            // outside the cone or standing inside the broad Backrooms spill.
+            indices.append(contentsOf: [0, current, next, 0, next, current])
+        }
+        var descriptor = MeshDescriptor(name: "cinear.projector.beam.mesh")
+        descriptor.positions = MeshBuffers.Positions(positions)
+        descriptor.primitives = .triangles(indices)
+        guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
+        let beam = ModelEntity(mesh: mesh, materials: [material])
+        beam.name = "cinear.projector.beam.\(id.uuidString)"
+        return beam
     }
 
     private func apply(settings: VirtualLightSettings, to light: SpotLight, prop: PropKind) {
@@ -8035,8 +8157,57 @@ final class ARSessionController: NSObject, ObservableObject {
                 model.materials = [material]
                 emitter.components.set(model)
             }
+            updateVisibleLightBeam(
+                id: id,
+                settings: settings,
+                prop: prop,
+                light: light
+            )
         }
         refreshProjectorFootprint(id: entityID(for: light), settings: settings)
+    }
+
+    private func updateVisibleLightBeam(
+        id: UUID,
+        settings: VirtualLightSettings,
+        prop: PropKind,
+        light: SpotLight
+    ) {
+        guard let beam = renderedLightBeams[id] else { return }
+        let isVisible = settings.isEnabled && settings.intensityLumens > 50
+        beam.isEnabled = isVisible
+        guard isVisible else { return }
+
+        let defaultLength: Float
+        switch prop.placementSurface {
+        case .ceiling: defaultLength = 2.20
+        case .wall: defaultLength = 1.55
+        case .floor, .horizontal: defaultLength = 1.20
+        }
+        var length = defaultLength
+        if let target = settings.projectorTarget, light.scene != nil {
+            let matrix = light.transformMatrix(relativeTo: nil)
+            let origin = SIMD3<Float>(matrix.columns.3.x, matrix.columns.3.y, matrix.columns.3.z)
+            let measured = simd_distance(origin, target)
+            if measured.isFinite { length = min(max(measured, 0.35), 4.0) }
+        }
+        let halfAngle = min(settings.coneAngleDegrees, 84) * .pi / 360
+        let radius = min(max(tan(halfAngle) * length, 0.07), 3.0)
+        beam.scale = [radius, radius, length]
+        beam.position = .zero
+
+        let normalizedIntensity = min(max(settings.intensityLumens / 12_000, 0), 1)
+        let opacity = min(
+            0.09,
+            0.018 + normalizedIntensity * 0.045 + settings.effectiveBeamSoftness * 0.012
+        )
+        var material = UnlitMaterial()
+        material.color = .init(tint: Self.colorTemperature(kelvin: settings.temperatureKelvin))
+        material.blending = .transparent(opacity: .init(floatLiteral: opacity))
+        if var model = beam.components[ModelComponent.self] {
+            model.materials = [material]
+            beam.components.set(model)
+        }
     }
 
     private func refreshProjectorLights() {
@@ -8149,7 +8320,10 @@ final class ARSessionController: NSObject, ObservableObject {
                     * (0.38 + edgeWeight * (0.78 - settings.effectiveBeamSoftness * 0.24)))
             )
             var material = UnlitMaterial()
-            material.color = .init(tint: color.withAlphaComponent(alpha))
+            material.color = .init(tint: color)
+            material.blending = .transparent(
+                opacity: .init(floatLiteral: Float(alpha))
+            )
             if var model = disc.components[ModelComponent.self] {
                 model.materials = [material]
                 disc.components.set(model)
@@ -8363,11 +8537,15 @@ final class ARSessionController: NSObject, ObservableObject {
             max(dimensions.y, 0.04),
             max(dimensions.z, 0.04)
         )
-        if prop == .hangingPictureFrame {
+        if [.hangingPictureFrame, .distressedPictureFrame, .antiqueLandscapeFrame,
+            .ovalVintageFrame].contains(prop) {
             return makePictureFrameLoadingProxy(dimensions: safeDimensions)
         }
         if prop == .modernCeilingLamp {
             return makeCeilingLampLoadingProxy(dimensions: safeDimensions)
+        }
+        if prop == .backroomsFluorescentLight {
+            return makeFluorescentLoadingProxy(dimensions: safeDimensions)
         }
         let mesh = MeshResource.generateBox(
             size: safeDimensions,
@@ -8477,6 +8655,45 @@ final class ARSessionController: NSObject, ObservableObject {
         root.addChild(shade)
         root.addChild(bulb)
         root.name = "cinear.loading-proxy.\(PropKind.modernCeilingLamp.rawValue)"
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: dimensions)]
+        )
+        return root
+    }
+
+    private func makeFluorescentLoadingProxy(
+        dimensions: SIMD3<Float>
+    ) -> ModelEntity {
+        let housingMaterial = SimpleMaterial(
+            color: UIColor(red: 0.68, green: 0.67, blue: 0.58, alpha: 1),
+            roughness: 0.76,
+            isMetallic: false
+        )
+        var tubeMaterial = UnlitMaterial()
+        tubeMaterial.color = .init(
+            tint: UIColor(red: 1.0, green: 0.91, blue: 0.55, alpha: 1)
+        )
+        let root = ModelEntity(
+            mesh: .generateBox(
+                size: [dimensions.x, max(dimensions.y * 0.48, 0.018), dimensions.z],
+                cornerRadius: 0.012
+            ),
+            materials: [housingMaterial]
+        )
+        let tubeSize = SIMD3<Float>(
+            dimensions.x * 0.86,
+            max(dimensions.y * 0.24, 0.012),
+            max(dimensions.z * 0.055, 0.018)
+        )
+        for zOffset in [-dimensions.z * 0.24, dimensions.z * 0.24] {
+            let tube = ModelEntity(
+                mesh: .generateBox(size: tubeSize, cornerRadius: tubeSize.z * 0.48),
+                materials: [tubeMaterial]
+            )
+            tube.position = [0, -dimensions.y * 0.32, zOffset]
+            root.addChild(tube)
+        }
+        root.name = "cinear.loading-proxy.\(PropKind.backroomsFluorescentLight.rawValue)"
         root.collision = CollisionComponent(
             shapes: [ShapeResource.generateBox(size: dimensions)]
         )
@@ -10725,6 +10942,19 @@ struct ContentView: View {
             .opacity(tint.alpha)
             .blendMode(.softLight)
 
+            if session.activeFilmLook == .backrooms {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.96, green: 0.80, blue: 0.20).opacity(0.12),
+                        Color.clear,
+                        Color(red: 0.50, green: 0.37, blue: 0.05).opacity(0.10)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .blendMode(.softLight)
+            }
+
             RadialGradient(
                 colors: [
                     Color.clear,
@@ -11559,6 +11789,35 @@ struct ContentView: View {
                     .disabled(session.customARAreas.count >= 8)
                 }
 
+                Section("Backrooms Kiti") {
+                    Button {
+                        session.applyCustomARBackroomsPreset()
+                    } label: {
+                        Label("Backrooms Görünümünü Uygula", systemImage: "lightbulb.max.fill")
+                    }
+                    Text(
+                        "Dokuz Yasu duvarı ve klasik CC0 duvar seçeneği; 1K PBR kirli halı, "
+                            + "dört tavan eşleşmesi, sıcak floresan ışık ve sinematik sarı filtre."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    Button {
+                        session.beginCustomARDoorPlacement()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("Açılır Kapı Ekle", systemImage: "door.left.hand.open")
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+
+                    Text(
+                        "Yeni gerçekçi set: eskimiş dolap, bavul, kasetçalar, telsiz, ahşap koltuk, "
+                            + "not defterleri, güvenlik lambası ve Backrooms duvar kaplaması."
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                }
+
                 Section("Özel AR Varlık Seti") {
                     Text(
                         session.activeCustomARAreaID == nil
@@ -11581,7 +11840,13 @@ struct ContentView: View {
                                 VStack(spacing: 5) {
                                     HStack(spacing: 6) {
                                         Text(prop.symbol).font(.title2)
-                                        if prop == .modernCeilingLamp || prop == .hangingPictureFrame {
+                                        if [.modernCeilingLamp, .hangingPictureFrame,
+                                            .backroomsFluorescentLight, .distressedPictureFrame,
+                                            .antiqueLandscapeFrame, .ovalVintageFrame,
+                                            .distressedCabinet, .vintageSuitcase,
+                                            .portableCassettePlayer, .vintageRadioTransceiver,
+                                            .paintedWoodenSofa, .officeNotepads, .securityLight,
+                                            .backroomsWallCladding].contains(prop) {
                                             Text("YENİ")
                                                 .font(.caption2.weight(.black))
                                                 .foregroundStyle(.green)
@@ -11611,7 +11876,7 @@ struct ContentView: View {
                             Text(style.title).tag(style)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
 
                     customARSlider(
                         title: "Duvar / tavan yüksekliği",
@@ -12376,6 +12641,16 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
     case studioWhite
     case concrete
     case brick
+    case backrooms
+    case backrooms02
+    case backrooms03
+    case backrooms04
+    case backrooms05
+    case backrooms06
+    case backrooms07
+    case backrooms08
+    case backrooms09
+    case backroomsClassic
 
     var id: String { rawValue }
 
@@ -12384,6 +12659,54 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .studioWhite: "Stüdyo Beyazı"
         case .concrete: "Beton"
         case .brick: "Tuğla"
+        case .backrooms: "Backrooms Yasu 01"
+        case .backrooms02: "Backrooms Yasu 02"
+        case .backrooms03: "Backrooms Yasu 03"
+        case .backrooms04: "Backrooms Yasu 04"
+        case .backrooms05: "Backrooms Yasu 05"
+        case .backrooms06: "Backrooms Yasu 06"
+        case .backrooms07: "Backrooms Yasu 07"
+        case .backrooms08: "Backrooms Yasu 08"
+        case .backrooms09: "Backrooms Yasu 09"
+        case .backroomsClassic: "Backrooms Klasik CC0"
+        }
+    }
+
+    var isBackrooms: Bool {
+        switch self {
+        case .studioWhite, .concrete, .brick: false
+        default: true
+        }
+    }
+
+    var backroomsWallpaperAssetName: String? {
+        switch self {
+        case .backrooms: "backrooms_yasu_wall_01"
+        case .backrooms02: "backrooms_yasu_wall_02"
+        case .backrooms03: "backrooms_yasu_wall_03"
+        case .backrooms04: "backrooms_yasu_wall_04"
+        case .backrooms05: "backrooms_yasu_wall_05"
+        case .backrooms06: "backrooms_yasu_wall_06"
+        case .backrooms07: "backrooms_yasu_wall_07"
+        case .backrooms08: "backrooms_yasu_wall_08"
+        case .backrooms09: "backrooms_yasu_wall_09"
+        case .backroomsClassic: "wall_cladding_backrooms_001"
+        case .studioWhite, .concrete, .brick: nil
+        }
+    }
+
+    var backroomsCeilingAssetName: String? {
+        switch self {
+        case .backrooms, .backrooms05, .backrooms09, .backroomsClassic:
+            "backrooms_yasu_ceiling_01"
+        case .backrooms02, .backrooms06:
+            "backrooms_yasu_ceiling_02"
+        case .backrooms03, .backrooms07:
+            "backrooms_yasu_ceiling_03"
+        case .backrooms04, .backrooms08:
+            "backrooms_yasu_ceiling_04"
+        case .studioWhite, .concrete, .brick:
+            nil
         }
     }
 }
@@ -12673,6 +12996,11 @@ enum CustomARGeometry {
         return doubledSignedArea > 0 ? -1 : 1
     }
 
+    static func inwardDoorOpenAngle(interiorSide: Float) -> Float {
+        let side: Float = interiorSide >= 0 ? 1 : -1
+        return -.pi * 0.52 * side
+    }
+
     static func makeDesign(
         id: UUID = UUID(),
         name: String,
@@ -12930,6 +13258,7 @@ enum CustomARGeometry {
 ## `CineAR/CustomARRenderer.swift`
 
 ````swift
+import Combine
 import RealityKit
 import UIKit
 import simd
@@ -12948,6 +13277,9 @@ final class CustomARRenderer {
     private var contentEntity = Entity()
     private var draftEntity = Entity()
     private weak var installedARView: ARView?
+    private var bundledMaterialCache: [String: any Material] = [:]
+    private var bundledMaterialLoads: [String: AnyCancellable] = [:]
+    private var lastRenderedDesigns: [CustomARDesignRecord] = []
 
     init() {
         configureRoot()
@@ -12984,6 +13316,7 @@ final class CustomARRenderer {
     }
 
     func clear() {
+        lastRenderedDesigns = []
         contentEntity.removeFromParent()
         draftEntity.removeFromParent()
         contentEntity = Entity()
@@ -13002,11 +13335,16 @@ final class CustomARRenderer {
     }
 
     func render(_ designs: [CustomARDesignRecord]) {
+        lastRenderedDesigns = designs
         let staging = Entity()
         staging.name = "synapmantis.custom-ar.content"
         for design in designs where design.isValid {
             let designRoot = Entity()
             designRoot.name = "synapmantis.custom-ar.area.\(design.id.uuidString)"
+            if design.walls.first?.style.isBackrooms == true,
+               let floorEntity = makeBackroomsFloor(for: design) {
+                designRoot.addChild(floorEntity)
+            }
             for (index, wall) in design.walls.enumerated() {
                 if let wallEntity = makeWall(
                     wall,
@@ -13070,9 +13408,12 @@ final class CustomARRenderer {
 
     func setDoor(id: UUID, isOpen: Bool, animated: Bool) {
         guard let hinge = rootEntity.findEntity(named: Self.doorPrefix + id.uuidString) else { return }
+        let interiorSide: Float = hinge.position.z >= 0 ? 1 : -1
         var target = hinge.transform
         target.rotation = simd_quatf(
-            angle: isOpen ? -.pi * 0.52 : 0,
+            angle: isOpen
+                ? CustomARGeometry.inwardDoorOpenAngle(interiorSide: interiorSide)
+                : 0,
             axis: [0, 1, 0]
         )
         if animated, let parent = hinge.parent {
@@ -13181,7 +13522,12 @@ final class CustomARRenderer {
                 )
             }
             addDoor(
-                door, openingStart: openingStart, wallThickness: wall.thickness, to: root
+                door,
+                openingStart: openingStart,
+                wallThickness: wall.thickness,
+                interiorSide: floorShadowSide ?? 1,
+                wallStyle: wall.style,
+                to: root
             )
             cursor = openingEnd
         }
@@ -13248,12 +13594,12 @@ final class CustomARRenderer {
         height: Float,
         depth: Float,
         center: SIMD3<Float>,
-        material: SimpleMaterial
+        material: any Material
     ) {
         guard width > 0.01, height > 0.01, depth > 0.01 else { return }
         let size = SIMD3<Float>(width, height, depth)
         let box = ModelEntity(
-            mesh: .generateBox(size: size, cornerRadius: min(depth * 0.08, 0.008)),
+            mesh: makeWallBoxMesh(size: size) ?? .generateBox(size: size),
             materials: [material]
         )
         box.name = "synapmantis.custom-ar.wall.segment"
@@ -13266,23 +13612,65 @@ final class CustomARRenderer {
         _ door: CustomARDoorRecord,
         openingStart: Float,
         wallThickness: Float,
+        interiorSide: Float,
+        wallStyle: CustomARWallStyle,
         to parent: Entity
     ) {
+        let frameColor = wallStyle.isBackrooms
+            ? UIColor(red: 0.28, green: 0.22, blue: 0.10, alpha: 1)
+            : UIColor(red: 0.095, green: 0.06, blue: 0.038, alpha: 1)
+        let frameMaterial = SimpleMaterial(
+            color: frameColor,
+            roughness: 0.62,
+            isMetallic: false
+        )
+        let frameWidth: Float = 0.065
+        let frameDepth: Float = 0.035
+        let frameZ = interiorSide * (wallThickness * 0.5 + frameDepth * 0.5)
+        for x in [openingStart, openingStart + door.width] {
+            let jamb = ModelEntity(
+                mesh: .generateBox(
+                    size: [frameWidth, door.height + frameWidth, frameDepth],
+                    cornerRadius: 0.006
+                ),
+                materials: [frameMaterial]
+            )
+            jamb.name = "synapmantis.custom-ar.door.frame"
+            jamb.position = [x, door.height * 0.5, frameZ]
+            parent.addChild(jamb)
+        }
+        let header = ModelEntity(
+            mesh: .generateBox(
+                size: [door.width + frameWidth * 2, frameWidth, frameDepth],
+                cornerRadius: 0.006
+            ),
+            materials: [frameMaterial]
+        )
+        header.name = "synapmantis.custom-ar.door.frame"
+        header.position = [openingStart + door.width * 0.5, door.height, frameZ]
+        parent.addChild(header)
+
         let hinge = Entity()
         hinge.name = Self.doorPrefix + door.id.uuidString
-        hinge.position = [openingStart, 0, wallThickness * 0.54]
+        hinge.position = [openingStart, 0, interiorSide * wallThickness * 0.54]
         hinge.orientation = simd_quatf(
-            angle: door.isOpen ? -.pi * 0.52 : 0,
+            angle: door.isOpen
+                ? CustomARGeometry.inwardDoorOpenAngle(interiorSide: interiorSide)
+                : 0,
             axis: [0, 1, 0]
         )
         let panelSize = SIMD3<Float>(door.width, door.height, max(0.035, wallThickness * 0.45))
+        let panelColor = wallStyle.isBackrooms
+            ? UIColor(red: 0.43, green: 0.34, blue: 0.16, alpha: 1)
+            : UIColor(red: 0.16, green: 0.11, blue: 0.075, alpha: 1)
+        let panelMaterial = SimpleMaterial(
+            color: panelColor,
+            roughness: 0.72,
+            isMetallic: false
+        )
         let panel = ModelEntity(
             mesh: .generateBox(size: panelSize, cornerRadius: 0.012),
-            materials: [SimpleMaterial(
-                color: UIColor(red: 0.16, green: 0.11, blue: 0.075, alpha: 1),
-                roughness: 0.72,
-                isMetallic: false
-            )]
+            materials: [panelMaterial]
         )
         panel.name = "synapmantis.custom-ar.door.panel"
         panel.position = [door.width * 0.5, door.height * 0.5, 0]
@@ -13294,9 +13682,72 @@ final class CustomARRenderer {
             materials: [SimpleMaterial(color: .lightGray, roughness: 0.22, isMetallic: true)]
         )
         handle.name = "synapmantis.custom-ar.door.handle"
-        handle.position = [door.width * 0.82, door.height * 0.52, panelSize.z * 0.58]
+        handle.position = [
+            door.width * 0.32,
+            door.height * 0.02,
+            interiorSide * panelSize.z * 0.58
+        ]
         panel.addChild(handle)
+
+        // Shallow raised panels make the built-in door read as an actual asset
+        // without another texture decode or a large mesh cost.
+        let trimColor = wallStyle.isBackrooms
+            ? UIColor(red: 0.37, green: 0.29, blue: 0.13, alpha: 1)
+            : UIColor(red: 0.12, green: 0.075, blue: 0.045, alpha: 1)
+        let trimMaterial = SimpleMaterial(
+            color: trimColor,
+            roughness: 0.66,
+            isMetallic: false
+        )
+        for centerY in [door.height * 0.30, door.height * 0.70] {
+            let inset = ModelEntity(
+                mesh: .generateBox(
+                    size: [door.width * 0.66, door.height * 0.29, 0.012],
+                    cornerRadius: 0.008
+                ),
+                materials: [trimMaterial]
+            )
+            inset.name = "synapmantis.custom-ar.door.detail"
+            inset.position = [
+                0,
+                centerY - door.height * 0.5,
+                interiorSide * (panelSize.z * 0.5 + 0.006)
+            ]
+            panel.addChild(inset)
+        }
         parent.addChild(hinge)
+    }
+
+    private func makeBackroomsFloor(for design: CustomARDesignRecord) -> ModelEntity? {
+        let points = design.boundary.map { $0.simd + design.normal * 0.004 }
+        let indices = CustomARGeometry.triangulatedIndices(for: points, normal: design.normal)
+        guard indices.count >= 3 else { return nil }
+
+        var descriptor = MeshDescriptor(name: "synapmantis.custom-ar.backrooms.floor.mesh")
+        descriptor.positions = MeshBuffers.Positions(points)
+        descriptor.normals = MeshBuffers.Normals(
+            Array(repeating: design.normal, count: points.count)
+        )
+        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(
+            planarTextureCoordinates(
+                for: points,
+                normal: design.normal,
+                tileMeters: 1.50
+            )
+        )
+        descriptor.primitives = .triangles(indices)
+        guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
+        let fallback = SimpleMaterial(
+            color: UIColor(red: 0.29, green: 0.28, blue: 0.17, alpha: 1),
+            roughness: 0.98,
+            isMetallic: false
+        )
+        let material = bundledMaterial(named: "backrooms_yasu_floor_01", fallback: fallback)
+        let floor = ModelEntity(mesh: mesh, materials: [material])
+        floor.name = "synapmantis.custom-ar.backrooms.floor"
+        // Intentionally no collision: the carpet must not steal taps from doors or
+        // from ARKit's physical placement surface underneath it.
+        return floor
     }
 
     private func makeCeiling(
@@ -13322,9 +13773,16 @@ final class CustomARRenderer {
         descriptor.normals = MeshBuffers.Normals(
             Array(repeating: -design.normal, count: basePoints.count)
         )
+        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(
+            planarTextureCoordinates(
+                for: basePoints,
+                normal: design.normal,
+                tileMeters: 1.20
+            )
+        )
         descriptor.primitives = .triangles(undersideIndices)
         guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
-        let entity = ModelEntity(mesh: mesh, materials: [wallMaterial(ceiling.style)])
+        let entity = ModelEntity(mesh: mesh, materials: [ceilingMaterial(ceiling.style)])
         entity.name = Self.ceilingPrefix + design.id.uuidString
 
         var collisionShapes: [ShapeResource] = []
@@ -13341,7 +13799,7 @@ final class CustomARRenderer {
         return entity
     }
 
-    private func wallMaterial(_ style: CustomARWallStyle) -> SimpleMaterial {
+    private func wallMaterial(_ style: CustomARWallStyle) -> any Material {
         switch style {
         case .studioWhite:
             SimpleMaterial(color: UIColor(white: 0.93, alpha: 1), roughness: 0.78, isMetallic: false)
@@ -13353,7 +13811,170 @@ final class CustomARRenderer {
                 roughness: 0.91,
                 isMetallic: false
             )
+        default:
+            let fallback = SimpleMaterial(
+                color: UIColor(red: 0.57, green: 0.50, blue: 0.25, alpha: 1),
+                roughness: 0.96,
+                isMetallic: false
+            )
+            guard let assetName = style.backroomsWallpaperAssetName else { return fallback }
+            return bundledMaterial(named: assetName, fallback: fallback)
         }
+    }
+
+    private func ceilingMaterial(_ style: CustomARWallStyle) -> any Material {
+        guard style.isBackrooms else { return wallMaterial(style) }
+        let fallback = SimpleMaterial(
+            color: UIColor(red: 0.72, green: 0.69, blue: 0.52, alpha: 1),
+            roughness: 0.95,
+            isMetallic: false
+        )
+        guard let assetName = style.backroomsCeilingAssetName else { return fallback }
+        return bundledMaterial(named: assetName, fallback: fallback)
+    }
+
+    private func planarTextureCoordinates(
+        for points: [SIMD3<Float>],
+        normal: SIMD3<Float>,
+        tileMeters: Float
+    ) -> [SIMD2<Float>] {
+        guard let origin = points.first, points.count > 1, tileMeters > 0 else {
+            return Array(repeating: .zero, count: points.count)
+        }
+        var tangent = points[1] - origin
+        tangent -= normal * simd_dot(tangent, normal)
+        if simd_length_squared(tangent) < 0.000_001 {
+            tangent = abs(normal.y) < 0.9
+                ? simd_cross(normal, SIMD3<Float>(0, 1, 0))
+                : simd_cross(normal, SIMD3<Float>(1, 0, 0))
+        }
+        tangent = simd_normalize(tangent)
+        let bitangent = simd_normalize(simd_cross(normal, tangent))
+        return points.map {
+            let offset = $0 - origin
+            return [simd_dot(offset, tangent) / tileMeters,
+                    simd_dot(offset, bitangent) / tileMeters]
+        }
+    }
+
+    private func makeWallBoxMesh(size: SIMD3<Float>) -> MeshResource? {
+        let half = size * 0.5
+        var positions: [SIMD3<Float>] = []
+        var normals: [SIMD3<Float>] = []
+        var coordinates: [SIMD2<Float>] = []
+        var indices: [UInt32] = []
+
+        func appendFace(
+            _ corners: [SIMD3<Float>],
+            normal: SIMD3<Float>,
+            uv: [SIMD2<Float>]
+        ) {
+            let start = UInt32(positions.count)
+            positions.append(contentsOf: corners)
+            normals.append(contentsOf: Array(repeating: normal, count: 4))
+            coordinates.append(contentsOf: uv)
+            indices.append(contentsOf: [start, start + 1, start + 2, start, start + 2, start + 3])
+        }
+
+        let x = size.x / 1.25
+        let y = size.y / 1.25
+        let z = size.z / 1.25
+        appendFace(
+            [[-half.x, -half.y, half.z], [half.x, -half.y, half.z],
+             [half.x, half.y, half.z], [-half.x, half.y, half.z]],
+            normal: [0, 0, 1], uv: [[0, 0], [x, 0], [x, y], [0, y]]
+        )
+        appendFace(
+            [[half.x, -half.y, -half.z], [-half.x, -half.y, -half.z],
+             [-half.x, half.y, -half.z], [half.x, half.y, -half.z]],
+            normal: [0, 0, -1], uv: [[0, 0], [x, 0], [x, y], [0, y]]
+        )
+        appendFace(
+            [[-half.x, -half.y, -half.z], [-half.x, -half.y, half.z],
+             [-half.x, half.y, half.z], [-half.x, half.y, -half.z]],
+            normal: [-1, 0, 0], uv: [[0, 0], [z, 0], [z, y], [0, y]]
+        )
+        appendFace(
+            [[half.x, -half.y, half.z], [half.x, -half.y, -half.z],
+             [half.x, half.y, -half.z], [half.x, half.y, half.z]],
+            normal: [1, 0, 0], uv: [[0, 0], [z, 0], [z, y], [0, y]]
+        )
+        appendFace(
+            [[-half.x, half.y, half.z], [half.x, half.y, half.z],
+             [half.x, half.y, -half.z], [-half.x, half.y, -half.z]],
+            normal: [0, 1, 0], uv: [[0, 0], [x, 0], [x, z], [0, z]]
+        )
+        appendFace(
+            [[-half.x, -half.y, -half.z], [half.x, -half.y, -half.z],
+             [half.x, -half.y, half.z], [-half.x, -half.y, half.z]],
+            normal: [0, -1, 0], uv: [[0, 0], [x, 0], [x, z], [0, z]]
+        )
+
+        var descriptor = MeshDescriptor(name: "synapmantis.custom-ar.wall.box")
+        descriptor.positions = MeshBuffers.Positions(positions)
+        descriptor.normals = MeshBuffers.Normals(normals)
+        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(coordinates)
+        descriptor.primitives = .triangles(indices)
+        return try? MeshResource.generate(from: [descriptor])
+    }
+
+    private func bundledMaterial(
+        named assetName: String,
+        fallback: SimpleMaterial
+    ) -> any Material {
+        if let cached = bundledMaterialCache[assetName] { return cached }
+        guard bundledMaterialLoads[assetName] == nil,
+              let url = bundledAssetURL(named: assetName) else {
+            return fallback
+        }
+        bundledMaterialLoads[assetName] = Entity.loadAsync(contentsOf: url)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    guard let self else { return }
+                    self.bundledMaterialLoads.removeValue(forKey: assetName)
+                    if case .failure = completion {
+                        // Cache the lightweight fallback for this session so a bad
+                        // package can never create a repeated load/render loop.
+                        self.bundledMaterialCache[assetName] = fallback
+                    }
+                },
+                receiveValue: { [weak self] source in
+                    guard let self else { return }
+                    self.bundledMaterialCache[assetName] =
+                        self.firstMaterial(in: source) ?? fallback
+                    // The initial frame used the fallback. Replace it atomically as
+                    // soon as the PBR material is decoded off the render path.
+                    self.render(self.lastRenderedDesigns)
+                }
+            )
+        return fallback
+    }
+
+    private func bundledAssetURL(named assetName: String) -> URL? {
+        if let url = Bundle.main.url(
+            forResource: assetName,
+            withExtension: "usdz",
+            subdirectory: "RoomAssets"
+        ) ?? Bundle.main.url(forResource: assetName, withExtension: "usdz") {
+            return url
+        }
+        guard let resourceURL = Bundle.main.resourceURL else { return nil }
+        let explicitURL = resourceURL
+            .appendingPathComponent("RoomAssets", isDirectory: true)
+            .appendingPathComponent(assetName)
+            .appendingPathExtension("usdz")
+        return FileManager.default.fileExists(atPath: explicitURL.path) ? explicitURL : nil
+    }
+
+    private func firstMaterial(in entity: Entity) -> (any Material)? {
+        if let material = entity.components[ModelComponent.self]?.materials.first {
+            return material
+        }
+        for child in entity.children {
+            if let material = firstMaterial(in: child) { return material }
+        }
+        return nil
     }
 
     private func makeLine(
@@ -14268,7 +14889,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case bloodWaterfall
     case apple
 
-    // Curated Poly Haven CC0 photoreal catalog (38 props + 2 wall panels).
+    // Curated photoreal catalog (49 Poly Haven props + 3 wall panels).
     case metalOfficeDesk
     case schoolChair
     case schoolDesk
@@ -14291,9 +14912,13 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case payphone
     case wallClock
     case hangingPictureFrame
+    case distressedPictureFrame
+    case antiqueLandscapeFrame
+    case ovalVintageFrame
     case cagedCeilingLight
     case industrialPendant
     case modernCeilingLamp
+    case backroomsFluorescentLight
     case ceilingFan
     case industrialWallLamp
     case cagedWallLight
@@ -14307,8 +14932,16 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case marbleCoffeeTable
     case modernCabinet
     case pottedSucculent
+    case distressedCabinet
+    case vintageSuitcase
+    case portableCassettePlayer
+    case vintageRadioTransceiver
+    case paintedWoodenSofa
+    case officeNotepads
+    case securityLight
     case brickWallCladding
     case woodWallCladding
+    case backroomsWallCladding
 
     var id: String { rawValue }
 
@@ -14361,9 +14994,13 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .payphone: "Eski Ankesörlü Telefon"
         case .wallClock: "Duvar Saati"
         case .hangingPictureFrame: "Asılı Sanat Çerçevesi"
+        case .distressedPictureFrame: "Yıpranmış Tablo"
+        case .antiqueLandscapeFrame: "Antika Manzara Tablosu"
+        case .ovalVintageFrame: "Oval Vintage Tablo"
         case .cagedCeilingLight: "Kafesli Tavan Işığı"
         case .industrialPendant: "Endüstriyel Sarkıt"
         case .modernCeilingLamp: "Modern Tavan Lambası"
+        case .backroomsFluorescentLight: "Backrooms Floresan"
         case .ceilingFan: "Tavan Vantilatörü"
         case .industrialWallLamp: "Endüstriyel Duvar Işığı"
         case .cagedWallLight: "Kafesli Duvar Işığı"
@@ -14377,8 +15014,16 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .marbleCoffeeTable: "Mermer Orta Sehpa"
         case .modernCabinet: "Modern Ahşap Konsol"
         case .pottedSucculent: "Saksılı Sukulent"
+        case .distressedCabinet: "Eskimiş Ahşap Dolap"
+        case .vintageSuitcase: "Vintage Bavul"
+        case .portableCassettePlayer: "Taşınabilir Kasetçalar"
+        case .vintageRadioTransceiver: "Vintage Telsiz"
+        case .paintedWoodenSofa: "Eskimiş Ahşap Koltuk"
+        case .officeNotepads: "Ofis Not Defterleri"
+        case .securityLight: "Güvenlik Lambası"
         case .brickWallCladding: "Tuğla Duvar Kaplama"
         case .woodWallCladding: "Ahşap Duvar Kaplama"
+        case .backroomsWallCladding: "Backrooms Duvar Kaplama"
         }
     }
 
@@ -14388,10 +15033,11 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .stage: "🎬"
         case .crate, .cardboardBox, .plasticCrate, .woodenCrate: "📦"
         case .lightPanel, .cagedCeilingLight, .industrialPendant, .modernCeilingLamp,
-             .industrialWallLamp, .cagedWallLight, .deskLamp: "💡"
+             .backroomsFluorescentLight,
+             .industrialWallLamp, .cagedWallLight, .deskLamp, .securityLight: "💡"
         case .chair, .schoolChair, .plasticChair, .modernArmchair: "🪑"
         case .table, .metalOfficeDesk, .schoolDesk: "🗄️"
-        case .sofa, .leatherSofa, .vintageSofa: "🛋️"
+        case .sofa, .leatherSofa, .vintageSofa, .paintedWoodenSofa: "🛋️"
         case .bed: "🛏️"
         case .bookcase, .steelShelves: "📚"
         case .television, .crtTelevision: "📺"
@@ -14413,7 +15059,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .metalTrashCan: "🗑️"
         case .blueBarrel: "🛢️"
         case .handTruck: "🛒"
-        case .drawerCabinet, .filingCabinet: "🗃️"
+        case .drawerCabinet, .filingCabinet, .distressedCabinet: "🗃️"
         case .toolChest: "🧰"
         case .woodenStool: "🪵"
         case .wetFloorSign: "⚠️"
@@ -14422,14 +15068,17 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .powerBox: "⚡"
         case .payphone: "☎️"
         case .wallClock: "🕒"
-        case .hangingPictureFrame: "🖼️"
+        case .hangingPictureFrame, .distressedPictureFrame, .antiqueLandscapeFrame,
+             .ovalVintageFrame: "🖼️"
         case .ceilingFan: "🌀"
         case .classicLaptop: "💻"
-        case .boombox: "📻"
+        case .boombox, .portableCassettePlayer, .vintageRadioTransceiver: "📻"
         case .marbleCoffeeTable: "☕️"
         case .modernCabinet: "🗄️"
         case .pottedSucculent: "🌵"
-        case .brickWallCladding: "🧱"
+        case .vintageSuitcase: "🧳"
+        case .officeNotepads: "🗒️"
+        case .brickWallCladding, .backroomsWallCladding: "🧱"
         case .woodWallCladding: "🪵"
         }
     }
@@ -14443,9 +15092,14 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     /// High-detail, mobile-budgeted pieces surfaced directly inside the Custom AR
     /// studio. The same cases remain in their normal library categories.
     static let customARAssetCases: [PropKind] = [
-        .payphone, .hangingPictureFrame, .wallClock, .securityCamera, .powerBox,
-        .modernCeilingLamp, .cagedCeilingLight, .industrialPendant, .ceilingFan,
-        .industrialWallLamp, .cagedWallLight, .handTruck, .steelShelves, .modernCabinet
+        .backroomsFluorescentLight, .hangingPictureFrame, .distressedPictureFrame,
+        .antiqueLandscapeFrame, .ovalVintageFrame, .payphone, .wallClock,
+        .securityCamera, .powerBox, .modernCeilingLamp, .cagedCeilingLight,
+        .industrialPendant, .ceilingFan,
+        .industrialWallLamp, .cagedWallLight, .handTruck, .steelShelves, .modernCabinet,
+        .distressedCabinet, .vintageSuitcase, .portableCassettePlayer,
+        .vintageRadioTransceiver, .paintedWoodenSofa, .officeNotepads,
+        .securityLight, .backroomsWallCladding
     ]
 
     static let photorealCases: [PropKind] = [
@@ -14454,12 +15108,15 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         .handTruck, .drawerCabinet, .filingCabinet, .steelShelves,
         .toolChest, .plasticChair, .woodenStool, .wetFloorSign,
         .fireExtinguisher, .securityCamera, .powerBox, .payphone,
-        .wallClock, .hangingPictureFrame, .cagedCeilingLight, .industrialPendant,
-        .modernCeilingLamp, .ceilingFan,
+        .wallClock, .hangingPictureFrame, .distressedPictureFrame,
+        .antiqueLandscapeFrame, .ovalVintageFrame, .cagedCeilingLight,
+        .industrialPendant, .modernCeilingLamp, .backroomsFluorescentLight, .ceilingFan,
         .industrialWallLamp, .cagedWallLight, .deskLamp, .classicLaptop,
         .crtTelevision, .boombox, .leatherSofa, .vintageSofa,
         .modernArmchair, .marbleCoffeeTable, .modernCabinet, .pottedSucculent,
-        .brickWallCladding, .woodWallCladding
+        .distressedCabinet, .vintageSuitcase, .portableCassettePlayer,
+        .vintageRadioTransceiver, .paintedWoodenSofa, .officeNotepads,
+        .securityLight, .brickWallCladding, .woodWallCladding, .backroomsWallCladding
     ]
 
     var photorealDescriptor: PhotorealPropDescriptor? {
@@ -14508,12 +15165,20 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
             .init(assetName: "wall_clock", dimensions: [0.39, 0.39, 0.07], surface: .wall, category: .wall, emitsLight: false)
         case .hangingPictureFrame:
             .init(assetName: "hanging_picture_frame_01", dimensions: [0.594, 0.841, 0.016], surface: .wall, category: .wall, emitsLight: false)
+        case .distressedPictureFrame:
+            .init(assetName: "hanging_picture_frame_02", dimensions: [0.752, 0.500, 0.033], surface: .wall, category: .wall, emitsLight: false)
+        case .antiqueLandscapeFrame:
+            .init(assetName: "fancy_picture_frame_01", dimensions: [0.603, 0.464, 0.020], surface: .wall, category: .wall, emitsLight: false)
+        case .ovalVintageFrame:
+            .init(assetName: "hanging_picture_frame_03", dimensions: [0.385, 0.502, 0.032], surface: .wall, category: .wall, emitsLight: false)
         case .cagedCeilingLight:
             .init(assetName: "caged_hanging_light", dimensions: [1.10, 0.72, 0.35], surface: .ceiling, category: .lighting, emitsLight: true)
         case .industrialPendant:
             .init(assetName: "hanging_industrial_lamp", dimensions: [0.55, 1.35, 0.55], surface: .ceiling, category: .lighting, emitsLight: true)
         case .modernCeilingLamp:
             .init(assetName: "modern_ceiling_lamp_01", dimensions: [0.432, 0.952, 0.432], surface: .ceiling, category: .lighting, emitsLight: true)
+        case .backroomsFluorescentLight:
+            .init(assetName: "mounted_fluorescent_lights", dimensions: [0.912, 0.035, 0.645], surface: .ceiling, category: .lighting, emitsLight: true)
         case .ceilingFan:
             .init(assetName: "ceiling_fan", dimensions: [1.30, 0.46, 1.30], surface: .ceiling, category: .equipment, emitsLight: false)
         case .industrialWallLamp:
@@ -14540,10 +15205,26 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
             .init(assetName: "modern_wooden_cabinet", dimensions: [2.44, 0.68, 0.52], surface: .floor, category: .storage, emitsLight: false)
         case .pottedSucculent:
             .init(assetName: "potted_plant_04", dimensions: [0.17, 0.27, 0.19], surface: .horizontal, category: .decor, emitsLight: false)
+        case .distressedCabinet:
+            .init(assetName: "painted_wooden_cabinet_02", dimensions: [1.00, 2.57, 0.73], surface: .floor, category: .storage, emitsLight: false)
+        case .vintageSuitcase:
+            .init(assetName: "vintage_suitcase", dimensions: [0.72, 0.30, 0.20], surface: .floor, category: .decor, emitsLight: false)
+        case .portableCassettePlayer:
+            .init(assetName: "cassette_player", dimensions: [0.13, 0.24, 0.05], surface: .horizontal, category: .electronics, emitsLight: false)
+        case .vintageRadioTransceiver:
+            .init(assetName: "vintage_radio_transceiver", dimensions: [0.32, 0.30, 0.22], surface: .horizontal, category: .electronics, emitsLight: false)
+        case .paintedWoodenSofa:
+            .init(assetName: "painted_wooden_sofa", dimensions: [2.45, 1.28, 0.79], surface: .floor, category: .furniture, emitsLight: false)
+        case .officeNotepads:
+            .init(assetName: "office_notepads", dimensions: [0.32, 0.015, 0.19], surface: .horizontal, category: .decor, emitsLight: false)
+        case .securityLight:
+            .init(assetName: "security_light", dimensions: [0.32, 0.53, 0.42], surface: .wall, category: .lighting, emitsLight: true)
         case .brickWallCladding:
             .init(assetName: "wall_cladding_brick", dimensions: [2.40, 2.50, 0.06], surface: .wall, category: .wall, emitsLight: false)
         case .woodWallCladding:
             .init(assetName: "wall_cladding_wood", dimensions: [2.40, 2.50, 0.06], surface: .wall, category: .wall, emitsLight: false)
+        case .backroomsWallCladding:
+            .init(assetName: "wall_cladding_backrooms_001", dimensions: [2.40, 2.50, 0.06], surface: .wall, category: .wall, emitsLight: false)
         default:
             nil
         }
@@ -14551,10 +15232,15 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
 
     var isWallCladding: Bool {
         self == .brickWallCladding || self == .woodWallCladding
+            || self == .backroomsWallCladding
     }
 
     var wallTextureTileMeters: Float {
-        self == .brickWallCladding ? 1.5 : 2.0
+        switch self {
+        case .brickWallCladding: 1.5
+        case .backroomsWallCladding: 1.25
+        default: 2.0
+        }
     }
 
     /// Positive local Z faces the room. Only a small front-face clearance remains
@@ -14865,6 +15551,42 @@ enum RealityThemeCatalog {
 }
 ````
 
+## `CineAR/RoomAssets/LICENSE-BACKROOMS.txt`
+
+````text
+SynapMantis Backrooms Material Sources
+
+Yasu's Backrooms Material Pack v1.0
+Creator: @mvyasu (Yasu)
+Source: https://mvyasu.itch.io/backrooms-material-pack
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License URL: https://creativecommons.org/licenses/by/4.0/
+
+Bundled adaptations:
+backrooms_yasu_wall_01.usdz through backrooms_yasu_wall_09.usdz
+backrooms_yasu_ceiling_01.usdz through backrooms_yasu_ceiling_04.usdz
+backrooms_yasu_floor_01.usdz
+
+The original 4K maps were resized and JPEG-compressed to 1K for mobile use.
+Each USDZ keeps the original color, OpenGL normal and roughness maps. Geometry,
+USD material wiring, naming and packaging were created for SynapMantis. No
+generative AI was used by the source author according to the source page.
+
+Wallpaper Backrooms 001
+Creator/site: 3DTextures.me
+Source: https://3dtextures.me/2024/06/25/wallpaper-backrooms-001/
+License: Creative Commons Zero (CC0 1.0 Universal)
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Bundled adaptation:
+wall_cladding_backrooms_001.usdz
+
+The official 1024 px base-color, OpenGL-normal and roughness maps are packaged
+as a repeatable RealityKit wall material. The generated panel geometry is only
+a material template; runtime wall geometry is fitted to the scanned wall and
+keeps door/window openings clear.
+````
+
 ## `CineAR/RoomAssets/LICENSE-KENNEY.txt`
 
 ````text
@@ -14899,11 +15621,12 @@ modified, redistributed, and included in commercial applications without
 attribution. CineAR keeps this notice for provenance and reproducibility.
 
 Most bundled USDZ files were generated from the official 1K glTF downloads with
-Blender 4.5 LTS. The two architecture-set additions noted below preserve Poly
-Haven's native 1K USD and are packaged with OpenUSD 26.8. Textures remain at 1K
+Blender 4.5 LTS. The thirteen newer additions noted below preserve Poly
+Haven's native 1K USD, are normalized to RealityKit's Y-up coordinates and are
+packaged with OpenUSD 26.8. Their textures are capped at 1K and mobile-compressed
 for predictable iPhone memory use.
 
-Included Poly Haven asset IDs (38):
+Included Poly Haven asset IDs (49):
 
 metal_office_desk
 SchoolChair_01
@@ -14928,6 +15651,10 @@ korean_public_payphone_01
 wall_clock
 modern_ceiling_lamp_01
 hanging_picture_frame_01
+hanging_picture_frame_02
+hanging_picture_frame_03
+fancy_picture_frame_01
+mounted_fluorescent_lights
 caged_hanging_light
 hanging_industrial_lamp
 ceiling_fan
@@ -14943,8 +15670,15 @@ modern_arm_chair_01
 coffee_table_round_01
 modern_wooden_cabinet
 potted_plant_04
+painted_wooden_cabinet_02
+vintage_suitcase
+cassette_player
+vintage_radio_transceiver
+painted_wooden_sofa
+office_notepads
+security_light
 
-Additional wall cladding (2 USDZ panels, 40 photoreal catalog entries total):
+Additional Poly Haven wall cladding (2 USDZ panels, 51 Poly Haven catalog entries total):
 wall_cladding_brick.usdz uses https://polyhaven.com/a/brick_wall_001
 wall_cladding_wood.usdz uses https://polyhaven.com/a/wood_plank_wall
 These panels are generated by Tools/generate_wall_assets.py using the original
@@ -14967,6 +15701,20 @@ https://polyhaven.com/a/<asset-id>
 ## `CineAR/RoomAssets/MANIFEST.sha256`
 
 ````text
+23ae2220337341653908a1f42e438fba3e00f04ed37cd6c43d103e25314af15f  backrooms_yasu_ceiling_01.usdz
+78040a7de31ae4bd7e6c9543735e30560aa02496adbef19f47d0ac47c2f90d4a  backrooms_yasu_ceiling_02.usdz
+c1a91c0cd6505108baa6bf0dca904e4705d490a6d4721939166225b69bb110e6  backrooms_yasu_ceiling_03.usdz
+8d75e9ee829d71feed92dfe9bc9832339e139782242bf55ed4317d08bbef3078  backrooms_yasu_ceiling_04.usdz
+d937bdbb8208b8ba45b217e81093b95a405d3f7258007a1536ce43846c8487c1  backrooms_yasu_floor_01.usdz
+24793965828715012f13e78d05b2d537eb1f7f238f4b74cc7cae8a09c5343ee5  backrooms_yasu_wall_01.usdz
+d6be1c4dd86d9f10e912ee8072d18b0a2c5c7aecbd1140b59f4b24cf0dc632f4  backrooms_yasu_wall_02.usdz
+c430d64032a07376c414a80343e0ad74477986ab285f341418beb232a5e00062  backrooms_yasu_wall_03.usdz
+4717e5af7ef0231e346ac325f5bb708adca6650d1601b522b855d8acf3c9b354  backrooms_yasu_wall_04.usdz
+a1fe7fa2219f4c246ae3785c6136827429598ac5e42cb48afcb08b567afb2c40  backrooms_yasu_wall_05.usdz
+5faa5c871a91bdf709bb376d5ac235df828cf582c27eb2c12395d552215988bb  backrooms_yasu_wall_06.usdz
+986822109b19cd9779d1513a52c65bb25aa15d28a3c8db53d9694ea7223e12a9  backrooms_yasu_wall_07.usdz
+420ec200c3c28a1568ddfde761edf5fae7d73becf8c410c855e945ee9288eea9  backrooms_yasu_wall_08.usdz
+474fdf3b15f28c15ada88df20a7f5d935f93195602b17fc1a95e5f83e7f4494c  backrooms_yasu_wall_09.usdz
 db44c3823a4313fcb39cc3363de427390b1126dbfccbaede42dfc4c62cc832fe  Barrel_02.usdz
 2de87dbd39ec292d8575aaf526160310ac090659d6cba1fb0b9d7b231f0cc643  bathroomSink.usdz
 3a24cebb0eac7b5dbf190958aeda8e3599b38a9d51c826cf349f703a2c44ce53  bathtub.usdz
@@ -14975,15 +15723,19 @@ c658a28c0afb73daa53330d9747f0651056f172f990df8acecf29003511d0297  bedDouble.usdz
 23d131aee04991d1b89989b6d74e2e769b70aca2d1cdd17a990e768019310e0b  boombox.usdz
 b4834b13750c18ee2ba3da62fe4392257f66d06330b47966b42c316d0e227025  caged_hanging_light.usdz
 f0968ac22285b3d7a9af0bfbe4576dc2f9074378dcfbbd2ec093064f9a5e48b0  cardboard_box_01.usdz
+34baacc909e20784299888773bc497e811f7ca43980f5e68d7e50997f5066f01  cassette_player.usdz
 f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d  ceiling_fan.usdz
 11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e  chairModernCushion.usdz
 f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145  classic_laptop.usdz
 d99f126b5a2af640d6ff40e9ce8c5da4b1bdc9cfea9bf6a94f0a620a7adcb0f8  coffee_table_round_01.usdz
 6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a  desk_lamp_arm_01.usdz
 351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68  drawer_cabinet.usdz
+6419e7cf694523fbed11258ccb39dcc4a883f7a6ac0dad05b166d115fa6c00a6  fancy_picture_frame_01.usdz
 fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486  hand_truck.usdz
 abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937  hanging_industrial_lamp.usdz
-43b901b41046e9fc969f18577fc905dd9298ba7a29340eb35f309719855d9a96  hanging_picture_frame_01.usdz
+2911ddd6c73e987e66f62655376501538d6c19e4d3fd8b286adccdfe57373033  hanging_picture_frame_01.usdz
+dc57c9272cf32a4fb7f78ebf91b9ccff291d039c16df733729b4cfaec6ceef18  hanging_picture_frame_02.usdz
+a5dac63f03979244a8fd91be8efcb96652f52b93216cd0f8cf3c492fe1541eb8  hanging_picture_frame_03.usdz
 41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9  industrial_wall_lamp.usdz
 c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee  industrial_wall_sconce.usdz
 a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7  kitchenFridge.usdz
@@ -14996,15 +15748,20 @@ e1ff365a2245f802cd0c31f6972927d8b3a82a4356a46a1f525e79d58558d3ad  loungeDesignSo
 ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba  metal_tool_chest.usdz
 d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871  metal_trash_can.usdz
 9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c  modern_arm_chair_01.usdz
-0a90110df54b6348403ee23c9fc43d4972cdf80890eede452262553e93cca210  modern_ceiling_lamp_01.usdz
+671a84a1bd13437de5585a9db2e1b70371b0db534df2be04cc942c1d5d53b461  modern_ceiling_lamp_01.usdz
 8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964  modern_wooden_cabinet.usdz
+6f22c9b55f8694a7d4903f256318ab99b91efd41010b9e0f9cfb0329a0dadd63  mounted_fluorescent_lights.usdz
+3a8c0b44c264d5e655a1b6014dbd4ec158004e1899ec7879c82c9aee63cc5a74  office_notepads.usdz
+93ac999464ba11fbcb6a7c33fed1dc7832b18ec3e33e10b0a38b12d108e26991  painted_wooden_cabinet_02.usdz
+712c6ca6754787bc44a81775c36eb43ace482d7dcfc81502e097a2441d85a69a  painted_wooden_sofa.usdz
 c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9  plastic_crate_02.usdz
 6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a  plastic_monobloc_chair_01.usdz
-247cb86f3662b3cdc532229875c3e2ac56d986d5044b967cc51e9499d6fb60a0  power_box_01.usdz
 22f20d0ddd99b10d3c96b97fd3cfabb4997d2991791a08ad9941a2f149afa34f  potted_plant_04.usdz
+247cb86f3662b3cdc532229875c3e2ac56d986d5044b967cc51e9499d6fb60a0  power_box_01.usdz
 738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6  SchoolChair_01.usdz
 b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596  SchoolDesk_01.usdz
 ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a  security_camera_01.usdz
+8d29d3c4a1ffa2fe540e064b1d8cc016616bbbbad3c8499a6060065bafe8d3bb  security_light.usdz
 a0033e27a6e82cd725159e85066b8aa6539ef45c9acf96118231ca7793e46890  sofa_02.usdz
 63ca8d488b487ac6abc9f7589ebe464bf66f4c6de10b58298dfb855a845de2e8  sofa_03.usdz
 683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b  stairs.usdz
@@ -15013,10 +15770,13 @@ a809a38664d4e8a65bb067d89a9f74985c1bc24c297b855fa14af4eed807700b  steel_frame_sh
 dc44f800926690dc281aed2f7fccb9340d70e253395c26ee59a80af3e097eaea  television_02.usdz
 a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819  televisionModern.usdz
 b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9  toilet.usdz
+58dc3cdde1509a4e1689428d4be78f93dcd50b99479e7597c20997b1ba323bff  vintage_radio_transceiver.usdz
+a2c2941418109b5d35d9a23152fdc516eed4ee85115d170f220d0f69aa04ec43  vintage_suitcase.usdz
 e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe  vintage_wooden_drawer_01.usdz
-9b83332d0db22eab9b514ee5a727acad1d846545785f763c558786e5bc165767  wall_clock.usdz
+113f45bb64393934b097a49dd6d24e0fac30a2e02709506315884780c15a434b  wall_cladding_backrooms_001.usdz
 120420d91647a5567356e933d10c02a41f5b151080b26e5eeeb94dbff23d2b6d  wall_cladding_brick.usdz
 55b869a26454816f1f0ddd71c7674fd2243c1cee22074f4d71012d3f48fa0001  wall_cladding_wood.usdz
+9b83332d0db22eab9b514ee5a727acad1d846545785f763c558786e5bc165767  wall_clock.usdz
 76d9e6d877d7003c51a503a1c6f890a7b85e9430363daa01f65a2cbb8fd72a16  washerDryerStacked.usdz
 080f512792bcbfdaf913200c3b1e3f1a162c46b16d1ab655ae1b965617c74601  WetFloorSign_01.usdz
 842aedb3aa03d4fa34d5e78eb6e7cdf67a2e0da8a26d389b05181bfc494bee8b  wooden_crate_02.usdz
@@ -18333,6 +19093,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
     case noir
     case thriller
     case dream
+    case backrooms
 
     var id: String { rawValue }
 
@@ -18344,6 +19105,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: "Noir"
         case .thriller: "Gerilim"
         case .dream: "Rüya"
+        case .backrooms: "Backrooms Sarı"
         }
     }
 
@@ -18355,6 +19117,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: "circle.righthalf.filled"
         case .thriller: "moon.stars.fill"
         case .dream: "sparkles"
+        case .backrooms: "lightbulb.max.fill"
         }
     }
 
@@ -18366,6 +19129,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: 0
         case .thriller: 0.62
         case .dream: 0.78
+        case .backrooms: 0.72
         }
     }
 
@@ -18377,6 +19141,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: 1.28
         case .thriller: 1.24
         case .dream: 0.88
+        case .backrooms: 1.17
         }
     }
 
@@ -18388,6 +19153,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: -0.035
         case .thriller: -0.055
         case .dream: 0.035
+        case .backrooms: -0.025
         }
     }
 
@@ -18397,6 +19163,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .tealOrange: -6
         case .thriller: -12
         case .dream: 8
+        case .backrooms: -8
         }
     }
 
@@ -18408,6 +19175,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: (0.08, 0.09, 0.12, 0.08)
         case .thriller: (0.04, 0.16, 0.10, 0.16)
         case .dream: (0.40, 0.24, 0.48, 0.11)
+        case .backrooms: (0.55, 0.43, 0.06, 0.23)
         }
     }
 
@@ -18419,6 +19187,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: 0.48
         case .thriller: 0.52
         case .dream: 0.18
+        case .backrooms: 0.38
         }
     }
 }
@@ -18472,6 +19241,18 @@ struct VirtualLightSettings: Codable, Equatable {
         yawDegrees: 0,
         tiltDegrees: 0,
         beamSoftness: 0.34
+    )
+
+    /// Broad, warm fluorescent spill used by the Custom AR Backrooms kit. The
+    /// intensity stays inside the validated mobile range and avoids extra lights.
+    static let backroomsFixture = VirtualLightSettings(
+        isEnabled: true,
+        intensityLumens: 8_000,
+        temperatureKelvin: 3_700,
+        coneAngleDegrees: 66,
+        yawDegrees: 0,
+        tiltDegrees: 0,
+        beamSoftness: 0.72
     )
 
     var isEnabled: Bool
@@ -20367,7 +21148,7 @@ Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncelle
 4. Ikinci adim gercek iPhone SDK'si ile Release uygulamasini imzasiz derler.
    ARKit/RealityKit API ve Swift tur denetimi bu adimda yapilir. Simulator testi degildir.
    Kaynak ve uretilmis `.app` icindeki kamera/mikrofon/konusma/yerel ag izin
-   aciklamalari da okunup dogrulanir. Ayrica 54 cevrimdisi USDZ kaynakta checksum
+   aciklamalari da okunup dogrulanir. Ayrica 58 cevrimdisi USDZ kaynakta checksum
    ve paket butunlugu testinden gecer; uretilen `.app` icindeki `RoomAssets`
    klasorunun ayni dosyalari eksiksiz tasidigi tekrar kontrol edilir.
 5. Hata varsa `swift-tests.log`, `ios-build.log` ve `.xcresult` ciktisini incele.
@@ -20473,7 +21254,7 @@ incelemesine uygulama gondermesi mumkun degildir.
 ## `Docs/DEVICE_TEST.md`
 
 ````markdown
-# SynapMantis 0.18.1 cihaz kabul testi
+# SynapMantis 0.20.0 cihaz kabul testi
 
 ## Hedef donanim
 
@@ -20516,7 +21297,7 @@ incelemesine uygulama gondermesi mumkun degildir.
    zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
    durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
-6. 40 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
+6. 52 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
    gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
@@ -20718,6 +21499,22 @@ incelemesine uygulama gondermesi mumkun degildir.
     ayni yeri gosterip Yukle; alan, ic duvar, kapi ve kapi durumu ayni koordinatta
     geri gelmelidir. Referansla Hizala uygulaninca tum Ozel AR yapisi tek parca
     kaymali; duvarlar kendi aralarinda ayrilmamalidir.
+30. `Ozel AR > Backrooms Kiti`ni uygula. Aktif alanin duvarlari dokulu sari, zemini
+    PBR kirli hali ve tavani dokulu acik panel olmali; `Backrooms Sari` film
+    filtresi secili gorunmelidir. `Backrooms Floresan`i sanal tavana tek dokunusla
+    yerlestir. Armaturun yuksek detayli modeli veya taninabilir iki tuplu yedegi
+    hemen gorunmeli; 8000 lumen genis sicak isik, saydam koni huzmesi ve hedef izi
+    birlikte calismalidir. El veya kisi huzmenin/armaturun onunden gecince LiDAR
+    ortmesi gercek nesneyi onde tutmalidir. Uc yeni tabloyu sirayla sanal duvara
+    yerlestir; dik/yatay eksenleri dogru, arka yuzleri duvara sifir ve kamera
+    uzakligindan bagimsiz kalmalidir. `Acilir Kapi Ekle` ile ayni duvara kapi koy;
+    fiziksel arka plan derinligi kapinin eklenmesini engellememeli, kol/panel odanin
+    ic tarafinda olmali ve kanat iki farkli duvar yonunde de iceri acilmalidir.
+    Malzeme menusundeki dokuz `Backrooms Yasu` secenegini ve `Backrooms Klasik CC0`
+    secenegini sirayla uygula; desenler duvar boyuna gore uzamamali ve arayuz dokular
+    yuklenirken donmamalidir. Yasu 01-04 secimlerinde dort farkli tavan eslesmesi
+    gorunmeli. Duvar kategorisindeki `Backrooms Duvar Kaplama` taranmis duvar olcusune
+    oturmali, kapi/pencere bosluklarini kapatmamalidir.
 
 ## Anlik LiDAR ortmesi regresyonu
 
@@ -21000,6 +21797,24 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.20.0: Ozel AR Backrooms kiti artik Yasu'nun dokuz duvar kagidi, dort tavan
+  ve bir hali PBR malzemesini; ayrica 3DTextures.me klasik CC0 duvar kaplamasini
+  1K mobil paketler olarak sunar. Malzeme menusu duvar varyantini ve ona eslesen
+  tavani degistirir; renk/normal/puruzluluk haritalari metre tabanli UV ile tekrar
+  eder ve arka planda yuklenirken sahneyi dondurmaz. Eskimis dolap, vintage bavul,
+  tasinabilir kasetcalar, vintage telsiz, eskimis ahsap koltuk, ofis not defterleri
+  ve guvenlik lambasi eklendi. Katalog 52 gercekci parcaya, cevrimdisi paket 80
+  USDZ'ye cikti. Yeni kaynaklar CC0 veya CC BY 4.0 lisanslidir.
+- 0.19.0: Ozel AR'a tek dokunuslu Backrooms kiti eklendi: sari yipranmis duvar,
+  koyu kirli hali, acik tavan ve `Backrooms Sari` sinematik filtresi birlikte
+  uygulanir. Tavana yerlestirilen yeni gercekci floresan 8000 lumen genis sicak
+  isikla baslar; dusuk poligonlu saydam huzmesi ve hedef izi LiDAR ortmesini korur.
+  Sanal duvar kapisi artik fiziksel arka plan derinligiyle yanlis reddedilmez,
+  cokgenin ic tarafinda olusur ve kanada dokununca animasyonlu acilip kapanir.
+  Uc yeni CC0 tablo ve Backrooms floresaniyla fotogercekci katalog 44 parcaya,
+  cevrimdisi paket 58 USDZ'ye cikti. Yeni ve onceki Ozel AR tablo/lamba USDZ'leri
+  iPhone RealityKit icin acik Y-up eksenine normalize edildi; yukleme sirasinda
+  her biri taninabilir prosedurel yedekle aninda gorunur.
 - 0.18.1: Ozel AR duvar ve tavanlari artik kendi sonlu, dunya koordinatina sabit
   collider'larinda tek dokunusla dekor kabul eder; fiziksel arka plani olcen LiDAR
   bu sanal yuzey secimini yanlislikla iptal etmez. Asili tablo ve modern tavan lambasi
@@ -21046,7 +21861,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik
   kaplamanin onunde kalir.
   Disaridan eklenen kok `Entity` hiyerarsili USDZ dosyalari da cihazda acilir;
-  yerel yukleme zaman asimi 25 saniyedir. Paketteki 54 cevrimdisi USDZ'nin ad,
+  yerel yukleme zaman asimi 25 saniyedir. Paketteki 58 cevrimdisi USDZ'nin ad,
   checksum, ZIP/USD sahne butunlugu ile uygulama ve IPA icine kopyalanmasi Codemagic
   tarafindan derlemeden once ve sonra dogrulanir; bu katalog PC baglantisi kullanmaz.
 - 0.17.13: RoomPlan taramasi biterken halen calisan ortak `ARSession` artik yeni
@@ -21158,7 +21973,8 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
-- Poly Haven kaynakli 1K PBR dokulu 40 fotogercekci CC0 USDZ dekor; mobilya,
+- 49 Poly Haven CC0 model, iki Poly Haven duvar kaplamasi ve bir 3DTextures.me
+  CC0 Backrooms kaplamasindan olusan 52 parcali gercekci 1K PBR katalog; mobilya,
   depolama, ekipman, duvar/tavan elemanlari, aydinlatma ve elektronik kategorileri
 - Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
@@ -21173,25 +21989,25 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   ucgen ve 8 MB dogrulama butcesi
 - Ayni oturumda yalniz son kullanilan sekiz fotogercekci modeli tutan LRU onbellek;
   aktif sahne nesnelerini bozmadan kullanilmayan kaynak klonlarini bellekten cikarma
-- Duvar kategorisindeki tugla ve ahsap kaplamalar tek dokunusla taranan duvarin
+- Duvar kategorisindeki tugla, ahsap ve Backrooms kaplamalar tek dokunusla taranan duvarin
   genisligine, yuksekligine ve duzlemsel sinir poligonuna otomatik oturur.
   RoomPlan kapi/pencere/acikliklari ilgili duvarla eslestirilip geometriden kesilir;
   yedek gorunum ve dokunma geometrisi de bu bosluklari acik birakir.
   Kaplama duzlemi taranan duvarla aynidir; dokunma derinligi tum duvari one cekmez.
   Eski kayitli kaplamalar bu degisiklikle tasinmaz; hatali olanlar yeniden yerlestirilmelidir.
   On yuz 6 mm onde, kalan 54 mm duvarin icinde kalir. Duvar buyudukce desen uzamaz:
-  tugla icin 1,5 m, ahsap icin 2 m tasarim karosu metre tabanli UV ile tekrar eder.
+  tugla icin 1,5 m, ahsap icin 2 m, Backrooms icin 1,25 m tasarim karosu metre tabanli UV ile tekrar eder.
   Otomatik kaplamada olcek/dondurme kilitlidir; taranan bosluklar yerinden kaymaz.
   Duvar olcusu, poligon ve kesimler scene.json'a kaydedilir; eski moduler kaplama
   kayitlari degistirilmez. Yeni kaplama icin tamamlanmis, hizalanmis oda taramasi gerekir.
   Egri duvarlar desteklenmez; karmasik geometri butceyi asarsa kapali panel uretilmez.
-  Iki kaynak USDZ sablonu toplam 2,53 MiB, sablon basina 12 ucgendir; otomatik
+  Uc kaynak USDZ sablonu dusuk maliyetlidir; otomatik
   kaplama tek mesh/materyal ve en fazla 512 disbukey parca kullanir. Geometri sadece
   yerlestirme/yukleme sirasinda uretilir. LiDAR ve insan occlusion'i acik kalir;
   taramada bulunmayan bosluklar ve sensor kaynakli kesilmeler cihazda kontrol edilmelidir.
 - Ilk acilista ve yerlestirme sonrasinda kamerayi acik birakan kompakt alt kontrol dock'u
 - Canli kamera ve sanal dekorlari birlikte etkileyen Dogal, Sinema, Teal & Orange,
-  Noir, Gerilim ve Ruya film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
+  Noir, Gerilim, Ruya ve Backrooms Sari film filtreleri; renk, kontrast, parlaklik, ton ve vinyet
   ayarlari ReplayKit HEVC kaydina da islenir
 - Nesne secilince paneli kapatan, zeminin tamamini dokunulabilir yapan yerlestirme modu
 - Her katalog nesnesi icin ayri zemin, yatay yuzey, duvar veya tavan yerlestirme kurali
@@ -21305,7 +22121,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
-   `Hazir 3B Nesne Kutuphanesi` icindeki 40 fotogercekci parcadan
+   `Hazir 3B Nesne Kutuphanesi` icindeki 52 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
    Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
@@ -21421,14 +22237,17 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde Poly Haven'dan alinmis 38 CC0 model ve fotografik dokularla
-uretilmis 2 duvar paneli olmak uzere 40 adet 1K PBR USDZ katalog varligi vardir.
+Bu surumde Poly Haven'dan alinmis 49 CC0 model, iki Poly Haven duvar paneli ve
+3DTextures.me kaynakli bir CC0 Backrooms paneli olmak uzere 52 adet 1K PBR katalog
+varligi vardir. Yasu'nun CC BY 4.0 Backrooms paketindeki dokuz duvar, dort tavan ve
+bir hali malzemesi Ozel AR tarafinda renderer sablonu olarak kullanilir.
 Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
 boyutlarina normalize edilir, sahne listesinde `genislik x yukseklik x derinlik`
 olarak gosterilir ve olculmus katalog modellerinin olcegi kilitlenir. Eski projeler icin
 Kenney Furniture Kit'ten 14 CC0 USDZ ve 4 hafif dekor kaynakta korunur.
 Kaynak/lisans `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` ve
-`CineAR/RoomAssets/LICENSE-KENNEY.txt`, tekrar uretim/dogrulama araclari `Tools/`
+`CineAR/RoomAssets/LICENSE-KENNEY.txt`, `CineAR/RoomAssets/LICENSE-BACKROOMS.txt`,
+tekrar uretim/dogrulama araclari `Tools/`
 altindadir. 1K doku siniri mobil bellek ve yukleme gecikmesini kontrol altinda tutar;
 2K/4K masaustu VFX paketi hedeflenmemistir. Eski opak oda tema renderer'i kaynakta deneysel
 olarak korunur; ana arayuzde onun yerine akici `Gercek` / `Beyaz Hatlar` gecisi vardir.
@@ -21453,7 +22272,8 @@ USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidi
 
 ### Ozel AR mimari varliklarini yeniden uretme
 
-Modern tavan lambasi ve asili sanat cercevesi Poly Haven'in resmi 1K native USD
+Modern tavan lambasi, Backrooms floresani, dort asili sanat cercevesi ve yedi yeni
+gercekci dekor Poly Haven'in resmi 1K native USD
 paketlerinden alinir. Indirilen ana sahne ve tum dokular API MD5 degerleriyle
 dogrulanir; OpenUSD olusturdugu USDZ'yi yeniden acmadan cikti kabul edilmez:
 
@@ -21462,8 +22282,17 @@ python3 -m pip install usd-core==26.8
 python3 Tools/package_polyhaven_usd_to_usdz.py --cache .asset-cache/polyhaven-usd --output CineAR/RoomAssets
 ```
 
-Her yeni mimari model icin 8 MiB kesin paket siniri vardir; bu iki varlik 1.9 MiB
-altinda kalir. Uygulama calisirken indirme yapmaz.
+Backrooms PBR sablonlari, resmi kaynak paketleri `.asset-cache/backrooms-materials`
+altindayken OpenUSD ve ImageMagick ile yeniden uretilebilir:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path '.tools-cache/usd-core').Path
+python Tools/generate_backrooms_material_assets.py --source .asset-cache/backrooms-materials --output CineAR/RoomAssets
+powershell -ExecutionPolicy Bypass -File Tools/update_asset_manifest.ps1
+```
+
+Her yeni mimari model icin 8 MiB kesin paket siniri vardir. Uygulama calisirken
+indirme yapmaz; tum modeller kaynakta ve uretilen uygulamada checksum ile dogrulanir.
 
 ### Otomatik duvar kaplama testleri
 
@@ -21483,7 +22312,7 @@ cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedi
 ### Cevrimdisi 3B katalog testi
 
 Hazir modeller uygulama paketinin icindedir ve PC ya da ag baglantisi kullanmaz.
-Kaynak katalog adlarini, 54 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
+Kaynak katalog adlarini, 80 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
 
 ```sh
 python3 Tools/test_bundled_assets.py --assets CineAR/RoomAssets --manifest CineAR/RoomAssets/MANIFEST.sha256 --prop-kind CineAR/PropKind.swift
@@ -22121,7 +22950,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Projenin amacı")
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 40 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
+[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 52 fotogerçekçi dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Teknoloji ve ana yetenekler")
 [void]$builder.AppendLine()
@@ -22136,8 +22965,8 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
-[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 40 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
-[void]$builder.AppendLine("- PC/ağ gerektirmeyen toplam 54 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi")
+[void]$builder.AppendLine("- Poly Haven, 3DTextures.me ve Yasu kaynaklı mobil 1K PBR malzemeler; 52 parçalı fotogerçekçi katalog ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- PC/ağ gerektirmeyen toplam 80 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi")
 [void]$builder.AppendLine("- Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi")
 [void]$builder.AppendLine("- 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi")
 [void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
@@ -22174,7 +23003,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("| ``BundledRoomRealityAssetProvider`` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |")
 [void]$builder.AppendLine("| ``SceneProjectStore`` | ``scene.json``, ``room.json``, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |")
 [void]$builder.AppendLine("| ``ProfessionalRecorder`` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |")
-[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri, 40 fotogerçekçi dekor ve eski kayıt uyumluluğu |")
+[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri, 52 fotogerçekçi dekor ve eski kayıt uyumluluğu |")
 [void]$builder.AppendLine("| ``codemagic.yaml`` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Temel kullanıcı akışı")
@@ -22183,7 +23012,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.")
 [void]$builder.AppendLine("3. Sonuç compact ``room.json`` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.")
 [void]$builder.AppendLine("4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.")
-[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 40 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
+[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 52 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
 [void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.")
 [void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
 [void]$builder.AppendLine("8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.")
@@ -22297,6 +23126,239 @@ Write-Host "Binary assets: $($binaryPaths.Count)"
 Write-Host "Sensitive files omitted: $($sensitivePaths.Count)"
 `````
 
+## `Tools/generate_backrooms_material_assets.py`
+
+````python
+"""Package the approved Backrooms PBR materials as mobile RealityKit USDZ files.
+
+The source folder contains the official 3DTextures.me CC0 Wallpaper Backrooms
+001 maps and Yasu's CC BY 4.0 Backrooms Material Pack. Source files stay in the
+ignored asset cache. Only 1K color, OpenGL-normal and roughness maps are shipped.
+
+    $env:PYTHONPATH = (Resolve-Path '.tools-cache/usd-core').Path
+    python Tools/generate_backrooms_material_assets.py \
+        --source .asset-cache/backrooms-materials --output CineAR/RoomAssets
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
+from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, UsdUtils, Vt
+
+
+MAX_TEXTURE_EDGE = 1024
+MAX_PACKAGE_BYTES = 3 * 1024 * 1024
+
+
+def arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    return parser.parse_args()
+
+
+def material_specs(source_root: Path) -> list[tuple[str, Path, Path, Path, float]]:
+    yasu = source_root / "Yasu's_Backrooms_Material_Pack"
+    specs: list[tuple[str, Path, Path, Path, float]] = [
+        (
+            "wall_cladding_backrooms_001",
+            source_root / "Wallpaper_Backrooms_001_basecolor.png",
+            source_root / "Wallpaper_Backrooms_001_normal.png",
+            source_root / "Wallpaper_Backrooms_001_roughness.png",
+            1.25,
+        )
+    ]
+    for index in range(1, 10):
+        stem = f"Backrooms_Wallpaper_{index:02d}"
+        specs.append((
+            f"backrooms_yasu_wall_{index:02d}",
+            yasu / "Walls" / f"{stem}_Color.jpg",
+            yasu / "Walls" / f"{stem}_Normal.jpg",
+            yasu / "Walls" / f"{stem}_Roughness.jpg",
+            1.25,
+        ))
+    for index in range(1, 5):
+        stem = f"Backrooms_Ceiling_{index:02d}"
+        specs.append((
+            f"backrooms_yasu_ceiling_{index:02d}",
+            yasu / "Ceilings" / f"{stem}_Color.jpg",
+            yasu / "Ceilings" / f"{stem}_Normal.jpg",
+            yasu / "Ceilings" / f"{stem}_Roughness.jpg",
+            1.20,
+        ))
+    stem = "Backrooms_Carpet_01"
+    specs.append((
+        "backrooms_yasu_floor_01",
+        yasu / "Floors" / f"{stem}_Color.jpg",
+        yasu / "Floors" / f"{stem}_Normal.jpg",
+        yasu / "Floors" / f"{stem}_Roughness.jpg",
+        1.50,
+    ))
+    return specs
+
+
+def convert_texture(source: Path, destination: Path, *, color: bool) -> None:
+    if not source.is_file():
+        raise RuntimeError(f"Missing source texture: {source}")
+    converter = shutil.which("magick")
+    if converter is None:
+        raise RuntimeError("ImageMagick `magick` is required")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    command = [
+        converter, str(source), "-strip", "-alpha", "off", "-depth", "8",
+        "-resize", f"{MAX_TEXTURE_EDGE}x{MAX_TEXTURE_EDGE}>",
+    ]
+    if color:
+        command += ["-sampling-factor", "4:2:0", "-quality", "88"]
+    else:
+        command += ["-colorspace", "sRGB", "-sampling-factor", "4:4:4", "-quality", "90"]
+    command.append(str(destination))
+    subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    if destination.stat().st_size < 128:
+        raise RuntimeError(f"Texture conversion failed: {source}")
+
+
+def texture_shader(
+    material: UsdShade.Material,
+    name: str,
+    file_name: str,
+    uv_reader: UsdShade.Shader,
+    color_space: str,
+) -> UsdShade.Shader:
+    shader = UsdShade.Shader.Define(material.GetPrim().GetStage(), material.GetPath().AppendChild(name))
+    shader.CreateIdAttr("UsdUVTexture")
+    shader.CreateInput("file", Sdf.ValueTypeNames.Asset).Set(Sdf.AssetPath(f"./textures/{file_name}"))
+    shader.CreateInput("sourceColorSpace", Sdf.ValueTypeNames.Token).Set(color_space)
+    shader.CreateInput("wrapS", Sdf.ValueTypeNames.Token).Set("repeat")
+    shader.CreateInput("wrapT", Sdf.ValueTypeNames.Token).Set("repeat")
+    shader.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(
+        uv_reader.ConnectableAPI(), "result"
+    )
+    shader.CreateOutput("rgb", Sdf.ValueTypeNames.Float3)
+    shader.CreateOutput("r", Sdf.ValueTypeNames.Float)
+    return shader
+
+
+def build_stage(stage_path: Path, asset_name: str, tile_meters: float) -> None:
+    stage = Usd.Stage.CreateNew(str(stage_path))
+    UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.y)
+    UsdGeom.SetStageMetersPerUnit(stage, 1.0)
+    root = UsdGeom.Xform.Define(stage, "/SynapMantisAsset")
+    stage.SetDefaultPrim(root.GetPrim())
+
+    mesh = UsdGeom.Mesh.Define(stage, f"/SynapMantisAsset/{asset_name}")
+    mesh.CreatePointsAttr(Vt.Vec3fArray([
+        Gf.Vec3f(-1.2, -1.25, 0), Gf.Vec3f(1.2, -1.25, 0),
+        Gf.Vec3f(1.2, 1.25, 0), Gf.Vec3f(-1.2, 1.25, 0),
+    ]))
+    mesh.CreateFaceVertexCountsAttr(Vt.IntArray([3, 3]))
+    mesh.CreateFaceVertexIndicesAttr(Vt.IntArray([0, 1, 2, 0, 2, 3]))
+    mesh.CreateExtentAttr(Vt.Vec3fArray([
+        Gf.Vec3f(-1.2, -1.25, 0), Gf.Vec3f(1.2, 1.25, 0),
+    ]))
+    mesh.CreateSubdivisionSchemeAttr().Set(UsdGeom.Tokens.none)
+    mesh.CreateDoubleSidedAttr().Set(True)
+    mesh.CreateNormalsAttr(Vt.Vec3fArray([Gf.Vec3f(0, 0, 1)] * 4))
+    mesh.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
+    st = UsdGeom.PrimvarsAPI(mesh).CreatePrimvar(
+        "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex
+    )
+    st.Set(Vt.Vec2fArray([
+        Gf.Vec2f(0, 0), Gf.Vec2f(2.4 / tile_meters, 0),
+        Gf.Vec2f(2.4 / tile_meters, 2.5 / tile_meters),
+        Gf.Vec2f(0, 2.5 / tile_meters),
+    ]))
+
+    material = UsdShade.Material.Define(stage, "/SynapMantisAsset/Materials/PBR")
+    preview = UsdShade.Shader.Define(stage, material.GetPath().AppendChild("PreviewSurface"))
+    preview.CreateIdAttr("UsdPreviewSurface")
+    preview.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.0)
+    preview.CreateInput("ior", Sdf.ValueTypeNames.Float).Set(1.5)
+    preview.CreateOutput("surface", Sdf.ValueTypeNames.Token)
+
+    uv_reader = UsdShade.Shader.Define(stage, material.GetPath().AppendChild("UVReader"))
+    uv_reader.CreateIdAttr("UsdPrimvarReader_float2")
+    uv_reader.CreateInput("varname", Sdf.ValueTypeNames.Token).Set("st")
+    uv_reader.CreateOutput("result", Sdf.ValueTypeNames.Float2)
+
+    color = texture_shader(material, "Color", "Color.jpg", uv_reader, "sRGB")
+    roughness = texture_shader(material, "Roughness", "Roughness.jpg", uv_reader, "raw")
+    normal = texture_shader(material, "Normal", "Normal.jpg", uv_reader, "raw")
+    normal.CreateInput("bias", Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(-1, -1, -1, -1))
+    normal.CreateInput("scale", Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(2, 2, 2, 2))
+
+    preview.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).ConnectToSource(
+        color.ConnectableAPI(), "rgb"
+    )
+    preview.CreateInput("roughness", Sdf.ValueTypeNames.Float).ConnectToSource(
+        roughness.ConnectableAPI(), "r"
+    )
+    preview.CreateInput("normal", Sdf.ValueTypeNames.Normal3f).ConnectToSource(
+        normal.ConnectableAPI(), "rgb"
+    )
+    material.CreateSurfaceOutput().ConnectToSource(preview.ConnectableAPI(), "surface")
+    UsdShade.MaterialBindingAPI.Apply(mesh.GetPrim()).Bind(material)
+    stage.GetRootLayer().Save()
+    # Release the Windows file handle before packaging or temporary cleanup.
+    stage = None
+
+
+def package_one(
+    output_root: Path,
+    asset_name: str,
+    color: Path,
+    normal: Path,
+    roughness: Path,
+    tile_meters: float,
+) -> None:
+    with tempfile.TemporaryDirectory(
+        prefix=f"{asset_name}-", ignore_cleanup_errors=True
+    ) as temporary:
+        work = Path(temporary)
+        textures = work / "textures"
+        convert_texture(color, textures / "Color.jpg", color=True)
+        convert_texture(normal, textures / "Normal.jpg", color=False)
+        convert_texture(roughness, textures / "Roughness.jpg", color=False)
+        stage_path = work / f"{asset_name}.usdc"
+        build_stage(stage_path, asset_name, tile_meters)
+        output = output_root / f"{asset_name}.usdz"
+        output.unlink(missing_ok=True)
+        previous = Path.cwd()
+        try:
+            os.chdir(work)
+            created = UsdUtils.CreateNewUsdzPackage(
+                Sdf.AssetPath(stage_path.name), str(output.resolve()), stage_path.name
+            )
+        finally:
+            os.chdir(previous)
+        if not created or not output.is_file():
+            raise RuntimeError(f"Failed to package {asset_name}")
+        if output.stat().st_size > MAX_PACKAGE_BYTES:
+            raise RuntimeError(f"Mobile package too large: {output}")
+        if not Usd.Stage.Open(str(output.resolve())):
+            raise RuntimeError(f"Packaged stage cannot be reopened: {output}")
+        print(f"SYNAPMANTIS_BACKROOMS_USDZ {asset_name} {output.stat().st_size}")
+
+
+def main() -> None:
+    options = arguments()
+    source_root = options.source.resolve()
+    output_root = options.output.resolve()
+    output_root.mkdir(parents=True, exist_ok=True)
+    for asset_name, color, normal, roughness, tile_meters in material_specs(source_root):
+        package_one(output_root, asset_name, color, normal, roughness, tile_meters)
+
+
+if __name__ == "__main__":
+    main()
+````
+
 ## `Tools/generate_wall_assets.py`
 
 ````python
@@ -22405,12 +23467,14 @@ import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
+import shutil
+import subprocess
 import tempfile
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 try:
-    from pxr import Sdf, Usd, UsdShade, UsdUtils
+    from pxr import Sdf, Usd, UsdGeom, UsdShade, UsdUtils
 except ImportError as error:
     raise SystemExit(
         "OpenUSD is required. Install the pinned tool with: "
@@ -22423,8 +23487,20 @@ USER_AGENT = "SynapMantisAssetPipeline/1.0"
 DEFAULT_ASSET_IDS = (
     "modern_ceiling_lamp_01",
     "hanging_picture_frame_01",
+    "mounted_fluorescent_lights",
+    "hanging_picture_frame_02",
+    "fancy_picture_frame_01",
+    "hanging_picture_frame_03",
+    "painted_wooden_cabinet_02",
+    "vintage_suitcase",
+    "cassette_player",
+    "vintage_radio_transceiver",
+    "painted_wooden_sofa",
+    "office_notepads",
+    "security_light",
 )
 MAX_USDZ_BYTES = 8 * 1024 * 1024
+MOBILE_TEXTURE_QUALITY = 88
 
 
 def arguments() -> argparse.Namespace:
@@ -22485,6 +23561,47 @@ def download_verified(url: str, destination: Path, expected_md5: str) -> None:
         temporary_path.unlink(missing_ok=True)
 
 
+def mobile_texture(source: Path) -> Path:
+    """Convert HDR authoring textures to compact RealityKit-compatible JPEGs.
+
+    Poly Haven's native USD files often reference lossless EXR maps. A single
+    prop can therefore exceed the complete per-asset iPhone budget even at 1K.
+    The source EXR remains in the verified cache; only the packaged USD stage is
+    redirected to an 8-bit JPEG generated beside it.
+    """
+    suffix = source.suffix.lower()
+    name = source.name.lower()
+    if suffix not in {".exr", ".png"} or "opacity" in name or "alpha" in name:
+        return source
+    converter = shutil.which("magick")
+    if converter is None:
+        raise RuntimeError(
+            "ImageMagick is required to mobile-optimize EXR textures. "
+            "Install it or ensure `magick` is available on PATH."
+        )
+    destination = source.with_suffix(".mobile.jpg")
+    if destination.is_file() and destination.stat().st_mtime >= source.stat().st_mtime:
+        return destination
+    subprocess.run(
+        [
+            converter,
+            str(source),
+            "-alpha", "off",
+            "-depth", "8",
+            "-resize", "1024x1024>",
+            "-quality", str(MOBILE_TEXTURE_QUALITY),
+            str(destination),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if not destination.is_file() or destination.stat().st_size < 128:
+        raise RuntimeError(f"Mobile texture conversion failed: {source}")
+    return destination
+
+
 def fetch_native_usd(asset_id: str, cache_root: Path) -> Path:
     files = api_json(asset_id)
     try:
@@ -22524,6 +23641,7 @@ def fetch_native_usd(asset_id: str, cache_root: Path) -> Path:
     stage = Usd.Stage.Open(str(main_path))
     if not stage:
         raise RuntimeError(f"Native USD did not open: {main_path}")
+    rewrote_stage_dependency = False
     for prim in stage.Traverse():
         if not prim.IsA(UsdShade.Shader):
             continue
@@ -22533,22 +23651,75 @@ def fetch_native_usd(asset_id: str, cache_root: Path) -> Path:
             asset_path = shader_input.Get()
             if not asset_path or not asset_path.path:
                 continue
-            relative_name = asset_path.path.removeprefix("./")
+            raw_name = asset_path.path
+            if PurePosixPath(raw_name).is_absolute():
+                # A few official native-USD stages still contain Poly Haven's
+                # internal /mnt/prod authoring path even though their API includes
+                # the matching portable texture files. Resolve by verified basename
+                # and author a package-local path into a normalized cache layer.
+                matches = list(asset_root.rglob(Path(raw_name).name))
+                if len(matches) != 1:
+                    raise RuntimeError(
+                        "Could not uniquely resolve absolute USD dependency: "
+                        f"{raw_name} (matches={len(matches)})"
+                    )
+                relative_name = matches[0].relative_to(asset_root).as_posix()
+                shader_input.Set(Sdf.AssetPath("./" + relative_name))
+                rewrote_stage_dependency = True
+            else:
+                relative_name = raw_name.removeprefix("./")
             destination = safe_destination(asset_root, relative_name)
             if destination.is_file():
-                continue
-            resource = resources_by_name.get(Path(relative_name).name)
-            if resource is None:
-                raise RuntimeError(
-                    f"Poly Haven API did not describe USD dependency: {relative_name}"
-                )
-            download_verified(resource["url"], destination, resource["md5"])
+                pass
+            else:
+                resource = resources_by_name.get(Path(relative_name).name)
+                if resource is None:
+                    raise RuntimeError(
+                        f"Poly Haven API did not describe USD dependency: {relative_name}"
+                    )
+                download_verified(resource["url"], destination, resource["md5"])
+
+            optimized = mobile_texture(destination)
+            if optimized != destination:
+                optimized_relative = optimized.relative_to(asset_root).as_posix()
+                shader_input.Set(Sdf.AssetPath("./" + optimized_relative))
+                rewrote_stage_dependency = True
+
+    if rewrote_stage_dependency:
+        # Keep large photogrammetry meshes binary. ASCII USDA can inflate a
+        # compact USDC mesh by several megabytes before textures are included.
+        normalized_path = asset_root / f"{asset_id}_package.usdc"
+        if not stage.GetRootLayer().Export(str(normalized_path)):
+            raise RuntimeError(f"Could not export normalized USD layer: {normalized_path}")
+        return normalized_path
     return main_path
 
 
 def package_usdz(source: Path, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.unlink(missing_ok=True)
+
+    source_stage = Usd.Stage.Open(str(source))
+    if not source_stage:
+        raise RuntimeError(f"Native USD did not open: {source}")
+    if UsdGeom.GetStageUpAxis(source_stage) == UsdGeom.Tokens.z:
+        # RealityKit is Y-up. Although USD readers may convert stage metadata,
+        # explicitly wrapping Poly Haven's Z-up native stages avoids device-specific
+        # 90-degree orientation and bounding-box failures for thin wall/ceiling props.
+        wrapper_path = source.with_name(source.stem + "_yup.usda")
+        wrapper_path.unlink(missing_ok=True)
+        wrapper = Usd.Stage.CreateNew(str(wrapper_path))
+        UsdGeom.SetStageUpAxis(wrapper, UsdGeom.Tokens.y)
+        UsdGeom.SetStageMetersPerUnit(
+            wrapper,
+            UsdGeom.GetStageMetersPerUnit(source_stage),
+        )
+        root = UsdGeom.Xform.Define(wrapper, "/SynapMantisAsset")
+        root.GetPrim().GetReferences().AddReference("./" + source.name)
+        root.AddRotateXOp().Set(-90.0)
+        wrapper.SetDefaultPrim(root.GetPrim())
+        wrapper.GetRootLayer().Save()
+        source = wrapper_path
 
     previous_directory = Path.cwd()
     try:
@@ -22780,12 +23951,23 @@ def parse_manifest(path: Path) -> dict[str, str]:
     return entries
 
 
-def catalog_references(prop_kind_path: Path) -> set[str]:
+def catalog_references(prop_kind_path: Path, asset_names: set[str]) -> set[str]:
     source = prop_kind_path.read_text(encoding="utf-8")
     references = set(re.findall(r'assetName:\s*"([^"]+)"', source))
     start = source.index("    var bundledAssetName: String?")
     end = source.index("\n    var anchorName:", start)
     references.update(re.findall(r'case\s+\.[A-Za-z0-9_]+:\s*"([^"]+)"', source[start:end]))
+    # Renderer-only USDZ material templates are intentionally absent from the
+    # user-placeable PropKind list. An exact Swift string reference still counts
+    # as usage, so orphaned packages remain a build failure.
+    app_source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(prop_kind_path.parent.glob("*.swift"))
+    )
+    for name in asset_names:
+        stem = Path(name).stem
+        if f'"{stem}"' in app_source:
+            references.add(stem)
     return references
 
 
@@ -22849,7 +24031,7 @@ def main() -> None:
         raise AssertionError(f"Bundled USDZ set mismatch; missing={missing}, unexpected={unexpected}")
 
     if arguments.prop_kind is not None:
-        referenced_stems = catalog_references(arguments.prop_kind.resolve())
+        referenced_stems = catalog_references(arguments.prop_kind.resolve(), actual_names)
         actual_stems = {Path(name).stem for name in actual_names}
         if referenced_stems != actual_stems:
             missing = sorted(referenced_stems - actual_stems)
@@ -22915,6 +24097,25 @@ struct CustomARGeometryTests {
         precondition(CustomARGeometry.contains([1.5, 0, 1], in: boundary, normal: [0, 1, 0]))
         precondition(!CustomARGeometry.contains([4, 0, 1], in: boundary, normal: [0, 1, 0]))
 
+        let backrooms = try CustomARGeometry.makeDesign(
+            name: "Backrooms", boundary: boundary, normal: [0, 1, 0],
+            wallHeight: 2.55, wallThickness: 0.10, style: .backrooms,
+            ceilingEnabled: true
+        )
+        precondition(backrooms.isValid)
+        precondition(backrooms.walls.allSatisfy { $0.style == .backrooms })
+        precondition(backrooms.ceiling?.style == .backrooms)
+        let backroomsData = try JSONEncoder().encode(backrooms)
+        let restoredBackrooms = try JSONDecoder().decode(
+            CustomARDesignRecord.self,
+            from: backroomsData
+        )
+        precondition(restoredBackrooms == backrooms)
+        precondition(CustomARWallStyle.allCases.filter(\.isBackrooms).count == 10)
+        precondition(CustomARWallStyle.backrooms02.backroomsWallpaperAssetName == "backrooms_yasu_wall_02")
+        precondition(CustomARWallStyle.backrooms04.backroomsCeilingAssetName == "backrooms_yasu_ceiling_04")
+        precondition(CustomARWallStyle.backroomsClassic.backroomsWallpaperAssetName == "wall_cladding_backrooms_001")
+
         let interior = try CustomARGeometry.makeInteriorWall(
             start: [0.5, 0.03, 1], end: [2.5, -0.02, 1], in: design,
             height: 2.4, thickness: 0.08, style: .concrete
@@ -22975,6 +24176,8 @@ struct CustomARGeometryTests {
             let forward = simd_normalize(simd_cross(direction, SIMD3<Float>(0, 1, 0)))
             let probe = (wall.start.simd + wall.end.simd) * 0.5 + forward * side * 0.075
             precondition(CustomARGeometry.contains(probe, in: concave, normal: [0, 1, 0]))
+            let angle = CustomARGeometry.inwardDoorOpenAngle(interiorSide: side)
+            precondition(angle * side < 0)
         }
         let reversedConcave = Array(concave.reversed())
         let reversedDesign = try CustomARGeometry.makeDesign(
@@ -22995,6 +24198,8 @@ struct CustomARGeometryTests {
                 in: reversedConcave,
                 normal: [0, 1, 0]
             ))
+            let angle = CustomARGeometry.inwardDoorOpenAngle(interiorSide: side)
+            precondition(angle * side < 0)
         }
         do {
             _ = try CustomARGeometry.makeInteriorWall(
@@ -23397,6 +24602,31 @@ struct WallCladdingGeometryTests {
         print("WALL_CLADDING_GEOMETRY_OK: \(checks) checks")
     }
 }
+````
+
+## `Tools/update_asset_manifest.ps1`
+
+````powershell
+param(
+    [string]$Assets = "CineAR/RoomAssets",
+    [string]$Manifest = "CineAR/RoomAssets/MANIFEST.sha256"
+)
+
+$ErrorActionPreference = "Stop"
+$assetRoot = (Resolve-Path -LiteralPath $Assets).Path
+$manifestPath = [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $Manifest))
+$lines = Get-ChildItem -LiteralPath $assetRoot -Filter "*.usdz" -File |
+    Sort-Object -Property Name |
+    ForEach-Object {
+        $digest = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        "$digest  $($_.Name)"
+    }
+
+if ($lines.Count -eq 0) {
+    throw "No USDZ assets found under $assetRoot"
+}
+[System.IO.File]::WriteAllLines($manifestPath, $lines, [System.Text.UTF8Encoding]::new($false))
+Write-Host "SYNAPMANTIS_MANIFEST_OK assets=$($lines.Count) path=$manifestPath"
 ````
 
 ## `Tools/validate_privacy_plist.py`

@@ -1,4 +1,4 @@
-# SynapMantis 0.18.1 cihaz kabul testi
+# SynapMantis 0.20.0 cihaz kabul testi
 
 ## Hedef donanim
 
@@ -41,7 +41,7 @@
    zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
    durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
-6. 40 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
+6. 52 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
    gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
@@ -243,6 +243,22 @@
     ayni yeri gosterip Yukle; alan, ic duvar, kapi ve kapi durumu ayni koordinatta
     geri gelmelidir. Referansla Hizala uygulaninca tum Ozel AR yapisi tek parca
     kaymali; duvarlar kendi aralarinda ayrilmamalidir.
+30. `Ozel AR > Backrooms Kiti`ni uygula. Aktif alanin duvarlari dokulu sari, zemini
+    PBR kirli hali ve tavani dokulu acik panel olmali; `Backrooms Sari` film
+    filtresi secili gorunmelidir. `Backrooms Floresan`i sanal tavana tek dokunusla
+    yerlestir. Armaturun yuksek detayli modeli veya taninabilir iki tuplu yedegi
+    hemen gorunmeli; 8000 lumen genis sicak isik, saydam koni huzmesi ve hedef izi
+    birlikte calismalidir. El veya kisi huzmenin/armaturun onunden gecince LiDAR
+    ortmesi gercek nesneyi onde tutmalidir. Uc yeni tabloyu sirayla sanal duvara
+    yerlestir; dik/yatay eksenleri dogru, arka yuzleri duvara sifir ve kamera
+    uzakligindan bagimsiz kalmalidir. `Acilir Kapi Ekle` ile ayni duvara kapi koy;
+    fiziksel arka plan derinligi kapinin eklenmesini engellememeli, kol/panel odanin
+    ic tarafinda olmali ve kanat iki farkli duvar yonunde de iceri acilmalidir.
+    Malzeme menusundeki dokuz `Backrooms Yasu` secenegini ve `Backrooms Klasik CC0`
+    secenegini sirayla uygula; desenler duvar boyuna gore uzamamali ve arayuz dokular
+    yuklenirken donmamalidir. Yasu 01-04 secimlerinde dort farkli tavan eslesmesi
+    gorunmeli. Duvar kategorisindeki `Backrooms Duvar Kaplama` taranmis duvar olcusune
+    oturmali, kapi/pencere bosluklarini kapatmamalidir.
 
 ## Anlik LiDAR ortmesi regresyonu
 

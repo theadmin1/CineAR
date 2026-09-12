@@ -45,6 +45,25 @@ struct CustomARGeometryTests {
         precondition(CustomARGeometry.contains([1.5, 0, 1], in: boundary, normal: [0, 1, 0]))
         precondition(!CustomARGeometry.contains([4, 0, 1], in: boundary, normal: [0, 1, 0]))
 
+        let backrooms = try CustomARGeometry.makeDesign(
+            name: "Backrooms", boundary: boundary, normal: [0, 1, 0],
+            wallHeight: 2.55, wallThickness: 0.10, style: .backrooms,
+            ceilingEnabled: true
+        )
+        precondition(backrooms.isValid)
+        precondition(backrooms.walls.allSatisfy { $0.style == .backrooms })
+        precondition(backrooms.ceiling?.style == .backrooms)
+        let backroomsData = try JSONEncoder().encode(backrooms)
+        let restoredBackrooms = try JSONDecoder().decode(
+            CustomARDesignRecord.self,
+            from: backroomsData
+        )
+        precondition(restoredBackrooms == backrooms)
+        precondition(CustomARWallStyle.allCases.filter(\.isBackrooms).count == 10)
+        precondition(CustomARWallStyle.backrooms02.backroomsWallpaperAssetName == "backrooms_yasu_wall_02")
+        precondition(CustomARWallStyle.backrooms04.backroomsCeilingAssetName == "backrooms_yasu_ceiling_04")
+        precondition(CustomARWallStyle.backroomsClassic.backroomsWallpaperAssetName == "wall_cladding_backrooms_001")
+
         let interior = try CustomARGeometry.makeInteriorWall(
             start: [0.5, 0.03, 1], end: [2.5, -0.02, 1], in: design,
             height: 2.4, thickness: 0.08, style: .concrete
@@ -105,6 +124,8 @@ struct CustomARGeometryTests {
             let forward = simd_normalize(simd_cross(direction, SIMD3<Float>(0, 1, 0)))
             let probe = (wall.start.simd + wall.end.simd) * 0.5 + forward * side * 0.075
             precondition(CustomARGeometry.contains(probe, in: concave, normal: [0, 1, 0]))
+            let angle = CustomARGeometry.inwardDoorOpenAngle(interiorSide: side)
+            precondition(angle * side < 0)
         }
         let reversedConcave = Array(concave.reversed())
         let reversedDesign = try CustomARGeometry.makeDesign(
@@ -125,6 +146,8 @@ struct CustomARGeometryTests {
                 in: reversedConcave,
                 normal: [0, 1, 0]
             ))
+            let angle = CustomARGeometry.inwardDoorOpenAngle(interiorSide: side)
+            precondition(angle * side < 0)
         }
         do {
             _ = try CustomARGeometry.makeInteriorWall(

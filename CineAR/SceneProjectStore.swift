@@ -11,6 +11,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
     case noir
     case thriller
     case dream
+    case backrooms
 
     var id: String { rawValue }
 
@@ -22,6 +23,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: "Noir"
         case .thriller: "Gerilim"
         case .dream: "Rüya"
+        case .backrooms: "Backrooms Sarı"
         }
     }
 
@@ -33,6 +35,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: "circle.righthalf.filled"
         case .thriller: "moon.stars.fill"
         case .dream: "sparkles"
+        case .backrooms: "lightbulb.max.fill"
         }
     }
 
@@ -44,6 +47,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: 0
         case .thriller: 0.62
         case .dream: 0.78
+        case .backrooms: 0.72
         }
     }
 
@@ -55,6 +59,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: 1.28
         case .thriller: 1.24
         case .dream: 0.88
+        case .backrooms: 1.17
         }
     }
 
@@ -66,6 +71,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: -0.035
         case .thriller: -0.055
         case .dream: 0.035
+        case .backrooms: -0.025
         }
     }
 
@@ -75,6 +81,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .tealOrange: -6
         case .thriller: -12
         case .dream: 8
+        case .backrooms: -8
         }
     }
 
@@ -86,6 +93,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: (0.08, 0.09, 0.12, 0.08)
         case .thriller: (0.04, 0.16, 0.10, 0.16)
         case .dream: (0.40, 0.24, 0.48, 0.11)
+        case .backrooms: (0.55, 0.43, 0.06, 0.23)
         }
     }
 
@@ -97,6 +105,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
         case .noir: 0.48
         case .thriller: 0.52
         case .dream: 0.18
+        case .backrooms: 0.38
         }
     }
 }
@@ -150,6 +159,18 @@ struct VirtualLightSettings: Codable, Equatable {
         yawDegrees: 0,
         tiltDegrees: 0,
         beamSoftness: 0.34
+    )
+
+    /// Broad, warm fluorescent spill used by the Custom AR Backrooms kit. The
+    /// intensity stays inside the validated mobile range and avoids extra lights.
+    static let backroomsFixture = VirtualLightSettings(
+        isEnabled: true,
+        intensityLumens: 8_000,
+        temperatureKelvin: 3_700,
+        coneAngleDegrees: 66,
+        yawDegrees: 0,
+        tiltDegrees: 0,
+        beamSoftness: 0.72
     )
 
     var isEnabled: Bool

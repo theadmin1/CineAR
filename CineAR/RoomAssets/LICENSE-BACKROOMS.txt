@@ -1,0 +1,31 @@
+SynapMantis Backrooms Material Sources
+
+Yasu's Backrooms Material Pack v1.0
+Creator: @mvyasu (Yasu)
+Source: https://mvyasu.itch.io/backrooms-material-pack
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License URL: https://creativecommons.org/licenses/by/4.0/
+
+Bundled adaptations:
+backrooms_yasu_wall_01.usdz through backrooms_yasu_wall_09.usdz
+backrooms_yasu_ceiling_01.usdz through backrooms_yasu_ceiling_04.usdz
+backrooms_yasu_floor_01.usdz
+
+The original 4K maps were resized and JPEG-compressed to 1K for mobile use.
+Each USDZ keeps the original color, OpenGL normal and roughness maps. Geometry,
+USD material wiring, naming and packaging were created for SynapMantis. No
+generative AI was used by the source author according to the source page.
+
+Wallpaper Backrooms 001
+Creator/site: 3DTextures.me
+Source: https://3dtextures.me/2024/06/25/wallpaper-backrooms-001/
+License: Creative Commons Zero (CC0 1.0 Universal)
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Bundled adaptation:
+wall_cladding_backrooms_001.usdz
+
+The official 1024 px base-color, OpenGL-normal and roughness maps are packaged
+as a repeatable RealityKit wall material. The generated panel geometry is only
+a material template; runtime wall geometry is fitted to the scanned wall and
+keeps door/window openings clear.

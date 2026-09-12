@@ -156,6 +156,19 @@ struct ContentView: View {
             .opacity(tint.alpha)
             .blendMode(.softLight)
 
+            if session.activeFilmLook == .backrooms {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.96, green: 0.80, blue: 0.20).opacity(0.12),
+                        Color.clear,
+                        Color(red: 0.50, green: 0.37, blue: 0.05).opacity(0.10)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .blendMode(.softLight)
+            }
+
             RadialGradient(
                 colors: [
                     Color.clear,
@@ -990,6 +1003,35 @@ struct ContentView: View {
                     .disabled(session.customARAreas.count >= 8)
                 }
 
+                Section("Backrooms Kiti") {
+                    Button {
+                        session.applyCustomARBackroomsPreset()
+                    } label: {
+                        Label("Backrooms Görünümünü Uygula", systemImage: "lightbulb.max.fill")
+                    }
+                    Text(
+                        "Dokuz Yasu duvarı ve klasik CC0 duvar seçeneği; 1K PBR kirli halı, "
+                            + "dört tavan eşleşmesi, sıcak floresan ışık ve sinematik sarı filtre."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    Button {
+                        session.beginCustomARDoorPlacement()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("Açılır Kapı Ekle", systemImage: "door.left.hand.open")
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+
+                    Text(
+                        "Yeni gerçekçi set: eskimiş dolap, bavul, kasetçalar, telsiz, ahşap koltuk, "
+                            + "not defterleri, güvenlik lambası ve Backrooms duvar kaplaması."
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                }
+
                 Section("Özel AR Varlık Seti") {
                     Text(
                         session.activeCustomARAreaID == nil
@@ -1012,7 +1054,13 @@ struct ContentView: View {
                                 VStack(spacing: 5) {
                                     HStack(spacing: 6) {
                                         Text(prop.symbol).font(.title2)
-                                        if prop == .modernCeilingLamp || prop == .hangingPictureFrame {
+                                        if [.modernCeilingLamp, .hangingPictureFrame,
+                                            .backroomsFluorescentLight, .distressedPictureFrame,
+                                            .antiqueLandscapeFrame, .ovalVintageFrame,
+                                            .distressedCabinet, .vintageSuitcase,
+                                            .portableCassettePlayer, .vintageRadioTransceiver,
+                                            .paintedWoodenSofa, .officeNotepads, .securityLight,
+                                            .backroomsWallCladding].contains(prop) {
                                             Text("YENİ")
                                                 .font(.caption2.weight(.black))
                                                 .foregroundStyle(.green)
@@ -1042,7 +1090,7 @@ struct ContentView: View {
                             Text(style.title).tag(style)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
 
                     customARSlider(
                         title: "Duvar / tavan yüksekliği",

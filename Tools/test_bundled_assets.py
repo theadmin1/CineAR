@@ -33,12 +33,23 @@ def parse_manifest(path: Path) -> dict[str, str]:
     return entries
 
 
-def catalog_references(prop_kind_path: Path) -> set[str]:
+def catalog_references(prop_kind_path: Path, asset_names: set[str]) -> set[str]:
     source = prop_kind_path.read_text(encoding="utf-8")
     references = set(re.findall(r'assetName:\s*"([^"]+)"', source))
     start = source.index("    var bundledAssetName: String?")
     end = source.index("\n    var anchorName:", start)
     references.update(re.findall(r'case\s+\.[A-Za-z0-9_]+:\s*"([^"]+)"', source[start:end]))
+    # Renderer-only USDZ material templates are intentionally absent from the
+    # user-placeable PropKind list. An exact Swift string reference still counts
+    # as usage, so orphaned packages remain a build failure.
+    app_source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(prop_kind_path.parent.glob("*.swift"))
+    )
+    for name in asset_names:
+        stem = Path(name).stem
+        if f'"{stem}"' in app_source:
+            references.add(stem)
     return references
 
 
@@ -102,7 +113,7 @@ def main() -> None:
         raise AssertionError(f"Bundled USDZ set mismatch; missing={missing}, unexpected={unexpected}")
 
     if arguments.prop_kind is not None:
-        referenced_stems = catalog_references(arguments.prop_kind.resolve())
+        referenced_stems = catalog_references(arguments.prop_kind.resolve(), actual_names)
         actual_stems = {Path(name).stem for name in actual_names}
         if referenced_stems != actual_stems:
             missing = sorted(referenced_stems - actual_stems)

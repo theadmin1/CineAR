@@ -209,6 +209,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private var renderedEntities: [UUID: ModelEntity] = [:]
     private var renderedLights: [UUID: SpotLight] = [:]
     private var renderedLightEmitters: [UUID: ModelEntity] = [:]
+    private var renderedLightBeams: [UUID: ModelEntity] = [:]
     private var renderedLightFootprints: [UUID: AnchorEntity] = [:]
     private var loadingEntityIDs = Set<UUID>()
     private var assetLoadSubscriptions: [UUID: AnyCancellable] = [:]
@@ -488,6 +489,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
+        renderedLightBeams.removeAll()
         renderedLightFootprints.removeAll()
         bloodWaterfallParticles.removeAll()
         loadingEntityIDs.removeAll()
@@ -2457,6 +2459,26 @@ final class ARSessionController: NSObject, ObservableObject {
         }
     }
 
+    func applyCustomARBackroomsPreset() {
+        customARWallStyle = .backrooms
+        customARWallHeight = 2.55
+        customARWallThickness = 0.10
+        customARCeilingEnabled = true
+        selectFilmLook(.backrooms)
+        if activeCustomARAreaID != nil {
+            applyCustomARWallSettings()
+            setCustomARStatus(
+                "Backrooms kiti uygulandı: sarı duvar, kirli halı, açık tavan ve film filtresi",
+                color: .green
+            )
+        } else {
+            setCustomARStatus(
+                "Backrooms kiti hazır; şimdi zeminde alanın köşelerini çiz",
+                color: .blue
+            )
+        }
+    }
+
     func deleteActiveCustomARArea() {
         guard let id = activeCustomARAreaID else {
             setCustomARStatus("Silinecek özel AR alanı yok", color: .yellow)
@@ -2604,18 +2626,9 @@ final class ARSessionController: NSObject, ObservableObject {
             setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
             return
         }
-        if let frame = arView.session.currentFrame,
-           let depth = sceneDepthSample(frame: frame, in: arView, at: point) {
-            let cameraPosition = arView.cameraTransform.translation
-            let measuredDistance = simd_distance(cameraPosition, depth.worldPoint)
-            guard WallPlacementPolicy.persistentWallIsVisible(
-                measuredDistance: measuredDistance,
-                wallDistance: hit.distance
-            ) else {
-                setCustomARStatus("Duvarın önündeki gerçek nesne kapı noktasını kapatıyor", color: .yellow)
-                return
-            }
-        }
+        // This hit comes from the exact Custom AR wall collider. Comparing it with
+        // physical scene depth incorrectly rejected virtual walls whenever the
+        // scanned real wall/furniture sat in front of or behind the designed room.
         var designs = projectStore.project.effectiveCustomARDesigns
         guard let location = customARWallLocation(id: wallID, designs: designs) else {
             setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
@@ -2928,12 +2941,17 @@ final class ARSessionController: NSObject, ObservableObject {
             wallCladding = fitted.layout
         }
         let id = UUID()
+        let defaultLightSettings: VirtualLightSettings? = prop.emitsVirtualLight
+            ? ((prop == .backroomsFluorescentLight || activeFilmLook == .backrooms)
+                ? .backroomsFixture
+                : .defaultFixture)
+            : nil
         let placement = PlacementRecord(
             id: id,
             kind: prop,
             assetFileName: prop == .custom ? selectedAssetURL?.lastPathComponent : nil,
             transform: StoredTransform(defaultTransform(for: prop)),
-            lightSettings: prop.emitsVirtualLight ? .defaultFixture : nil,
+            lightSettings: defaultLightSettings,
             wallCladding: wallCladding
         )
         do {
@@ -4546,6 +4564,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedEntities.removeAll()
         renderedLights.removeAll()
         renderedLightEmitters.removeAll()
+        renderedLightBeams.removeAll()
         renderedLightFootprints.removeAll()
         selectedEntityID = nil
         selectedLightSettings = nil
@@ -4826,6 +4845,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
+        renderedLightBeams[id] = nil
         bloodWaterfallParticles[id] = nil
         if let footprint = renderedLightFootprints.removeValue(forKey: id) {
             footprint.scene?.removeAnchor(footprint)
@@ -5606,6 +5626,7 @@ final class ARSessionController: NSObject, ObservableObject {
         renderedLights[id]?.removeFromParent()
         renderedLights[id] = nil
         renderedLightEmitters[id] = nil
+        renderedLightBeams[id] = nil
         current.removeFromParent()
 
         entity.name = id.uuidString
@@ -5808,6 +5829,7 @@ final class ARSessionController: NSObject, ObservableObject {
         settings: VirtualLightSettings
     ) {
         renderedLights[id]?.removeFromParent()
+        renderedLightBeams[id] = nil
         let light = SpotLight()
         light.name = "cinear.virtual-light.\(id.uuidString)"
         light.shadow = SpotLightComponent.Shadow()
@@ -5826,7 +5848,12 @@ final class ARSessionController: NSObject, ObservableObject {
         var emitterMaterial = UnlitMaterial()
         emitterMaterial.color = .init(tint: .white)
         let emitter: ModelEntity
-        if prop == .cagedCeilingLight || prop == .lightPanel {
+        if prop == .backroomsFluorescentLight {
+            emitter = ModelEntity(
+                mesh: .generateBox(size: [0.78, 0.018, 0.48], cornerRadius: 0.009),
+                materials: [emitterMaterial]
+            )
+        } else if prop == .cagedCeilingLight || prop == .lightPanel {
             emitter = ModelEntity(
                 mesh: .generateBox(size: [0.58, 0.018, 0.07], cornerRadius: 0.009),
                 materials: [emitterMaterial]
@@ -5840,7 +5867,44 @@ final class ARSessionController: NSObject, ObservableObject {
         emitter.name = "cinear.virtual-light.emitter"
         light.addChild(emitter)
         renderedLightEmitters[id] = emitter
+
+        var beamMaterial = UnlitMaterial()
+        beamMaterial.color = .init(tint: .white)
+        beamMaterial.blending = .transparent(opacity: .init(floatLiteral: 0.035))
+        if let beam = makeVisibleLightBeam(id: id, material: beamMaterial) {
+            light.addChild(beam)
+            renderedLightBeams[id] = beam
+        }
         apply(settings: settings, to: light, prop: prop)
+    }
+
+    private func makeVisibleLightBeam(
+        id: UUID,
+        material: UnlitMaterial
+    ) -> ModelEntity? {
+        let segments = 24
+        var positions: [SIMD3<Float>] = [.zero]
+        positions.reserveCapacity(segments + 1)
+        for segment in 0..<segments {
+            let angle = Float(segment) / Float(segments) * 2 * .pi
+            positions.append([cos(angle), sin(angle), -1])
+        }
+        var indices: [UInt32] = []
+        indices.reserveCapacity(segments * 6)
+        for segment in 0..<segments {
+            let current = UInt32(segment + 1)
+            let next = UInt32((segment + 1) % segments + 1)
+            // Both windings keep the volumetric shell visible when the iPhone is
+            // outside the cone or standing inside the broad Backrooms spill.
+            indices.append(contentsOf: [0, current, next, 0, next, current])
+        }
+        var descriptor = MeshDescriptor(name: "cinear.projector.beam.mesh")
+        descriptor.positions = MeshBuffers.Positions(positions)
+        descriptor.primitives = .triangles(indices)
+        guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
+        let beam = ModelEntity(mesh: mesh, materials: [material])
+        beam.name = "cinear.projector.beam.\(id.uuidString)"
+        return beam
     }
 
     private func apply(settings: VirtualLightSettings, to light: SpotLight, prop: PropKind) {
@@ -5904,8 +5968,57 @@ final class ARSessionController: NSObject, ObservableObject {
                 model.materials = [material]
                 emitter.components.set(model)
             }
+            updateVisibleLightBeam(
+                id: id,
+                settings: settings,
+                prop: prop,
+                light: light
+            )
         }
         refreshProjectorFootprint(id: entityID(for: light), settings: settings)
+    }
+
+    private func updateVisibleLightBeam(
+        id: UUID,
+        settings: VirtualLightSettings,
+        prop: PropKind,
+        light: SpotLight
+    ) {
+        guard let beam = renderedLightBeams[id] else { return }
+        let isVisible = settings.isEnabled && settings.intensityLumens > 50
+        beam.isEnabled = isVisible
+        guard isVisible else { return }
+
+        let defaultLength: Float
+        switch prop.placementSurface {
+        case .ceiling: defaultLength = 2.20
+        case .wall: defaultLength = 1.55
+        case .floor, .horizontal: defaultLength = 1.20
+        }
+        var length = defaultLength
+        if let target = settings.projectorTarget, light.scene != nil {
+            let matrix = light.transformMatrix(relativeTo: nil)
+            let origin = SIMD3<Float>(matrix.columns.3.x, matrix.columns.3.y, matrix.columns.3.z)
+            let measured = simd_distance(origin, target)
+            if measured.isFinite { length = min(max(measured, 0.35), 4.0) }
+        }
+        let halfAngle = min(settings.coneAngleDegrees, 84) * .pi / 360
+        let radius = min(max(tan(halfAngle) * length, 0.07), 3.0)
+        beam.scale = [radius, radius, length]
+        beam.position = .zero
+
+        let normalizedIntensity = min(max(settings.intensityLumens / 12_000, 0), 1)
+        let opacity = min(
+            0.09,
+            0.018 + normalizedIntensity * 0.045 + settings.effectiveBeamSoftness * 0.012
+        )
+        var material = UnlitMaterial()
+        material.color = .init(tint: Self.colorTemperature(kelvin: settings.temperatureKelvin))
+        material.blending = .transparent(opacity: .init(floatLiteral: opacity))
+        if var model = beam.components[ModelComponent.self] {
+            model.materials = [material]
+            beam.components.set(model)
+        }
     }
 
     private func refreshProjectorLights() {
@@ -6018,7 +6131,10 @@ final class ARSessionController: NSObject, ObservableObject {
                     * (0.38 + edgeWeight * (0.78 - settings.effectiveBeamSoftness * 0.24)))
             )
             var material = UnlitMaterial()
-            material.color = .init(tint: color.withAlphaComponent(alpha))
+            material.color = .init(tint: color)
+            material.blending = .transparent(
+                opacity: .init(floatLiteral: Float(alpha))
+            )
             if var model = disc.components[ModelComponent.self] {
                 model.materials = [material]
                 disc.components.set(model)
@@ -6232,11 +6348,15 @@ final class ARSessionController: NSObject, ObservableObject {
             max(dimensions.y, 0.04),
             max(dimensions.z, 0.04)
         )
-        if prop == .hangingPictureFrame {
+        if [.hangingPictureFrame, .distressedPictureFrame, .antiqueLandscapeFrame,
+            .ovalVintageFrame].contains(prop) {
             return makePictureFrameLoadingProxy(dimensions: safeDimensions)
         }
         if prop == .modernCeilingLamp {
             return makeCeilingLampLoadingProxy(dimensions: safeDimensions)
+        }
+        if prop == .backroomsFluorescentLight {
+            return makeFluorescentLoadingProxy(dimensions: safeDimensions)
         }
         let mesh = MeshResource.generateBox(
             size: safeDimensions,
@@ -6346,6 +6466,45 @@ final class ARSessionController: NSObject, ObservableObject {
         root.addChild(shade)
         root.addChild(bulb)
         root.name = "cinear.loading-proxy.\(PropKind.modernCeilingLamp.rawValue)"
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: dimensions)]
+        )
+        return root
+    }
+
+    private func makeFluorescentLoadingProxy(
+        dimensions: SIMD3<Float>
+    ) -> ModelEntity {
+        let housingMaterial = SimpleMaterial(
+            color: UIColor(red: 0.68, green: 0.67, blue: 0.58, alpha: 1),
+            roughness: 0.76,
+            isMetallic: false
+        )
+        var tubeMaterial = UnlitMaterial()
+        tubeMaterial.color = .init(
+            tint: UIColor(red: 1.0, green: 0.91, blue: 0.55, alpha: 1)
+        )
+        let root = ModelEntity(
+            mesh: .generateBox(
+                size: [dimensions.x, max(dimensions.y * 0.48, 0.018), dimensions.z],
+                cornerRadius: 0.012
+            ),
+            materials: [housingMaterial]
+        )
+        let tubeSize = SIMD3<Float>(
+            dimensions.x * 0.86,
+            max(dimensions.y * 0.24, 0.012),
+            max(dimensions.z * 0.055, 0.018)
+        )
+        for zOffset in [-dimensions.z * 0.24, dimensions.z * 0.24] {
+            let tube = ModelEntity(
+                mesh: .generateBox(size: tubeSize, cornerRadius: tubeSize.z * 0.48),
+                materials: [tubeMaterial]
+            )
+            tube.position = [0, -dimensions.y * 0.32, zOffset]
+            root.addChild(tube)
+        }
+        root.name = "cinear.loading-proxy.\(PropKind.backroomsFluorescentLight.rawValue)"
         root.collision = CollisionComponent(
             shapes: [ShapeResource.generateBox(size: dimensions)]
         )

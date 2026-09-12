@@ -1,3 +1,4 @@
+import Combine
 import RealityKit
 import UIKit
 import simd
@@ -16,6 +17,9 @@ final class CustomARRenderer {
     private var contentEntity = Entity()
     private var draftEntity = Entity()
     private weak var installedARView: ARView?
+    private var bundledMaterialCache: [String: any Material] = [:]
+    private var bundledMaterialLoads: [String: AnyCancellable] = [:]
+    private var lastRenderedDesigns: [CustomARDesignRecord] = []
 
     init() {
         configureRoot()
@@ -52,6 +56,7 @@ final class CustomARRenderer {
     }
 
     func clear() {
+        lastRenderedDesigns = []
         contentEntity.removeFromParent()
         draftEntity.removeFromParent()
         contentEntity = Entity()
@@ -70,11 +75,16 @@ final class CustomARRenderer {
     }
 
     func render(_ designs: [CustomARDesignRecord]) {
+        lastRenderedDesigns = designs
         let staging = Entity()
         staging.name = "synapmantis.custom-ar.content"
         for design in designs where design.isValid {
             let designRoot = Entity()
             designRoot.name = "synapmantis.custom-ar.area.\(design.id.uuidString)"
+            if design.walls.first?.style.isBackrooms == true,
+               let floorEntity = makeBackroomsFloor(for: design) {
+                designRoot.addChild(floorEntity)
+            }
             for (index, wall) in design.walls.enumerated() {
                 if let wallEntity = makeWall(
                     wall,
@@ -138,9 +148,12 @@ final class CustomARRenderer {
 
     func setDoor(id: UUID, isOpen: Bool, animated: Bool) {
         guard let hinge = rootEntity.findEntity(named: Self.doorPrefix + id.uuidString) else { return }
+        let interiorSide: Float = hinge.position.z >= 0 ? 1 : -1
         var target = hinge.transform
         target.rotation = simd_quatf(
-            angle: isOpen ? -.pi * 0.52 : 0,
+            angle: isOpen
+                ? CustomARGeometry.inwardDoorOpenAngle(interiorSide: interiorSide)
+                : 0,
             axis: [0, 1, 0]
         )
         if animated, let parent = hinge.parent {
@@ -249,7 +262,12 @@ final class CustomARRenderer {
                 )
             }
             addDoor(
-                door, openingStart: openingStart, wallThickness: wall.thickness, to: root
+                door,
+                openingStart: openingStart,
+                wallThickness: wall.thickness,
+                interiorSide: floorShadowSide ?? 1,
+                wallStyle: wall.style,
+                to: root
             )
             cursor = openingEnd
         }
@@ -316,12 +334,12 @@ final class CustomARRenderer {
         height: Float,
         depth: Float,
         center: SIMD3<Float>,
-        material: SimpleMaterial
+        material: any Material
     ) {
         guard width > 0.01, height > 0.01, depth > 0.01 else { return }
         let size = SIMD3<Float>(width, height, depth)
         let box = ModelEntity(
-            mesh: .generateBox(size: size, cornerRadius: min(depth * 0.08, 0.008)),
+            mesh: makeWallBoxMesh(size: size) ?? .generateBox(size: size),
             materials: [material]
         )
         box.name = "synapmantis.custom-ar.wall.segment"
@@ -334,23 +352,65 @@ final class CustomARRenderer {
         _ door: CustomARDoorRecord,
         openingStart: Float,
         wallThickness: Float,
+        interiorSide: Float,
+        wallStyle: CustomARWallStyle,
         to parent: Entity
     ) {
+        let frameColor = wallStyle.isBackrooms
+            ? UIColor(red: 0.28, green: 0.22, blue: 0.10, alpha: 1)
+            : UIColor(red: 0.095, green: 0.06, blue: 0.038, alpha: 1)
+        let frameMaterial = SimpleMaterial(
+            color: frameColor,
+            roughness: 0.62,
+            isMetallic: false
+        )
+        let frameWidth: Float = 0.065
+        let frameDepth: Float = 0.035
+        let frameZ = interiorSide * (wallThickness * 0.5 + frameDepth * 0.5)
+        for x in [openingStart, openingStart + door.width] {
+            let jamb = ModelEntity(
+                mesh: .generateBox(
+                    size: [frameWidth, door.height + frameWidth, frameDepth],
+                    cornerRadius: 0.006
+                ),
+                materials: [frameMaterial]
+            )
+            jamb.name = "synapmantis.custom-ar.door.frame"
+            jamb.position = [x, door.height * 0.5, frameZ]
+            parent.addChild(jamb)
+        }
+        let header = ModelEntity(
+            mesh: .generateBox(
+                size: [door.width + frameWidth * 2, frameWidth, frameDepth],
+                cornerRadius: 0.006
+            ),
+            materials: [frameMaterial]
+        )
+        header.name = "synapmantis.custom-ar.door.frame"
+        header.position = [openingStart + door.width * 0.5, door.height, frameZ]
+        parent.addChild(header)
+
         let hinge = Entity()
         hinge.name = Self.doorPrefix + door.id.uuidString
-        hinge.position = [openingStart, 0, wallThickness * 0.54]
+        hinge.position = [openingStart, 0, interiorSide * wallThickness * 0.54]
         hinge.orientation = simd_quatf(
-            angle: door.isOpen ? -.pi * 0.52 : 0,
+            angle: door.isOpen
+                ? CustomARGeometry.inwardDoorOpenAngle(interiorSide: interiorSide)
+                : 0,
             axis: [0, 1, 0]
         )
         let panelSize = SIMD3<Float>(door.width, door.height, max(0.035, wallThickness * 0.45))
+        let panelColor = wallStyle.isBackrooms
+            ? UIColor(red: 0.43, green: 0.34, blue: 0.16, alpha: 1)
+            : UIColor(red: 0.16, green: 0.11, blue: 0.075, alpha: 1)
+        let panelMaterial = SimpleMaterial(
+            color: panelColor,
+            roughness: 0.72,
+            isMetallic: false
+        )
         let panel = ModelEntity(
             mesh: .generateBox(size: panelSize, cornerRadius: 0.012),
-            materials: [SimpleMaterial(
-                color: UIColor(red: 0.16, green: 0.11, blue: 0.075, alpha: 1),
-                roughness: 0.72,
-                isMetallic: false
-            )]
+            materials: [panelMaterial]
         )
         panel.name = "synapmantis.custom-ar.door.panel"
         panel.position = [door.width * 0.5, door.height * 0.5, 0]
@@ -362,9 +422,72 @@ final class CustomARRenderer {
             materials: [SimpleMaterial(color: .lightGray, roughness: 0.22, isMetallic: true)]
         )
         handle.name = "synapmantis.custom-ar.door.handle"
-        handle.position = [door.width * 0.82, door.height * 0.52, panelSize.z * 0.58]
+        handle.position = [
+            door.width * 0.32,
+            door.height * 0.02,
+            interiorSide * panelSize.z * 0.58
+        ]
         panel.addChild(handle)
+
+        // Shallow raised panels make the built-in door read as an actual asset
+        // without another texture decode or a large mesh cost.
+        let trimColor = wallStyle.isBackrooms
+            ? UIColor(red: 0.37, green: 0.29, blue: 0.13, alpha: 1)
+            : UIColor(red: 0.12, green: 0.075, blue: 0.045, alpha: 1)
+        let trimMaterial = SimpleMaterial(
+            color: trimColor,
+            roughness: 0.66,
+            isMetallic: false
+        )
+        for centerY in [door.height * 0.30, door.height * 0.70] {
+            let inset = ModelEntity(
+                mesh: .generateBox(
+                    size: [door.width * 0.66, door.height * 0.29, 0.012],
+                    cornerRadius: 0.008
+                ),
+                materials: [trimMaterial]
+            )
+            inset.name = "synapmantis.custom-ar.door.detail"
+            inset.position = [
+                0,
+                centerY - door.height * 0.5,
+                interiorSide * (panelSize.z * 0.5 + 0.006)
+            ]
+            panel.addChild(inset)
+        }
         parent.addChild(hinge)
+    }
+
+    private func makeBackroomsFloor(for design: CustomARDesignRecord) -> ModelEntity? {
+        let points = design.boundary.map { $0.simd + design.normal * 0.004 }
+        let indices = CustomARGeometry.triangulatedIndices(for: points, normal: design.normal)
+        guard indices.count >= 3 else { return nil }
+
+        var descriptor = MeshDescriptor(name: "synapmantis.custom-ar.backrooms.floor.mesh")
+        descriptor.positions = MeshBuffers.Positions(points)
+        descriptor.normals = MeshBuffers.Normals(
+            Array(repeating: design.normal, count: points.count)
+        )
+        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(
+            planarTextureCoordinates(
+                for: points,
+                normal: design.normal,
+                tileMeters: 1.50
+            )
+        )
+        descriptor.primitives = .triangles(indices)
+        guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
+        let fallback = SimpleMaterial(
+            color: UIColor(red: 0.29, green: 0.28, blue: 0.17, alpha: 1),
+            roughness: 0.98,
+            isMetallic: false
+        )
+        let material = bundledMaterial(named: "backrooms_yasu_floor_01", fallback: fallback)
+        let floor = ModelEntity(mesh: mesh, materials: [material])
+        floor.name = "synapmantis.custom-ar.backrooms.floor"
+        // Intentionally no collision: the carpet must not steal taps from doors or
+        // from ARKit's physical placement surface underneath it.
+        return floor
     }
 
     private func makeCeiling(
@@ -390,9 +513,16 @@ final class CustomARRenderer {
         descriptor.normals = MeshBuffers.Normals(
             Array(repeating: -design.normal, count: basePoints.count)
         )
+        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(
+            planarTextureCoordinates(
+                for: basePoints,
+                normal: design.normal,
+                tileMeters: 1.20
+            )
+        )
         descriptor.primitives = .triangles(undersideIndices)
         guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
-        let entity = ModelEntity(mesh: mesh, materials: [wallMaterial(ceiling.style)])
+        let entity = ModelEntity(mesh: mesh, materials: [ceilingMaterial(ceiling.style)])
         entity.name = Self.ceilingPrefix + design.id.uuidString
 
         var collisionShapes: [ShapeResource] = []
@@ -409,7 +539,7 @@ final class CustomARRenderer {
         return entity
     }
 
-    private func wallMaterial(_ style: CustomARWallStyle) -> SimpleMaterial {
+    private func wallMaterial(_ style: CustomARWallStyle) -> any Material {
         switch style {
         case .studioWhite:
             SimpleMaterial(color: UIColor(white: 0.93, alpha: 1), roughness: 0.78, isMetallic: false)
@@ -421,7 +551,170 @@ final class CustomARRenderer {
                 roughness: 0.91,
                 isMetallic: false
             )
+        default:
+            let fallback = SimpleMaterial(
+                color: UIColor(red: 0.57, green: 0.50, blue: 0.25, alpha: 1),
+                roughness: 0.96,
+                isMetallic: false
+            )
+            guard let assetName = style.backroomsWallpaperAssetName else { return fallback }
+            return bundledMaterial(named: assetName, fallback: fallback)
         }
+    }
+
+    private func ceilingMaterial(_ style: CustomARWallStyle) -> any Material {
+        guard style.isBackrooms else { return wallMaterial(style) }
+        let fallback = SimpleMaterial(
+            color: UIColor(red: 0.72, green: 0.69, blue: 0.52, alpha: 1),
+            roughness: 0.95,
+            isMetallic: false
+        )
+        guard let assetName = style.backroomsCeilingAssetName else { return fallback }
+        return bundledMaterial(named: assetName, fallback: fallback)
+    }
+
+    private func planarTextureCoordinates(
+        for points: [SIMD3<Float>],
+        normal: SIMD3<Float>,
+        tileMeters: Float
+    ) -> [SIMD2<Float>] {
+        guard let origin = points.first, points.count > 1, tileMeters > 0 else {
+            return Array(repeating: .zero, count: points.count)
+        }
+        var tangent = points[1] - origin
+        tangent -= normal * simd_dot(tangent, normal)
+        if simd_length_squared(tangent) < 0.000_001 {
+            tangent = abs(normal.y) < 0.9
+                ? simd_cross(normal, SIMD3<Float>(0, 1, 0))
+                : simd_cross(normal, SIMD3<Float>(1, 0, 0))
+        }
+        tangent = simd_normalize(tangent)
+        let bitangent = simd_normalize(simd_cross(normal, tangent))
+        return points.map {
+            let offset = $0 - origin
+            return [simd_dot(offset, tangent) / tileMeters,
+                    simd_dot(offset, bitangent) / tileMeters]
+        }
+    }
+
+    private func makeWallBoxMesh(size: SIMD3<Float>) -> MeshResource? {
+        let half = size * 0.5
+        var positions: [SIMD3<Float>] = []
+        var normals: [SIMD3<Float>] = []
+        var coordinates: [SIMD2<Float>] = []
+        var indices: [UInt32] = []
+
+        func appendFace(
+            _ corners: [SIMD3<Float>],
+            normal: SIMD3<Float>,
+            uv: [SIMD2<Float>]
+        ) {
+            let start = UInt32(positions.count)
+            positions.append(contentsOf: corners)
+            normals.append(contentsOf: Array(repeating: normal, count: 4))
+            coordinates.append(contentsOf: uv)
+            indices.append(contentsOf: [start, start + 1, start + 2, start, start + 2, start + 3])
+        }
+
+        let x = size.x / 1.25
+        let y = size.y / 1.25
+        let z = size.z / 1.25
+        appendFace(
+            [[-half.x, -half.y, half.z], [half.x, -half.y, half.z],
+             [half.x, half.y, half.z], [-half.x, half.y, half.z]],
+            normal: [0, 0, 1], uv: [[0, 0], [x, 0], [x, y], [0, y]]
+        )
+        appendFace(
+            [[half.x, -half.y, -half.z], [-half.x, -half.y, -half.z],
+             [-half.x, half.y, -half.z], [half.x, half.y, -half.z]],
+            normal: [0, 0, -1], uv: [[0, 0], [x, 0], [x, y], [0, y]]
+        )
+        appendFace(
+            [[-half.x, -half.y, -half.z], [-half.x, -half.y, half.z],
+             [-half.x, half.y, half.z], [-half.x, half.y, -half.z]],
+            normal: [-1, 0, 0], uv: [[0, 0], [z, 0], [z, y], [0, y]]
+        )
+        appendFace(
+            [[half.x, -half.y, half.z], [half.x, -half.y, -half.z],
+             [half.x, half.y, -half.z], [half.x, half.y, half.z]],
+            normal: [1, 0, 0], uv: [[0, 0], [z, 0], [z, y], [0, y]]
+        )
+        appendFace(
+            [[-half.x, half.y, half.z], [half.x, half.y, half.z],
+             [half.x, half.y, -half.z], [-half.x, half.y, -half.z]],
+            normal: [0, 1, 0], uv: [[0, 0], [x, 0], [x, z], [0, z]]
+        )
+        appendFace(
+            [[-half.x, -half.y, -half.z], [half.x, -half.y, -half.z],
+             [half.x, -half.y, half.z], [-half.x, -half.y, half.z]],
+            normal: [0, -1, 0], uv: [[0, 0], [x, 0], [x, z], [0, z]]
+        )
+
+        var descriptor = MeshDescriptor(name: "synapmantis.custom-ar.wall.box")
+        descriptor.positions = MeshBuffers.Positions(positions)
+        descriptor.normals = MeshBuffers.Normals(normals)
+        descriptor.textureCoordinates = MeshBuffers.TextureCoordinates(coordinates)
+        descriptor.primitives = .triangles(indices)
+        return try? MeshResource.generate(from: [descriptor])
+    }
+
+    private func bundledMaterial(
+        named assetName: String,
+        fallback: SimpleMaterial
+    ) -> any Material {
+        if let cached = bundledMaterialCache[assetName] { return cached }
+        guard bundledMaterialLoads[assetName] == nil,
+              let url = bundledAssetURL(named: assetName) else {
+            return fallback
+        }
+        bundledMaterialLoads[assetName] = Entity.loadAsync(contentsOf: url)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    guard let self else { return }
+                    self.bundledMaterialLoads.removeValue(forKey: assetName)
+                    if case .failure = completion {
+                        // Cache the lightweight fallback for this session so a bad
+                        // package can never create a repeated load/render loop.
+                        self.bundledMaterialCache[assetName] = fallback
+                    }
+                },
+                receiveValue: { [weak self] source in
+                    guard let self else { return }
+                    self.bundledMaterialCache[assetName] =
+                        self.firstMaterial(in: source) ?? fallback
+                    // The initial frame used the fallback. Replace it atomically as
+                    // soon as the PBR material is decoded off the render path.
+                    self.render(self.lastRenderedDesigns)
+                }
+            )
+        return fallback
+    }
+
+    private func bundledAssetURL(named assetName: String) -> URL? {
+        if let url = Bundle.main.url(
+            forResource: assetName,
+            withExtension: "usdz",
+            subdirectory: "RoomAssets"
+        ) ?? Bundle.main.url(forResource: assetName, withExtension: "usdz") {
+            return url
+        }
+        guard let resourceURL = Bundle.main.resourceURL else { return nil }
+        let explicitURL = resourceURL
+            .appendingPathComponent("RoomAssets", isDirectory: true)
+            .appendingPathComponent(assetName)
+            .appendingPathExtension("usdz")
+        return FileManager.default.fileExists(atPath: explicitURL.path) ? explicitURL : nil
+    }
+
+    private func firstMaterial(in entity: Entity) -> (any Material)? {
+        if let material = entity.components[ModelComponent.self]?.materials.first {
+            return material
+        }
+        for child in entity.children {
+            if let material = firstMaterial(in: child) { return material }
+        }
+        return nil
     }
 
     private func makeLine(
