@@ -6,8 +6,8 @@
 - Uygulama sürümü: `0.20.0`
 - Proje build numarası: `55`
 - Git dalı: `main`
-- Kaynak commit: `04376a5713daf5e24a1278b99c6a30f05e7ef8a2`
-- Oluşturulma zamanı: `2026-09-12 17:31:26 +03:00`
+- Kaynak commit: `c0d6648af561463eb65a47d5937023e98120dc5a`
+- Oluşturulma zamanı: `2026-09-12 17:51:56 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -373,10 +373,10 @@ Yok.
 | `CineAR/CineARApp.swift` | 180 | 6748 |
 | `CineAR/ContentView.swift` | 1825 | 79141 |
 | `CineAR/CustomARDesign.swift` | 641 | 25668 |
-| `CineAR/CustomARRenderer.swift` | 750 | 30534 |
+| `CineAR/CustomARRenderer.swift` | 758 | 30679 |
 | `CineAR/Info.plist` | 62 | 2253 |
 | `CineAR/LiveDepthGeometry.swift` | 95 | 4350 |
-| `CineAR/LiveDepthOcclusionRenderer.swift` | 217 | 11113 |
+| `CineAR/LiveDepthOcclusionRenderer.swift` | 228 | 11564 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 496 | 22437 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
@@ -13802,11 +13802,19 @@ final class CustomARRenderer {
     private func wallMaterial(_ style: CustomARWallStyle) -> any Material {
         switch style {
         case .studioWhite:
-            SimpleMaterial(color: UIColor(white: 0.93, alpha: 1), roughness: 0.78, isMetallic: false)
+            return SimpleMaterial(
+                color: UIColor(white: 0.93, alpha: 1),
+                roughness: 0.78,
+                isMetallic: false
+            )
         case .concrete:
-            SimpleMaterial(color: UIColor(white: 0.43, alpha: 1), roughness: 0.94, isMetallic: false)
+            return SimpleMaterial(
+                color: UIColor(white: 0.43, alpha: 1),
+                roughness: 0.94,
+                isMetallic: false
+            )
         case .brick:
-            SimpleMaterial(
+            return SimpleMaterial(
                 color: UIColor(red: 0.42, green: 0.16, blue: 0.095, alpha: 1),
                 roughness: 0.91,
                 isMetallic: false
@@ -14185,6 +14193,14 @@ import QuartzCore
 import RealityKit
 import simd
 
+/// ARFrame owns these immutable Core Video buffers for the duration of the
+/// background read. Core Video buffers are reference-counted and copyGeometry
+/// brackets every base-address access with read-only locks.
+private struct LiveDepthPixelBuffers: @unchecked Sendable {
+    let depth: CVPixelBuffer
+    let confidence: CVPixelBuffer
+}
+
 /// A camera-synchronised fine-depth supplement to ARKit's coarser reconstruction.
 /// One worker and one mesh upload at a time; no queued ARFrames, network or collision hulls.
 @MainActor
@@ -14279,10 +14295,13 @@ final class LiveDepthOcclusionRenderer {
         let startedAt = CACurrentMediaTime()
         buildStartedAt = startedAt
         // Retain only depth/confidence buffers, not the captured camera image/frame.
-        let depthBuffer = depth.depthMap
+        let pixelBuffers = LiveDepthPixelBuffers(
+            depth: depth.depthMap,
+            confidence: confidenceBuffer
+        )
         worker.async { [weak self] in
             let data = Self.copyGeometry(
-                depth: depthBuffer, confidence: confidenceBuffer,
+                depth: pixelBuffers.depth, confidence: pixelBuffers.confidence,
                 intrinsics: intrinsics, imageSize: imageSize, reduced: reduced
             )
             DispatchQueue.main.async { [weak self] in

@@ -6,6 +6,14 @@ import QuartzCore
 import RealityKit
 import simd
 
+/// ARFrame owns these immutable Core Video buffers for the duration of the
+/// background read. Core Video buffers are reference-counted and copyGeometry
+/// brackets every base-address access with read-only locks.
+private struct LiveDepthPixelBuffers: @unchecked Sendable {
+    let depth: CVPixelBuffer
+    let confidence: CVPixelBuffer
+}
+
 /// A camera-synchronised fine-depth supplement to ARKit's coarser reconstruction.
 /// One worker and one mesh upload at a time; no queued ARFrames, network or collision hulls.
 @MainActor
@@ -100,10 +108,13 @@ final class LiveDepthOcclusionRenderer {
         let startedAt = CACurrentMediaTime()
         buildStartedAt = startedAt
         // Retain only depth/confidence buffers, not the captured camera image/frame.
-        let depthBuffer = depth.depthMap
+        let pixelBuffers = LiveDepthPixelBuffers(
+            depth: depth.depthMap,
+            confidence: confidenceBuffer
+        )
         worker.async { [weak self] in
             let data = Self.copyGeometry(
-                depth: depthBuffer, confidence: confidenceBuffer,
+                depth: pixelBuffers.depth, confidence: pixelBuffers.confidence,
                 intrinsics: intrinsics, imageSize: imageSize, reduced: reduced
             )
             DispatchQueue.main.async { [weak self] in

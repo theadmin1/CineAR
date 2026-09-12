@@ -542,11 +542,19 @@ final class CustomARRenderer {
     private func wallMaterial(_ style: CustomARWallStyle) -> any Material {
         switch style {
         case .studioWhite:
-            SimpleMaterial(color: UIColor(white: 0.93, alpha: 1), roughness: 0.78, isMetallic: false)
+            return SimpleMaterial(
+                color: UIColor(white: 0.93, alpha: 1),
+                roughness: 0.78,
+                isMetallic: false
+            )
         case .concrete:
-            SimpleMaterial(color: UIColor(white: 0.43, alpha: 1), roughness: 0.94, isMetallic: false)
+            return SimpleMaterial(
+                color: UIColor(white: 0.43, alpha: 1),
+                roughness: 0.94,
+                isMetallic: false
+            )
         case .brick:
-            SimpleMaterial(
+            return SimpleMaterial(
                 color: UIColor(red: 0.42, green: 0.16, blue: 0.095, alpha: 1),
                 roughness: 0.91,
                 isMetallic: false
