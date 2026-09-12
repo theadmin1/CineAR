@@ -247,6 +247,8 @@ def fetch_native_usd(asset_id: str, cache_root: Path) -> Path:
 
 
 def package_usdz(source: Path, output: Path) -> None:
+    source = source.resolve()
+    output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     output.unlink(missing_ok=True)
 
@@ -271,6 +273,52 @@ def package_usdz(source: Path, output: Path) -> None:
         wrapper.SetDefaultPrim(root.GetPrim())
         wrapper.GetRootLayer().Save()
         source = wrapper_path
+
+    # RealityKit on iOS can open referenced USD layers, but bundled materials are
+    # considerably more reliable when the USDZ has one self-contained root scene.
+    # Flatten the Y-up composed stage while it still lives beside its textures. This
+    # preserves meshes/material bindings and removes the wrapper -> source-layer hop
+    # that otherwise leaves a loading proxy visible on some devices.
+    composed_stage = Usd.Stage.Open(str(source))
+    if not composed_stage:
+        raise RuntimeError(f"Composed USD did not open: {source}")
+    flattened_path = source.with_name(source.stem + "_realitykit.usdc")
+    flattened_path.unlink(missing_ok=True)
+    flattened_layer = composed_stage.Flatten()
+    if not flattened_layer.Export(str(flattened_path)):
+        raise RuntimeError(f"Could not export RealityKit-flat USD: {flattened_path}")
+
+    # Stage.Flatten resolves texture inputs to absolute authoring paths. Absolute
+    # paths are forbidden in a portable USDZ and some OpenUSD versions localize them
+    # as broken `0/<file>` references. Re-author every texture as a package-relative
+    # path, while converting heavy EXR/opaque PNG maps to iPhone-friendly JPEG.
+    flattened_stage = Usd.Stage.Open(str(flattened_path))
+    if not flattened_stage:
+        raise RuntimeError(f"RealityKit-flat USD did not reopen: {flattened_path}")
+    for prim in flattened_stage.Traverse():
+        if not prim.IsA(UsdShade.Shader):
+            continue
+        for shader_input in UsdShade.Shader(prim).GetInputs():
+            if shader_input.GetTypeName() != Sdf.ValueTypeNames.Asset:
+                continue
+            asset_path = shader_input.Get()
+            if not asset_path or not asset_path.path:
+                continue
+            raw_path = Path(asset_path.path)
+            destination = raw_path if raw_path.is_absolute() else source.parent / raw_path
+            if not destination.is_file():
+                matches = list(source.parent.rglob(raw_path.name))
+                if len(matches) != 1:
+                    raise RuntimeError(
+                        f"Could not resolve flattened texture: {asset_path.path} "
+                        f"(matches={len(matches)})"
+                    )
+                destination = matches[0]
+            optimized = mobile_texture(destination)
+            relative_texture = optimized.relative_to(source.parent).as_posix()
+            shader_input.Set(Sdf.AssetPath("./" + relative_texture))
+    flattened_stage.GetRootLayer().Save()
+    source = flattened_path
 
     previous_directory = Path.cwd()
     try:

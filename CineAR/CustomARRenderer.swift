@@ -3,6 +3,12 @@ import RealityKit
 import UIKit
 import simd
 
+struct CustomARFloorHit {
+    let position: SIMD3<Float>
+    let normal: SIMD3<Float>
+    let distanceMeters: Float
+}
+
 @MainActor
 final class CustomARRenderer {
     private static let rootName = "synapmantis.custom-ar.root"
@@ -184,6 +190,37 @@ final class CustomARRenderer {
         return false
     }
 
+    /// Intersects the screen ray with every saved Custom AR base polygon. The base
+    /// is a persistent, finite world-space surface even when its optional carpet has
+    /// no collision component and ARKit has not classified the physical floor yet.
+    func floorHit(in arView: ARView, at point: CGPoint) -> CustomARFloorHit? {
+        guard rootEntity.isEnabled, let ray = arView.ray(through: point) else { return nil }
+        let direction = simd_normalize(ray.direction)
+        var nearest: CustomARFloorHit?
+
+        for design in lastRenderedDesigns where design.isValid {
+            guard let origin = design.boundary.first?.simd else { continue }
+            let normal = design.normal
+            let denominator = simd_dot(direction, normal)
+            guard abs(denominator) > 0.000_1 else { continue }
+            let distance = simd_dot(origin - ray.origin, normal) / denominator
+            guard distance.isFinite, (0.15...8).contains(distance) else { continue }
+            let candidate = ray.origin + direction * distance
+            guard CustomARGeometry.contains(
+                candidate,
+                in: design.boundary.map(\.simd),
+                normal: normal
+            ) else { continue }
+            if let nearest, distance >= nearest.distanceMeters { continue }
+            nearest = CustomARFloorHit(
+                position: candidate,
+                normal: normal,
+                distanceMeters: distance
+            )
+        }
+        return nearest
+    }
+
     private func configureRoot() {
         rootEntity.name = Self.rootName
         contentEntity.name = "synapmantis.custom-ar.content"
@@ -318,11 +355,11 @@ final class CustomARRenderer {
                 materials: [material]
             )
             shadow.name = "synapmantis.custom-ar.floor-join-shadow"
-            shadow.scale = [max(segmentLength - 0.02, 0.04), 0.006, 0.16]
+            shadow.scale = [max(segmentLength - 0.02, 0.04), 0.010, 0.18]
             shadow.position = [
                 (start + end) * 0.5,
-                0.004,
-                side * (wall.thickness * 0.5 + 0.075)
+                0.009,
+                side * (wall.thickness * 0.5 + 0.080)
             ]
             parent.addChild(shadow)
         }
@@ -459,7 +496,7 @@ final class CustomARRenderer {
     }
 
     private func makeBackroomsFloor(for design: CustomARDesignRecord) -> ModelEntity? {
-        let points = design.boundary.map { $0.simd + design.normal * 0.004 }
+        let points = design.boundary.map { $0.simd + design.normal * 0.002 }
         let indices = CustomARGeometry.triangulatedIndices(for: points, normal: design.normal)
         guard indices.count >= 3 else { return nil }
 

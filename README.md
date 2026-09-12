@@ -23,6 +23,12 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.20.1: Ozel AR alaninin sonlu taban cokgeni artik dolap, koltuk ve diger zemin
+  nesneleri icin tek dokunusla kullanilan kalici bir yerlestirme yuzeyidir. Backrooms
+  halisi duvar-zemin birlesim golgesini kapatmaz; nesne temas golgeleri gercek alt
+  sinira gore daha gorunur ve kararlidir. Yeni 13 fotogercekci USDZ, RealityKit'in
+  kaplamalari cihazda guvenilir acmasi icin tek katmanli Y-up sahneye duzlestirildi;
+  tum texture yollari paket icine alindi ve agir haritalar mobil JPEG'e donusturuldu.
 - 0.20.0: Ozel AR Backrooms kiti artik Yasu'nun dokuz duvar kagidi, dort tavan
   ve bir hali PBR malzemesini; ayrica 3DTextures.me klasik CC0 duvar kaplamasini
   1K mobil paketler olarak sunar. Malzeme menusu duvar varyantini ve ona eslesen

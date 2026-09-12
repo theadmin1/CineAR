@@ -75,6 +75,15 @@ def validate_usdz(path: Path, expected_digest: str) -> None:
             raise AssertionError(f"USDZ first member is not a native USD scene: {path.name}")
         if not any(Path(name).suffix.lower() in {".usd", ".usda", ".usdc"} for name in archive.namelist()):
             raise AssertionError(f"USDZ contains no USD scene: {path.name}")
+        scene_members = [
+            name for name in archive.namelist()
+            if Path(name).suffix.lower() in {".usd", ".usda", ".usdc"}
+        ]
+        if len(scene_members) != 1:
+            raise AssertionError(
+                f"USDZ must contain one flattened RealityKit scene: "
+                f"{path.name} ({scene_members})"
+            )
         for member in members:
             if member.flag_bits & 0x1:
                 raise AssertionError(

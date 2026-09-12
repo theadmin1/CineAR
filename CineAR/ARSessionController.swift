@@ -2895,7 +2895,7 @@ final class ARSessionController: NSObject, ObservableObject {
         // not the virtual surface. One stable tap on the exact collider is sufficient.
         if let exactSurface = placementSolution(in: arView, at: point, for: selectedProp) {
             switch exactSurface.source {
-            case .customARWall, .customARCeiling:
+            case .customARFloor, .customARWall, .customARCeiling:
                 placementReticlePoint = point
                 placementSurfaceMessage = "Yeşil: sabit Özel AR yüzeyi"
                 placementSurfaceColor = .green
@@ -3812,6 +3812,22 @@ final class ARSessionController: NSObject, ObservableObject {
         guard let frame = arView.session.currentFrame else { return nil }
         let cameraY = frame.camera.transform.columns.3.y
         let depth = sceneDepthSample(frame: frame, in: arView, at: point)
+
+        // The user already measured and saved this finite base while drawing the
+        // Custom AR area. It is therefore a stronger placement source than waiting
+        // for ARKit to independently classify the same patch as a physical floor.
+        // Do not compare it with scene depth: the optional virtual carpet is not a
+        // LiDAR surface and furniture behind/in front of it would otherwise veto it.
+        if let hit = customARRenderer.floorHit(in: arView, at: point) {
+            return floorSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: arView.cameraTransform.translation,
+                source: .customARFloor,
+                depth: nil
+            )
+        }
 
         // A finite classified plane is the strongest tap-local ARKit result. When
         // LiDAR depth exists it must agree, preventing a floor plane behind a table
@@ -6641,19 +6657,20 @@ final class ARSessionController: NSObject, ObservableObject {
         let baseAlpha = contactShadowAlpha
         switch prop.placementSurface {
         case .floor, .horizontal:
+            let contactY = bounds.center.y - extents.y * 0.5
             addContactShadowLayer(
                 to: entity,
                 name: "cinear.contact-shadow.outer",
-                scale: [extents.x * 1.02, 0.003, extents.z * 1.02],
-                position: [bounds.center.x, 0.002, bounds.center.z],
-                alpha: baseAlpha * 0.34
+                scale: [extents.x * 1.04, 0.008, extents.z * 1.04],
+                position: [bounds.center.x, contactY + 0.006, bounds.center.z],
+                alpha: baseAlpha * 0.48
             )
             addContactShadowLayer(
                 to: entity,
                 name: "cinear.contact-shadow.inner",
-                scale: [extents.x * 0.78, 0.005, extents.z * 0.78],
-                position: [bounds.center.x, 0.0035, bounds.center.z],
-                alpha: baseAlpha
+                scale: [extents.x * 0.76, 0.010, extents.z * 0.76],
+                position: [bounds.center.x, contactY + 0.008, bounds.center.z],
+                alpha: baseAlpha * 1.15
             )
         case .wall:
             addContactShadowLayer(
@@ -6683,7 +6700,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     private var contactShadowAlpha: Float {
         let normalized = min(max((ambientLightIntensity - 100) / 1_500, 0), 1)
-        return (0.12 + sqrt(normalized) * 0.09) * contactShadowStrength
+        return (0.17 + sqrt(normalized) * 0.11) * contactShadowStrength
     }
 
     private func addContactShadowLayer(
@@ -6736,12 +6753,12 @@ final class ARSessionController: NSObject, ObservableObject {
         for entity in renderedEntities.values {
             if let outer = entity.findEntity(named: "cinear.contact-shadow.outer") as? ModelEntity,
                var model = outer.model {
-                model.materials = [contactShadowMaterial(alpha: baseAlpha * 0.34)]
+                model.materials = [contactShadowMaterial(alpha: baseAlpha * 0.48)]
                 outer.model = model
             }
             if let inner = entity.findEntity(named: "cinear.contact-shadow.inner") as? ModelEntity,
                var model = inner.model {
-                model.materials = [contactShadowMaterial(alpha: baseAlpha)]
+                model.materials = [contactShadowMaterial(alpha: baseAlpha * 1.15)]
                 inner.model = model
             }
             if let outer = entity.findEntity(named: "cinear.wall-contact-shadow.outer") as? ModelEntity,
@@ -7644,6 +7661,7 @@ private enum PlacementSurfaceSource: Equatable {
     case arkitPlane
     case roomPlanGeometry
     case roomPlanLevel
+    case customARFloor
     case customARWall
     case customARCeiling
     case deviceCalibration
@@ -7657,6 +7675,7 @@ private enum PlacementSurfaceSource: Equatable {
         case .arkitPlane: "ARKit yüzey"
         case .roomPlanGeometry: "RoomPlan yüzey"
         case .roomPlanLevel: "RoomPlan kotu"
+        case .customARFloor: "Özel AR zemini"
         case .customARWall: "Özel AR duvarı"
         case .customARCeiling: "Özel AR tavanı"
         case .deviceCalibration: "Telefon kalibrasyonu"

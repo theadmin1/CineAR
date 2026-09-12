@@ -250,8 +250,13 @@
     hemen gorunmeli; 8000 lumen genis sicak isik, saydam koni huzmesi ve hedef izi
     birlikte calismalidir. El veya kisi huzmenin/armaturun onunden gecince LiDAR
     ortmesi gercek nesneyi onde tutmalidir. Uc yeni tabloyu sirayla sanal duvara
-    yerlestir; dik/yatay eksenleri dogru, arka yuzleri duvara sifir ve kamera
-    uzakligindan bagimsiz kalmalidir. `Acilir Kapi Ekle` ile ayni duvara kapi koy;
+    yerlestir; gecici sade cerceve en gec birkac saniyede resim ve PBR kaplamalari
+    gorunen gercek modele donmeli, dik/yatay eksenleri dogru, arka yuzleri duvara
+    sifir ve kamera uzakligindan bagimsiz kalmalidir. `Eskimis Ahsap Dolap`i sanal
+    zemin cokgenine yerlestir; ayaklari zemine temas etmeli, ic/dis temas golgesi
+    gorunmeli ve kaplamali model gecici kutunun yerini almalidir. Duvar dibindeki
+    yumusak birlesim golgesi hali tarafindan ortulmemelidir. `Acilir Kapi Ekle` ile
+    ayni duvara kapi koy;
     fiziksel arka plan derinligi kapinin eklenmesini engellememeli, kol/panel odanin
     ic tarafinda olmali ve kanat iki farkli duvar yonunde de iceri acilmalidir.
     Malzeme menusundeki dokuz `Backrooms Yasu` secenegini ve `Backrooms Klasik CC0`
