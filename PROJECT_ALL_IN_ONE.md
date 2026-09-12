@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.14`
-- Proje build numarası: `48`
+- Uygulama sürümü: `0.17.15`
+- Proje build numarası: `49`
 - Git dalı: `main`
-- Kaynak commit: `232035191cf29a5fb2ea04ac30b53ccded9e8877`
-- Oluşturulma zamanı: `2026-09-12 09:25:54 +03:00`
+- Kaynak commit: `8ed74de59a536cc9b983dee9bf5cfd95a6351fa3`
+- Oluşturulma zamanı: `2026-09-12 11:36:22 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -301,7 +301,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 294 | 15656 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 6988 | 296574 |
+| `CineAR/ARSessionController.swift` | 7019 | 298196 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -318,17 +318,17 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
-| `CineAR/RoomRealityRenderer.swift` | 2279 | 90085 |
+| `CineAR/RoomRealityRenderer.swift` | 2287 | 90626 |
 | `CineAR/RoomScanner.swift` | 999 | 38097 |
 | `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
-| `CineAR/SpatialValidation.swift` | 142 | 7019 |
+| `CineAR/SpatialValidation.swift` | 191 | 9611 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
 | `codemagic.yaml` | 279 | 10343 |
 | `Docs/CODEMAGIC.md` | 123 | 6806 |
-| `Docs/DEVICE_TEST.md` | 380 | 26601 |
+| `Docs/DEVICE_TEST.md` | 394 | 27548 |
 | `Docs/ICON_PROMPT.md` | 25 | 1421 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 459 | 31444 |
+| `README.md` | 465 | 31954 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
@@ -340,7 +340,7 @@ Yok.
 | `Tools/test_bundled_assets.py` | 97 | 3953 |
 | `Tools/test_live_depth_geometry.swift` | 76 | 3977 |
 | `Tools/test_privacy_plist.py` | 37 | 1416 |
-| `Tools/test_spatial_validation.swift` | 110 | 7299 |
+| `Tools/test_spatial_validation.swift` | 130 | 8367 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
 | `Tools/validate_privacy_plist.py` | 56 | 1953 |
 | `Tools/validate_usdz_assets.py` | 101 | 3573 |
@@ -1541,13 +1541,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.14;
+				MARKETING_VERSION = 0.17.15;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1565,12 +1565,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.14;
+				MARKETING_VERSION = 0.17.15;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -4974,13 +4974,53 @@ final class ARSessionController: NSObject, ObservableObject {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
         let cameraPosition = arView.cameraTransform.translation
+        let scannedWall = roomCoordinateSpaceIsActive
+            ? roomRealityRenderer.scannedWallHit(in: arView, at: point)
+            : nil
+
+        // A normal wall prop must touch the surface measured under the finger. A
+        // RoomPlan wall is deliberately a stable, room-sized approximation and can
+        // sit several centimetres away from the plaster. Using that approximate plane
+        // as the contact point made a correctly anchored prop look as if it floated or
+        // slid when viewed from the side. Keep the exact current LiDAR point, while
+        // borrowing the scanned wall's steadier normal only when both describe the
+        // same physical plane. Full-wall cladding remains tied to RoomPlan because its
+        // outline and door/window cut-outs share that coordinate system.
+        if !prop.isWallCladding,
+           let depth,
+           let measuredNormal = depth.worldNormal,
+           wallSurfaceAccepts(normal: measuredNormal) {
+            let contactNormal: SIMD3<Float>
+            if let scannedWall,
+               WallPlacementPolicy.liveContactMatchesPersistentWall(
+                   measuredPosition: depth.worldPoint,
+                   measuredNormal: measuredNormal,
+                   wallPosition: scannedWall.position,
+                   wallNormal: scannedWall.normal
+               ) {
+                contactNormal = scannedWall.normal
+            } else {
+                contactNormal = measuredNormal
+            }
+            return wallSolution(position: depth.worldPoint, normal: contactNormal, prop: prop,
+                                cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
+        }
 
         // A completed RoomPlan wall is the most stable finite placement source. Raw
         // scene depth is intermittent on plain/dark walls, so a missing low-confidence
         // pixel cannot veto it. Positive foreground depth still prevents selecting the
         // wall through a person or piece of furniture.
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point) {
+        if let hit = scannedWall {
+            if let depth,
+               WallPlacementPolicy.liveContactMatchesPersistentWall(
+                   measuredPosition: depth.worldPoint,
+                   measuredNormal: depth.worldNormal,
+                   wallPosition: hit.position,
+                   wallNormal: hit.normal
+               ) {
+                return wallSolution(position: depth.worldPoint, normal: hit.normal, prop: prop,
+                                    cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
+            }
             let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
             guard WallPlacementPolicy.persistentWallIsVisible(
                 measuredDistance: measuredDistance,
@@ -4993,15 +5033,6 @@ final class ARSessionController: NSObject, ObservableObject {
         // Fitted cladding belongs to a particular stored wall and must never be
         // fabricated from a transient pixel or infinite plane.
         if prop.isWallCladding { return nil }
-
-        // Without a matching saved wall, a confident current LiDAR normal is an exact
-        // physical contact and keeps ordinary wall props usable on newly seen walls.
-        if let depth,
-           let measuredNormal = depth.worldNormal,
-           wallSurfaceAccepts(normal: measuredNormal) {
-            return wallSolution(position: depth.worldPoint, normal: measuredNormal, prop: prop,
-                                cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
-        }
 
         // ARPlane geometry is finite and its normal is fitted over many measurements.
         for result in arView.raycast(from: point, allowing: .existingPlaneGeometry, alignment: .vertical) {
@@ -13138,12 +13169,20 @@ final class RoomRealityRenderer {
             }) else { continue }
             let center = bounds.center
             let worldCenter = world * SIMD4<Float>(center.x, center.y, 0, 1)
+            // `position` may be a fresh LiDAR contact that refines RoomPlan's stable
+            // wall by a few centimetres. Preserve the RoomPlan outline/orientation,
+            // but move its anchor plane by that measured local-Z offset. Without this
+            // correction the panel is world-locked yet visibly parallax-slides across
+            // real door and window trim when viewed from the side.
             let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
+                + worldNormal * local.z
             let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
             var transform = world
             transform.columns.0 *= sign
             transform.columns.2 *= sign
-            transform.columns.3 = worldCenter
+            transform.columns.3 = SIMD4<Float>(
+                centerPosition.x, centerPosition.y, centerPosition.z, 1
+            )
             let layout = WallCladdingLayout(
                 wallID: wall.identifier, width: bounds.width, height: bounds.height,
                 outline: polygon.map { [($0.x - center.x) * sign, $0.y - center.y] },
@@ -17363,6 +17402,55 @@ enum RoomScanCompletionPolicy {
 }
 
 enum WallPlacementPolicy {
+    /// RoomPlan supplies a stable wall normal and finite outline, but its plane may
+    /// be a few centimetres away from the physical finish. Admit a fresh LiDAR point
+    /// only when it is close enough to be a refinement of that wall, rather than a
+    /// separate foreground surface. The caller can then keep the scanned orientation
+    /// while using the measured point as the exact contact plane.
+    static func liveContactMatchesPersistentWall(
+        measuredPosition: SIMD3<Float>,
+        measuredNormal: SIMD3<Float>?,
+        wallPosition: SIMD3<Float>,
+        wallNormal: SIMD3<Float>
+    ) -> Bool {
+        let values = [
+            measuredPosition.x, measuredPosition.y, measuredPosition.z,
+            wallPosition.x, wallPosition.y, wallPosition.z,
+            wallNormal.x, wallNormal.y, wallNormal.z,
+        ]
+        guard values.allSatisfy(\.isFinite) else { return false }
+        let wallLengthSquared = wallNormal.x * wallNormal.x
+            + wallNormal.y * wallNormal.y + wallNormal.z * wallNormal.z
+        guard wallLengthSquared.isFinite, wallLengthSquared > 0.000_001 else { return false }
+        let wallDirection = wallNormal / sqrt(wallLengthSquared)
+
+        if let measuredNormal {
+            guard [measuredNormal.x, measuredNormal.y, measuredNormal.z].allSatisfy(\.isFinite)
+            else { return false }
+            let measuredLengthSquared = measuredNormal.x * measuredNormal.x
+                + measuredNormal.y * measuredNormal.y + measuredNormal.z * measuredNormal.z
+            guard measuredLengthSquared.isFinite, measuredLengthSquared > 0.000_001 else {
+                return false
+            }
+            let measuredDirection = measuredNormal / sqrt(measuredLengthSquared)
+            let normalAgreement = measuredDirection.x * wallDirection.x
+                + measuredDirection.y * wallDirection.y
+                + measuredDirection.z * wallDirection.z
+            guard abs(normalAgreement) >= 0.88 else { return false }
+        }
+
+        let delta = measuredPosition - wallPosition
+        let signedSeparation = delta.x * wallDirection.x
+            + delta.y * wallDirection.y + delta.z * wallDirection.z
+        let lateral = delta - wallDirection * signedSeparation
+        let lateralLengthSquared = lateral.x * lateral.x
+            + lateral.y * lateral.y + lateral.z * lateral.z
+        let distanceSquared = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z
+        return abs(signedSeparation) <= 0.05
+            && lateralLengthSquared <= 0.0064
+            && distanceSquared <= 0.0144
+    }
+
     /// Missing/low-confidence depth is not evidence that a finite saved wall is bad.
     /// A saved wall is rejected only when LiDAR positively measures a foreground
     /// surface a meaningful distance in front of it.
@@ -18390,6 +18478,20 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
+0.17.15 duvar temas koordinati regresyonlari (iPhone 15 Pro Max):
+
+- Bos ve dokulu bir duvara `Eski Ankesorlu Telefon` yerlestir. Telefonu hedefte
+  kilit tamamlanana kadar sabit tut; modelin arka temas duzlemi gercek LiDAR noktasina
+  oturmali, RoomPlan duzlemi birkac santimetre farkli olsa bile model yuzmemelidir.
+- Telefona 0.7, 1.5 ve 3 metre mesafeden bakip saga/sola en az 45 derece yuruyun.
+  Arka kenar fiziksel duvar dokusuna gore kaymamali; yalniz modelin gercek kalinligina
+  ait dogal perspektif/parallax gorulmelidir.
+- Ayni duvara tugla veya ahsap kaplama koyup kapi/pencere pervazina caprazdan bak.
+  Kaplama RoomPlan kesimlerini korumali, fakat dogrulanmis 5 cm'ye kadar LiDAR duzlem
+  farkini anchor'a uygulayarak pervaz kenarinda saga/sola yuzmemelidir.
+- Duvardan 5 cm'den fazla ondeki kutu, dolap veya insan uzerinden arka duvar duzlemi
+  duzeltilmemeli; farkli normal veya gecersiz olcum yeni temas noktasi sayilmamalidir.
+
 0.17.14 ortme ve cevrimdisi asset regresyonlari (iPhone 15 Pro Max):
 
 - Gercek duvarda saat, cerceve veya ince raf bulunan bir bolumu tara ve ayni duvara
@@ -18617,6 +18719,12 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.15: Taranmis oda varken duvar dekorlari artik RoomPlan'in yaklasik duvar
+  duzlemini temas noktasi olarak kullanmaz; iPhone'un ayni anda olctugu gercek LiDAR
+  noktasi anchor temasidir. RoomPlan yalnizca kararlı duvar yonu ve sonlu siniri
+  saglar. Tam duvar kaplamalari da kapi/pencere kesimlerini korurken en fazla 5 cm'lik
+  dogrulanmis LiDAR duzlem farkiyla fiziksel duvara oturtulur. Bu, yandan bakildiginda
+  telefonun yuzmesi ve kaplamanin pervaz uzerinde parallax kaymasi regresyonunu giderir.
 - 0.17.14: Canli LiDAR ortme aginin yuzey arkasi payi 8-25 mm'den 1.4-3 mm'ye
   indirildi. Sanal kaplamanin 6 mm ondeki yuzeyi gorunur kalirken gercek duvar
   saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik
@@ -20386,6 +20494,26 @@ struct SpatialValidationTests {
         precondition(WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.92, wallDistance: 3))
         precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.70, wallDistance: 3))
         precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: nil, wallDistance: .nan))
+        precondition(WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0.02, -0.01, 0.035], measuredNormal: [0, 0, 1],
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0.04, 0.03, -0.045], measuredNormal: nil,
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(!WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0, 0, 0.051], measuredNormal: [0, 0, 1],
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(!WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0, 0, 0.02], measuredNormal: [1, 0, 0],
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(!WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [.nan, 0, 0], measuredNormal: nil,
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
         precondition(WallPlacementPolicy.samePhysicalSurface(
             firstPosition: [0, 1, 0], firstNormal: [0, 0, 1],
             secondPosition: [0.04, 1.01, 0.02], secondNormal: [0.05, 0, 0.998]

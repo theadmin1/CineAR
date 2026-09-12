@@ -327,12 +327,20 @@ final class RoomRealityRenderer {
             }) else { continue }
             let center = bounds.center
             let worldCenter = world * SIMD4<Float>(center.x, center.y, 0, 1)
+            // `position` may be a fresh LiDAR contact that refines RoomPlan's stable
+            // wall by a few centimetres. Preserve the RoomPlan outline/orientation,
+            // but move its anchor plane by that measured local-Z offset. Without this
+            // correction the panel is world-locked yet visibly parallax-slides across
+            // real door and window trim when viewed from the side.
             let centerPosition = SIMD3<Float>(worldCenter.x, worldCenter.y, worldCenter.z)
+                + worldNormal * local.z
             let sign: Float = simd_dot(worldNormal, cameraPosition - centerPosition) >= 0 ? 1 : -1
             var transform = world
             transform.columns.0 *= sign
             transform.columns.2 *= sign
-            transform.columns.3 = worldCenter
+            transform.columns.3 = SIMD4<Float>(
+                centerPosition.x, centerPosition.y, centerPosition.z, 1
+            )
             let layout = WallCladdingLayout(
                 wallID: wall.identifier, width: bounds.width, height: bounds.height,
                 outline: polygon.map { [($0.x - center.x) * sign, $0.y - center.y] },

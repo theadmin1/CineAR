@@ -23,6 +23,12 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.15: Taranmis oda varken duvar dekorlari artik RoomPlan'in yaklasik duvar
+  duzlemini temas noktasi olarak kullanmaz; iPhone'un ayni anda olctugu gercek LiDAR
+  noktasi anchor temasidir. RoomPlan yalnizca kararlı duvar yonu ve sonlu siniri
+  saglar. Tam duvar kaplamalari da kapi/pencere kesimlerini korurken en fazla 5 cm'lik
+  dogrulanmis LiDAR duzlem farkiyla fiziksel duvara oturtulur. Bu, yandan bakildiginda
+  telefonun yuzmesi ve kaplamanin pervaz uzerinde parallax kaymasi regresyonunu giderir.
 - 0.17.14: Canli LiDAR ortme aginin yuzey arkasi payi 8-25 mm'den 1.4-3 mm'ye
   indirildi. Sanal kaplamanin 6 mm ondeki yuzeyi gorunur kalirken gercek duvar
   saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik

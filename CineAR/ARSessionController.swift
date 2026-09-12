@@ -2863,13 +2863,53 @@ final class ARSessionController: NSObject, ObservableObject {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
         let cameraPosition = arView.cameraTransform.translation
+        let scannedWall = roomCoordinateSpaceIsActive
+            ? roomRealityRenderer.scannedWallHit(in: arView, at: point)
+            : nil
+
+        // A normal wall prop must touch the surface measured under the finger. A
+        // RoomPlan wall is deliberately a stable, room-sized approximation and can
+        // sit several centimetres away from the plaster. Using that approximate plane
+        // as the contact point made a correctly anchored prop look as if it floated or
+        // slid when viewed from the side. Keep the exact current LiDAR point, while
+        // borrowing the scanned wall's steadier normal only when both describe the
+        // same physical plane. Full-wall cladding remains tied to RoomPlan because its
+        // outline and door/window cut-outs share that coordinate system.
+        if !prop.isWallCladding,
+           let depth,
+           let measuredNormal = depth.worldNormal,
+           wallSurfaceAccepts(normal: measuredNormal) {
+            let contactNormal: SIMD3<Float>
+            if let scannedWall,
+               WallPlacementPolicy.liveContactMatchesPersistentWall(
+                   measuredPosition: depth.worldPoint,
+                   measuredNormal: measuredNormal,
+                   wallPosition: scannedWall.position,
+                   wallNormal: scannedWall.normal
+               ) {
+                contactNormal = scannedWall.normal
+            } else {
+                contactNormal = measuredNormal
+            }
+            return wallSolution(position: depth.worldPoint, normal: contactNormal, prop: prop,
+                                cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
+        }
 
         // A completed RoomPlan wall is the most stable finite placement source. Raw
         // scene depth is intermittent on plain/dark walls, so a missing low-confidence
         // pixel cannot veto it. Positive foreground depth still prevents selecting the
         // wall through a person or piece of furniture.
-        if roomCoordinateSpaceIsActive,
-           let hit = roomRealityRenderer.scannedWallHit(in: arView, at: point) {
+        if let hit = scannedWall {
+            if let depth,
+               WallPlacementPolicy.liveContactMatchesPersistentWall(
+                   measuredPosition: depth.worldPoint,
+                   measuredNormal: depth.worldNormal,
+                   wallPosition: hit.position,
+                   wallNormal: hit.normal
+               ) {
+                return wallSolution(position: depth.worldPoint, normal: hit.normal, prop: prop,
+                                    cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
+            }
             let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
             guard WallPlacementPolicy.persistentWallIsVisible(
                 measuredDistance: measuredDistance,
@@ -2882,15 +2922,6 @@ final class ARSessionController: NSObject, ObservableObject {
         // Fitted cladding belongs to a particular stored wall and must never be
         // fabricated from a transient pixel or infinite plane.
         if prop.isWallCladding { return nil }
-
-        // Without a matching saved wall, a confident current LiDAR normal is an exact
-        // physical contact and keeps ordinary wall props usable on newly seen walls.
-        if let depth,
-           let measuredNormal = depth.worldNormal,
-           wallSurfaceAccepts(normal: measuredNormal) {
-            return wallSolution(position: depth.worldPoint, normal: measuredNormal, prop: prop,
-                                cameraPosition: cameraPosition, source: .lidarDepth, depth: depth)
-        }
 
         // ARPlane geometry is finite and its normal is fitted over many measurements.
         for result in arView.raycast(from: point, allowing: .existingPlaneGeometry, alignment: .vertical) {

@@ -63,6 +63,26 @@ struct SpatialValidationTests {
         precondition(WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.92, wallDistance: 3))
         precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: 2.70, wallDistance: 3))
         precondition(!WallPlacementPolicy.persistentWallIsVisible(measuredDistance: nil, wallDistance: .nan))
+        precondition(WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0.02, -0.01, 0.035], measuredNormal: [0, 0, 1],
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0.04, 0.03, -0.045], measuredNormal: nil,
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(!WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0, 0, 0.051], measuredNormal: [0, 0, 1],
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(!WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [0, 0, 0.02], measuredNormal: [1, 0, 0],
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
+        precondition(!WallPlacementPolicy.liveContactMatchesPersistentWall(
+            measuredPosition: [.nan, 0, 0], measuredNormal: nil,
+            wallPosition: .zero, wallNormal: [0, 0, 1]
+        ))
         precondition(WallPlacementPolicy.samePhysicalSurface(
             firstPosition: [0, 1, 0], firstNormal: [0, 0, 1],
             secondPosition: [0.04, 1.01, 0.02], secondNormal: [0.05, 0, 0.998]

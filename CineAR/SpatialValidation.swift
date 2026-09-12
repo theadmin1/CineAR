@@ -71,6 +71,55 @@ enum RoomScanCompletionPolicy {
 }
 
 enum WallPlacementPolicy {
+    /// RoomPlan supplies a stable wall normal and finite outline, but its plane may
+    /// be a few centimetres away from the physical finish. Admit a fresh LiDAR point
+    /// only when it is close enough to be a refinement of that wall, rather than a
+    /// separate foreground surface. The caller can then keep the scanned orientation
+    /// while using the measured point as the exact contact plane.
+    static func liveContactMatchesPersistentWall(
+        measuredPosition: SIMD3<Float>,
+        measuredNormal: SIMD3<Float>?,
+        wallPosition: SIMD3<Float>,
+        wallNormal: SIMD3<Float>
+    ) -> Bool {
+        let values = [
+            measuredPosition.x, measuredPosition.y, measuredPosition.z,
+            wallPosition.x, wallPosition.y, wallPosition.z,
+            wallNormal.x, wallNormal.y, wallNormal.z,
+        ]
+        guard values.allSatisfy(\.isFinite) else { return false }
+        let wallLengthSquared = wallNormal.x * wallNormal.x
+            + wallNormal.y * wallNormal.y + wallNormal.z * wallNormal.z
+        guard wallLengthSquared.isFinite, wallLengthSquared > 0.000_001 else { return false }
+        let wallDirection = wallNormal / sqrt(wallLengthSquared)
+
+        if let measuredNormal {
+            guard [measuredNormal.x, measuredNormal.y, measuredNormal.z].allSatisfy(\.isFinite)
+            else { return false }
+            let measuredLengthSquared = measuredNormal.x * measuredNormal.x
+                + measuredNormal.y * measuredNormal.y + measuredNormal.z * measuredNormal.z
+            guard measuredLengthSquared.isFinite, measuredLengthSquared > 0.000_001 else {
+                return false
+            }
+            let measuredDirection = measuredNormal / sqrt(measuredLengthSquared)
+            let normalAgreement = measuredDirection.x * wallDirection.x
+                + measuredDirection.y * wallDirection.y
+                + measuredDirection.z * wallDirection.z
+            guard abs(normalAgreement) >= 0.88 else { return false }
+        }
+
+        let delta = measuredPosition - wallPosition
+        let signedSeparation = delta.x * wallDirection.x
+            + delta.y * wallDirection.y + delta.z * wallDirection.z
+        let lateral = delta - wallDirection * signedSeparation
+        let lateralLengthSquared = lateral.x * lateral.x
+            + lateral.y * lateral.y + lateral.z * lateral.z
+        let distanceSquared = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z
+        return abs(signedSeparation) <= 0.05
+            && lateralLengthSquared <= 0.0064
+            && distanceSquared <= 0.0144
+    }
+
     /// Missing/low-confidence depth is not evidence that a finite saved wall is bad.
     /// A saved wall is rejected only when LiDAR positively measures a foreground
     /// surface a meaningful distance in front of it.

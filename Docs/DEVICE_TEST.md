@@ -252,6 +252,20 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
+0.17.15 duvar temas koordinati regresyonlari (iPhone 15 Pro Max):
+
+- Bos ve dokulu bir duvara `Eski Ankesorlu Telefon` yerlestir. Telefonu hedefte
+  kilit tamamlanana kadar sabit tut; modelin arka temas duzlemi gercek LiDAR noktasina
+  oturmali, RoomPlan duzlemi birkac santimetre farkli olsa bile model yuzmemelidir.
+- Telefona 0.7, 1.5 ve 3 metre mesafeden bakip saga/sola en az 45 derece yuruyun.
+  Arka kenar fiziksel duvar dokusuna gore kaymamali; yalniz modelin gercek kalinligina
+  ait dogal perspektif/parallax gorulmelidir.
+- Ayni duvara tugla veya ahsap kaplama koyup kapi/pencere pervazina caprazdan bak.
+  Kaplama RoomPlan kesimlerini korumali, fakat dogrulanmis 5 cm'ye kadar LiDAR duzlem
+  farkini anchor'a uygulayarak pervaz kenarinda saga/sola yuzmemelidir.
+- Duvardan 5 cm'den fazla ondeki kutu, dolap veya insan uzerinden arka duvar duzlemi
+  duzeltilmemeli; farkli normal veya gecersiz olcum yeni temas noktasi sayilmamalidir.
+
 0.17.14 ortme ve cevrimdisi asset regresyonlari (iPhone 15 Pro Max):
 
 - Gercek duvarda saat, cerceve veya ince raf bulunan bir bolumu tara ve ayni duvara
