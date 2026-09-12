@@ -1126,6 +1126,8 @@ struct ContentView: View {
                     Text(
                         "Alan ve duvarlar AR dünya koordinatında saklanır. Normal Nesneler "
                             + "menüsündeki duvar objelerini oluşturduğun sanal duvara da yerleştirebilirsin. "
+                            + "Düz taban kararlı zemin kotuna oturur; duvar gövdesi birleşim boşluğunu "
+                            + "kapatmak için 10 cm aşağı uzar ve gölge yalnız içeride kalır. "
                             + "Kapı kanadına kamerada dokunmak kapıyı açar veya kapatır."
                     )
                     .font(.caption)

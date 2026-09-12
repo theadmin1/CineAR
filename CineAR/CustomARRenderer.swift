@@ -8,6 +8,9 @@ final class CustomARRenderer {
     private static let wallPrefix = "synapmantis.custom-ar.wall."
     private static let doorPrefix = "synapmantis.custom-ar.door."
     private static let ceilingPrefix = "synapmantis.custom-ar.ceiling."
+    /// Bury the visual wall body slightly below the drawn base plane so small LiDAR
+    /// floor-height errors cannot leave a bright gap at the wall/floor seam.
+    private static let floorEmbedDepth: Float = 0.10
 
     private(set) var rootEntity = AnchorEntity(world: .zero)
     private var contentEntity = Entity()
@@ -72,9 +75,18 @@ final class CustomARRenderer {
         for design in designs where design.isValid {
             let designRoot = Entity()
             designRoot.name = "synapmantis.custom-ar.area.\(design.id.uuidString)"
-            addBoundary(design, to: designRoot)
-            for wall in design.walls {
-                if let wallEntity = makeWall(wall, surfaceNormal: design.normal) {
+            for (index, wall) in design.walls.enumerated() {
+                if let wallEntity = makeWall(
+                    wall,
+                    surfaceNormal: design.normal,
+                    floorShadowSide: index < design.boundary.count
+                        ? CustomARGeometry.interiorSide(
+                            of: wall,
+                            in: design.boundary.map(\.simd),
+                            normal: design.normal
+                        )
+                        : nil
+                ) {
                     designRoot.addChild(wallEntity)
                 }
             }
@@ -173,28 +185,10 @@ final class CustomARRenderer {
         rootEntity.addChild(draftEntity)
     }
 
-    private func addBoundary(_ design: CustomARDesignRecord, to parent: Entity) {
-        let points = design.boundary.map(\.simd)
-        guard points.count >= 3 else { return }
-        let material = SimpleMaterial(
-            color: UIColor.systemCyan.withAlphaComponent(0.82),
-            roughness: 0.30,
-            isMetallic: false
-        )
-        let lift = design.normal * 0.012
-        for index in points.indices {
-            parent.addChild(makeLine(
-                from: points[index] + lift,
-                to: points[(index + 1) % points.count] + lift,
-                thickness: 0.014,
-                material: material
-            ))
-        }
-    }
-
     private func makeWall(
         _ wall: CustomARWallRecord,
-        surfaceNormal: SIMD3<Float>
+        surfaceNormal: SIMD3<Float>,
+        floorShadowSide: Float?
     ) -> Entity? {
         let vector = wall.end.simd - wall.start.simd
         let length = simd_length(vector)
@@ -215,10 +209,15 @@ final class CustomARRenderer {
         root.transform = Transform(matrix: transform)
 
         let material = wallMaterial(wall.style)
+        let embeddedHeight = wall.height + Self.floorEmbedDepth
+        let embeddedCenterY = (wall.height - Self.floorEmbedDepth) * 0.5
         if wall.doors.isEmpty {
             addWallBox(
-                to: root, width: length, height: wall.height, depth: wall.thickness,
-                center: [length * 0.5, wall.height * 0.5, 0], material: material
+                to: root, width: length, height: embeddedHeight, depth: wall.thickness,
+                center: [length * 0.5, embeddedCenterY, 0], material: material
+            )
+            addFloorJoinShadow(
+                to: root, wall: wall, length: length, side: floorShadowSide
             )
             return root
         }
@@ -232,8 +231,8 @@ final class CustomARRenderer {
             if openingStart > cursor + 0.01 {
                 let segment = openingStart - cursor
                 addWallBox(
-                    to: root, width: segment, height: wall.height, depth: wall.thickness,
-                    center: [cursor + segment * 0.5, wall.height * 0.5, 0], material: material
+                    to: root, width: segment, height: embeddedHeight, depth: wall.thickness,
+                    center: [cursor + segment * 0.5, embeddedCenterY, 0], material: material
                 )
             }
             let lintelHeight = wall.height - door.height
@@ -257,11 +256,58 @@ final class CustomARRenderer {
         if cursor < length - 0.01 {
             let segment = length - cursor
             addWallBox(
-                to: root, width: segment, height: wall.height, depth: wall.thickness,
-                center: [cursor + segment * 0.5, wall.height * 0.5, 0], material: material
+                to: root, width: segment, height: embeddedHeight, depth: wall.thickness,
+                center: [cursor + segment * 0.5, embeddedCenterY, 0], material: material
             )
         }
+        addFloorJoinShadow(
+            to: root, wall: wall, length: length, side: floorShadowSide
+        )
         return root
+    }
+
+    private func addFloorJoinShadow(
+        to parent: Entity,
+        wall: CustomARWallRecord,
+        length: Float,
+        side: Float?
+    ) {
+        guard let side else { return }
+
+        var material = PhysicallyBasedMaterial()
+        material.baseColor = .init(tint: UIColor(white: 0.015, alpha: 1))
+        material.roughness = .init(floatLiteral: 1)
+        material.metallic = .init(floatLiteral: 0)
+        material.blending = .transparent(opacity: .init(floatLiteral: 0.11))
+
+        var solidIntervals: [(Float, Float)] = []
+        var cursor: Float = 0
+        for door in wall.doors.sorted(by: { $0.centerRatio < $1.centerRatio }) {
+            let center = min(max(door.centerRatio, 0), 1) * length
+            let openingStart = max(cursor, center - door.width * 0.5)
+            let openingEnd = min(length, center + door.width * 0.5)
+            if openingStart > cursor + 0.02 { solidIntervals.append((cursor, openingStart)) }
+            cursor = max(cursor, openingEnd)
+        }
+        if cursor < length - 0.02 { solidIntervals.append((cursor, length)) }
+
+        // Flattened spheres give every solid segment rounded ends without a texture
+        // allocation. Door openings remain clear instead of receiving a dark stripe.
+        for (start, end) in solidIntervals {
+            let segmentLength = end - start
+            let shadow = ModelEntity(
+                mesh: .generateSphere(radius: 0.5),
+                materials: [material]
+            )
+            shadow.name = "synapmantis.custom-ar.floor-join-shadow"
+            shadow.scale = [max(segmentLength - 0.02, 0.04), 0.006, 0.16]
+            shadow.position = [
+                (start + end) * 0.5,
+                0.004,
+                side * (wall.thickness * 0.5 + 0.075)
+            ]
+            parent.addChild(shadow)
+        }
     }
 
     private func addWallBox(

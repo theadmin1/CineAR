@@ -23,6 +23,15 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.18.1: Ozel AR duvar ve tavanlari artik kendi sonlu, dunya koordinatina sabit
+  collider'larinda tek dokunusla dekor kabul eder; fiziksel arka plani olcen LiDAR
+  bu sanal yuzey secimini yanlislikla iptal etmez. Asili tablo ve modern tavan lambasi
+  yuksek detayli USDZ acilirken taninabilir, dusuk maliyetli bir yedek modelle aninda
+  gorunur. Duz cizimlerde ilk nokta, 30 cm guven araligindaki kararlı RoomPlan/ARKit
+  zemin kotuna oturur; gercek egimli yuzeyler egimli kalir. Duvar govdesi LiDAR zemin
+  sapmasindan bosluk birakmamak icin taban duzleminin 10 cm altina uzar. Bitmis alanda
+  mavi taslak cizgileri kaldirilir ve zeminle birlesim icin yalniz cokgenin ic tarafinda,
+  kapi acikliklarini kapatmayan tek katmanli mobil temas golgesi kullanilir.
 - 0.18.0: Ayri `Ozel AR` modu eklendi. Kullanici LiDAR ile duz veya egimli bir
   yuzeyde 3-24 kose cizer; alan kapaninca cevre duvarlari dunya koordinatinda
   sabitlenir. Alan icinde iki noktayla ek duvar cizilebilir, duvara gercek aciklik

@@ -1,4 +1,4 @@
-# SynapMantis 0.18.0 cihaz kabul testi
+# SynapMantis 0.18.1 cihaz kabul testi
 
 ## Hedef donanim
 
@@ -223,9 +223,18 @@
 29. `Ozel AR > Yeni Alan Ciz` ile once duz zeminde, sonra yaklasik 15-30 derece egimli
     bir yuzeyde dort kose belirle. Ilk noktaya yaklasinca alan kapanmali, cevrede dort
     duvar olusmali ve telefonla dolasirken duvarlar kamerayi takip etmemelidir. Alan
+    duz zeminde cizilirken telefonu yere yaklastirip ilk noktayi yaklasik 5-15 cm kot
+    hatasiyla sec; bitmis duvar ile zemin arasinda aydinlik bosluk kalmamali. Duvar
+    govdesi zemine 10 cm gomulmeli, mavi taslak taban cizgisi kaybolmali ve yumusak
+    temas golgesi yalniz alanin ic tarafinda gorunmelidir. Ic bukey alanda da golge
+    dis tarafa atlamamali, kapi esigini karartmamalidir. Egimli yuzey testi ise egimi
+    duz zemine zorlamadan korumalidir.
     icin `Tavan olustur` acikken tavan secilen yukseklikte ve cokgen disina tasmadan
     olusmali; ayar kapatilip alana uygulaninca tavan kalkmalidir. Tavan armaturu bu
-    sanal tavana yerlestirilebilmelidir. Alan icinde iki noktayla ic duvar ciz;
+    sanal tavana tek dokunusla yerlestirilebilmelidir. Ozel AR varlik setinden once
+    `Asili Sanat Cercevesi`, sonra `Modern Tavan Lambasi` sec; ilk dokunusta taninabilir
+    yedek gorunmeli ve USDZ acilinca ayni anchor'da gercek modelle degismelidir. Fiziksel
+    arka plan derinligi `Yuzey kilitlenemedi` uretmemelidir. Alan icinde iki noktayla ic duvar ciz;
     disaridaki nokta reddedilmelidir. Duvara 90 cm
     kapi ekle; duvar gercek aciklik birakmali ve kapi kanadina her dokunusta kanat
     animasyonla acilip kapanmalidir. Normal kutuphaneden saat/telefon secip Ozel AR

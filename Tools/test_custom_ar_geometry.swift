@@ -4,6 +4,25 @@ import simd
 @main
 struct CustomARGeometryTests {
     static func main() throws {
+        let snapped = CustomARGeometry.snappedBaseSurface(
+            position: [0.2, 0.09, -0.4], normal: simd_normalize([0.03, 1, 0.01]),
+            stableFloorY: 0
+        )
+        precondition(snapped != nil)
+        precondition(abs(snapped!.position.y) < 0.000_1)
+        precondition(simd_distance(snapped!.normal, [0, 1, 0]) < 0.000_1)
+        let inclinedNormal = simd_normalize(SIMD3<Float>(0, 1, 0.35))
+        let inclined = CustomARGeometry.snappedBaseSurface(
+            position: [0, 0.09, 0], normal: inclinedNormal, stableFloorY: 0
+        )
+        precondition(inclined != nil)
+        precondition(abs(inclined!.position.y - 0.09) < 0.000_1)
+        precondition(simd_distance(inclined!.normal, inclinedNormal) < 0.000_1)
+        let distantFloor = CustomARGeometry.snappedBaseSurface(
+            position: [0, 0.42, 0], normal: [0, 1, 0], stableFloorY: 0
+        )
+        precondition(abs(distantFloor!.position.y - 0.42) < 0.000_1)
+
         let boundary: [SIMD3<Float>] = [
             [0, 0, 0], [3, 0, 0], [3, 0, 2], [0, 0, 2]
         ]
@@ -74,6 +93,39 @@ struct CustomARGeometryTests {
             name: "İçbükey", boundary: concave, normal: [0, 1, 0],
             wallHeight: 2.4, wallThickness: 0.08, style: .studioWhite
         )
+        for wall in concaveDesign.walls {
+            guard let side = CustomARGeometry.interiorSide(
+                of: wall,
+                in: concave,
+                normal: [0, 1, 0]
+            ) else {
+                preconditionFailure("Every perimeter wall needs an interior side")
+            }
+            let direction = simd_normalize(wall.end.simd - wall.start.simd)
+            let forward = simd_normalize(simd_cross(direction, SIMD3<Float>(0, 1, 0)))
+            let probe = (wall.start.simd + wall.end.simd) * 0.5 + forward * side * 0.075
+            precondition(CustomARGeometry.contains(probe, in: concave, normal: [0, 1, 0]))
+        }
+        let reversedConcave = Array(concave.reversed())
+        let reversedDesign = try CustomARGeometry.makeDesign(
+            name: "Ters İçbükey", boundary: reversedConcave, normal: [0, 1, 0],
+            wallHeight: 2.4, wallThickness: 0.08, style: .studioWhite
+        )
+        for wall in reversedDesign.walls {
+            let side = CustomARGeometry.interiorSide(
+                of: wall,
+                in: reversedConcave,
+                normal: [0, 1, 0]
+            )!
+            let direction = simd_normalize(wall.end.simd - wall.start.simd)
+            let forward = simd_normalize(simd_cross(direction, SIMD3<Float>(0, 1, 0)))
+            let probe = (wall.start.simd + wall.end.simd) * 0.5 + forward * side * 0.075
+            precondition(CustomARGeometry.contains(
+                probe,
+                in: reversedConcave,
+                normal: [0, 1, 0]
+            ))
+        }
         do {
             _ = try CustomARGeometry.makeInteriorWall(
                 start: [0.2, 0, 0.8], end: [1.8, 0, 0.8], in: concaveDesign,

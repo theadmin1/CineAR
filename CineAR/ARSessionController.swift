@@ -2510,12 +2510,16 @@ final class ARSessionController: NSObject, ObservableObject {
         let measured = customARSurfaceHit(in: arView, at: point, frame: frame)
         if customARDraftPoints.isEmpty {
             guard let measured,
-                  let normal = CustomARGeometry.normalizedUpFacing(measured.normal) else {
+                  let baseSurface = CustomARGeometry.snappedBaseSurface(
+                    position: measured.position,
+                    normal: measured.normal,
+                    stableFloorY: stableCustomARFloorY(for: frame)
+                  ) else {
                 setCustomARStatus("LiDAR düz/eğimli yüzeyi doğrulayamadı; daha aydınlık açıdan dene", color: .yellow)
                 return
             }
-            customARDraftNormal = normal
-            customARDraftPoints = [measured.position]
+            customARDraftNormal = baseSurface.normal
+            customARDraftPoints = [baseSurface.position]
         } else {
             guard let origin = customARDraftPoints.first,
                   let normal = customARDraftNormal,
@@ -2550,6 +2554,15 @@ final class ARSessionController: NSObject, ObservableObject {
                 : "\(customARDraftPoints.count) köşe — ilk noktaya dokun veya Alanı Kapat",
             color: .blue
         )
+    }
+
+    private func stableCustomARFloorY(for frame: ARFrame) -> Float? {
+        if let lastKnownFloorY, lastKnownFloorY.isFinite { return lastKnownFloorY }
+        let cameraY = frame.camera.transform.columns.3.y
+        guard let estimate = floorSurfaceTracker.estimate(cameraY: cameraY),
+              estimate.isStable,
+              estimate.y.isFinite else { return nil }
+        return estimate.y
     }
 
     private func addCustomARInteriorWallPoint(in arView: ARView, at point: CGPoint) {
@@ -2861,6 +2874,23 @@ final class ARSessionController: NSObject, ObservableObject {
         guard selectedProp != .custom || selectedAssetURL != nil else {
             publishStatus("Önce kütüphaneden bir USDZ dekor seç", color: .yellow)
             return
+        }
+
+        // Custom AR surfaces are already finite, world-anchored RealityKit geometry.
+        // Requiring six fresh LiDAR samples here made wall art and ceiling fixtures
+        // time out because scene depth correctly measures the physical background,
+        // not the virtual surface. One stable tap on the exact collider is sufficient.
+        if let exactSurface = placementSolution(in: arView, at: point, for: selectedProp) {
+            switch exactSurface.source {
+            case .customARWall, .customARCeiling:
+                placementReticlePoint = point
+                placementSurfaceMessage = "Yeşil: sabit Özel AR yüzeyi"
+                placementSurfaceColor = .green
+                commitPlacement(in: arView, solution: exactSurface, prop: selectedProp)
+                return
+            default:
+                break
+            }
         }
 
         pendingPlacementRequest = PendingPlacementRequest(
@@ -3471,18 +3501,14 @@ final class ARSessionController: NSObject, ObservableObject {
         let cameraPosition = arView.cameraTransform.translation
 
         // Custom AR walls are intentionally virtual, so LiDAR sees the physical
-        // background behind them. Accept their finite collision face as the placement
-        // surface, while a closer measured person/object still blocks selection.
+        // background behind them. Their finite, world-anchored collision face is the
+        // authoritative placement surface. Live depth still handles visual occlusion,
+        // but must not veto a deliberate tap by comparing it with the real background.
         if !prop.isWallCladding,
            let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
                CustomARRenderer.wallID(containing: $0.entity) != nil
-                   && wallSurfaceAccepts(normal: $0.normal)
+                   && customARWallSurfaceAccepts(normal: $0.normal)
            }) {
-            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
-            guard WallPlacementPolicy.persistentWallIsVisible(
-                measuredDistance: measuredDistance,
-                wallDistance: hit.distance
-            ) else { return nil }
             return wallSolution(
                 position: hit.position,
                 normal: hit.normal,
@@ -3609,6 +3635,13 @@ final class ARSessionController: NSObject, ObservableObject {
         return abs(simd_normalize(normal).y) <= 0.45
     }
 
+    private func customARWallSurfaceAccepts(normal: SIMD3<Float>) -> Bool {
+        guard simd_length_squared(normal) > 0.000_001 else { return false }
+        // A wall extruded from a 15–30 degree Custom AR base is intentionally not
+        // perfectly vertical in world space. Still reject the thin top/bottom faces.
+        return abs(simd_normalize(normal).y) <= 0.82
+    }
+
     private func wallDepthAgrees(
         _ depth: SceneDepthSurfaceSample,
         position: SIMD3<Float>,
@@ -3640,19 +3673,14 @@ final class ARSessionController: NSObject, ObservableObject {
         let cameraPosition = arView.cameraTransform.translation
 
         // A Custom AR ceiling is virtual, so scene depth normally reports the real
-        // background ceiling. Use the finite custom collider while still rejecting a
-        // positively measured person or object that is closer to the camera.
+        // background ceiling. Its finite, world-anchored collider is authoritative;
+        // otherwise the physical ceiling depth incorrectly blocks every virtual hit.
         if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
             guard CustomARRenderer.ceilingID(containing: hit.entity) != nil,
                   simd_length_squared(hit.normal) > 0.000_001 else { return false }
             return abs(simd_normalize(hit.normal).y) >= 0.55
                 && hit.position.y > cameraPosition.y + 0.20
         }) {
-            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
-            guard WallPlacementPolicy.persistentWallIsVisible(
-                measuredDistance: measuredDistance,
-                wallDistance: hit.distance
-            ) else { return nil }
             var normal = simd_normalize(hit.normal)
             if simd_dot(normal, cameraPosition - hit.position) < 0 { normal = -normal }
             return PlacementSurfaceSolution(
@@ -6204,6 +6232,12 @@ final class ARSessionController: NSObject, ObservableObject {
             max(dimensions.y, 0.04),
             max(dimensions.z, 0.04)
         )
+        if prop == .hangingPictureFrame {
+            return makePictureFrameLoadingProxy(dimensions: safeDimensions)
+        }
+        if prop == .modernCeilingLamp {
+            return makeCeilingLampLoadingProxy(dimensions: safeDimensions)
+        }
         let mesh = MeshResource.generateBox(
             size: safeDimensions,
             cornerRadius: min(safeDimensions.x, safeDimensions.y, safeDimensions.z) * 0.06
@@ -6228,6 +6262,94 @@ final class ARSessionController: NSObject, ObservableObject {
             shapes: [ShapeResource.generateBox(size: safeDimensions)]
         )
         return entity
+    }
+
+    /// Recognisable, low-poly stand-ins keep Custom AR usable while a high-detail
+    /// USDZ is decoded (and remain visible if an individual device rejects the file).
+    private func makePictureFrameLoadingProxy(
+        dimensions: SIMD3<Float>
+    ) -> ModelEntity {
+        let frameMaterial = SimpleMaterial(
+            color: UIColor(red: 0.055, green: 0.06, blue: 0.07, alpha: 1),
+            roughness: 0.45,
+            isMetallic: false
+        )
+        let artMaterial = SimpleMaterial(
+            color: UIColor(red: 0.82, green: 0.77, blue: 0.65, alpha: 1),
+            roughness: 0.88,
+            isMetallic: false
+        )
+        let root = ModelEntity(
+            mesh: .generateBox(
+                size: dimensions,
+                cornerRadius: min(dimensions.x, dimensions.y) * 0.025
+            ),
+            materials: [frameMaterial]
+        )
+        let artwork = ModelEntity(
+            mesh: .generateBox(
+                size: [dimensions.x * 0.82, dimensions.y * 0.86, 0.006],
+                cornerRadius: 0.004
+            ),
+            materials: [artMaterial]
+        )
+        artwork.position.z = dimensions.z * 0.5 + 0.003
+        root.addChild(artwork)
+        root.name = "cinear.loading-proxy.\(PropKind.hangingPictureFrame.rawValue)"
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: dimensions)]
+        )
+        return root
+    }
+
+    private func makeCeilingLampLoadingProxy(
+        dimensions: SIMD3<Float>
+    ) -> ModelEntity {
+        let darkMetal = SimpleMaterial(
+            color: UIColor(red: 0.07, green: 0.075, blue: 0.085, alpha: 1),
+            roughness: 0.30,
+            isMetallic: true
+        )
+        var glow = UnlitMaterial()
+        glow.color = .init(tint: UIColor(red: 1.0, green: 0.80, blue: 0.43, alpha: 1))
+
+        let root = ModelEntity(
+            mesh: .generateBox(
+                size: [dimensions.x * 0.38, dimensions.y * 0.07, dimensions.z * 0.38],
+                cornerRadius: min(dimensions.x, dimensions.z) * 0.08
+            ),
+            materials: [darkMetal]
+        )
+        let stem = ModelEntity(
+            mesh: .generateBox(
+                size: [0.025, dimensions.y * 0.55, 0.025],
+                cornerRadius: 0.008
+            ),
+            materials: [darkMetal]
+        )
+        stem.position.y = -dimensions.y * 0.30
+
+        let shade = ModelEntity(
+            mesh: .generateSphere(radius: 0.5),
+            materials: [darkMetal]
+        )
+        shade.scale = [dimensions.x, dimensions.y * 0.20, dimensions.z]
+        shade.position.y = -dimensions.y * 0.67
+
+        let bulb = ModelEntity(
+            mesh: .generateSphere(radius: min(dimensions.x, dimensions.z) * 0.16),
+            materials: [glow]
+        )
+        bulb.position.y = -dimensions.y * 0.76
+
+        root.addChild(stem)
+        root.addChild(shade)
+        root.addChild(bulb)
+        root.name = "cinear.loading-proxy.\(PropKind.modernCeilingLamp.rawValue)"
+        root.collision = CollisionComponent(
+            shapes: [ShapeResource.generateBox(size: dimensions)]
+        )
+        return root
     }
 
     private func bundledAssetURL(named assetName: String) -> URL? {

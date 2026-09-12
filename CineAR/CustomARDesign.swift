@@ -193,6 +193,27 @@ enum CustomARGeometryError: LocalizedError {
 }
 
 enum CustomARGeometry {
+    /// Flat floor samples can wander by several centimetres when the phone is very
+    /// close to the ground. Reuse an already stable room/ARKit floor level only for
+    /// nearly horizontal bases; genuinely inclined drawing surfaces stay inclined.
+    static func snappedBaseSurface(
+        position: SIMD3<Float>,
+        normal: SIMD3<Float>,
+        stableFloorY: Float?
+    ) -> (position: SIMD3<Float>, normal: SIMD3<Float>)? {
+        guard let normalized = normalizedUpFacing(normal),
+              [position.x, position.y, position.z].allSatisfy(\.isFinite) else {
+            return nil
+        }
+        guard let stableFloorY,
+              stableFloorY.isFinite,
+              abs(normalized.y) >= 0.985,
+              abs(position.y - stableFloorY) <= 0.30 else {
+            return (position, normalized)
+        }
+        return ([position.x, stableFloorY, position.z], [0, 1, 0])
+    }
+
     static func normalizedUpFacing(_ normal: SIMD3<Float>) -> SIMD3<Float>? {
         guard [normal.x, normal.y, normal.z].allSatisfy(\.isFinite),
               simd_length_squared(normal) > 0.000_001 else { return nil }
@@ -271,6 +292,35 @@ enum CustomARGeometry {
             previous = current
         }
         return inside
+    }
+
+    /// Returns +1 when the polygon interior is on the edge's local forward side and
+    /// -1 when it is on the opposite side. Polygon winding stays correct for every
+    /// edge of a valid concave area, unlike an arithmetic-centre guess.
+    static func interiorSide(
+        of wall: CustomARWallRecord,
+        in boundary: [SIMD3<Float>],
+        normal rawNormal: SIMD3<Float>
+    ) -> Float? {
+        guard boundary.count >= 3,
+              let up = normalizedUpFacing(rawNormal) else { return nil }
+        let vector = wall.end.simd - wall.start.simd
+        let length = simd_length(vector)
+        guard length > 0.001 else { return nil }
+        let direction = vector / length
+        let face = simd_cross(direction, up)
+        guard simd_length_squared(face) > 0.000_001 else { return nil }
+        let local = localPoints(boundary, normal: up)
+        var doubledSignedArea: Float = 0
+        for index in local.indices {
+            let next = local[(index + 1) % local.count]
+            doubledSignedArea += local[index].x * next.y - next.x * local[index].y
+        }
+        guard abs(doubledSignedArea) > 0.000_001 else { return nil }
+
+        // With u × v = up, a positive winding has its interior on up × direction.
+        // Local forward is direction × up, the opposite side.
+        return doubledSignedArea > 0 ? -1 : 1
     }
 
     static func makeDesign(
