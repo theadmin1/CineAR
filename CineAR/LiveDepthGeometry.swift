@@ -18,8 +18,12 @@ enum LiveDepthGeometry {
     }
 
     static func depthBias(_ depth: Float) -> Float {
-        // Avoid cutting a clock attached to the very surface that supplied depth.
-        min(0.008 + depth * 0.004, 0.025)
+        // Keep the occluder just behind the measured surface. The previous 8-25 mm
+        // bias also pushed thin real clocks and frames behind a wall
+        // cladding whose visible face is only 6 mm in front of the scanned wall.
+        // A 1.4-3 mm bias still prevents coplanar depth noise while allowing any
+        // genuinely protruding wall object to remain in front of the virtual finish.
+        min(0.0008 + depth * 0.0006, 0.003)
     }
 
     static func build(

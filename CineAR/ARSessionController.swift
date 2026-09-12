@@ -858,6 +858,22 @@ final class ARSessionController: NSObject, ObservableObject {
         setPhysicalSceneOcclusion(enabled: true)
     }
 
+    private func suspendWorldLockedRoomRenderingForTrackingLoss() {
+        // ARKit can keep drawing the last camera-relative estimate while tracking is
+        // limited. Hiding only the scanned-room roots avoids presenting that estimate
+        // as if the room were following the phone; the prepared geometry remains intact.
+        roomRealityRenderer.isVisible = false
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
+    }
+
+    private func restoreWorldLockedRoomRenderingAfterTrackingRecovery() {
+        guard roomCoordinateSpaceIsActive else { return }
+        if activeRealityThemeID != nil || isRoomOutlineVisible {
+            roomRealityRenderer.isVisible = true
+        }
+        refreshPhysicalRoomOcclusionIfPossible()
+    }
+
     func resumeAfterRoomScan(result: RoomScanResult?) {
         liveDepthRenderer.clear()
         isRoomScanActive = false
@@ -926,7 +942,14 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
         arView?.renderOptions.remove(.disablePersonOcclusion)
-        arView?.session.run(configuration(), options: [])
+        if let arView {
+            // RoomCaptureSession.stop(pauseARSession: false) leaves this exact shared
+            // ARSession running. Re-running a freshly built configuration here is both
+            // unnecessary and can break the coordinate continuity established during
+            // the scan. Keep that world origin and only renew RealityKit's attachment
+            // to its fixed world anchors.
+            roomRealityRenderer.reattachWorldAnchorsAfterRoomScan(in: arView)
+        }
         refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
 
@@ -4493,7 +4516,7 @@ final class ARSessionController: NSObject, ObservableObject {
         id: UUID,
         prop: PropKind,
         generation: UInt64,
-        timeout: TimeInterval = 10
+        timeout: TimeInterval = 25
     ) -> UUID {
         let token = UUID()
         assetLoadTokens[id] = token
@@ -4698,7 +4721,9 @@ final class ARSessionController: NSObject, ObservableObject {
             )
             let loadToken = beginAssetLoad(id: id, prop: prop, generation: generation)
             publishStatus("3B dekor yerinde — USDZ hazırlanıyor", color: .yellow)
-            let request = ModelEntity.loadModelAsync(contentsOf: modelURL)
+            // Imported USDZ files commonly have an Entity hierarchy at their root.
+            // loadModelAsync rejects those otherwise valid, fully local packages.
+            let request = Entity.loadAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] completion in
@@ -4715,8 +4740,16 @@ final class ARSessionController: NSObject, ObservableObject {
                             color: .yellow
                         )
                     }
-                } receiveValue: { [weak self] entity in
-                    guard let self, self.assetLoadTokens[id] == loadToken else { return }
+                } receiveValue: { [weak self] content in
+                    guard let self,
+                          self.assetLoadTokens[id] == loadToken,
+                          let entity = self.makeImportedLibraryEntity(content: content) else {
+                        self?.publishStatus(
+                            "3B dekor geometrisi okunamadı; yerindeki yedek model korunuyor",
+                            color: .yellow
+                        )
+                        return
+                    }
                     self.customEntityCache[fileName] = entity.clone(recursive: true)
                     if self.replaceRenderedEntity(
                         entity: entity,
@@ -5580,6 +5613,29 @@ final class ARSessionController: NSObject, ObservableObject {
         return root
     }
 
+    /// Accepts both a single ModelEntity and the nested Entity roots produced by
+    /// Blender, Reality Composer Pro and common iPhone USDZ exporters. Contact-pivot
+    /// fitting remains the single place that aligns the result with its AR surface.
+    private func makeImportedLibraryEntity(content: Entity) -> ModelEntity? {
+        let measurementRoot = Entity()
+        measurementRoot.addChild(content)
+        let bounds = measurementRoot.visualBounds(
+            recursive: true,
+            relativeTo: measurementRoot,
+            excludeInactive: false
+        )
+        content.removeFromParent()
+        guard [bounds.center.x, bounds.center.y, bounds.center.z].allSatisfy(\.isFinite),
+              [bounds.extents.x, bounds.extents.y, bounds.extents.z].allSatisfy({
+                  $0.isFinite && $0 > 0.0001 && $0 < 100
+              }) else { return nil }
+
+        let root = ModelEntity()
+        root.name = "cinear.imported.hierarchy"
+        root.addChild(content)
+        return root
+    }
+
     private func makeBundledLibraryEntity(for prop: PropKind) -> ModelEntity? {
         guard let descriptor = libraryDescriptor(for: prop),
               let content = manualAssetProvider.makeEntity(
@@ -6363,6 +6419,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         case .normal:
             isARReady = true
             didAttemptSessionFailureRecovery = false
+            restoreWorldLockedRoomRenderingAfterTrackingRecovery()
             let anchorRecovery = restorePlacementAnchorsIfNeeded(
                 allowCreatingMissingAnchors: false
             )
@@ -6391,11 +6448,14 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             publishStatus("Takip hazır — dekor seçip yüzeye dokun", color: .green)
         case .notAvailable:
             isARReady = false
+            suspendWorldLockedRoomRenderingForTrackingLoss()
             publishStatus("Kamera takibi kullanılamıyor", color: .red)
         case .limited(let reason):
-            // Limited tracking may still render an existing scene, but accepting a
-            // new anchor here is the main source of visible placement drift.
+            // Keep world-locked content hidden until ARKit has a trustworthy pose.
+            // Otherwise a stale camera-relative estimate looks like the room follows
+            // the device while the user walks into another space.
             isARReady = false
+            suspendWorldLockedRoomRenderingForTrackingLoss()
             let message: String
             switch reason {
             case .initializing: message = "AR oturumu hazırlanıyor"

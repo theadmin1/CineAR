@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.12`
-- Proje build numarası: `46`
+- Uygulama sürümü: `0.17.14`
+- Proje build numarası: `48`
 - Git dalı: `main`
-- Kaynak commit: `12f8942edf7e992fb06ba78ed83c425199d0e6e9`
-- Oluşturulma zamanı: `2026-09-11 17:57:10 +03:00`
+- Kaynak commit: `232035191cf29a5fb2ea04ac30b53ccded9e8877`
+- Oluşturulma zamanı: `2026-09-12 09:25:54 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -19,18 +19,21 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 
 - Swift + SwiftUI kullanıcı arayüzü
 - ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion
-- Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma
+- Kettle/kumaş ve duvara asılı ince gerçek nesneler için 1,4-3 mm yüzey paylı ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma
 - Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i
 - RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi `room.json` üretimi, tarama boyunca en geniş duvar kapsamını koruyan yüksek-su-izi ve her zaman sonlandırılabilen tarama akışı
 - Tarama başında ARSession'ı yeniden yapılandırmadan kararlı ortak dünya takibini RoomPlan'a devreden; uygulama çizim/AI işlerini tarama boyunca askıya alan sensör akışı
+- RoomPlan dönüşünde çalışan ortak ARSession'ı yeniden başlatmadan tarama dünya koordinatını koruyan ve RealityKit oda köklerini sabit dünya anchor'larına yeniden bağlayan geçiş
+- Sınırlı AR takibinde yanlış kamera pozuna sürüklemek yerine taranmış oda köklerini geçici gizleyen ve normal takipte aynı dünya konumunda geri gösteren güvenlik katmanı
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
 - Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
+- PC/ağ gerektirmeyen toplam 52 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi
 - Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi
 - 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi
 - Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı
-- USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok
+- Tek ModelEntity veya iç içe Entity köklü USDZ yükleme; 25 saniyelik cihaz içi hazırlama ve hata durumunda kategoriye uygun görünür fallback
 - Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli
 - AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i
 - Manuel dekor sürükleme, döndürme ve ölçekleme
@@ -210,6 +213,7 @@ Tools/generate_all_in_one_markdown.ps1
 Tools/generate_wall_assets.py
 Tools/render_usdz_thumbnails.py
 Tools/run_swift_regressions.py
+Tools/test_bundled_assets.py
 Tools/test_live_depth_geometry.swift
 Tools/test_privacy_plist.py
 Tools/test_spatial_validation.swift
@@ -297,7 +301,7 @@ Yok.
 | `CineAR.xcodeproj/project.pbxproj` | 294 | 15656 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 6928 | 293561 |
+| `CineAR/ARSessionController.swift` | 6988 | 296574 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
@@ -306,7 +310,7 @@ Yok.
 | `CineAR/CineARApp.swift` | 180 | 6728 |
 | `CineAR/ContentView.swift` | 1478 | 62936 |
 | `CineAR/Info.plist` | 62 | 2252 |
-| `CineAR/LiveDepthGeometry.swift` | 91 | 4027 |
+| `CineAR/LiveDepthGeometry.swift` | 95 | 4350 |
 | `CineAR/LiveDepthOcclusionRenderer.swift` | 214 | 10898 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 413 | 17104 |
@@ -314,26 +318,27 @@ Yok.
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
 | `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
 | `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
-| `CineAR/RoomRealityRenderer.swift` | 2247 | 88394 |
+| `CineAR/RoomRealityRenderer.swift` | 2279 | 90085 |
 | `CineAR/RoomScanner.swift` | 999 | 38097 |
 | `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
 | `CineAR/SpatialValidation.swift` | 142 | 7019 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
-| `codemagic.yaml` | 262 | 9368 |
-| `Docs/CODEMAGIC.md` | 120 | 6576 |
-| `Docs/DEVICE_TEST.md` | 330 | 23302 |
+| `codemagic.yaml` | 279 | 10343 |
+| `Docs/CODEMAGIC.md` | 123 | 6806 |
+| `Docs/DEVICE_TEST.md` | 380 | 26601 |
 | `Docs/ICON_PROMPT.md` | 25 | 1421 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 435 | 29931 |
+| `README.md` | 459 | 31444 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
 | `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
-| `Tools/generate_all_in_one_markdown.ps1` | 376 | 20852 |
+| `Tools/generate_all_in_one_markdown.ps1` | 379 | 21516 |
 | `Tools/generate_wall_assets.py` | 81 | 3290 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/run_swift_regressions.py` | 46 | 2055 |
-| `Tools/test_live_depth_geometry.swift` | 73 | 3746 |
+| `Tools/test_bundled_assets.py` | 97 | 3953 |
+| `Tools/test_live_depth_geometry.swift` | 76 | 3977 |
 | `Tools/test_privacy_plist.py` | 37 | 1416 |
 | `Tools/test_spatial_validation.swift` | 110 | 7299 |
 | `Tools/test_wall_cladding_geometry.swift` | 107 | 5800 |
@@ -1536,13 +1541,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 48;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.12;
+				MARKETING_VERSION = 0.17.14;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1560,12 +1565,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 48;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.12;
+				MARKETING_VERSION = 0.17.14;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -2964,6 +2969,22 @@ final class ARSessionController: NSObject, ObservableObject {
         setPhysicalSceneOcclusion(enabled: true)
     }
 
+    private func suspendWorldLockedRoomRenderingForTrackingLoss() {
+        // ARKit can keep drawing the last camera-relative estimate while tracking is
+        // limited. Hiding only the scanned-room roots avoids presenting that estimate
+        // as if the room were following the phone; the prepared geometry remains intact.
+        roomRealityRenderer.isVisible = false
+        roomRealityRenderer.isPhysicalOcclusionVisible = false
+    }
+
+    private func restoreWorldLockedRoomRenderingAfterTrackingRecovery() {
+        guard roomCoordinateSpaceIsActive else { return }
+        if activeRealityThemeID != nil || isRoomOutlineVisible {
+            roomRealityRenderer.isVisible = true
+        }
+        refreshPhysicalRoomOcclusionIfPossible()
+    }
+
     func resumeAfterRoomScan(result: RoomScanResult?) {
         liveDepthRenderer.clear()
         isRoomScanActive = false
@@ -3032,7 +3053,14 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegateQueue = .main
         arView?.session.delegate = self
         arView?.renderOptions.remove(.disablePersonOcclusion)
-        arView?.session.run(configuration(), options: [])
+        if let arView {
+            // RoomCaptureSession.stop(pauseARSession: false) leaves this exact shared
+            // ARSession running. Re-running a freshly built configuration here is both
+            // unnecessary and can break the coordinate continuity established during
+            // the scan. Keep that world origin and only renew RealityKit's attachment
+            // to its fixed world anchors.
+            roomRealityRenderer.reattachWorldAnchorsAfterRoomScan(in: arView)
+        }
         refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
 
@@ -6599,7 +6627,7 @@ final class ARSessionController: NSObject, ObservableObject {
         id: UUID,
         prop: PropKind,
         generation: UInt64,
-        timeout: TimeInterval = 10
+        timeout: TimeInterval = 25
     ) -> UUID {
         let token = UUID()
         assetLoadTokens[id] = token
@@ -6804,7 +6832,9 @@ final class ARSessionController: NSObject, ObservableObject {
             )
             let loadToken = beginAssetLoad(id: id, prop: prop, generation: generation)
             publishStatus("3B dekor yerinde — USDZ hazırlanıyor", color: .yellow)
-            let request = ModelEntity.loadModelAsync(contentsOf: modelURL)
+            // Imported USDZ files commonly have an Entity hierarchy at their root.
+            // loadModelAsync rejects those otherwise valid, fully local packages.
+            let request = Entity.loadAsync(contentsOf: modelURL)
             assetLoadSubscriptions[id] = request
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] completion in
@@ -6821,8 +6851,16 @@ final class ARSessionController: NSObject, ObservableObject {
                             color: .yellow
                         )
                     }
-                } receiveValue: { [weak self] entity in
-                    guard let self, self.assetLoadTokens[id] == loadToken else { return }
+                } receiveValue: { [weak self] content in
+                    guard let self,
+                          self.assetLoadTokens[id] == loadToken,
+                          let entity = self.makeImportedLibraryEntity(content: content) else {
+                        self?.publishStatus(
+                            "3B dekor geometrisi okunamadı; yerindeki yedek model korunuyor",
+                            color: .yellow
+                        )
+                        return
+                    }
                     self.customEntityCache[fileName] = entity.clone(recursive: true)
                     if self.replaceRenderedEntity(
                         entity: entity,
@@ -7686,6 +7724,29 @@ final class ARSessionController: NSObject, ObservableObject {
         return root
     }
 
+    /// Accepts both a single ModelEntity and the nested Entity roots produced by
+    /// Blender, Reality Composer Pro and common iPhone USDZ exporters. Contact-pivot
+    /// fitting remains the single place that aligns the result with its AR surface.
+    private func makeImportedLibraryEntity(content: Entity) -> ModelEntity? {
+        let measurementRoot = Entity()
+        measurementRoot.addChild(content)
+        let bounds = measurementRoot.visualBounds(
+            recursive: true,
+            relativeTo: measurementRoot,
+            excludeInactive: false
+        )
+        content.removeFromParent()
+        guard [bounds.center.x, bounds.center.y, bounds.center.z].allSatisfy(\.isFinite),
+              [bounds.extents.x, bounds.extents.y, bounds.extents.z].allSatisfy({
+                  $0.isFinite && $0 > 0.0001 && $0 < 100
+              }) else { return nil }
+
+        let root = ModelEntity()
+        root.name = "cinear.imported.hierarchy"
+        root.addChild(content)
+        return root
+    }
+
     private func makeBundledLibraryEntity(for prop: PropKind) -> ModelEntity? {
         guard let descriptor = libraryDescriptor(for: prop),
               let content = manualAssetProvider.makeEntity(
@@ -8469,6 +8530,7 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         case .normal:
             isARReady = true
             didAttemptSessionFailureRecovery = false
+            restoreWorldLockedRoomRenderingAfterTrackingRecovery()
             let anchorRecovery = restorePlacementAnchorsIfNeeded(
                 allowCreatingMissingAnchors: false
             )
@@ -8497,11 +8559,14 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
             publishStatus("Takip hazır — dekor seçip yüzeye dokun", color: .green)
         case .notAvailable:
             isARReady = false
+            suspendWorldLockedRoomRenderingForTrackingLoss()
             publishStatus("Kamera takibi kullanılamıyor", color: .red)
         case .limited(let reason):
-            // Limited tracking may still render an existing scene, but accepting a
-            // new anchor here is the main source of visible placement drift.
+            // Keep world-locked content hidden until ARKit has a trustworthy pose.
+            // Otherwise a stale camera-relative estimate looks like the room follows
+            // the device while the user walks into another space.
             isARReady = false
+            suspendWorldLockedRoomRenderingForTrackingLoss()
             let message: String
             switch reason {
             case .initializing: message = "AR oturumu hazırlanıyor"
@@ -11227,8 +11292,12 @@ enum LiveDepthGeometry {
     }
 
     static func depthBias(_ depth: Float) -> Float {
-        // Avoid cutting a clock attached to the very surface that supplied depth.
-        min(0.008 + depth * 0.004, 0.025)
+        // Keep the occluder just behind the measured surface. The previous 8-25 mm
+        // bias also pushed thin real clocks and frames behind a wall
+        // cladding whose visible face is only 6 mm in front of the scanned wall.
+        // A 1.4-3 mm bias still prevents coplanar depth noise while allowing any
+        // genuinely protruding wall object to remain in front of the virtual finish.
+        min(0.0008 + depth * 0.0006, 0.003)
     }
 
     static func build(
@@ -12810,10 +12879,10 @@ enum RoomRealityRendererError: LocalizedError {
 /// Bu kök manuel eklenen dekor anchor'larından bağımsızdır.
 @MainActor
 final class RoomRealityRenderer {
-    let rootEntity: AnchorEntity
+    private(set) var rootEntity: AnchorEntity
 
     private var contentEntity = Entity()
-    private let physicalOcclusionRootEntity: AnchorEntity
+    private var physicalOcclusionRootEntity: AnchorEntity
     private var physicalOcclusionContentEntity = Entity()
     private let assetProvider: (any RoomRealityAssetProviding)?
     private weak var installedARView: ARView?
@@ -12887,6 +12956,38 @@ final class RoomRealityRenderer {
             physicalOcclusionRootEntity.scene?.removeAnchor(physicalOcclusionRootEntity)
             arView.scene.addAnchor(physicalOcclusionRootEntity)
         }
+        installedARView = arView
+    }
+
+    /// RoomPlan and RealityKit share the same continuously running ARSession. After
+    /// RoomPlan releases that session, rebuild the two anchor roots explicitly as
+    /// world-zero anchors without recreating their content or the session coordinate
+    /// system. This prevents a temporarily detached AnchorEntity from being interpreted
+    /// in camera-relative space when the user walks away from the scanned room.
+    func reattachWorldAnchorsAfterRoomScan(in arView: ARView) {
+        if installedARView !== arView {
+            installedARView?.scene.removeAnchor(rootEntity)
+            installedARView?.scene.removeAnchor(physicalOcclusionRootEntity)
+        }
+
+        let roomWasVisible = rootEntity.isEnabled
+        let physicalOcclusionWasVisible = physicalOcclusionRootEntity.isEnabled
+        rootEntity.scene?.removeAnchor(rootEntity)
+        physicalOcclusionRootEntity.scene?.removeAnchor(physicalOcclusionRootEntity)
+
+        contentEntity.removeFromParent()
+        physicalOcclusionContentEntity.removeFromParent()
+        rootEntity = AnchorEntity(world: .zero)
+        physicalOcclusionRootEntity = AnchorEntity(world: .zero)
+        rootEntity.name = "cinear.reality.room.root"
+        physicalOcclusionRootEntity.name = "cinear.reality.physical-occlusion.root"
+        rootEntity.isEnabled = roomWasVisible
+        physicalOcclusionRootEntity.isEnabled = physicalOcclusionWasVisible
+        rootEntity.addChild(contentEntity)
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+
+        arView.scene.addAnchor(rootEntity)
+        arView.scene.addAnchor(physicalOcclusionRootEntity)
         installedARView = arView
     }
 
@@ -17641,6 +17742,10 @@ workflows:
           cd "$CM_BUILD_DIR"
           mkdir -p build/preflight
           python3 Tools/test_privacy_plist.py
+          python3 Tools/test_bundled_assets.py \
+            --assets CineAR/RoomAssets \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256 \
+            --prop-kind CineAR/PropKind.swift
           python3 Tools/validate_privacy_plist.py \
             --plist CineAR/Info.plist \
             --expected-bundle-id com.cinear.virtualproduction
@@ -17672,6 +17777,9 @@ workflows:
           python3 Tools/validate_privacy_plist.py \
             --plist "$app_plist" \
             --expected-bundle-id com.cinear.virtualproduction
+          python3 Tools/test_bundled_assets.py \
+            --assets "$(dirname "$app_plist")/RoomAssets" \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256
     artifacts:
       - build/preflight/*.log
       - build/preflight/*.xcresult
@@ -17753,6 +17861,10 @@ workflows:
           fi
 
           python3 "$CM_BUILD_DIR/Tools/test_privacy_plist.py"
+          python3 "$CM_BUILD_DIR/Tools/test_bundled_assets.py" \
+            --assets "$CM_BUILD_DIR/CineAR/RoomAssets" \
+            --manifest "$CM_BUILD_DIR/CineAR/RoomAssets/MANIFEST.sha256" \
+            --prop-kind "$CM_BUILD_DIR/CineAR/PropKind.swift"
           python3 "$CM_BUILD_DIR/Tools/validate_privacy_plist.py" \
             --plist "$info_plist" \
             --expected-bundle-id "$BUNDLE_ID"
@@ -17838,7 +17950,7 @@ workflows:
             --config Release \
             --clean
 
-      - name: Verify privacy descriptions in archive and IPA
+      - name: Verify privacy descriptions and offline assets in archive and IPA
         script: |
           #!/bin/bash
           set -euo pipefail
@@ -17853,6 +17965,9 @@ workflows:
           python3 Tools/validate_privacy_plist.py \
             --plist "$archive_plist" \
             --expected-bundle-id "$BUNDLE_ID"
+          python3 Tools/test_bundled_assets.py \
+            --assets "$(dirname "$archive_plist")/RoomAssets" \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256
 
           ipa_path="$(find build/ios/ipa -name '*.ipa' -print -quit)"
           if [[ -z "$ipa_path" ]]; then
@@ -17870,6 +17985,9 @@ workflows:
           python3 Tools/validate_privacy_plist.py \
             --plist "$ipa_plist" \
             --expected-bundle-id "$BUNDLE_ID"
+          python3 Tools/test_bundled_assets.py \
+            --assets "$(dirname "$ipa_plist")/RoomAssets" \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -17912,7 +18030,9 @@ Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncelle
 4. Ikinci adim gercek iPhone SDK'si ile Release uygulamasini imzasiz derler.
    ARKit/RealityKit API ve Swift tur denetimi bu adimda yapilir. Simulator testi degildir.
    Kaynak ve uretilmis `.app` icindeki kamera/mikrofon/konusma/yerel ag izin
-   aciklamalari da okunup dogrulanir.
+   aciklamalari da okunup dogrulanir. Ayrica 52 cevrimdisi USDZ kaynakta checksum
+   ve paket butunlugu testinden gecer; uretilen `.app` icindeki `RoomAssets`
+   klasorunun ayni dosyalari eksiksiz tasidigi tekrar kontrol edilir.
 5. Hata varsa `swift-tests.log`, `ios-build.log` ve `.xcresult` ciktisini incele.
    Yalnizca on kontrolu gecen **ayni commit** icin `cinear-testflight` baslat.
 
@@ -17930,8 +18050,9 @@ python3 Tools/run_swift_regressions.py --swiftc /tam/yol/swiftc
 Resmi dayanak: [Codemagic unsigned iOS build](https://docs.codemagic.io/yaml-quick-start/first-signed-build/).
 
 TestFlight akisinda ayni denetim kaynak plist'ten sonra arsivlenmis `.app` ve
-son IPA icinde tekrar yapilir. Son pakette `NSCameraUsageDescription` yoksa veya
-aciklama amaci belirtmiyorsa App Store Connect yuklemesi baslamadan akis durur.
+son IPA icinde tekrar yapilir. Son pakette `NSCameraUsageDescription` yoksa,
+aciklama amaci belirtmiyorsa veya cevrimdisi USDZ katalog eksik/bozuksa App Store
+Connect yuklemesi baslamadan akis durur.
 
 ## Apple tarafinda bir kez yapilacaklar
 
@@ -18269,6 +18390,56 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
+0.17.14 ortme ve cevrimdisi asset regresyonlari (iPhone 15 Pro Max):
+
+- Gercek duvarda saat, cerceve veya ince raf bulunan bir bolumu tara ve ayni duvara
+  tugla/ahsap kaplama koy. 1-3 metre uzaktan hafifce saga-sola hareket et; kaplama
+  duvar yuzeyini degistirmeli fakat gercek asili nesne kaplamanin onunde kalmalidir.
+- Duvar kaplamasi acikken ince nesnenin kenarinda mavi `Anlik LiDAR ortmesi` durumu
+  gorulmeli; gercek duvar kaplamayi tamamen silmemeli, saat de kaplamanin arkasinda
+  kaybolmamalidir. Parlak camli cercevede telefonu 20-30 derece caprazdan da dene.
+- PC servisini kapat ve mumkunse telefonu ucak moduna al. Kutuphaneden `Metal Cop
+  Kutulari`, `Eski Ankesorlu Telefon`, iki koltuk ve iki duvar kaplamasini sirayla
+  yerlestir; gecici mavi vekil en gec 25 saniyede gercek modele donmelidir.
+- Files uygulamasindan kokunde birden fazla alt `Entity` bulunan gecerli USDZ ekle.
+  Dosya cihaza kopyalanmali, yerlestirilmeli ve kaydet/yukle sonrasinda PC olmadan
+  yeniden acilmalidir.
+
+0.17.13 dunya koordinati regresyonlari (iPhone 15 Pro Max):
+
+- Bir odayi tara, bitir ve Beyaz Hatlar veya bir duvar temasini ac. Telefona
+  dokunmadan bitisik odaya 3-5 metre yuru; taranmis oda ilk konumunda kalmali,
+  kameranin yanina gelmemeli ve ekranla birlikte suruklenmemelidir.
+- Taranmis duvardan uzaklasirken telefonu saga-sola cevir. Duvar kaplamasi dunya
+  koordinatinda sabit kalmali; kameraya yaklasmamali, arkasindaki gercek nesneyi
+  alip kaymamali ve tekrar dokunus gerektirmemelidir.
+- `Taramayi Bitir` sonrasinda yeni bir `Dunya takibi hazirlaniyor` gecisi veya
+  anlik koordinat sifirlanmasi olmamali. Ayni kesintisiz AR oturumu devam etmeli;
+  yerlestirilen dekorlarla taranmis oda birbirine gore konum degistirmemelidir.
+- Detaysiz veya karanlik bir duvara gecip takibi gecici olarak sari duruma dusur.
+  Taranmis oda kameranin yanina yapisip suruklenmemeli; gerekirse gizlenmeli ve takip
+  tekrar yesil oldugunda eski dunya konumunda yeniden gorunmelidir.
+
+## iPhone 15 Pro Max ile onerilen tarama rotasi
+
+1. Odayi yaygin ve sabit isikla aydinlat; dogrudan gun isigi huzmesini, yanip sonen
+   lambayi ve aynaya/cama dik bakisi azalt. Kapiyi kapat, perdeyi pencere kenari
+   gorulecek sekilde ayarla ve telefon cok sicaksa taramadan once sogumasini bekle.
+2. Dokulu bir koseden 1-3 metre uzakta basla. Once zemin-duvar birlesimini ve kosenin
+   iki duvarini ayni karede 2-3 saniye goster.
+3. Tek yone dogru yavas don. Yeni duvara gecerken eski koseyi ekranin yaklasik ucte
+   birinde tut; yeni duvar beyaz kaplamayla sabitlenmeden once eski duvari kadrajdan
+   cikarma.
+4. Her duvari once orta yukseklikten yatay gec, sonra ayni bolgenin alt ve ust kismini
+   birer kez goster. Saat, raf, masa ve koltuklari 20-30 derece capraz iki acidan tara;
+   telefonu hizla sallama veya nesnenin etrafinda ani tur atma.
+5. Ayna/camda yuzeye odaklanmak yerine cerceveyi ve iki yanindaki dokulu duvari tara.
+   `Yaklas`, `Uzaklas`, `Yavasla`, `Isigi ac` veya `Dusuk doku` uyarisi kalkana kadar
+   ilgili bolgede kisa sure bekle.
+6. Son duvardan ilk koseye geri donup donguyu kapat. Uygulama kismi sonucu kabul eder;
+   yine de en iyi duvar birlesimi icin ilk kosenin yeniden taninmasini bekleyip bitir.
+   Tek taramayi 5 dakikadan uzun tutma; arka arkaya taramalarda cihazi dinlendir.
+
 0.17.12 ek regresyonlari (ozellikle iPhone 15 Pro Max):
 
 - Dort duvari sirayla tara ve canli sayacin `Duvar 4` oldugunu gor. Son duvara
@@ -18446,6 +18617,21 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.14: Canli LiDAR ortme aginin yuzey arkasi payi 8-25 mm'den 1.4-3 mm'ye
+  indirildi. Sanal kaplamanin 6 mm ondeki yuzeyi gorunur kalirken gercek duvar
+  saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik
+  kaplamanin onunde kalir.
+  Disaridan eklenen kok `Entity` hiyerarsili USDZ dosyalari da cihazda acilir;
+  yerel yukleme zaman asimi 25 saniyedir. Paketteki 52 cevrimdisi USDZ'nin ad,
+  checksum, ZIP/USD sahne butunlugu ile uygulama ve IPA icine kopyalanmasi Codemagic
+  tarafindan derlemeden once ve sonra dogrulanir; bu katalog PC baglantisi kullanmaz.
+- 0.17.13: RoomPlan taramasi biterken halen calisan ortak `ARSession` artik yeni
+  bir yapilandirmayla tekrar calistirilmaz. Boylece tarama sirasinda kurulan dunya
+  koordinat sistemi korunur; taranmis oda kullanici baska bir odaya yurudugunde
+  kamerayla birlikte gelmez. RealityKit oda ve fiziksel occlusion kokleri ayni
+  kesintisiz dunya koordinat sistemine yeniden baglanir. ARKit takibi gecici olarak
+  sinirlanirsa oda yanlis kamera pozunda suruklenmek yerine gizlenir ve normal takip
+  dondugunde hazir geometrisi ayni dunya konumunda yeniden gosterilir.
 - 0.17.12: Tarama boyunca gorulen en genis duvar kapsami artik yuksek-su-izi
   olarak korunur; RoomPlan kose birlestirirken gecici olarak 4 duvari 1 duvara
   dusururse bu kare onceki taramayi silemez. Bitis islemi de islenmis sonuc canli
@@ -18855,6 +19041,15 @@ swiftc -D WALL_GEOMETRY_TESTS CineAR/WallCladdingGeometry.swift Tools/test_wall_
 
 Codemagic ayni testi IPA derlemesinden once calistirir. Bu test RoomPlan/RealityKit
 cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedir.
+
+### Cevrimdisi 3B katalog testi
+
+Hazir modeller uygulama paketinin icindedir ve PC ya da ag baglantisi kullanmaz.
+Kaynak katalog adlarini, 52 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
+
+```sh
+python3 Tools/test_bundled_assets.py --assets CineAR/RoomAssets --manifest CineAR/RoomAssets/MANIFEST.sha256 --prop-kind CineAR/PropKind.swift
+```
 ````
 
 ## `Tools/convert_kenney_to_usdz.py`
@@ -19494,18 +19689,21 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("- Swift + SwiftUI kullanıcı arayüzü")
 [void]$builder.AppendLine("- ARKit dünya takibi, düzlem algılama, raycast, scene reconstruction ve occlusion")
-[void]$builder.AppendLine("- Kettle/kumaş gibi düzensiz ön nesneler için ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma")
+[void]$builder.AppendLine("- Kettle/kumaş ve duvara asılı ince gerçek nesneler için 1,4-3 mm yüzey paylı ham LiDAR derinliğinden güven/kenar filtreli anlık örtme; tek iş kuyruğu, 100 ms tazelik sınırı ve termal yük azaltma")
 [void]$builder.AppendLine("- Aynı Wi-Fi'daki PC'de SAM 2.1 Tiny + Depth Anything V2 Small; LiDAR metre kalibrasyonlu görünmez RealityKit occlusion mesh'i")
 [void]$builder.AppendLine("- RoomPlan ile semantik oda taraması; tam oda zorunluluğu olmadan tek duvar, zemin veya nesneden itibaren kısmi ``room.json`` üretimi, tarama boyunca en geniş duvar kapsamını koruyan yüksek-su-izi ve her zaman sonlandırılabilen tarama akışı")
 [void]$builder.AppendLine("- Tarama başında ARSession'ı yeniden yapılandırmadan kararlı ortak dünya takibini RoomPlan'a devreden; uygulama çizim/AI işlerini tarama boyunca askıya alan sensör akışı")
+[void]$builder.AppendLine("- RoomPlan dönüşünde çalışan ortak ARSession'ı yeniden başlatmadan tarama dünya koordinatını koruyan ve RealityKit oda köklerini sabit dünya anchor'larına yeniden bağlayan geçiş")
+[void]$builder.AppendLine("- Sınırlı AR takibinde yanlış kamera pozuna sürüklemek yerine taranmış oda köklerini geçici gizleyen ve normal takipte aynı dünya konumunda geri gösteren güvenlik katmanı")
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
 [void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- PC/ağ gerektirmeyen toplam 52 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi")
 [void]$builder.AppendLine("- Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi")
 [void]$builder.AppendLine("- 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi")
 [void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
-[void]$builder.AppendLine("- USDZ yükleme/normalize hatasında kategoriye uygun prosedürel model fallback'i; görünmez veya yarım kalan yerleştirme yok")
+[void]$builder.AppendLine("- Tek ModelEntity veya iç içe Entity köklü USDZ yükleme; 25 saniyelik cihaz içi hazırlama ve hata durumunda kategoriye uygun görünür fallback")
 [void]$builder.AppendLine("- Kamerayı açık tutan kompakt alt dock ve yalnız istenince açılan ayrıntılı kontrol paneli")
 [void]$builder.AppendLine("- AR düzlemi bulunamadığında ekran ışınını bilinen veya tahmini zeminle kesiştiren yerleştirme fallback'i")
 [void]$builder.AppendLine("- Manuel dekor sürükleme, döndürme ve ölçekleme")
@@ -19898,6 +20096,107 @@ if __name__ == "__main__":
     main()
 ````
 
+## `Tools/test_bundled_assets.py`
+
+````python
+#!/usr/bin/env python3
+"""Verify that every phone-only USDZ catalog asset is present and intact."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+from pathlib import Path
+import re
+import zipfile
+
+
+MAX_USDZ_BYTES = 8 * 1024 * 1024
+MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  ([^/\\]+\.usdz)$")
+
+
+def parse_manifest(path: Path) -> dict[str, str]:
+    entries: dict[str, str] = {}
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        match = MANIFEST_LINE.fullmatch(line)
+        if match is None:
+            raise AssertionError(f"Invalid manifest line {line_number}: {raw_line!r}")
+        digest, name = match.groups()
+        if name in entries:
+            raise AssertionError(f"Duplicate manifest asset: {name}")
+        entries[name] = digest
+    if not entries:
+        raise AssertionError("Bundled asset manifest is empty")
+    return entries
+
+
+def catalog_references(prop_kind_path: Path) -> set[str]:
+    source = prop_kind_path.read_text(encoding="utf-8")
+    references = set(re.findall(r'assetName:\s*"([^"]+)"', source))
+    start = source.index("    var bundledAssetName: String?")
+    end = source.index("\n    var anchorName:", start)
+    references.update(re.findall(r'case\s+\.[A-Za-z0-9_]+:\s*"([^"]+)"', source[start:end]))
+    return references
+
+
+def validate_usdz(path: Path, expected_digest: str) -> None:
+    size = path.stat().st_size
+    if not 0 < size <= MAX_USDZ_BYTES:
+        raise AssertionError(f"USDZ size is outside the mobile budget: {path.name} ({size})")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != expected_digest:
+        raise AssertionError(
+            f"USDZ checksum mismatch: {path.name}; expected {expected_digest}, got {digest}"
+        )
+    if not zipfile.is_zipfile(path):
+        raise AssertionError(f"USDZ is not a readable ZIP package: {path.name}")
+    with zipfile.ZipFile(path) as archive:
+        corrupt_member = archive.testzip()
+        if corrupt_member is not None:
+            raise AssertionError(f"Corrupt USDZ member: {path.name}/{corrupt_member}")
+        if not any(Path(name).suffix.lower() in {".usd", ".usda", ".usdc"} for name in archive.namelist()):
+            raise AssertionError(f"USDZ contains no USD scene: {path.name}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--assets", required=True, type=Path)
+    parser.add_argument("--manifest", required=True, type=Path)
+    parser.add_argument("--prop-kind", type=Path)
+    arguments = parser.parse_args()
+
+    asset_directory = arguments.assets.resolve()
+    manifest = parse_manifest(arguments.manifest.resolve())
+    if not asset_directory.is_dir():
+        raise AssertionError(f"Bundled RoomAssets directory is missing: {asset_directory}")
+
+    actual_names = {path.name for path in asset_directory.glob("*.usdz") if path.is_file()}
+    expected_names = set(manifest)
+    if actual_names != expected_names:
+        missing = sorted(expected_names - actual_names)
+        unexpected = sorted(actual_names - expected_names)
+        raise AssertionError(f"Bundled USDZ set mismatch; missing={missing}, unexpected={unexpected}")
+
+    if arguments.prop_kind is not None:
+        referenced_stems = catalog_references(arguments.prop_kind.resolve())
+        actual_stems = {Path(name).stem for name in actual_names}
+        if referenced_stems != actual_stems:
+            missing = sorted(referenced_stems - actual_stems)
+            unused = sorted(actual_stems - referenced_stems)
+            raise AssertionError(f"Catalog/source mismatch; missing={missing}, unused={unused}")
+
+    for name, digest in sorted(manifest.items()):
+        validate_usdz(asset_directory / name, digest)
+    print(f"Bundled asset tests passed ({len(manifest)} offline USDZ files)")
+
+
+if __name__ == "__main__":
+    main()
+````
+
 ## `Tools/test_live_depth_geometry.swift`
 
 ````swift
@@ -19919,7 +20218,10 @@ struct LiveDepthGeometryTests {
         precondition(flat.validFraction == 1)
         precondition(flat.positions[5].x == 0 && flat.positions[5].y == 0)
         precondition(flat.positions[0].x < 0 && flat.positions[0].y > 0)
-        precondition(abs(flat.positions[0].z + 1.012) < 0.00001)
+        precondition(abs(flat.positions[0].z + 1.0014) < 0.00001)
+        precondition(abs(LiveDepthGeometry.depthBias(1) - 0.0014) < 0.00001)
+        precondition(abs(LiveDepthGeometry.depthBias(3) - 0.0026) < 0.00001)
+        precondition(abs(LiveDepthGeometry.depthBias(6) - 0.003) < 0.00001)
         for i in stride(from: 0, to: flat.indices.count, by: 3) {
             let a = flat.positions[Int(flat.indices[i])]
             let b = flat.positions[Int(flat.indices[i + 1])]

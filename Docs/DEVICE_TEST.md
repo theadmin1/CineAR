@@ -252,6 +252,56 @@ olcum, bellek ornek butcesi ve eski kare reddini kapsar; Codemagic'e de eklenmis
 
 ## Baslangic kabul esikleri
 
+0.17.14 ortme ve cevrimdisi asset regresyonlari (iPhone 15 Pro Max):
+
+- Gercek duvarda saat, cerceve veya ince raf bulunan bir bolumu tara ve ayni duvara
+  tugla/ahsap kaplama koy. 1-3 metre uzaktan hafifce saga-sola hareket et; kaplama
+  duvar yuzeyini degistirmeli fakat gercek asili nesne kaplamanin onunde kalmalidir.
+- Duvar kaplamasi acikken ince nesnenin kenarinda mavi `Anlik LiDAR ortmesi` durumu
+  gorulmeli; gercek duvar kaplamayi tamamen silmemeli, saat de kaplamanin arkasinda
+  kaybolmamalidir. Parlak camli cercevede telefonu 20-30 derece caprazdan da dene.
+- PC servisini kapat ve mumkunse telefonu ucak moduna al. Kutuphaneden `Metal Cop
+  Kutulari`, `Eski Ankesorlu Telefon`, iki koltuk ve iki duvar kaplamasini sirayla
+  yerlestir; gecici mavi vekil en gec 25 saniyede gercek modele donmelidir.
+- Files uygulamasindan kokunde birden fazla alt `Entity` bulunan gecerli USDZ ekle.
+  Dosya cihaza kopyalanmali, yerlestirilmeli ve kaydet/yukle sonrasinda PC olmadan
+  yeniden acilmalidir.
+
+0.17.13 dunya koordinati regresyonlari (iPhone 15 Pro Max):
+
+- Bir odayi tara, bitir ve Beyaz Hatlar veya bir duvar temasini ac. Telefona
+  dokunmadan bitisik odaya 3-5 metre yuru; taranmis oda ilk konumunda kalmali,
+  kameranin yanina gelmemeli ve ekranla birlikte suruklenmemelidir.
+- Taranmis duvardan uzaklasirken telefonu saga-sola cevir. Duvar kaplamasi dunya
+  koordinatinda sabit kalmali; kameraya yaklasmamali, arkasindaki gercek nesneyi
+  alip kaymamali ve tekrar dokunus gerektirmemelidir.
+- `Taramayi Bitir` sonrasinda yeni bir `Dunya takibi hazirlaniyor` gecisi veya
+  anlik koordinat sifirlanmasi olmamali. Ayni kesintisiz AR oturumu devam etmeli;
+  yerlestirilen dekorlarla taranmis oda birbirine gore konum degistirmemelidir.
+- Detaysiz veya karanlik bir duvara gecip takibi gecici olarak sari duruma dusur.
+  Taranmis oda kameranin yanina yapisip suruklenmemeli; gerekirse gizlenmeli ve takip
+  tekrar yesil oldugunda eski dunya konumunda yeniden gorunmelidir.
+
+## iPhone 15 Pro Max ile onerilen tarama rotasi
+
+1. Odayi yaygin ve sabit isikla aydinlat; dogrudan gun isigi huzmesini, yanip sonen
+   lambayi ve aynaya/cama dik bakisi azalt. Kapiyi kapat, perdeyi pencere kenari
+   gorulecek sekilde ayarla ve telefon cok sicaksa taramadan once sogumasini bekle.
+2. Dokulu bir koseden 1-3 metre uzakta basla. Once zemin-duvar birlesimini ve kosenin
+   iki duvarini ayni karede 2-3 saniye goster.
+3. Tek yone dogru yavas don. Yeni duvara gecerken eski koseyi ekranin yaklasik ucte
+   birinde tut; yeni duvar beyaz kaplamayla sabitlenmeden once eski duvari kadrajdan
+   cikarma.
+4. Her duvari once orta yukseklikten yatay gec, sonra ayni bolgenin alt ve ust kismini
+   birer kez goster. Saat, raf, masa ve koltuklari 20-30 derece capraz iki acidan tara;
+   telefonu hizla sallama veya nesnenin etrafinda ani tur atma.
+5. Ayna/camda yuzeye odaklanmak yerine cerceveyi ve iki yanindaki dokulu duvari tara.
+   `Yaklas`, `Uzaklas`, `Yavasla`, `Isigi ac` veya `Dusuk doku` uyarisi kalkana kadar
+   ilgili bolgede kisa sure bekle.
+6. Son duvardan ilk koseye geri donup donguyu kapat. Uygulama kismi sonucu kabul eder;
+   yine de en iyi duvar birlesimi icin ilk kosenin yeniden taninmasini bekleyip bitir.
+   Tek taramayi 5 dakikadan uzun tutma; arka arkaya taramalarda cihazi dinlendir.
+
 0.17.12 ek regresyonlari (ozellikle iPhone 15 Pro Max):
 
 - Dort duvari sirayla tara ve canli sayacin `Duvar 4` oldugunu gor. Son duvara

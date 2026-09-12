@@ -68,10 +68,10 @@ enum RoomRealityRendererError: LocalizedError {
 /// Bu kök manuel eklenen dekor anchor'larından bağımsızdır.
 @MainActor
 final class RoomRealityRenderer {
-    let rootEntity: AnchorEntity
+    private(set) var rootEntity: AnchorEntity
 
     private var contentEntity = Entity()
-    private let physicalOcclusionRootEntity: AnchorEntity
+    private var physicalOcclusionRootEntity: AnchorEntity
     private var physicalOcclusionContentEntity = Entity()
     private let assetProvider: (any RoomRealityAssetProviding)?
     private weak var installedARView: ARView?
@@ -145,6 +145,38 @@ final class RoomRealityRenderer {
             physicalOcclusionRootEntity.scene?.removeAnchor(physicalOcclusionRootEntity)
             arView.scene.addAnchor(physicalOcclusionRootEntity)
         }
+        installedARView = arView
+    }
+
+    /// RoomPlan and RealityKit share the same continuously running ARSession. After
+    /// RoomPlan releases that session, rebuild the two anchor roots explicitly as
+    /// world-zero anchors without recreating their content or the session coordinate
+    /// system. This prevents a temporarily detached AnchorEntity from being interpreted
+    /// in camera-relative space when the user walks away from the scanned room.
+    func reattachWorldAnchorsAfterRoomScan(in arView: ARView) {
+        if installedARView !== arView {
+            installedARView?.scene.removeAnchor(rootEntity)
+            installedARView?.scene.removeAnchor(physicalOcclusionRootEntity)
+        }
+
+        let roomWasVisible = rootEntity.isEnabled
+        let physicalOcclusionWasVisible = physicalOcclusionRootEntity.isEnabled
+        rootEntity.scene?.removeAnchor(rootEntity)
+        physicalOcclusionRootEntity.scene?.removeAnchor(physicalOcclusionRootEntity)
+
+        contentEntity.removeFromParent()
+        physicalOcclusionContentEntity.removeFromParent()
+        rootEntity = AnchorEntity(world: .zero)
+        physicalOcclusionRootEntity = AnchorEntity(world: .zero)
+        rootEntity.name = "cinear.reality.room.root"
+        physicalOcclusionRootEntity.name = "cinear.reality.physical-occlusion.root"
+        rootEntity.isEnabled = roomWasVisible
+        physicalOcclusionRootEntity.isEnabled = physicalOcclusionWasVisible
+        rootEntity.addChild(contentEntity)
+        physicalOcclusionRootEntity.addChild(physicalOcclusionContentEntity)
+
+        arView.scene.addAnchor(rootEntity)
+        arView.scene.addAnchor(physicalOcclusionRootEntity)
         installedARView = arView
     }
 

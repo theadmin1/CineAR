@@ -23,6 +23,21 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.14: Canli LiDAR ortme aginin yuzey arkasi payi 8-25 mm'den 1.4-3 mm'ye
+  indirildi. Sanal kaplamanin 6 mm ondeki yuzeyi gorunur kalirken gercek duvar
+  saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik
+  kaplamanin onunde kalir.
+  Disaridan eklenen kok `Entity` hiyerarsili USDZ dosyalari da cihazda acilir;
+  yerel yukleme zaman asimi 25 saniyedir. Paketteki 52 cevrimdisi USDZ'nin ad,
+  checksum, ZIP/USD sahne butunlugu ile uygulama ve IPA icine kopyalanmasi Codemagic
+  tarafindan derlemeden once ve sonra dogrulanir; bu katalog PC baglantisi kullanmaz.
+- 0.17.13: RoomPlan taramasi biterken halen calisan ortak `ARSession` artik yeni
+  bir yapilandirmayla tekrar calistirilmaz. Boylece tarama sirasinda kurulan dunya
+  koordinat sistemi korunur; taranmis oda kullanici baska bir odaya yurudugunde
+  kamerayla birlikte gelmez. RealityKit oda ve fiziksel occlusion kokleri ayni
+  kesintisiz dunya koordinat sistemine yeniden baglanir. ARKit takibi gecici olarak
+  sinirlanirsa oda yanlis kamera pozunda suruklenmek yerine gizlenir ve normal takip
+  dondugunde hazir geometrisi ayni dunya konumunda yeniden gosterilir.
 - 0.17.12: Tarama boyunca gorulen en genis duvar kapsami artik yuksek-su-izi
   olarak korunur; RoomPlan kose birlestirirken gecici olarak 4 duvari 1 duvara
   dusururse bu kare onceki taramayi silemez. Bitis islemi de islenmis sonuc canli
@@ -432,3 +447,12 @@ swiftc -D WALL_GEOMETRY_TESTS CineAR/WallCladdingGeometry.swift Tools/test_wall_
 
 Codemagic ayni testi IPA derlemesinden once calistirir. Bu test RoomPlan/RealityKit
 cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedir.
+
+### Cevrimdisi 3B katalog testi
+
+Hazir modeller uygulama paketinin icindedir ve PC ya da ag baglantisi kullanmaz.
+Kaynak katalog adlarini, 52 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
+
+```sh
+python3 Tools/test_bundled_assets.py --assets CineAR/RoomAssets --manifest CineAR/RoomAssets/MANIFEST.sha256 --prop-kind CineAR/PropKind.swift
+```

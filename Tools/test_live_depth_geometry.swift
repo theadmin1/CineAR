@@ -16,7 +16,10 @@ struct LiveDepthGeometryTests {
         precondition(flat.validFraction == 1)
         precondition(flat.positions[5].x == 0 && flat.positions[5].y == 0)
         precondition(flat.positions[0].x < 0 && flat.positions[0].y > 0)
-        precondition(abs(flat.positions[0].z + 1.012) < 0.00001)
+        precondition(abs(flat.positions[0].z + 1.0014) < 0.00001)
+        precondition(abs(LiveDepthGeometry.depthBias(1) - 0.0014) < 0.00001)
+        precondition(abs(LiveDepthGeometry.depthBias(3) - 0.0026) < 0.00001)
+        precondition(abs(LiveDepthGeometry.depthBias(6) - 0.003) < 0.00001)
         for i in stride(from: 0, to: flat.indices.count, by: 3) {
             let a = flat.positions[Int(flat.indices[i])]
             let b = flat.positions[Int(flat.indices[i + 1])]

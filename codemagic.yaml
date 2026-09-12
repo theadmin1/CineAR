@@ -14,6 +14,10 @@ workflows:
           cd "$CM_BUILD_DIR"
           mkdir -p build/preflight
           python3 Tools/test_privacy_plist.py
+          python3 Tools/test_bundled_assets.py \
+            --assets CineAR/RoomAssets \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256 \
+            --prop-kind CineAR/PropKind.swift
           python3 Tools/validate_privacy_plist.py \
             --plist CineAR/Info.plist \
             --expected-bundle-id com.cinear.virtualproduction
@@ -45,6 +49,9 @@ workflows:
           python3 Tools/validate_privacy_plist.py \
             --plist "$app_plist" \
             --expected-bundle-id com.cinear.virtualproduction
+          python3 Tools/test_bundled_assets.py \
+            --assets "$(dirname "$app_plist")/RoomAssets" \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256
     artifacts:
       - build/preflight/*.log
       - build/preflight/*.xcresult
@@ -126,6 +133,10 @@ workflows:
           fi
 
           python3 "$CM_BUILD_DIR/Tools/test_privacy_plist.py"
+          python3 "$CM_BUILD_DIR/Tools/test_bundled_assets.py" \
+            --assets "$CM_BUILD_DIR/CineAR/RoomAssets" \
+            --manifest "$CM_BUILD_DIR/CineAR/RoomAssets/MANIFEST.sha256" \
+            --prop-kind "$CM_BUILD_DIR/CineAR/PropKind.swift"
           python3 "$CM_BUILD_DIR/Tools/validate_privacy_plist.py" \
             --plist "$info_plist" \
             --expected-bundle-id "$BUNDLE_ID"
@@ -211,7 +222,7 @@ workflows:
             --config Release \
             --clean
 
-      - name: Verify privacy descriptions in archive and IPA
+      - name: Verify privacy descriptions and offline assets in archive and IPA
         script: |
           #!/bin/bash
           set -euo pipefail
@@ -226,6 +237,9 @@ workflows:
           python3 Tools/validate_privacy_plist.py \
             --plist "$archive_plist" \
             --expected-bundle-id "$BUNDLE_ID"
+          python3 Tools/test_bundled_assets.py \
+            --assets "$(dirname "$archive_plist")/RoomAssets" \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256
 
           ipa_path="$(find build/ios/ipa -name '*.ipa' -print -quit)"
           if [[ -z "$ipa_path" ]]; then
@@ -243,6 +257,9 @@ workflows:
           python3 Tools/validate_privacy_plist.py \
             --plist "$ipa_plist" \
             --expected-bundle-id "$BUNDLE_ID"
+          python3 Tools/test_bundled_assets.py \
+            --assets "$(dirname "$ipa_plist")/RoomAssets" \
+            --manifest CineAR/RoomAssets/MANIFEST.sha256
 
     artifacts:
       - build/ios/ipa/*.ipa
