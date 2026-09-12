@@ -70,7 +70,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case bloodWaterfall
     case apple
 
-    // Curated Poly Haven CC0 photoreal catalog (36 props + 2 wall panels).
+    // Curated Poly Haven CC0 photoreal catalog (38 props + 2 wall panels).
     case metalOfficeDesk
     case schoolChair
     case schoolDesk
@@ -92,8 +92,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case powerBox
     case payphone
     case wallClock
+    case hangingPictureFrame
     case cagedCeilingLight
     case industrialPendant
+    case modernCeilingLamp
     case ceilingFan
     case industrialWallLamp
     case cagedWallLight
@@ -160,8 +162,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .powerBox: "Elektrik Panosu"
         case .payphone: "Eski Ankesörlü Telefon"
         case .wallClock: "Duvar Saati"
+        case .hangingPictureFrame: "Asılı Sanat Çerçevesi"
         case .cagedCeilingLight: "Kafesli Tavan Işığı"
         case .industrialPendant: "Endüstriyel Sarkıt"
+        case .modernCeilingLamp: "Modern Tavan Lambası"
         case .ceilingFan: "Tavan Vantilatörü"
         case .industrialWallLamp: "Endüstriyel Duvar Işığı"
         case .cagedWallLight: "Kafesli Duvar Işığı"
@@ -185,7 +189,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .wall: "🧱"
         case .stage: "🎬"
         case .crate, .cardboardBox, .plasticCrate, .woodenCrate: "📦"
-        case .lightPanel, .cagedCeilingLight, .industrialPendant,
+        case .lightPanel, .cagedCeilingLight, .industrialPendant, .modernCeilingLamp,
              .industrialWallLamp, .cagedWallLight, .deskLamp: "💡"
         case .chair, .schoolChair, .plasticChair, .modernArmchair: "🪑"
         case .table, .metalOfficeDesk, .schoolDesk: "🗄️"
@@ -220,6 +224,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .powerBox: "⚡"
         case .payphone: "☎️"
         case .wallClock: "🕒"
+        case .hangingPictureFrame: "🖼️"
         case .ceilingFan: "🌀"
         case .classicLaptop: "💻"
         case .boombox: "📻"
@@ -237,13 +242,22 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     static let effectCases: [PropKind] = [.bloodWaterfall, .apple]
     static let furnitureCases: [PropKind] = photorealCases
 
+    /// High-detail, mobile-budgeted pieces surfaced directly inside the Custom AR
+    /// studio. The same cases remain in their normal library categories.
+    static let customARAssetCases: [PropKind] = [
+        .payphone, .hangingPictureFrame, .wallClock, .securityCamera, .powerBox,
+        .modernCeilingLamp, .cagedCeilingLight, .industrialPendant, .ceilingFan,
+        .industrialWallLamp, .cagedWallLight, .handTruck, .steelShelves, .modernCabinet
+    ]
+
     static let photorealCases: [PropKind] = [
         .metalOfficeDesk, .schoolChair, .schoolDesk, .metalTrashCan,
         .cardboardBox, .plasticCrate, .woodenCrate, .blueBarrel,
         .handTruck, .drawerCabinet, .filingCabinet, .steelShelves,
         .toolChest, .plasticChair, .woodenStool, .wetFloorSign,
         .fireExtinguisher, .securityCamera, .powerBox, .payphone,
-        .wallClock, .cagedCeilingLight, .industrialPendant, .ceilingFan,
+        .wallClock, .hangingPictureFrame, .cagedCeilingLight, .industrialPendant,
+        .modernCeilingLamp, .ceilingFan,
         .industrialWallLamp, .cagedWallLight, .deskLamp, .classicLaptop,
         .crtTelevision, .boombox, .leatherSofa, .vintageSofa,
         .modernArmchair, .marbleCoffeeTable, .modernCabinet, .pottedSucculent,
@@ -294,10 +308,14 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
             .init(assetName: "korean_public_payphone_01", dimensions: [0.31, 0.55, 0.29], surface: .wall, category: .wall, emitsLight: false)
         case .wallClock:
             .init(assetName: "wall_clock", dimensions: [0.39, 0.39, 0.07], surface: .wall, category: .wall, emitsLight: false)
+        case .hangingPictureFrame:
+            .init(assetName: "hanging_picture_frame_01", dimensions: [0.594, 0.841, 0.016], surface: .wall, category: .wall, emitsLight: false)
         case .cagedCeilingLight:
             .init(assetName: "caged_hanging_light", dimensions: [1.10, 0.72, 0.35], surface: .ceiling, category: .lighting, emitsLight: true)
         case .industrialPendant:
             .init(assetName: "hanging_industrial_lamp", dimensions: [0.55, 1.35, 0.55], surface: .ceiling, category: .lighting, emitsLight: true)
+        case .modernCeilingLamp:
+            .init(assetName: "modern_ceiling_lamp_01", dimensions: [0.432, 0.952, 0.432], surface: .ceiling, category: .lighting, emitsLight: true)
         case .ceilingFan:
             .init(assetName: "ceiling_fan", dimensions: [1.30, 0.46, 1.30], surface: .ceiling, category: .equipment, emitsLight: false)
         case .industrialWallLamp:

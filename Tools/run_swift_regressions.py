@@ -26,6 +26,7 @@ def main():
         ("wall", ["-D", "WALL_GEOMETRY_TESTS"], "CineAR/WallCladdingGeometry.swift", "Tools/test_wall_cladding_geometry.swift"),
         ("depth", [], "CineAR/LiveDepthGeometry.swift", "Tools/test_live_depth_geometry.swift"),
         ("spatial", [], "CineAR/SpatialValidation.swift", "Tools/test_spatial_validation.swift"),
+        ("custom-ar", [], "CineAR/CustomARDesign.swift", "Tools/test_custom_ar_geometry.swift"),
     ]
     run([args.swiftc, "--version"], root)
     with tempfile.TemporaryDirectory(prefix="cinear-swift-tests-") as output:

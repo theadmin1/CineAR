@@ -7,6 +7,7 @@ import argparse
 import hashlib
 from pathlib import Path
 import re
+import struct
 import zipfile
 
 
@@ -56,8 +57,29 @@ def validate_usdz(path: Path, expected_digest: str) -> None:
         corrupt_member = archive.testzip()
         if corrupt_member is not None:
             raise AssertionError(f"Corrupt USDZ member: {path.name}/{corrupt_member}")
+        members = archive.infolist()
+        if not members or Path(members[0].filename).suffix.lower() not in {
+            ".usd", ".usda", ".usdc"
+        }:
+            raise AssertionError(f"USDZ first member is not a native USD scene: {path.name}")
         if not any(Path(name).suffix.lower() in {".usd", ".usda", ".usdc"} for name in archive.namelist()):
             raise AssertionError(f"USDZ contains no USD scene: {path.name}")
+        for member in members:
+            if member.flag_bits & 0x1:
+                raise AssertionError(
+                    f"USDZ member is encrypted: {path.name}/{member.filename}"
+                )
+            if member.compress_type != zipfile.ZIP_STORED:
+                raise AssertionError(
+                    f"USDZ member is compressed: {path.name}/{member.filename}"
+                )
+            archive.fp.seek(member.header_offset + 26)
+            name_length, extra_length = struct.unpack("<HH", archive.fp.read(4))
+            data_offset = member.header_offset + 30 + name_length + extra_length
+            if data_offset % 64 != 0:
+                raise AssertionError(
+                    f"USDZ member is not 64-byte aligned: {path.name}/{member.filename}"
+                )
 
 
 def main() -> None:

@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var showingSavedPlaces = false
     @State private var showingCGIStudio = false
     @State private var showingFilmStudio = false
+    @State private var showingCustomARStudio = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
     @State private var sceneObjectPendingDeletion: SceneObjectSummary?
@@ -29,10 +30,14 @@ struct ContentView: View {
                 .hueRotation(.degrees(session.activeFilmLook.hueDegrees))
                 .overlay { filmLookOverlay }
 
-            if (session.isPlacingProp || session.isAlignmentReferenceActive),
+            if (session.isPlacingProp || session.isAlignmentReferenceActive || session.isCustomAREditing),
                !session.isRecording,
                !session.isRecordingTransitioning {
-                placementReticle
+                if session.isCustomAREditing {
+                    customARReticle
+                } else {
+                    placementReticle
+                }
             }
 
             if session.isFloorMeterEnabled,
@@ -58,7 +63,9 @@ struct ContentView: View {
                     if session.isFloorMeterEnabled {
                         floorMeterPanel
                     }
-                    if session.isPlacingProp {
+                    if session.isCustomAREditing {
+                        customAREditBar
+                    } else if session.isPlacingProp {
                         placementBar
                     } else {
                         if session.selectedLightSettings != nil {
@@ -130,6 +137,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingFilmStudio) {
             filmStudio
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingCustomARStudio) {
+            customARStudio
                 .presentationDetents([.medium, .large])
         }
     }
@@ -311,6 +322,9 @@ struct ContentView: View {
                 }
                 utilityButton("Canlı CGI", "wand.and.stars") {
                     showingCGIStudio = true
+                }
+                utilityButton("Özel AR", "square.3.layers.3d.down.right") {
+                    showingCustomARStudio = true
                 }
                 utilityButton("Film & Gölge", "camera.filters") {
                     showingFilmStudio = true
@@ -548,6 +562,9 @@ struct ContentView: View {
             HStack(spacing: 8) {
                 compactButton("Zemin", "ruler.fill") {
                     session.setFloorMeterEnabled(!session.isFloorMeterEnabled)
+                }
+                compactButton("Özel AR", "square.3.layers.3d.down.right") {
+                    showingCustomARStudio = true
                 }
                 compactButton("Kontroller", "slider.horizontal.3") {
                     controlsExpanded = true
@@ -929,6 +946,230 @@ struct ContentView: View {
         }
     }
 
+    private var customARStudio: some View {
+        NavigationStack {
+            Form {
+                Section("Özel AR Alanları") {
+                    if session.customARAreas.isEmpty {
+                        Text("Henüz alan yok. Zeminde veya eğimli yüzeyde en az üç köşe çiz.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(session.customARAreas) { area in
+                            Button {
+                                session.selectCustomARArea(id: area.id)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "square.3.layers.3d")
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(area.name).font(.subheadline.weight(.semibold))
+                                        Text(
+                                            "\(area.wallCount) duvar • \(area.doorCount) kapı"
+                                                + (area.hasCeiling ? " • tavan" : "")
+                                        )
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if session.activeCustomARAreaID == area.id {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    Button {
+                        session.beginCustomARAreaDrawing()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("Yeni Alan Çiz", systemImage: "point.3.connected.trianglepath.dotted")
+                    }
+                    .disabled(session.customARAreas.count >= 8)
+                }
+
+                Section("Özel AR Varlık Seti") {
+                    Text(
+                        session.activeCustomARAreaID == nil
+                            ? "Önce bir alan çiz veya kayıtlı alanı seç."
+                            : "Sanal duvar, tavan ve zemin için iPhone'a özel 1K dokulu, boyutu "
+                                + "sınırlandırılmış kaliteli parçalar. Birini seçince yerleştirme açılır."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2),
+                        spacing: 10
+                    ) {
+                        ForEach(PropKind.customARAssetCases) { prop in
+                            Button {
+                                session.selectProp(prop)
+                                showingCustomARStudio = false
+                            } label: {
+                                VStack(spacing: 5) {
+                                    HStack(spacing: 6) {
+                                        Text(prop.symbol).font(.title2)
+                                        if prop == .modernCeilingLamp || prop == .hangingPictureFrame {
+                                            Text("YENİ")
+                                                .font(.caption2.weight(.black))
+                                                .foregroundStyle(.green)
+                                        }
+                                    }
+                                    Text(prop.title)
+                                        .font(.caption.weight(.semibold))
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.75)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 72)
+                                .background(
+                                    .thinMaterial,
+                                    in: RoundedRectangle(cornerRadius: 12)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(session.activeCustomARAreaID == nil)
+                        }
+                    }
+                }
+
+                Section("Duvar Ayarları") {
+                    Picker("Malzeme", selection: $session.customARWallStyle) {
+                        ForEach(CustomARWallStyle.allCases) { style in
+                            Text(style.title).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    customARSlider(
+                        title: "Duvar / tavan yüksekliği",
+                        valueText: String(format: "%.2f m", session.customARWallHeight),
+                        value: Binding(
+                            get: { Double(session.customARWallHeight) },
+                            set: { session.customARWallHeight = Float($0) }
+                        ),
+                        range: 1.50...4.50,
+                        step: 0.05
+                    )
+                    customARSlider(
+                        title: "Kalınlık",
+                        valueText: String(format: "%.0f cm", session.customARWallThickness * 100),
+                        value: Binding(
+                            get: { Double(session.customARWallThickness) },
+                            set: { session.customARWallThickness = Float($0) }
+                        ),
+                        range: 0.05...0.25,
+                        step: 0.01
+                    )
+
+                    Toggle("Tavan oluştur", isOn: $session.customARCeilingEnabled)
+                    Text("Tavan, çizdiğin alanın sınırlarına uyar ve seçilen duvar yüksekliğinde oluşur.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Button("Ayarları Aktif Alana Uygula") {
+                        session.applyCustomARWallSettings()
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+                }
+
+                Section("İç Duvar ve Kapı") {
+                    Button {
+                        session.beginCustomARInteriorWallDrawing()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("İç Duvar Çiz", systemImage: "rectangle.split.3x1")
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+
+                    customARSlider(
+                        title: "Kapı genişliği",
+                        valueText: String(format: "%.2f m", session.customARDoorWidth),
+                        value: Binding(
+                            get: { Double(session.customARDoorWidth) },
+                            set: { session.customARDoorWidth = Float($0) }
+                        ),
+                        range: 0.70...1.80,
+                        step: 0.05
+                    )
+                    customARSlider(
+                        title: "Kapı yüksekliği",
+                        valueText: String(format: "%.2f m", session.customARDoorHeight),
+                        value: Binding(
+                            get: { Double(session.customARDoorHeight) },
+                            set: { session.customARDoorHeight = Float($0) }
+                        ),
+                        range: 1.70...2.60,
+                        step: 0.05
+                    )
+                    Button {
+                        session.beginCustomARDoorPlacement()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("Duvara Kapı Ekle", systemImage: "door.left.hand.open")
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+                }
+
+                Section("Durum") {
+                    HStack(alignment: .top, spacing: 8) {
+                        Circle()
+                            .fill(session.customARStatusColor)
+                            .frame(width: 9, height: 9)
+                            .padding(.top, 5)
+                        Text(session.customARStatus)
+                            .font(.caption)
+                    }
+                    Text(
+                        "Alan ve duvarlar AR dünya koordinatında saklanır. Normal Nesneler "
+                            + "menüsündeki duvar objelerini oluşturduğun sanal duvara da yerleştirebilirsin. "
+                            + "Kapı kanadına kamerada dokunmak kapıyı açar veya kapatır."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
+                if session.activeCustomARAreaID != nil {
+                    Section {
+                        Button("Aktif Alanı Sil", role: .destructive) {
+                            session.deleteActiveCustomARArea()
+                        }
+                        Button("Tüm Özel AR Alanlarını Sil", role: .destructive) {
+                            session.deleteAllCustomARAreas()
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Özel AR")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingCustomARStudio = false }
+                }
+            }
+        }
+    }
+
+    private func customARSlider(
+        title: String,
+        valueText: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double
+    ) -> some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(valueText).font(.caption.monospacedDigit())
+            }
+            Slider(value: value, in: range, step: step)
+        }
+    }
+
     private func lightSliderRow(
         title: String,
         valueText: String,
@@ -990,6 +1231,44 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
+    private var customAREditBar: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "square.3.layers.3d.down.right")
+                .font(.title2)
+                .foregroundStyle(.cyan)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.customAREditMode.title)
+                    .font(.subheadline.weight(.bold))
+                Text(session.customARStatus)
+                    .font(.caption2)
+                    .foregroundStyle(session.customARStatusColor)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 4)
+            if session.customAREditMode == .drawingArea {
+                Button("Geri") { session.undoCustomARStep() }
+                    .disabled(session.customARDraftPointCount == 0)
+                Button("Alanı Kapat") { session.finishCustomARArea() }
+                    .disabled(session.customARDraftPointCount < 3)
+                    .buttonStyle(.borderedProminent)
+            } else if session.customAREditMode == .drawingWall {
+                Button("Geri") { session.undoCustomARStep() }
+                    .disabled(session.customARDraftPointCount == 0)
+                Button("Bitti") { session.finishCustomARWallDrawing() }
+                    .buttonStyle(.borderedProminent)
+            }
+            Button {
+                session.cancelCustomAREditing()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+        }
+        .padding(11)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
     private var placementReticle: some View {
         GeometryReader { proxy in
             let point = session.placementReticlePoint
@@ -1007,6 +1286,24 @@ struct ContentView: View {
                 Rectangle()
                     .fill(session.placementSurfaceColor)
                     .frame(width: 1, height: 66)
+            }
+            .position(point)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var customARReticle: some View {
+        GeometryReader { proxy in
+            let point = session.placementReticlePoint
+                ?? CGPoint(x: proxy.size.width * 0.5, y: proxy.size.height * 0.5)
+            ZStack {
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(session.customARStatusColor, style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
+                    .frame(width: 50, height: 50)
+                Circle()
+                    .fill(session.customARStatusColor)
+                    .frame(width: 8, height: 8)
             }
             .position(point)
         }

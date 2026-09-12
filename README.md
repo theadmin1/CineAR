@@ -23,6 +23,21 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.18.0: Ayri `Ozel AR` modu eklendi. Kullanici LiDAR ile duz veya egimli bir
+  yuzeyde 3-24 kose cizer; alan kapaninca cevre duvarlari dunya koordinatinda
+  sabitlenir. Alan icinde iki noktayla ek duvar cizilebilir, duvara gercek aciklik
+  olusturan olculu kapi eklenebilir ve kapi kanadi dokunusla animasyonlu acilip
+  kapanir. Duvar yuksekligi, kalinligi ve beyaz/beton/tugla malzemesi ayarlanir.
+  Istege bagli tavan, cizilen cokgenin sinirlarina tam uyar ve secilen duvar
+  yuksekliginde olusur; tavan armaturleri de bu sonlu sanal yuzeye sabitlenebilir.
+  Moda ozel hizli varlik seti; mevcut ankesorlu telefon, yuk arabasi ve mimari
+  ekipmana ek olarak yeni 1K PBR modern tavan lambasi ile duvara asilan sanat
+  cercevesini dogrudan sunar. Yeni USDZ'ler 1.9 MB altinda tutulmustur.
+  Normal nesne kutuphanesindeki duvar dekorlari Ozel AR duvarlarinin sonlu collision
+  yuzeyine yerlestirilebilir. Alanlar, duvarlar, tavanlar, kapilar ve acik/kapali durumu
+  `scene.json` ile mekana kaydolur; ARWorldMap ve referans hizalama duzeltmesiyle
+  birlikte ayni fiziksel koordinata geri gelir. Canli LiDAR/kisi derinligi bu
+  sanal yapilarda da gercek insan ve nesneleri onde tutar.
 - 0.17.17: RoomPlan taramasi bittikten sonra ayni ARSession'in dunya baslangici ve
   mevcut anchor'lari korunurken `sceneDepth`, kisi derinligi ve LiDAR mesh occlusion
   ayarlari yeniden etkinlestiriliyor. Boylece 0.17.15'te duzeltilen koordinat
@@ -45,7 +60,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik
   kaplamanin onunde kalir.
   Disaridan eklenen kok `Entity` hiyerarsili USDZ dosyalari da cihazda acilir;
-  yerel yukleme zaman asimi 25 saniyedir. Paketteki 52 cevrimdisi USDZ'nin ad,
+  yerel yukleme zaman asimi 25 saniyedir. Paketteki 54 cevrimdisi USDZ'nin ad,
   checksum, ZIP/USD sahne butunlugu ile uygulama ve IPA icine kopyalanmasi Codemagic
   tarafindan derlemeden once ve sonra dogrulanir; bu katalog PC baglantisi kullanmaz.
 - 0.17.13: RoomPlan taramasi biterken halen calisan ortak `ARSession` artik yeni
@@ -157,7 +172,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
-- Poly Haven kaynakli 1K PBR dokulu 38 fotogercekci CC0 USDZ dekor; mobilya,
+- Poly Haven kaynakli 1K PBR dokulu 40 fotogercekci CC0 USDZ dekor; mobilya,
   depolama, ekipman, duvar/tavan elemanlari, aydinlatma ve elektronik kategorileri
 - Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
@@ -304,7 +319,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
-   `Hazir 3B Nesne Kutuphanesi` icindeki 38 fotogercekci parcadan
+   `Hazir 3B Nesne Kutuphanesi` icindeki 40 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
    Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
@@ -420,8 +435,8 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde Poly Haven'dan donusturulmus 36 CC0 model ve fotografik dokularla
-uretilmis 2 duvar paneli olmak uzere 38 adet 1K PBR USDZ katalog varligi vardir.
+Bu surumde Poly Haven'dan alinmis 38 CC0 model ve fotografik dokularla
+uretilmis 2 duvar paneli olmak uzere 40 adet 1K PBR USDZ katalog varligi vardir.
 Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
 boyutlarina normalize edilir, sahne listesinde `genislik x yukseklik x derinlik`
 olarak gosterilir ve olculmus katalog modellerinin olcegi kilitlenir. Eski projeler icin
@@ -450,6 +465,20 @@ blender --background --factory-startup --python-exit-code 1 --python Tools/valid
 
 USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidir.
 
+### Ozel AR mimari varliklarini yeniden uretme
+
+Modern tavan lambasi ve asili sanat cercevesi Poly Haven'in resmi 1K native USD
+paketlerinden alinir. Indirilen ana sahne ve tum dokular API MD5 degerleriyle
+dogrulanir; OpenUSD olusturdugu USDZ'yi yeniden acmadan cikti kabul edilmez:
+
+```sh
+python3 -m pip install usd-core==26.8
+python3 Tools/package_polyhaven_usd_to_usdz.py --cache .asset-cache/polyhaven-usd --output CineAR/RoomAssets
+```
+
+Her yeni mimari model icin 8 MiB kesin paket siniri vardir; bu iki varlik 1.9 MiB
+altinda kalir. Uygulama calisirken indirme yapmaz.
+
 ### Otomatik duvar kaplama testleri
 
 `WallCladdingGeometry.swift` oda poligonunu ucgenleyip acikliklari cikarir;
@@ -468,7 +497,7 @@ cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedi
 ### Cevrimdisi 3B katalog testi
 
 Hazir modeller uygulama paketinin icindedir ve PC ya da ag baglantisi kullanmaz.
-Kaynak katalog adlarini, 52 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
+Kaynak katalog adlarini, 54 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
 
 ```sh
 python3 Tools/test_bundled_assets.py --assets CineAR/RoomAssets --manifest CineAR/RoomAssets/MANIFEST.sha256 --prop-kind CineAR/PropKind.swift

@@ -36,6 +36,30 @@ struct FloorMeterReading: Equatable {
     let isVisibleFloor: Bool
 }
 
+enum CustomAREditMode: Equatable {
+    case inactive
+    case drawingArea
+    case drawingWall
+    case placingDoor
+
+    var title: String {
+        switch self {
+        case .inactive: "Özel AR hazır"
+        case .drawingArea: "Alan köşelerini çiz"
+        case .drawingWall: "İç duvarın iki ucunu seç"
+        case .placingDoor: "Kapı için duvara dokun"
+        }
+    }
+}
+
+struct CustomARAreaSummary: Identifiable, Equatable {
+    let id: UUID
+    let name: String
+    let wallCount: Int
+    let doorCount: Int
+    let hasCeiling: Bool
+}
+
 /// Core Video buffers are reference-counted and remain immutable while Vision reads them.
 /// This wrapper makes that cross-queue lifetime guarantee explicit to Swift concurrency.
 private struct SendablePixelBuffer: @unchecked Sendable {
@@ -146,6 +170,19 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isAlignmentReferenceActive = false
     @Published private(set) var alignmentReferenceStatus = "Hizalama referansı kaydedilmedi"
     @Published private(set) var liveOcclusionStatus = "Anlık LiDAR derinliği bekleniyor"
+    @Published private(set) var customAREditMode: CustomAREditMode = .inactive
+    @Published private(set) var customARStatus = "Yeni bir alan çizerek başla"
+    @Published private(set) var customARStatusColor: Color = .secondary
+    @Published private(set) var customARDraftPointCount = 0
+    @Published private(set) var customARAreas: [CustomARAreaSummary] = []
+    @Published private(set) var activeCustomARAreaID: UUID?
+    @Published private(set) var isCustomARWorldSpaceActive = false
+    @Published var customARWallHeight: Float = 2.50
+    @Published var customARWallThickness: Float = 0.10
+    @Published var customARDoorWidth: Float = 0.90
+    @Published var customARDoorHeight: Float = 2.05
+    @Published var customARWallStyle: CustomARWallStyle = .studioWhite
+    @Published var customARCeilingEnabled = true
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -158,6 +195,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private let aiServiceDiscovery = AILocalServiceDiscovery()
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
     private let liveDepthRenderer = LiveDepthOcclusionRenderer()
+    private let customARRenderer = CustomARRenderer()
     private var lastOcclusionStatusTimestamp: TimeInterval = 0
     private var aiDiscoveryHealthCheckURL: URL?
     private var aiDiscoveryPendingURLs: [URL] = []
@@ -231,6 +269,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private var filteredLiveApplePosition: SIMD3<Float>?
     private var lastLiveAppleObservationTimestamp: TimeInterval = 0
     private var lastHandDetectionTimestamp: TimeInterval = 0
+    private var customARDraftPoints: [SIMD3<Float>] = []
+    private var customARDraftNormal: SIMD3<Float>?
+    private var customARInteriorWallStart: SIMD3<Float>?
     private var handDetectionInFlight = false
     private let handDetectionQueue = DispatchQueue(
         label: "com.cinear.hand-pose",
@@ -265,6 +306,7 @@ final class ARSessionController: NSObject, ObservableObject {
     var roomModelURL: URL { projectStore.roomModelURL }
     var roomDataURL: URL { projectStore.roomDataURL }
     var sharedARSession: ARSession? { arView?.session }
+    var isCustomAREditing: Bool { customAREditMode != .inactive }
     private var roomAlignmentTransform: simd_float4x4 {
         projectStore.project.roomAlignment?.realityKitTransform.matrix
             ?? matrix_identity_float4x4
@@ -311,6 +353,7 @@ final class ARSessionController: NSObject, ObservableObject {
             : "Hizalama referansı kaydedilmedi"
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+        refreshCustomARCatalog()
         if projectStore.savedPlaces.isEmpty,
            projectStore.project.worldMapChecksum != nil {
             _ = try? projectStore.archiveCurrentProject(preferredName: "Önceki Mekân")
@@ -360,6 +403,8 @@ final class ARSessionController: NSObject, ObservableObject {
         } else {
             liveOcclusionStatus = "Bu cihazda anlık LiDAR derinliği yok"
         }
+        customARRenderer.install(in: view)
+        customARRenderer.isVisible = false
         refreshAIServerDiscovery()
         if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: view)
@@ -470,11 +515,14 @@ final class ARSessionController: NSObject, ObservableObject {
         // A loaded place can carry a different version-7 RoomPlan alignment. Never
         // reuse the previous room's prepared outline/collision geometry across maps.
         roomRealityRenderer.clear()
+        customARRenderer.clear()
+        customARRenderer.isVisible = false
         clearFloorMeterVisualization()
         floorMeterOrigin = nil
         floorMeterReading = nil
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
+        isCustomARWorldSpaceActive = initialWorldMap != nil
         lastKnownFloorY = nil
         lastKnownCeilingY = nil
         roomPlanFloorY = nil
@@ -500,6 +548,13 @@ final class ARSessionController: NSObject, ObservableObject {
             options: [.resetTracking, .removeExistingAnchors]
         )
         roomRealityRenderer.install(in: arView)
+        customARRenderer.install(in: arView)
+        if initialWorldMap != nil {
+            customARRenderer.render(projectStore.project.effectiveCustomARDesigns)
+            customARRenderer.isVisible = false
+        }
+        activeCustomARAreaID = projectStore.project.effectiveCustomARDesigns.last?.id
+        refreshCustomARCatalog()
         if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: arView)
         }
@@ -513,6 +568,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func pauseForRoomScan() {
         liveDepthRenderer.clear()
+        cancelCustomAREditing(publish: false)
         cancelPlacement()
         alignmentReferenceAction = nil
         pendingAlignmentRequest = nil
@@ -530,6 +586,7 @@ final class ARSessionController: NSObject, ObservableObject {
             ?? (roomRealityRenderer.isVisible ? activeRealityThemeID : nil)
         roomRealityRenderer.isVisible = false
         roomRealityRenderer.isPhysicalOcclusionVisible = false
+        customARRenderer.isVisible = false
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         clearFloorMeterVisualization()
@@ -864,14 +921,16 @@ final class ARSessionController: NSObject, ObservableObject {
         // as if the room were following the phone; the prepared geometry remains intact.
         roomRealityRenderer.isVisible = false
         roomRealityRenderer.isPhysicalOcclusionVisible = false
+        customARRenderer.isVisible = false
     }
 
     private func restoreWorldLockedRoomRenderingAfterTrackingRecovery() {
-        guard roomCoordinateSpaceIsActive else { return }
-        if activeRealityThemeID != nil || isRoomOutlineVisible {
+        if roomCoordinateSpaceIsActive && (activeRealityThemeID != nil || isRoomOutlineVisible) {
             roomRealityRenderer.isVisible = true
         }
-        refreshPhysicalRoomOcclusionIfPossible()
+        if roomCoordinateSpaceIsActive { refreshPhysicalRoomOcclusionIfPossible() }
+        customARRenderer.isVisible = isCustomARWorldSpaceActive
+            && !projectStore.project.effectiveCustomARDesigns.isEmpty
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
@@ -954,6 +1013,9 @@ final class ARSessionController: NSObject, ObservableObject {
             arView.session.run(configuration(), options: [])
             liveDepthRenderer.install(in: arView)
             roomRealityRenderer.reattachWorldAnchorsAfterRoomScan(in: arView)
+            customARRenderer.reattachWorldAnchor(in: arView)
+            customARRenderer.render(projectStore.project.effectiveCustomARDesigns)
+            customARRenderer.isVisible = false
         }
         refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
@@ -1166,6 +1228,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func selectProp(_ prop: PropKind) {
         persistSelectedLightSettings()
+        cancelCustomAREditing(publish: false)
         alignmentReferenceAction = nil
         pendingAlignmentRequest = nil
         isAlignmentReferenceActive = false
@@ -2204,6 +2267,532 @@ final class ARSessionController: NSObject, ObservableObject {
         liveCGIStatus = String(format: "Elma avuçta • %.2f m", depth.depthMeters)
     }
 
+    func beginCustomARAreaDrawing() {
+        guard let arView, !isRoomScanActive, !isSessionInterrupted, isARReady else {
+            setCustomARStatus("AR takibi hazır olduğunda alan çizebilirsin", color: .yellow)
+            return
+        }
+        guard projectStore.project.effectiveCustomARDesigns.count < 8 else {
+            setCustomARStatus("En fazla 8 özel AR alanı oluşturulabilir", color: .yellow)
+            return
+        }
+        guard projectStore.project.effectiveCustomARDesigns.isEmpty || isCustomARWorldSpaceActive else {
+            setCustomARStatus("Kayıtlı alanları dünya koordinatına bağlamak için önce Yükle'ye dokun", color: .yellow)
+            return
+        }
+        if isPlacingProp { cancelPlacement() }
+        if isAimingLight { cancelSelectedLightTargeting() }
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        customAREditMode = .drawingArea
+        customARRenderer.install(in: arView)
+        customARRenderer.isVisible = true
+        customARRenderer.clearDraft()
+        setCustomARStatus(
+            "Düz veya eğimli yüzeyde köşelere dokun; ilk noktaya yaklaşınca alan kapanır",
+            color: .blue
+        )
+        placementReticlePoint = nil
+    }
+
+    func beginCustomARInteriorWallDrawing() {
+        guard isCustomARWorldSpaceActive else {
+            setCustomARStatus("Önce kayıtlı sahneyi Yükle veya yeni bir alan çiz", color: .yellow)
+            return
+        }
+        guard activeCustomARDesign() != nil else {
+            setCustomARStatus("Önce kapalı bir alan oluştur", color: .yellow)
+            return
+        }
+        if isPlacingProp { cancelPlacement() }
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        customAREditMode = .drawingWall
+        customARRenderer.clearDraft()
+        customARRenderer.isVisible = true
+        setCustomARStatus("Alan içinde iç duvarın başlangıç ve bitiş noktasına dokun", color: .blue)
+    }
+
+    func beginCustomARDoorPlacement() {
+        guard isCustomARWorldSpaceActive else {
+            setCustomARStatus("Önce kayıtlı sahneyi Yükle veya yeni bir alan çiz", color: .yellow)
+            return
+        }
+        guard activeCustomARDesign()?.walls.isEmpty == false else {
+            setCustomARStatus("Kapı eklemek için önce bir duvar oluştur", color: .yellow)
+            return
+        }
+        if isPlacingProp { cancelPlacement() }
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        customAREditMode = .placingDoor
+        customARRenderer.clearDraft()
+        customARRenderer.isVisible = true
+        setCustomARStatus("Kapının merkezinin bulunacağı özel AR duvarına dokun", color: .blue)
+    }
+
+    func selectCustomARArea(id: UUID) {
+        guard projectStore.project.effectiveCustomARDesigns.contains(where: { $0.id == id }) else {
+            return
+        }
+        activeCustomARAreaID = id
+        refreshCustomARCatalog()
+        setCustomARStatus("Aktif alan seçildi", color: .green)
+    }
+
+    func finishCustomARArea() {
+        guard customAREditMode == .drawingArea,
+              let normal = customARDraftNormal else { return }
+        do {
+            let current = projectStore.project.effectiveCustomARDesigns
+            let design = try CustomARGeometry.makeDesign(
+                name: "Özel Alan \(current.count + 1)",
+                boundary: customARDraftPoints,
+                normal: normal,
+                wallHeight: customARWallHeight,
+                wallThickness: customARWallThickness,
+                style: customARWallStyle,
+                ceilingEnabled: customARCeilingEnabled
+            )
+            try commitCustomARDesigns(current + [design], invalidatesWorldMap: true)
+            isCustomARWorldSpaceActive = true
+            activeCustomARAreaID = design.id
+            refreshCustomARCatalog()
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus(
+                "Alan kapandı; \(design.walls.count) çevre duvarı"
+                    + (design.ceiling == nil ? "" : " ve tavan")
+                    + " dünya koordinatına sabitlendi",
+                color: .green
+            )
+            publishStatus("Özel AR alanı sabitlendi — duvarlara nesne veya kapı ekleyebilirsin", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    func finishCustomARWallDrawing() {
+        guard customAREditMode == .drawingWall else { return }
+        cancelCustomAREditing(publish: false)
+        setCustomARStatus("İç duvar çizimi tamamlandı", color: .green)
+    }
+
+    func undoCustomARStep() {
+        switch customAREditMode {
+        case .drawingArea:
+            if !customARDraftPoints.isEmpty { customARDraftPoints.removeLast() }
+            if customARDraftPoints.isEmpty { customARDraftNormal = nil }
+            customARDraftPointCount = customARDraftPoints.count
+            customARRenderer.showAreaDraft(points: customARDraftPoints, closeLoop: false)
+            setCustomARStatus("Son köşe geri alındı", color: .yellow)
+        case .drawingWall:
+            customARInteriorWallStart = nil
+            customARDraftPointCount = 0
+            customARRenderer.clearDraft()
+            setCustomARStatus("İç duvar başlangıcı temizlendi", color: .yellow)
+        case .placingDoor, .inactive:
+            break
+        }
+    }
+
+    func cancelCustomAREditing() {
+        cancelCustomAREditing(publish: true)
+    }
+
+    private func cancelCustomAREditing(publish: Bool) {
+        let wasEditing = isCustomAREditing
+        customAREditMode = .inactive
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        placementReticlePoint = nil
+        customARRenderer.clearDraft()
+        customARRenderer.isVisible = isCustomARWorldSpaceActive
+            && !projectStore.project.effectiveCustomARDesigns.isEmpty
+        if publish, wasEditing {
+            setCustomARStatus("Özel AR düzenleme kapatıldı", color: .yellow)
+        }
+    }
+
+    func applyCustomARWallSettings() {
+        guard let activeID = activeCustomARAreaID else {
+            setCustomARStatus("Ayar uygulanacak alan bulunamadı", color: .yellow)
+            return
+        }
+        var designs = projectStore.project.effectiveCustomARDesigns
+        guard let index = designs.firstIndex(where: { $0.id == activeID }) else { return }
+        let height = min(max(customARWallHeight, 1.50), 6)
+        let thickness = min(max(customARWallThickness, 0.025), 0.40)
+        for wallIndex in designs[index].walls.indices {
+            designs[index].walls[wallIndex].height = height
+            designs[index].walls[wallIndex].thickness = thickness
+            designs[index].walls[wallIndex].style = customARWallStyle
+            for doorIndex in designs[index].walls[wallIndex].doors.indices {
+                designs[index].walls[wallIndex].doors[doorIndex].height = min(
+                    designs[index].walls[wallIndex].doors[doorIndex].height,
+                    height - 0.08
+                )
+            }
+        }
+        designs[index].ceiling = customARCeilingEnabled
+            ? CustomARCeilingRecord(height: height, thickness: thickness, style: customARWallStyle)
+            : nil
+        do {
+            try commitCustomARDesigns(designs, invalidatesWorldMap: false)
+            setCustomARStatus(
+                customARCeilingEnabled
+                    ? "Duvar ayarları ve alan tavanı güncellendi"
+                    : "Duvar ayarları güncellendi; alan tavanı kaldırıldı",
+                color: .green
+            )
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    func deleteActiveCustomARArea() {
+        guard let id = activeCustomARAreaID else {
+            setCustomARStatus("Silinecek özel AR alanı yok", color: .yellow)
+            return
+        }
+        var designs = projectStore.project.effectiveCustomARDesigns
+        designs.removeAll { $0.id == id }
+        do {
+            try commitCustomARDesigns(designs, invalidatesWorldMap: true)
+            activeCustomARAreaID = designs.last?.id
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus("Özel AR alanı silindi", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    func deleteAllCustomARAreas() {
+        do {
+            try commitCustomARDesigns([], invalidatesWorldMap: true)
+            activeCustomARAreaID = nil
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus("Tüm özel AR alanları silindi", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    private func handleCustomARTap(in arView: ARView, at point: CGPoint) {
+        guard !isRoomScanActive, !isSessionInterrupted, isARReady,
+              let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped) else {
+            setCustomARStatus("Dünya koordinatı sabitleniyor; telefonu kısa süre yavaş hareket ettir", color: .yellow)
+            return
+        }
+        placementReticlePoint = point
+        switch customAREditMode {
+        case .drawingArea:
+            addCustomARAreaPoint(in: arView, at: point, frame: frame)
+        case .drawingWall:
+            addCustomARInteriorWallPoint(in: arView, at: point)
+        case .placingDoor:
+            addCustomARDoor(in: arView, at: point)
+        case .inactive:
+            break
+        }
+    }
+
+    private func addCustomARAreaPoint(in arView: ARView, at point: CGPoint, frame: ARFrame) {
+        let measured = customARSurfaceHit(in: arView, at: point, frame: frame)
+        if customARDraftPoints.isEmpty {
+            guard let measured,
+                  let normal = CustomARGeometry.normalizedUpFacing(measured.normal) else {
+                setCustomARStatus("LiDAR düz/eğimli yüzeyi doğrulayamadı; daha aydınlık açıdan dene", color: .yellow)
+                return
+            }
+            customARDraftNormal = normal
+            customARDraftPoints = [measured.position]
+        } else {
+            guard let origin = customARDraftPoints.first,
+                  let normal = customARDraftNormal,
+                  let candidate = customARPointOnPlane(
+                    in: arView, at: point, origin: origin, normal: normal,
+                    measuredPosition: measured?.position
+                  ) else {
+                setCustomARStatus("Nokta ilk köşeyle aynı yüzeyde değil", color: .yellow)
+                return
+            }
+            if customARDraftPoints.count >= 3,
+               simd_distance(candidate, origin) <= 0.16 {
+                finishCustomARArea()
+                return
+            }
+            guard customARDraftPoints.count < 24 else {
+                setCustomARStatus("En fazla 24 köşe çizilebilir; alanı kapat", color: .yellow)
+                return
+            }
+            guard let last = customARDraftPoints.last,
+                  simd_distance(candidate, last) >= 0.12 else {
+                setCustomARStatus("Yeni köşe önceki noktadan en az 12 cm uzakta olmalı", color: .yellow)
+                return
+            }
+            customARDraftPoints.append(candidate)
+        }
+        customARDraftPointCount = customARDraftPoints.count
+        customARRenderer.showAreaDraft(points: customARDraftPoints, closeLoop: false)
+        setCustomARStatus(
+            customARDraftPoints.count < 3
+                ? "\(customARDraftPoints.count)/3 köşe — sonraki köşeye dokun"
+                : "\(customARDraftPoints.count) köşe — ilk noktaya dokun veya Alanı Kapat",
+            color: .blue
+        )
+    }
+
+    private func addCustomARInteriorWallPoint(in arView: ARView, at point: CGPoint) {
+        guard let design = activeCustomARDesign(),
+              let candidate = customARPointInsideDesign(in: arView, at: point, design: design) else {
+            setCustomARStatus("İç duvar noktası çizilmiş alanın içinde olmalı", color: .yellow)
+            return
+        }
+        if customARInteriorWallStart == nil {
+            customARInteriorWallStart = candidate
+            customARDraftPointCount = 1
+            customARRenderer.showWallDraft(start: candidate)
+            setCustomARStatus("Başlangıç seçildi; duvarın bitiş noktasına dokun", color: .blue)
+            return
+        }
+        do {
+            let wall = try CustomARGeometry.makeInteriorWall(
+                start: customARInteriorWallStart!, end: candidate, in: design,
+                height: customARWallHeight, thickness: customARWallThickness,
+                style: customARWallStyle
+            )
+            var designs = projectStore.project.effectiveCustomARDesigns
+            guard let designIndex = designs.firstIndex(where: { $0.id == design.id }) else { return }
+            designs[designIndex].walls.append(wall)
+            try commitCustomARDesigns(designs, invalidatesWorldMap: true)
+            customARInteriorWallStart = nil
+            customARDraftPointCount = 0
+            customARRenderer.clearDraft()
+            setCustomARStatus("İç duvar sabitlendi; başka bir duvar için iki nokta daha seç", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    private func addCustomARDoor(in arView: ARView, at point: CGPoint) {
+        let hits = arView.hitTest(point, query: .all, mask: .all)
+        guard let hit = hits.first(where: { CustomARRenderer.wallID(containing: $0.entity) != nil }),
+              let wallID = CustomARRenderer.wallID(containing: hit.entity) else {
+            setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
+            return
+        }
+        if let frame = arView.session.currentFrame,
+           let depth = sceneDepthSample(frame: frame, in: arView, at: point) {
+            let cameraPosition = arView.cameraTransform.translation
+            let measuredDistance = simd_distance(cameraPosition, depth.worldPoint)
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distance
+            ) else {
+                setCustomARStatus("Duvarın önündeki gerçek nesne kapı noktasını kapatıyor", color: .yellow)
+                return
+            }
+        }
+        var designs = projectStore.project.effectiveCustomARDesigns
+        guard let location = customARWallLocation(id: wallID, designs: designs) else {
+            setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
+            return
+        }
+        do {
+            let door = try CustomARGeometry.door(
+                on: designs[location.design].walls[location.wall],
+                at: hit.position,
+                width: customARDoorWidth,
+                height: customARDoorHeight
+            )
+            designs[location.design].walls[location.wall].doors.append(door)
+            try commitCustomARDesigns(designs, invalidatesWorldMap: false)
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus("Kapı eklendi; kamerada kapıya dokunarak açıp kapat", color: .green)
+            publishStatus("Özel AR kapısı hazır — dokunarak aç/kapat", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    private func toggleCustomARDoor(id: UUID) {
+        var designs = projectStore.project.effectiveCustomARDesigns
+        for designIndex in designs.indices {
+            for wallIndex in designs[designIndex].walls.indices {
+                guard let doorIndex = designs[designIndex].walls[wallIndex].doors.firstIndex(
+                    where: { $0.id == id }
+                ) else { continue }
+                designs[designIndex].walls[wallIndex].doors[doorIndex].isOpen.toggle()
+                let isOpen = designs[designIndex].walls[wallIndex].doors[doorIndex].isOpen
+                do {
+                    try projectStore.replaceCustomARDesigns(designs, invalidateWorldMap: false)
+                    customARRenderer.setDoor(id: id, isOpen: isOpen, animated: true)
+                    refreshCustomARCatalog()
+                    setCustomARStatus(isOpen ? "Kapı açıldı" : "Kapı kapandı", color: .green)
+                } catch {
+                    setCustomARStatus(error.localizedDescription, color: .red)
+                }
+                return
+            }
+        }
+    }
+
+    private func customARSurfaceHit(
+        in arView: ARView,
+        at point: CGPoint,
+        frame: ARFrame
+    ) -> (position: SIMD3<Float>, normal: SIMD3<Float>)? {
+        if let depth = sceneDepthSample(frame: frame, in: arView, at: point),
+           let normal = depth.worldNormal,
+           CustomARGeometry.normalizedUpFacing(normal) != nil {
+            return (depth.worldPoint, normal)
+        }
+        if let collision = arView.hitTest(point, query: .all, mask: .all).first(where: {
+            !CustomARRenderer.belongsToCustomAR($0.entity)
+                && entityID(from: $0.entity) == nil
+                && !belongsToRoomReality($0.entity)
+                && !belongsToProjectorVisualization($0.entity)
+                && CustomARGeometry.normalizedUpFacing($0.normal) != nil
+        }) {
+            return (collision.position, collision.normal)
+        }
+        for target in [ARRaycastQuery.Target.existingPlaneGeometry, .estimatedPlane] {
+            guard let result = arView.raycast(from: point, allowing: target, alignment: .any).first else {
+                continue
+            }
+            let position = SIMD3<Float>(
+                result.worldTransform.columns.3.x,
+                result.worldTransform.columns.3.y,
+                result.worldTransform.columns.3.z
+            )
+            let normal = SIMD3<Float>(
+                result.worldTransform.columns.1.x,
+                result.worldTransform.columns.1.y,
+                result.worldTransform.columns.1.z
+            )
+            if CustomARGeometry.normalizedUpFacing(normal) != nil { return (position, normal) }
+        }
+        return nil
+    }
+
+    private func customARPointOnPlane(
+        in arView: ARView,
+        at point: CGPoint,
+        origin: SIMD3<Float>,
+        normal: SIMD3<Float>,
+        measuredPosition: SIMD3<Float>?
+    ) -> SIMD3<Float>? {
+        if let measuredPosition,
+           abs(simd_dot(measuredPosition - origin, normal)) <= 0.12 {
+            return CustomARGeometry.project(measuredPosition, onto: origin, normal: normal)
+        }
+        guard let ray = arView.ray(through: point) else { return nil }
+        let direction = simd_normalize(ray.direction)
+        let denominator = simd_dot(direction, normal)
+        guard abs(denominator) >= 0.02 else { return nil }
+        let distance = simd_dot(origin - ray.origin, normal) / denominator
+        guard distance.isFinite, (0.15...8).contains(distance) else { return nil }
+        return ray.origin + direction * distance
+    }
+
+    private func customARPointInsideDesign(
+        in arView: ARView,
+        at point: CGPoint,
+        design: CustomARDesignRecord
+    ) -> SIMD3<Float>? {
+        guard let origin = design.boundary.first?.simd,
+              let candidate = customARPointOnPlane(
+                in: arView, at: point, origin: origin, normal: design.normal,
+                measuredPosition: nil
+              ),
+              CustomARGeometry.contains(
+                candidate, in: design.boundary.map(\.simd), normal: design.normal
+              ) else { return nil }
+        return candidate
+    }
+
+    private func activeCustomARDesign() -> CustomARDesignRecord? {
+        let designs = projectStore.project.effectiveCustomARDesigns
+        if let activeCustomARAreaID,
+           let selected = designs.first(where: { $0.id == activeCustomARAreaID }) {
+            return selected
+        }
+        return designs.last
+    }
+
+    private func customARWallLocation(
+        id: UUID,
+        designs: [CustomARDesignRecord]
+    ) -> (design: Int, wall: Int)? {
+        for designIndex in designs.indices {
+            if let wallIndex = designs[designIndex].walls.firstIndex(where: { $0.id == id }) {
+                return (designIndex, wallIndex)
+            }
+        }
+        return nil
+    }
+
+    private func commitCustomARDesigns(
+        _ designs: [CustomARDesignRecord],
+        invalidatesWorldMap: Bool
+    ) throws {
+        try projectStore.replaceCustomARDesigns(designs, invalidateWorldMap: invalidatesWorldMap)
+        customARRenderer.render(designs)
+        customARRenderer.isVisible = !designs.isEmpty || isCustomAREditing
+        refreshCustomARCatalog()
+        if invalidatesWorldMap {
+            shouldSaveWorldMapWhenReady = true
+            scheduleReadinessRecovery()
+        }
+    }
+
+    private func refreshCustomARCatalog() {
+        let designs = projectStore.project.effectiveCustomARDesigns
+        if let activeCustomARAreaID,
+           !designs.contains(where: { $0.id == activeCustomARAreaID }) {
+            self.activeCustomARAreaID = designs.last?.id
+        } else if activeCustomARAreaID == nil {
+            activeCustomARAreaID = designs.last?.id
+        }
+        customARAreas = designs.enumerated().map { index, design in
+            CustomARAreaSummary(
+                id: design.id,
+                name: design.name.isEmpty ? "Özel Alan \(index + 1)" : design.name,
+                wallCount: design.walls.count,
+                doorCount: design.walls.reduce(0) { $0 + $1.doors.count },
+                hasCeiling: design.ceiling != nil
+            )
+        }
+        if let activeCustomARAreaID,
+           let design = designs.first(where: { $0.id == activeCustomARAreaID }) {
+            loadCustomARSettings(from: design)
+        }
+    }
+
+    private func loadCustomARSettings(from design: CustomARDesignRecord) {
+        if let wall = design.walls.first {
+            customARWallHeight = wall.height
+            customARWallThickness = wall.thickness
+            customARWallStyle = wall.style
+        }
+        customARCeilingEnabled = design.ceiling != nil
+    }
+
+    private func setCustomARStatus(_ text: String, color: Color) {
+        customARStatus = text
+        customARStatusColor = color
+    }
+
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
@@ -2215,6 +2804,18 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if alignmentReferenceAction != nil {
             beginAlignmentReferenceLock(in: arView, at: point)
+            return
+        }
+
+        if isCustomAREditing {
+            handleCustomARTap(in: arView, at: point)
+            return
+        }
+
+        if !isPlacingProp,
+           let touched = arView.entity(at: point),
+           let doorID = CustomARRenderer.doorID(containing: touched) {
+            toggleCustomARDoor(id: doorID)
             return
         }
 
@@ -2868,6 +3469,29 @@ final class ARSessionController: NSObject, ObservableObject {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
         let cameraPosition = arView.cameraTransform.translation
+
+        // Custom AR walls are intentionally virtual, so LiDAR sees the physical
+        // background behind them. Accept their finite collision face as the placement
+        // surface, while a closer measured person/object still blocks selection.
+        if !prop.isWallCladding,
+           let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
+               CustomARRenderer.wallID(containing: $0.entity) != nil
+                   && wallSurfaceAccepts(normal: $0.normal)
+           }) {
+            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distance
+            ) else { return nil }
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .customARWall,
+                depth: depth
+            )
+        }
         let scannedWall = roomCoordinateSpaceIsActive
             ? roomRealityRenderer.scannedWallHit(in: arView, at: point)
             : nil
@@ -3014,6 +3638,36 @@ final class ARSessionController: NSObject, ObservableObject {
         guard let frame = arView.session.currentFrame else { return nil }
         let depth = sceneDepthSample(frame: frame, in: arView, at: point)
         let cameraPosition = arView.cameraTransform.translation
+
+        // A Custom AR ceiling is virtual, so scene depth normally reports the real
+        // background ceiling. Use the finite custom collider while still rejecting a
+        // positively measured person or object that is closer to the camera.
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
+            guard CustomARRenderer.ceilingID(containing: hit.entity) != nil,
+                  simd_length_squared(hit.normal) > 0.000_001 else { return false }
+            return abs(simd_normalize(hit.normal).y) >= 0.55
+                && hit.position.y > cameraPosition.y + 0.20
+        }) {
+            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distance
+            ) else { return nil }
+            var normal = simd_normalize(hit.normal)
+            if simd_dot(normal, cameraPosition - hit.position) < 0 { normal = -normal }
+            return PlacementSurfaceSolution(
+                transform: placementTransform(
+                    position: hit.position,
+                    normal: normal,
+                    prop: prop,
+                    cameraPosition: cameraPosition
+                ),
+                position: hit.position,
+                normal: normal,
+                source: .customARCeiling,
+                depthMeters: depth?.depthMeters
+            )
+        }
 
         let classifiedResults = arView.raycast(
             from: point,
@@ -4268,6 +4922,8 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func rebuildRoomRenderingAfterAlignment() {
+        customARRenderer.render(projectStore.project.effectiveCustomARDesigns)
+        customARRenderer.isVisible = !projectStore.project.effectiveCustomARDesigns.isEmpty
         guard let arView,
               FileManager.default.fileExists(atPath: roomDataURL.path) else { return }
         let wasOutlineVisible = isRoomOutlineVisible
@@ -6343,7 +6999,12 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         liveDepthRenderer.update(
             frame: frame,
             enabled: !isSessionInterrupted
-                && (!renderedEntities.isEmpty || isLiveAppleEnabled || roomRealityRenderer.isVisible)
+                && (
+                    !renderedEntities.isEmpty
+                        || isLiveAppleEnabled
+                        || roomRealityRenderer.isVisible
+                        || customARRenderer.isVisible
+                )
         )
         if frame.timestamp - lastOcclusionStatusTimestamp >= 0.5 {
             lastOcclusionStatusTimestamp = frame.timestamp
@@ -6702,6 +7363,8 @@ private enum PlacementSurfaceSource: Equatable {
     case arkitPlane
     case roomPlanGeometry
     case roomPlanLevel
+    case customARWall
+    case customARCeiling
     case deviceCalibration
 
     var title: String {
@@ -6713,6 +7376,8 @@ private enum PlacementSurfaceSource: Equatable {
         case .arkitPlane: "ARKit yüzey"
         case .roomPlanGeometry: "RoomPlan yüzey"
         case .roomPlanLevel: "RoomPlan kotu"
+        case .customARWall: "Özel AR duvarı"
+        case .customARCeiling: "Özel AR tavanı"
         case .deviceCalibration: "Telefon kalibrasyonu"
         }
     }

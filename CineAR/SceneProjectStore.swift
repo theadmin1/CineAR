@@ -102,7 +102,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
 }
 
 struct SceneProject: Codable {
-    static let currentVersion = 7
+    static let currentVersion = 8
 
     var version = currentVersion
     var name = "Ana Set"
@@ -123,6 +123,11 @@ struct SceneProject: Codable {
     // corrected ARWorldMap coordinate space.
     var alignmentReference: StoredTransform?
     var roomAlignment: StoredTransform?
+    // Version-8 Custom AR structures live directly in the matching ARWorldMap
+    // coordinate space. Optional keeps every earlier scene.json decodable.
+    var customARDesigns: [CustomARDesignRecord]?
+
+    var effectiveCustomARDesigns: [CustomARDesignRecord] { customARDesigns ?? [] }
 }
 
 struct PlacementRecord: Codable, Identifiable {
@@ -289,6 +294,7 @@ enum SceneProjectStoreError: LocalizedError {
     case invalidVisualStyle
     case invalidSpatialCalibration
     case invalidAlignmentReference
+    case invalidCustomARDesign
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
@@ -317,6 +323,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Zemin/tavan kalibrasyonu geçersiz veya oda yüksekliği gerçekçi değil"
         case .invalidAlignmentReference:
             "Mekân hizalama referansı geçersiz"
+        case .invalidCustomARDesign:
+            "Özel AR alanı, duvarı veya kapı verisi geçersiz"
         case .worldMapOutOfDate:
             "Sahne son harita kaydından sonra değişmiş; önce yeniden Kaydet'e dokunun"
         case .worldMapChecksumMismatch:
@@ -427,7 +435,12 @@ final class SceneProjectStore {
             name: suppliedName.flatMap { $0.isEmpty ? nil : $0 } ?? Self.defaultSavedPlaceName(now),
             createdAt: now,
             updatedAt: now,
-            objectCount: snapshot.project.placements.count,
+            objectCount: snapshot.project.placements.count
+                + snapshot.project.effectiveCustomARDesigns.reduce(0) { total, design in
+                    total + design.walls.count
+                        + design.walls.reduce(0) { $0 + $1.doors.count }
+                        + (design.ceiling == nil ? 0 : 1)
+                },
             hasRoomScan: fileManager.fileExists(atPath: roomDataURL.path)
         )
 
@@ -749,6 +762,26 @@ final class SceneProjectStore {
         }
     }
 
+    func replaceCustomARDesigns(
+        _ designs: [CustomARDesignRecord],
+        invalidateWorldMap: Bool
+    ) throws {
+        try commit(invalidateWorldMap: invalidateWorldMap) { candidate in
+            let wallIDs = designs.flatMap { $0.walls.map(\.id) }
+            let doorIDs = designs.flatMap { design in
+                design.walls.flatMap { $0.doors.map(\.id) }
+            }
+            guard designs.count <= 8,
+                  Set(designs.map(\.id)).count == designs.count,
+                  Set(wallIDs).count == wallIDs.count,
+                  Set(doorIDs).count == doorIDs.count,
+                  designs.allSatisfy(\.isValid) else {
+                throw SceneProjectStoreError.invalidCustomARDesign
+            }
+            candidate.customARDesigns = designs
+        }
+    }
+
     func setCalibratedFloorY(_ floorY: Float) throws {
         try commit(invalidateWorldMap: true) { candidate in
             guard floorY.isFinite else {
@@ -873,6 +906,9 @@ final class SceneProjectStore {
                     }
                 }
                 candidate.placements[index].lightSettings = light
+            }
+            if let designs = candidate.customARDesigns {
+                candidate.customARDesigns = designs.map { $0.applying(correction) }
             }
         }
     }
@@ -1110,6 +1146,11 @@ final class SceneProjectStore {
             project.version = 7
             project.updatedAt = Date()
         }
+        if project.version < 8 {
+            project.customARDesigns = project.customARDesigns ?? []
+            project.version = 8
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }
@@ -1136,6 +1177,18 @@ final class SceneProjectStore {
         guard project.alignmentReference.map({ isValid($0) }) ?? true,
               project.roomAlignment.map({ isValid($0) }) ?? true else {
             throw SceneProjectStoreError.invalidAlignmentReference
+        }
+        let customDesigns = project.effectiveCustomARDesigns
+        let customWallIDs = customDesigns.flatMap { $0.walls.map(\.id) }
+        let customDoorIDs = customDesigns.flatMap { design in
+            design.walls.flatMap { $0.doors.map(\.id) }
+        }
+        guard customDesigns.count <= 8,
+              Set(customDesigns.map(\.id)).count == customDesigns.count,
+              Set(customWallIDs).count == customWallIDs.count,
+              Set(customDoorIDs).count == customDoorIDs.count,
+              customDesigns.allSatisfy(\.isValid) else {
+            throw SceneProjectStoreError.invalidCustomARDesign
         }
 
         var ids = Set<UUID>()

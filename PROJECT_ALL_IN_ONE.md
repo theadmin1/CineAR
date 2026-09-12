@@ -3,17 +3,17 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.17`
-- Proje build numarası: `51`
+- Uygulama sürümü: `0.18.0`
+- Proje build numarası: `52`
 - Git dalı: `main`
-- Kaynak commit: `c128f2856915d22c02f5603567c14de936d7a1de`
-- Oluşturulma zamanı: `2026-09-12 12:30:51 +03:00`
+- Kaynak commit: `278b8ccc98fb1ab9875fb9bafbf7438f5397ec79`
+- Oluşturulma zamanı: `2026-09-12 14:50:44 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
 ## Projenin amacı
 
-CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 38 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.
+CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 40 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.
 
 ## Teknoloji ve ana yetenekler
 
@@ -28,8 +28,8 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 - RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması
 - Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı
 - Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu
-- Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
-- PC/ağ gerektirmeyen toplam 52 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi
+- Poly Haven kaynaklı 1K PBR dokulu 40 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme
+- PC/ağ gerektirmeyen toplam 54 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi
 - Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi
 - 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi
 - Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı
@@ -66,7 +66,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 | `BundledRoomRealityAssetProvider` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |
 | `SceneProjectStore` | `scene.json`, `room.json`, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |
 | `ProfessionalRecorder` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |
-| `RealityTheme` / `PropKind` | Materyal tarifleri, oda rolleri, 38 fotogerçekçi dekor ve eski kayıt uyumluluğu |
+| `RealityTheme` / `PropKind` | Materyal tarifleri, oda rolleri, 40 fotogerçekçi dekor ve eski kayıt uyumluluğu |
 | `codemagic.yaml` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |
 
 ## Temel kullanıcı akışı
@@ -75,7 +75,7 @@ CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçe
 2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.
 3. Sonuç compact `room.json` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.
 4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.
-5. Kullanıcı kompakt dock'tan hızlı dekor, 38 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
+5. Kullanıcı kompakt dock'tan hızlı dekor, 40 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.
 6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.
 7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.
 8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.
@@ -127,13 +127,14 @@ CineAR/AIEnhancementClient.swift
 CineAR/ARSessionController.swift
 CineAR/ARViewContainer.swift
 CineAR/Assets.xcassets/AccentColor.colorset/Contents.json
-CineAR/Assets.xcassets/AppIcon.appiconset/CineAR-AppIcon-1024.png
 CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json
 CineAR/Assets.xcassets/AppIcon.appiconset/SynapMantis-AppIcon-1024.png
 CineAR/Assets.xcassets/Contents.json
 CineAR/BundledRoomRealityAssetProvider.swift
 CineAR/CineARApp.swift
 CineAR/ContentView.swift
+CineAR/CustomARDesign.swift
+CineAR/CustomARRenderer.swift
 CineAR/Info.plist
 CineAR/LiveDepthGeometry.swift
 CineAR/LiveDepthOcclusionRenderer.swift
@@ -156,6 +157,7 @@ CineAR/RoomAssets/desk_lamp_arm_01.usdz
 CineAR/RoomAssets/drawer_cabinet.usdz
 CineAR/RoomAssets/hand_truck.usdz
 CineAR/RoomAssets/hanging_industrial_lamp.usdz
+CineAR/RoomAssets/hanging_picture_frame_01.usdz
 CineAR/RoomAssets/industrial_wall_lamp.usdz
 CineAR/RoomAssets/industrial_wall_sconce.usdz
 CineAR/RoomAssets/kitchenFridge.usdz
@@ -171,6 +173,7 @@ CineAR/RoomAssets/metal_office_desk.usdz
 CineAR/RoomAssets/metal_tool_chest.usdz
 CineAR/RoomAssets/metal_trash_can.usdz
 CineAR/RoomAssets/modern_arm_chair_01.usdz
+CineAR/RoomAssets/modern_ceiling_lamp_01.usdz
 CineAR/RoomAssets/modern_wooden_cabinet.usdz
 CineAR/RoomAssets/plastic_crate_02.usdz
 CineAR/RoomAssets/plastic_monobloc_chair_01.usdz
@@ -212,9 +215,11 @@ Tools/fetch_polyhaven_props.ps1
 Tools/fetch_wall_textures.ps1
 Tools/generate_all_in_one_markdown.ps1
 Tools/generate_wall_assets.py
+Tools/package_polyhaven_usd_to_usdz.py
 Tools/render_usdz_thumbnails.py
 Tools/run_swift_regressions.py
 Tools/test_bundled_assets.py
+Tools/test_custom_ar_geometry.swift
 Tools/test_live_depth_geometry.swift
 Tools/test_privacy_plist.py
 Tools/test_spatial_validation.swift
@@ -244,6 +249,7 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/drawer_cabinet.usdz` | 2219127 | `351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68` |
 | `CineAR/RoomAssets/hand_truck.usdz` | 3639690 | `fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486` |
 | `CineAR/RoomAssets/hanging_industrial_lamp.usdz` | 3604302 | `abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937` |
+| `CineAR/RoomAssets/hanging_picture_frame_01.usdz` | 1896408 | `43b901b41046e9fc969f18577fc905dd9298ba7a29340eb35f309719855d9a96` |
 | `CineAR/RoomAssets/industrial_wall_lamp.usdz` | 3955877 | `41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9` |
 | `CineAR/RoomAssets/industrial_wall_sconce.usdz` | 2264430 | `c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee` |
 | `CineAR/RoomAssets/kitchenFridge.usdz` | 24080 | `a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7` |
@@ -256,6 +262,7 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/metal_tool_chest.usdz` | 2896433 | `ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba` |
 | `CineAR/RoomAssets/metal_trash_can.usdz` | 5583572 | `d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871` |
 | `CineAR/RoomAssets/modern_arm_chair_01.usdz` | 3086703 | `9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c` |
+| `CineAR/RoomAssets/modern_ceiling_lamp_01.usdz` | 1545197 | `0a90110df54b6348403ee23c9fc43d4972cdf80890eede452262553e93cca210` |
 | `CineAR/RoomAssets/modern_wooden_cabinet.usdz` | 3599448 | `8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964` |
 | `CineAR/RoomAssets/plastic_crate_02.usdz` | 2088182 | `c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9` |
 | `CineAR/RoomAssets/plastic_monobloc_chair_01.usdz` | 2086673 | `6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a` |
@@ -299,46 +306,50 @@ Yok.
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
-| `CineAR.xcodeproj/project.pbxproj` | 294 | 15656 |
+| `CineAR.xcodeproj/project.pbxproj` | 302 | 16574 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
 | `CineAR/AIEnhancementClient.swift` | 464 | 19590 |
-| `CineAR/ARSessionController.swift` | 7024 | 298569 |
+| `CineAR/ARSessionController.swift` | 7689 | 327674 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
 | `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 228 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 180 | 6748 |
-| `CineAR/ContentView.swift` | 1478 | 62946 |
+| `CineAR/ContentView.swift` | 1775 | 76531 |
+| `CineAR/CustomARDesign.swift` | 528 | 21238 |
+| `CineAR/CustomARRenderer.swift` | 411 | 15929 |
 | `CineAR/Info.plist` | 62 | 2253 |
 | `CineAR/LiveDepthGeometry.swift` | 95 | 4350 |
 | `CineAR/LiveDepthOcclusionRenderer.swift` | 217 | 11113 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
-| `CineAR/PropKind.swift` | 413 | 17104 |
+| `CineAR/PropKind.swift` | 431 | 18219 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
 | `CineAR/RoomAssets/LICENSE-KENNEY.txt` | 16 | 619 |
-| `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 66 | 2044 |
-| `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
+| `CineAR/RoomAssets/LICENSE-POLYHAVEN.txt` | 75 | 2431 |
+| `CineAR/RoomAssets/MANIFEST.sha256` | 55 | 4730 |
 | `CineAR/RoomRealityRenderer.swift` | 2287 | 90626 |
 | `CineAR/RoomScanner.swift` | 999 | 38097 |
-| `CineAR/SceneProjectStore.swift` | 1191 | 47912 |
+| `CineAR/SceneProjectStore.swift` | 1244 | 50393 |
 | `CineAR/SpatialValidation.swift` | 191 | 9611 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
-| `codemagic.yaml` | 279 | 10352 |
+| `codemagic.yaml` | 289 | 10742 |
 | `Docs/CODEMAGIC.md` | 123 | 6841 |
-| `Docs/DEVICE_TEST.md` | 396 | 27727 |
+| `Docs/DEVICE_TEST.md` | 417 | 29394 |
 | `Docs/ICON_PROMPT.md` | 25 | 1846 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 476 | 32767 |
+| `README.md` | 505 | 34520 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
 | `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
 | `Tools/generate_all_in_one_markdown.ps1` | 379 | 21516 |
 | `Tools/generate_wall_assets.py` | 81 | 3290 |
+| `Tools/package_polyhaven_usd_to_usdz.py` | 203 | 7651 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
-| `Tools/run_swift_regressions.py` | 46 | 2055 |
-| `Tools/test_bundled_assets.py` | 97 | 3953 |
+| `Tools/run_swift_regressions.py` | 47 | 2152 |
+| `Tools/test_bundled_assets.py` | 119 | 5022 |
+| `Tools/test_custom_ar_geometry.swift` | 112 | 4571 |
 | `Tools/test_live_depth_geometry.swift` | 76 | 3977 |
 | `Tools/test_privacy_plist.py` | 37 | 1416 |
 | `Tools/test_spatial_validation.swift` | 130 | 8367 |
@@ -1341,6 +1352,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* LiveDepthGeometry.swift */; };
 		A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */; };
 		A10000000000000000000012 /* SpatialValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* SpatialValidation.swift */; };
+		A10000000000000000000013 /* CustomARDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* CustomARDesign.swift */; };
+		A10000000000000000000014 /* CustomARRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* CustomARRenderer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -1364,6 +1377,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 		B10000000000000000000012 /* LiveDepthGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthGeometry.swift; sourceTree = "<group>"; };
 		B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDepthOcclusionRenderer.swift; sourceTree = "<group>"; };
 		B10000000000000000000014 /* SpatialValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpatialValidation.swift; sourceTree = "<group>"; };
+		B10000000000000000000015 /* CustomARDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomARDesign.swift; sourceTree = "<group>"; };
+		B10000000000000000000016 /* CustomARRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomARRenderer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1403,6 +1418,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				B10000000000000000000012 /* LiveDepthGeometry.swift */,
 				B10000000000000000000013 /* LiveDepthOcclusionRenderer.swift */,
 				B10000000000000000000014 /* SpatialValidation.swift */,
+				B10000000000000000000015 /* CustomARDesign.swift */,
+				B10000000000000000000016 /* CustomARRenderer.swift */,
 				B1000000000000000000000F /* RoomAssets */,
 				B10000000000000000000006 /* Assets.xcassets */,
 				B10000000000000000000007 /* Info.plist */,
@@ -1495,6 +1512,8 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				A10000000000000000000010 /* LiveDepthGeometry.swift in Sources */,
 				A10000000000000000000011 /* LiveDepthOcclusionRenderer.swift in Sources */,
 				A10000000000000000000012 /* SpatialValidation.swift in Sources */,
+				A10000000000000000000013 /* CustomARDesign.swift in Sources */,
+				A10000000000000000000014 /* CustomARRenderer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1542,13 +1561,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 51;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.17;
+				MARKETING_VERSION = 0.18.0;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1566,12 +1585,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 51;
+				CURRENT_PROJECT_VERSION = 52;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.17;
+				MARKETING_VERSION = 0.18.0;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -2148,6 +2167,30 @@ struct FloorMeterReading: Equatable {
     let isVisibleFloor: Bool
 }
 
+enum CustomAREditMode: Equatable {
+    case inactive
+    case drawingArea
+    case drawingWall
+    case placingDoor
+
+    var title: String {
+        switch self {
+        case .inactive: "Özel AR hazır"
+        case .drawingArea: "Alan köşelerini çiz"
+        case .drawingWall: "İç duvarın iki ucunu seç"
+        case .placingDoor: "Kapı için duvara dokun"
+        }
+    }
+}
+
+struct CustomARAreaSummary: Identifiable, Equatable {
+    let id: UUID
+    let name: String
+    let wallCount: Int
+    let doorCount: Int
+    let hasCeiling: Bool
+}
+
 /// Core Video buffers are reference-counted and remain immutable while Vision reads them.
 /// This wrapper makes that cross-queue lifetime guarantee explicit to Swift concurrency.
 private struct SendablePixelBuffer: @unchecked Sendable {
@@ -2258,6 +2301,19 @@ final class ARSessionController: NSObject, ObservableObject {
     @Published private(set) var isAlignmentReferenceActive = false
     @Published private(set) var alignmentReferenceStatus = "Hizalama referansı kaydedilmedi"
     @Published private(set) var liveOcclusionStatus = "Anlık LiDAR derinliği bekleniyor"
+    @Published private(set) var customAREditMode: CustomAREditMode = .inactive
+    @Published private(set) var customARStatus = "Yeni bir alan çizerek başla"
+    @Published private(set) var customARStatusColor: Color = .secondary
+    @Published private(set) var customARDraftPointCount = 0
+    @Published private(set) var customARAreas: [CustomARAreaSummary] = []
+    @Published private(set) var activeCustomARAreaID: UUID?
+    @Published private(set) var isCustomARWorldSpaceActive = false
+    @Published var customARWallHeight: Float = 2.50
+    @Published var customARWallThickness: Float = 0.10
+    @Published var customARDoorWidth: Float = 0.90
+    @Published var customARDoorHeight: Float = 2.05
+    @Published var customARWallStyle: CustomARWallStyle = .studioWhite
+    @Published var customARCeilingEnabled = true
 
     private(set) var arView: ARView?
     private let projectStore = SceneProjectStore()
@@ -2270,6 +2326,7 @@ final class ARSessionController: NSObject, ObservableObject {
     private let aiServiceDiscovery = AILocalServiceDiscovery()
     private let aiDepthRenderer = AIDepthOcclusionRenderer()
     private let liveDepthRenderer = LiveDepthOcclusionRenderer()
+    private let customARRenderer = CustomARRenderer()
     private var lastOcclusionStatusTimestamp: TimeInterval = 0
     private var aiDiscoveryHealthCheckURL: URL?
     private var aiDiscoveryPendingURLs: [URL] = []
@@ -2343,6 +2400,9 @@ final class ARSessionController: NSObject, ObservableObject {
     private var filteredLiveApplePosition: SIMD3<Float>?
     private var lastLiveAppleObservationTimestamp: TimeInterval = 0
     private var lastHandDetectionTimestamp: TimeInterval = 0
+    private var customARDraftPoints: [SIMD3<Float>] = []
+    private var customARDraftNormal: SIMD3<Float>?
+    private var customARInteriorWallStart: SIMD3<Float>?
     private var handDetectionInFlight = false
     private let handDetectionQueue = DispatchQueue(
         label: "com.cinear.hand-pose",
@@ -2377,6 +2437,7 @@ final class ARSessionController: NSObject, ObservableObject {
     var roomModelURL: URL { projectStore.roomModelURL }
     var roomDataURL: URL { projectStore.roomDataURL }
     var sharedARSession: ARSession? { arView?.session }
+    var isCustomAREditing: Bool { customAREditMode != .inactive }
     private var roomAlignmentTransform: simd_float4x4 {
         projectStore.project.roomAlignment?.realityKitTransform.matrix
             ?? matrix_identity_float4x4
@@ -2423,6 +2484,7 @@ final class ARSessionController: NSObject, ObservableObject {
             : "Hizalama referansı kaydedilmedi"
         importedAssetURLs = projectStore.importedModelURLs
         hasScannedRoom = FileManager.default.fileExists(atPath: roomDataURL.path)
+        refreshCustomARCatalog()
         if projectStore.savedPlaces.isEmpty,
            projectStore.project.worldMapChecksum != nil {
             _ = try? projectStore.archiveCurrentProject(preferredName: "Önceki Mekân")
@@ -2472,6 +2534,8 @@ final class ARSessionController: NSObject, ObservableObject {
         } else {
             liveOcclusionStatus = "Bu cihazda anlık LiDAR derinliği yok"
         }
+        customARRenderer.install(in: view)
+        customARRenderer.isVisible = false
         refreshAIServerDiscovery()
         if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: view)
@@ -2582,11 +2646,14 @@ final class ARSessionController: NSObject, ObservableObject {
         // A loaded place can carry a different version-7 RoomPlan alignment. Never
         // reuse the previous room's prepared outline/collision geometry across maps.
         roomRealityRenderer.clear()
+        customARRenderer.clear()
+        customARRenderer.isVisible = false
         clearFloorMeterVisualization()
         floorMeterOrigin = nil
         floorMeterReading = nil
         arView.scene.anchors.removeAll()
         roomCoordinateSpaceIsActive = initialWorldMap != nil
+        isCustomARWorldSpaceActive = initialWorldMap != nil
         lastKnownFloorY = nil
         lastKnownCeilingY = nil
         roomPlanFloorY = nil
@@ -2612,6 +2679,13 @@ final class ARSessionController: NSObject, ObservableObject {
             options: [.resetTracking, .removeExistingAnchors]
         )
         roomRealityRenderer.install(in: arView)
+        customARRenderer.install(in: arView)
+        if initialWorldMap != nil {
+            customARRenderer.render(projectStore.project.effectiveCustomARDesigns)
+            customARRenderer.isVisible = false
+        }
+        activeCustomARAreaID = projectStore.project.effectiveCustomARDesigns.last?.id
+        refreshCustomARCatalog()
         if aiEnhancementEnabled, !Self.hasLiveSceneReconstruction {
             aiDepthRenderer.install(in: arView)
         }
@@ -2625,6 +2699,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func pauseForRoomScan() {
         liveDepthRenderer.clear()
+        cancelCustomAREditing(publish: false)
         cancelPlacement()
         alignmentReferenceAction = nil
         pendingAlignmentRequest = nil
@@ -2642,6 +2717,7 @@ final class ARSessionController: NSObject, ObservableObject {
             ?? (roomRealityRenderer.isVisible ? activeRealityThemeID : nil)
         roomRealityRenderer.isVisible = false
         roomRealityRenderer.isPhysicalOcclusionVisible = false
+        customARRenderer.isVisible = false
         isRoomOutlineVisible = false
         setPhysicalSceneOcclusion(enabled: false)
         clearFloorMeterVisualization()
@@ -2976,14 +3052,16 @@ final class ARSessionController: NSObject, ObservableObject {
         // as if the room were following the phone; the prepared geometry remains intact.
         roomRealityRenderer.isVisible = false
         roomRealityRenderer.isPhysicalOcclusionVisible = false
+        customARRenderer.isVisible = false
     }
 
     private func restoreWorldLockedRoomRenderingAfterTrackingRecovery() {
-        guard roomCoordinateSpaceIsActive else { return }
-        if activeRealityThemeID != nil || isRoomOutlineVisible {
+        if roomCoordinateSpaceIsActive && (activeRealityThemeID != nil || isRoomOutlineVisible) {
             roomRealityRenderer.isVisible = true
         }
-        refreshPhysicalRoomOcclusionIfPossible()
+        if roomCoordinateSpaceIsActive { refreshPhysicalRoomOcclusionIfPossible() }
+        customARRenderer.isVisible = isCustomARWorldSpaceActive
+            && !projectStore.project.effectiveCustomARDesigns.isEmpty
     }
 
     func resumeAfterRoomScan(result: RoomScanResult?) {
@@ -3066,6 +3144,9 @@ final class ARSessionController: NSObject, ObservableObject {
             arView.session.run(configuration(), options: [])
             liveDepthRenderer.install(in: arView)
             roomRealityRenderer.reattachWorldAnchorsAfterRoomScan(in: arView)
+            customARRenderer.reattachWorldAnchor(in: arView)
+            customARRenderer.render(projectStore.project.effectiveCustomARDesigns)
+            customARRenderer.isVisible = false
         }
         refreshPhysicalRoomOcclusionIfPossible()
         scheduleReadinessRecovery()
@@ -3278,6 +3359,7 @@ final class ARSessionController: NSObject, ObservableObject {
 
     func selectProp(_ prop: PropKind) {
         persistSelectedLightSettings()
+        cancelCustomAREditing(publish: false)
         alignmentReferenceAction = nil
         pendingAlignmentRequest = nil
         isAlignmentReferenceActive = false
@@ -4316,6 +4398,532 @@ final class ARSessionController: NSObject, ObservableObject {
         liveCGIStatus = String(format: "Elma avuçta • %.2f m", depth.depthMeters)
     }
 
+    func beginCustomARAreaDrawing() {
+        guard let arView, !isRoomScanActive, !isSessionInterrupted, isARReady else {
+            setCustomARStatus("AR takibi hazır olduğunda alan çizebilirsin", color: .yellow)
+            return
+        }
+        guard projectStore.project.effectiveCustomARDesigns.count < 8 else {
+            setCustomARStatus("En fazla 8 özel AR alanı oluşturulabilir", color: .yellow)
+            return
+        }
+        guard projectStore.project.effectiveCustomARDesigns.isEmpty || isCustomARWorldSpaceActive else {
+            setCustomARStatus("Kayıtlı alanları dünya koordinatına bağlamak için önce Yükle'ye dokun", color: .yellow)
+            return
+        }
+        if isPlacingProp { cancelPlacement() }
+        if isAimingLight { cancelSelectedLightTargeting() }
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        customAREditMode = .drawingArea
+        customARRenderer.install(in: arView)
+        customARRenderer.isVisible = true
+        customARRenderer.clearDraft()
+        setCustomARStatus(
+            "Düz veya eğimli yüzeyde köşelere dokun; ilk noktaya yaklaşınca alan kapanır",
+            color: .blue
+        )
+        placementReticlePoint = nil
+    }
+
+    func beginCustomARInteriorWallDrawing() {
+        guard isCustomARWorldSpaceActive else {
+            setCustomARStatus("Önce kayıtlı sahneyi Yükle veya yeni bir alan çiz", color: .yellow)
+            return
+        }
+        guard activeCustomARDesign() != nil else {
+            setCustomARStatus("Önce kapalı bir alan oluştur", color: .yellow)
+            return
+        }
+        if isPlacingProp { cancelPlacement() }
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        customAREditMode = .drawingWall
+        customARRenderer.clearDraft()
+        customARRenderer.isVisible = true
+        setCustomARStatus("Alan içinde iç duvarın başlangıç ve bitiş noktasına dokun", color: .blue)
+    }
+
+    func beginCustomARDoorPlacement() {
+        guard isCustomARWorldSpaceActive else {
+            setCustomARStatus("Önce kayıtlı sahneyi Yükle veya yeni bir alan çiz", color: .yellow)
+            return
+        }
+        guard activeCustomARDesign()?.walls.isEmpty == false else {
+            setCustomARStatus("Kapı eklemek için önce bir duvar oluştur", color: .yellow)
+            return
+        }
+        if isPlacingProp { cancelPlacement() }
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        customAREditMode = .placingDoor
+        customARRenderer.clearDraft()
+        customARRenderer.isVisible = true
+        setCustomARStatus("Kapının merkezinin bulunacağı özel AR duvarına dokun", color: .blue)
+    }
+
+    func selectCustomARArea(id: UUID) {
+        guard projectStore.project.effectiveCustomARDesigns.contains(where: { $0.id == id }) else {
+            return
+        }
+        activeCustomARAreaID = id
+        refreshCustomARCatalog()
+        setCustomARStatus("Aktif alan seçildi", color: .green)
+    }
+
+    func finishCustomARArea() {
+        guard customAREditMode == .drawingArea,
+              let normal = customARDraftNormal else { return }
+        do {
+            let current = projectStore.project.effectiveCustomARDesigns
+            let design = try CustomARGeometry.makeDesign(
+                name: "Özel Alan \(current.count + 1)",
+                boundary: customARDraftPoints,
+                normal: normal,
+                wallHeight: customARWallHeight,
+                wallThickness: customARWallThickness,
+                style: customARWallStyle,
+                ceilingEnabled: customARCeilingEnabled
+            )
+            try commitCustomARDesigns(current + [design], invalidatesWorldMap: true)
+            isCustomARWorldSpaceActive = true
+            activeCustomARAreaID = design.id
+            refreshCustomARCatalog()
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus(
+                "Alan kapandı; \(design.walls.count) çevre duvarı"
+                    + (design.ceiling == nil ? "" : " ve tavan")
+                    + " dünya koordinatına sabitlendi",
+                color: .green
+            )
+            publishStatus("Özel AR alanı sabitlendi — duvarlara nesne veya kapı ekleyebilirsin", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    func finishCustomARWallDrawing() {
+        guard customAREditMode == .drawingWall else { return }
+        cancelCustomAREditing(publish: false)
+        setCustomARStatus("İç duvar çizimi tamamlandı", color: .green)
+    }
+
+    func undoCustomARStep() {
+        switch customAREditMode {
+        case .drawingArea:
+            if !customARDraftPoints.isEmpty { customARDraftPoints.removeLast() }
+            if customARDraftPoints.isEmpty { customARDraftNormal = nil }
+            customARDraftPointCount = customARDraftPoints.count
+            customARRenderer.showAreaDraft(points: customARDraftPoints, closeLoop: false)
+            setCustomARStatus("Son köşe geri alındı", color: .yellow)
+        case .drawingWall:
+            customARInteriorWallStart = nil
+            customARDraftPointCount = 0
+            customARRenderer.clearDraft()
+            setCustomARStatus("İç duvar başlangıcı temizlendi", color: .yellow)
+        case .placingDoor, .inactive:
+            break
+        }
+    }
+
+    func cancelCustomAREditing() {
+        cancelCustomAREditing(publish: true)
+    }
+
+    private func cancelCustomAREditing(publish: Bool) {
+        let wasEditing = isCustomAREditing
+        customAREditMode = .inactive
+        customARDraftPoints.removeAll()
+        customARDraftNormal = nil
+        customARInteriorWallStart = nil
+        customARDraftPointCount = 0
+        placementReticlePoint = nil
+        customARRenderer.clearDraft()
+        customARRenderer.isVisible = isCustomARWorldSpaceActive
+            && !projectStore.project.effectiveCustomARDesigns.isEmpty
+        if publish, wasEditing {
+            setCustomARStatus("Özel AR düzenleme kapatıldı", color: .yellow)
+        }
+    }
+
+    func applyCustomARWallSettings() {
+        guard let activeID = activeCustomARAreaID else {
+            setCustomARStatus("Ayar uygulanacak alan bulunamadı", color: .yellow)
+            return
+        }
+        var designs = projectStore.project.effectiveCustomARDesigns
+        guard let index = designs.firstIndex(where: { $0.id == activeID }) else { return }
+        let height = min(max(customARWallHeight, 1.50), 6)
+        let thickness = min(max(customARWallThickness, 0.025), 0.40)
+        for wallIndex in designs[index].walls.indices {
+            designs[index].walls[wallIndex].height = height
+            designs[index].walls[wallIndex].thickness = thickness
+            designs[index].walls[wallIndex].style = customARWallStyle
+            for doorIndex in designs[index].walls[wallIndex].doors.indices {
+                designs[index].walls[wallIndex].doors[doorIndex].height = min(
+                    designs[index].walls[wallIndex].doors[doorIndex].height,
+                    height - 0.08
+                )
+            }
+        }
+        designs[index].ceiling = customARCeilingEnabled
+            ? CustomARCeilingRecord(height: height, thickness: thickness, style: customARWallStyle)
+            : nil
+        do {
+            try commitCustomARDesigns(designs, invalidatesWorldMap: false)
+            setCustomARStatus(
+                customARCeilingEnabled
+                    ? "Duvar ayarları ve alan tavanı güncellendi"
+                    : "Duvar ayarları güncellendi; alan tavanı kaldırıldı",
+                color: .green
+            )
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    func deleteActiveCustomARArea() {
+        guard let id = activeCustomARAreaID else {
+            setCustomARStatus("Silinecek özel AR alanı yok", color: .yellow)
+            return
+        }
+        var designs = projectStore.project.effectiveCustomARDesigns
+        designs.removeAll { $0.id == id }
+        do {
+            try commitCustomARDesigns(designs, invalidatesWorldMap: true)
+            activeCustomARAreaID = designs.last?.id
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus("Özel AR alanı silindi", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    func deleteAllCustomARAreas() {
+        do {
+            try commitCustomARDesigns([], invalidatesWorldMap: true)
+            activeCustomARAreaID = nil
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus("Tüm özel AR alanları silindi", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    private func handleCustomARTap(in arView: ARView, at point: CGPoint) {
+        guard !isRoomScanActive, !isSessionInterrupted, isARReady,
+              let frame = arView.session.currentFrame,
+              case .normal = frame.camera.trackingState,
+              (frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped) else {
+            setCustomARStatus("Dünya koordinatı sabitleniyor; telefonu kısa süre yavaş hareket ettir", color: .yellow)
+            return
+        }
+        placementReticlePoint = point
+        switch customAREditMode {
+        case .drawingArea:
+            addCustomARAreaPoint(in: arView, at: point, frame: frame)
+        case .drawingWall:
+            addCustomARInteriorWallPoint(in: arView, at: point)
+        case .placingDoor:
+            addCustomARDoor(in: arView, at: point)
+        case .inactive:
+            break
+        }
+    }
+
+    private func addCustomARAreaPoint(in arView: ARView, at point: CGPoint, frame: ARFrame) {
+        let measured = customARSurfaceHit(in: arView, at: point, frame: frame)
+        if customARDraftPoints.isEmpty {
+            guard let measured,
+                  let normal = CustomARGeometry.normalizedUpFacing(measured.normal) else {
+                setCustomARStatus("LiDAR düz/eğimli yüzeyi doğrulayamadı; daha aydınlık açıdan dene", color: .yellow)
+                return
+            }
+            customARDraftNormal = normal
+            customARDraftPoints = [measured.position]
+        } else {
+            guard let origin = customARDraftPoints.first,
+                  let normal = customARDraftNormal,
+                  let candidate = customARPointOnPlane(
+                    in: arView, at: point, origin: origin, normal: normal,
+                    measuredPosition: measured?.position
+                  ) else {
+                setCustomARStatus("Nokta ilk köşeyle aynı yüzeyde değil", color: .yellow)
+                return
+            }
+            if customARDraftPoints.count >= 3,
+               simd_distance(candidate, origin) <= 0.16 {
+                finishCustomARArea()
+                return
+            }
+            guard customARDraftPoints.count < 24 else {
+                setCustomARStatus("En fazla 24 köşe çizilebilir; alanı kapat", color: .yellow)
+                return
+            }
+            guard let last = customARDraftPoints.last,
+                  simd_distance(candidate, last) >= 0.12 else {
+                setCustomARStatus("Yeni köşe önceki noktadan en az 12 cm uzakta olmalı", color: .yellow)
+                return
+            }
+            customARDraftPoints.append(candidate)
+        }
+        customARDraftPointCount = customARDraftPoints.count
+        customARRenderer.showAreaDraft(points: customARDraftPoints, closeLoop: false)
+        setCustomARStatus(
+            customARDraftPoints.count < 3
+                ? "\(customARDraftPoints.count)/3 köşe — sonraki köşeye dokun"
+                : "\(customARDraftPoints.count) köşe — ilk noktaya dokun veya Alanı Kapat",
+            color: .blue
+        )
+    }
+
+    private func addCustomARInteriorWallPoint(in arView: ARView, at point: CGPoint) {
+        guard let design = activeCustomARDesign(),
+              let candidate = customARPointInsideDesign(in: arView, at: point, design: design) else {
+            setCustomARStatus("İç duvar noktası çizilmiş alanın içinde olmalı", color: .yellow)
+            return
+        }
+        if customARInteriorWallStart == nil {
+            customARInteriorWallStart = candidate
+            customARDraftPointCount = 1
+            customARRenderer.showWallDraft(start: candidate)
+            setCustomARStatus("Başlangıç seçildi; duvarın bitiş noktasına dokun", color: .blue)
+            return
+        }
+        do {
+            let wall = try CustomARGeometry.makeInteriorWall(
+                start: customARInteriorWallStart!, end: candidate, in: design,
+                height: customARWallHeight, thickness: customARWallThickness,
+                style: customARWallStyle
+            )
+            var designs = projectStore.project.effectiveCustomARDesigns
+            guard let designIndex = designs.firstIndex(where: { $0.id == design.id }) else { return }
+            designs[designIndex].walls.append(wall)
+            try commitCustomARDesigns(designs, invalidatesWorldMap: true)
+            customARInteriorWallStart = nil
+            customARDraftPointCount = 0
+            customARRenderer.clearDraft()
+            setCustomARStatus("İç duvar sabitlendi; başka bir duvar için iki nokta daha seç", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    private func addCustomARDoor(in arView: ARView, at point: CGPoint) {
+        let hits = arView.hitTest(point, query: .all, mask: .all)
+        guard let hit = hits.first(where: { CustomARRenderer.wallID(containing: $0.entity) != nil }),
+              let wallID = CustomARRenderer.wallID(containing: hit.entity) else {
+            setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
+            return
+        }
+        if let frame = arView.session.currentFrame,
+           let depth = sceneDepthSample(frame: frame, in: arView, at: point) {
+            let cameraPosition = arView.cameraTransform.translation
+            let measuredDistance = simd_distance(cameraPosition, depth.worldPoint)
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distance
+            ) else {
+                setCustomARStatus("Duvarın önündeki gerçek nesne kapı noktasını kapatıyor", color: .yellow)
+                return
+            }
+        }
+        var designs = projectStore.project.effectiveCustomARDesigns
+        guard let location = customARWallLocation(id: wallID, designs: designs) else {
+            setCustomARStatus(CustomARGeometryError.wallNotFound.localizedDescription, color: .yellow)
+            return
+        }
+        do {
+            let door = try CustomARGeometry.door(
+                on: designs[location.design].walls[location.wall],
+                at: hit.position,
+                width: customARDoorWidth,
+                height: customARDoorHeight
+            )
+            designs[location.design].walls[location.wall].doors.append(door)
+            try commitCustomARDesigns(designs, invalidatesWorldMap: false)
+            cancelCustomAREditing(publish: false)
+            setCustomARStatus("Kapı eklendi; kamerada kapıya dokunarak açıp kapat", color: .green)
+            publishStatus("Özel AR kapısı hazır — dokunarak aç/kapat", color: .green)
+        } catch {
+            setCustomARStatus(error.localizedDescription, color: .red)
+        }
+    }
+
+    private func toggleCustomARDoor(id: UUID) {
+        var designs = projectStore.project.effectiveCustomARDesigns
+        for designIndex in designs.indices {
+            for wallIndex in designs[designIndex].walls.indices {
+                guard let doorIndex = designs[designIndex].walls[wallIndex].doors.firstIndex(
+                    where: { $0.id == id }
+                ) else { continue }
+                designs[designIndex].walls[wallIndex].doors[doorIndex].isOpen.toggle()
+                let isOpen = designs[designIndex].walls[wallIndex].doors[doorIndex].isOpen
+                do {
+                    try projectStore.replaceCustomARDesigns(designs, invalidateWorldMap: false)
+                    customARRenderer.setDoor(id: id, isOpen: isOpen, animated: true)
+                    refreshCustomARCatalog()
+                    setCustomARStatus(isOpen ? "Kapı açıldı" : "Kapı kapandı", color: .green)
+                } catch {
+                    setCustomARStatus(error.localizedDescription, color: .red)
+                }
+                return
+            }
+        }
+    }
+
+    private func customARSurfaceHit(
+        in arView: ARView,
+        at point: CGPoint,
+        frame: ARFrame
+    ) -> (position: SIMD3<Float>, normal: SIMD3<Float>)? {
+        if let depth = sceneDepthSample(frame: frame, in: arView, at: point),
+           let normal = depth.worldNormal,
+           CustomARGeometry.normalizedUpFacing(normal) != nil {
+            return (depth.worldPoint, normal)
+        }
+        if let collision = arView.hitTest(point, query: .all, mask: .all).first(where: {
+            !CustomARRenderer.belongsToCustomAR($0.entity)
+                && entityID(from: $0.entity) == nil
+                && !belongsToRoomReality($0.entity)
+                && !belongsToProjectorVisualization($0.entity)
+                && CustomARGeometry.normalizedUpFacing($0.normal) != nil
+        }) {
+            return (collision.position, collision.normal)
+        }
+        for target in [ARRaycastQuery.Target.existingPlaneGeometry, .estimatedPlane] {
+            guard let result = arView.raycast(from: point, allowing: target, alignment: .any).first else {
+                continue
+            }
+            let position = SIMD3<Float>(
+                result.worldTransform.columns.3.x,
+                result.worldTransform.columns.3.y,
+                result.worldTransform.columns.3.z
+            )
+            let normal = SIMD3<Float>(
+                result.worldTransform.columns.1.x,
+                result.worldTransform.columns.1.y,
+                result.worldTransform.columns.1.z
+            )
+            if CustomARGeometry.normalizedUpFacing(normal) != nil { return (position, normal) }
+        }
+        return nil
+    }
+
+    private func customARPointOnPlane(
+        in arView: ARView,
+        at point: CGPoint,
+        origin: SIMD3<Float>,
+        normal: SIMD3<Float>,
+        measuredPosition: SIMD3<Float>?
+    ) -> SIMD3<Float>? {
+        if let measuredPosition,
+           abs(simd_dot(measuredPosition - origin, normal)) <= 0.12 {
+            return CustomARGeometry.project(measuredPosition, onto: origin, normal: normal)
+        }
+        guard let ray = arView.ray(through: point) else { return nil }
+        let direction = simd_normalize(ray.direction)
+        let denominator = simd_dot(direction, normal)
+        guard abs(denominator) >= 0.02 else { return nil }
+        let distance = simd_dot(origin - ray.origin, normal) / denominator
+        guard distance.isFinite, (0.15...8).contains(distance) else { return nil }
+        return ray.origin + direction * distance
+    }
+
+    private func customARPointInsideDesign(
+        in arView: ARView,
+        at point: CGPoint,
+        design: CustomARDesignRecord
+    ) -> SIMD3<Float>? {
+        guard let origin = design.boundary.first?.simd,
+              let candidate = customARPointOnPlane(
+                in: arView, at: point, origin: origin, normal: design.normal,
+                measuredPosition: nil
+              ),
+              CustomARGeometry.contains(
+                candidate, in: design.boundary.map(\.simd), normal: design.normal
+              ) else { return nil }
+        return candidate
+    }
+
+    private func activeCustomARDesign() -> CustomARDesignRecord? {
+        let designs = projectStore.project.effectiveCustomARDesigns
+        if let activeCustomARAreaID,
+           let selected = designs.first(where: { $0.id == activeCustomARAreaID }) {
+            return selected
+        }
+        return designs.last
+    }
+
+    private func customARWallLocation(
+        id: UUID,
+        designs: [CustomARDesignRecord]
+    ) -> (design: Int, wall: Int)? {
+        for designIndex in designs.indices {
+            if let wallIndex = designs[designIndex].walls.firstIndex(where: { $0.id == id }) {
+                return (designIndex, wallIndex)
+            }
+        }
+        return nil
+    }
+
+    private func commitCustomARDesigns(
+        _ designs: [CustomARDesignRecord],
+        invalidatesWorldMap: Bool
+    ) throws {
+        try projectStore.replaceCustomARDesigns(designs, invalidateWorldMap: invalidatesWorldMap)
+        customARRenderer.render(designs)
+        customARRenderer.isVisible = !designs.isEmpty || isCustomAREditing
+        refreshCustomARCatalog()
+        if invalidatesWorldMap {
+            shouldSaveWorldMapWhenReady = true
+            scheduleReadinessRecovery()
+        }
+    }
+
+    private func refreshCustomARCatalog() {
+        let designs = projectStore.project.effectiveCustomARDesigns
+        if let activeCustomARAreaID,
+           !designs.contains(where: { $0.id == activeCustomARAreaID }) {
+            self.activeCustomARAreaID = designs.last?.id
+        } else if activeCustomARAreaID == nil {
+            activeCustomARAreaID = designs.last?.id
+        }
+        customARAreas = designs.enumerated().map { index, design in
+            CustomARAreaSummary(
+                id: design.id,
+                name: design.name.isEmpty ? "Özel Alan \(index + 1)" : design.name,
+                wallCount: design.walls.count,
+                doorCount: design.walls.reduce(0) { $0 + $1.doors.count },
+                hasCeiling: design.ceiling != nil
+            )
+        }
+        if let activeCustomARAreaID,
+           let design = designs.first(where: { $0.id == activeCustomARAreaID }) {
+            loadCustomARSettings(from: design)
+        }
+    }
+
+    private func loadCustomARSettings(from design: CustomARDesignRecord) {
+        if let wall = design.walls.first {
+            customARWallHeight = wall.height
+            customARWallThickness = wall.thickness
+            customARWallStyle = wall.style
+        }
+        customARCeilingEnabled = design.ceiling != nil
+    }
+
+    private func setCustomARStatus(_ text: String, color: Color) {
+        customARStatus = text
+        customARStatusColor = color
+    }
+
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let arView else { return }
         let point = recognizer.location(in: arView)
@@ -4327,6 +4935,18 @@ final class ARSessionController: NSObject, ObservableObject {
 
         if alignmentReferenceAction != nil {
             beginAlignmentReferenceLock(in: arView, at: point)
+            return
+        }
+
+        if isCustomAREditing {
+            handleCustomARTap(in: arView, at: point)
+            return
+        }
+
+        if !isPlacingProp,
+           let touched = arView.entity(at: point),
+           let doorID = CustomARRenderer.doorID(containing: touched) {
+            toggleCustomARDoor(id: doorID)
             return
         }
 
@@ -4980,6 +5600,29 @@ final class ARSessionController: NSObject, ObservableObject {
             (0.20...5.0).contains($0.depthMeters) ? $0 : nil
         }
         let cameraPosition = arView.cameraTransform.translation
+
+        // Custom AR walls are intentionally virtual, so LiDAR sees the physical
+        // background behind them. Accept their finite collision face as the placement
+        // surface, while a closer measured person/object still blocks selection.
+        if !prop.isWallCladding,
+           let hit = arView.hitTest(point, query: .all, mask: .all).first(where: {
+               CustomARRenderer.wallID(containing: $0.entity) != nil
+                   && wallSurfaceAccepts(normal: $0.normal)
+           }) {
+            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distance
+            ) else { return nil }
+            return wallSolution(
+                position: hit.position,
+                normal: hit.normal,
+                prop: prop,
+                cameraPosition: cameraPosition,
+                source: .customARWall,
+                depth: depth
+            )
+        }
         let scannedWall = roomCoordinateSpaceIsActive
             ? roomRealityRenderer.scannedWallHit(in: arView, at: point)
             : nil
@@ -5126,6 +5769,36 @@ final class ARSessionController: NSObject, ObservableObject {
         guard let frame = arView.session.currentFrame else { return nil }
         let depth = sceneDepthSample(frame: frame, in: arView, at: point)
         let cameraPosition = arView.cameraTransform.translation
+
+        // A Custom AR ceiling is virtual, so scene depth normally reports the real
+        // background ceiling. Use the finite custom collider while still rejecting a
+        // positively measured person or object that is closer to the camera.
+        if let hit = arView.hitTest(point, query: .all, mask: .all).first(where: { hit in
+            guard CustomARRenderer.ceilingID(containing: hit.entity) != nil,
+                  simd_length_squared(hit.normal) > 0.000_001 else { return false }
+            return abs(simd_normalize(hit.normal).y) >= 0.55
+                && hit.position.y > cameraPosition.y + 0.20
+        }) {
+            let measuredDistance = depth.map { simd_distance(cameraPosition, $0.worldPoint) }
+            guard WallPlacementPolicy.persistentWallIsVisible(
+                measuredDistance: measuredDistance,
+                wallDistance: hit.distance
+            ) else { return nil }
+            var normal = simd_normalize(hit.normal)
+            if simd_dot(normal, cameraPosition - hit.position) < 0 { normal = -normal }
+            return PlacementSurfaceSolution(
+                transform: placementTransform(
+                    position: hit.position,
+                    normal: normal,
+                    prop: prop,
+                    cameraPosition: cameraPosition
+                ),
+                position: hit.position,
+                normal: normal,
+                source: .customARCeiling,
+                depthMeters: depth?.depthMeters
+            )
+        }
 
         let classifiedResults = arView.raycast(
             from: point,
@@ -6380,6 +7053,8 @@ final class ARSessionController: NSObject, ObservableObject {
     }
 
     private func rebuildRoomRenderingAfterAlignment() {
+        customARRenderer.render(projectStore.project.effectiveCustomARDesigns)
+        customARRenderer.isVisible = !projectStore.project.effectiveCustomARDesigns.isEmpty
         guard let arView,
               FileManager.default.fileExists(atPath: roomDataURL.path) else { return }
         let wasOutlineVisible = isRoomOutlineVisible
@@ -8455,7 +9130,12 @@ extension ARSessionController: @preconcurrency ARSessionDelegate {
         liveDepthRenderer.update(
             frame: frame,
             enabled: !isSessionInterrupted
-                && (!renderedEntities.isEmpty || isLiveAppleEnabled || roomRealityRenderer.isVisible)
+                && (
+                    !renderedEntities.isEmpty
+                        || isLiveAppleEnabled
+                        || roomRealityRenderer.isVisible
+                        || customARRenderer.isVisible
+                )
         )
         if frame.timestamp - lastOcclusionStatusTimestamp >= 0.5 {
             lastOcclusionStatusTimestamp = frame.timestamp
@@ -8814,6 +9494,8 @@ private enum PlacementSurfaceSource: Equatable {
     case arkitPlane
     case roomPlanGeometry
     case roomPlanLevel
+    case customARWall
+    case customARCeiling
     case deviceCalibration
 
     var title: String {
@@ -8825,6 +9507,8 @@ private enum PlacementSurfaceSource: Equatable {
         case .arkitPlane: "ARKit yüzey"
         case .roomPlanGeometry: "RoomPlan yüzey"
         case .roomPlanLevel: "RoomPlan kotu"
+        case .customARWall: "Özel AR duvarı"
+        case .customARCeiling: "Özel AR tavanı"
         case .deviceCalibration: "Telefon kalibrasyonu"
         }
     }
@@ -9776,6 +10460,7 @@ struct ContentView: View {
     @State private var showingSavedPlaces = false
     @State private var showingCGIStudio = false
     @State private var showingFilmStudio = false
+    @State private var showingCustomARStudio = false
     @State private var roomScanResult: RoomScanResult?
     @State private var controlsExpanded = false
     @State private var sceneObjectPendingDeletion: SceneObjectSummary?
@@ -9792,10 +10477,14 @@ struct ContentView: View {
                 .hueRotation(.degrees(session.activeFilmLook.hueDegrees))
                 .overlay { filmLookOverlay }
 
-            if (session.isPlacingProp || session.isAlignmentReferenceActive),
+            if (session.isPlacingProp || session.isAlignmentReferenceActive || session.isCustomAREditing),
                !session.isRecording,
                !session.isRecordingTransitioning {
-                placementReticle
+                if session.isCustomAREditing {
+                    customARReticle
+                } else {
+                    placementReticle
+                }
             }
 
             if session.isFloorMeterEnabled,
@@ -9821,7 +10510,9 @@ struct ContentView: View {
                     if session.isFloorMeterEnabled {
                         floorMeterPanel
                     }
-                    if session.isPlacingProp {
+                    if session.isCustomAREditing {
+                        customAREditBar
+                    } else if session.isPlacingProp {
                         placementBar
                     } else {
                         if session.selectedLightSettings != nil {
@@ -9893,6 +10584,10 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingFilmStudio) {
             filmStudio
+                .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingCustomARStudio) {
+            customARStudio
                 .presentationDetents([.medium, .large])
         }
     }
@@ -10074,6 +10769,9 @@ struct ContentView: View {
                 }
                 utilityButton("Canlı CGI", "wand.and.stars") {
                     showingCGIStudio = true
+                }
+                utilityButton("Özel AR", "square.3.layers.3d.down.right") {
+                    showingCustomARStudio = true
                 }
                 utilityButton("Film & Gölge", "camera.filters") {
                     showingFilmStudio = true
@@ -10311,6 +11009,9 @@ struct ContentView: View {
             HStack(spacing: 8) {
                 compactButton("Zemin", "ruler.fill") {
                     session.setFloorMeterEnabled(!session.isFloorMeterEnabled)
+                }
+                compactButton("Özel AR", "square.3.layers.3d.down.right") {
+                    showingCustomARStudio = true
                 }
                 compactButton("Kontroller", "slider.horizontal.3") {
                     controlsExpanded = true
@@ -10692,6 +11393,230 @@ struct ContentView: View {
         }
     }
 
+    private var customARStudio: some View {
+        NavigationStack {
+            Form {
+                Section("Özel AR Alanları") {
+                    if session.customARAreas.isEmpty {
+                        Text("Henüz alan yok. Zeminde veya eğimli yüzeyde en az üç köşe çiz.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(session.customARAreas) { area in
+                            Button {
+                                session.selectCustomARArea(id: area.id)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "square.3.layers.3d")
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(area.name).font(.subheadline.weight(.semibold))
+                                        Text(
+                                            "\(area.wallCount) duvar • \(area.doorCount) kapı"
+                                                + (area.hasCeiling ? " • tavan" : "")
+                                        )
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if session.activeCustomARAreaID == area.id {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    Button {
+                        session.beginCustomARAreaDrawing()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("Yeni Alan Çiz", systemImage: "point.3.connected.trianglepath.dotted")
+                    }
+                    .disabled(session.customARAreas.count >= 8)
+                }
+
+                Section("Özel AR Varlık Seti") {
+                    Text(
+                        session.activeCustomARAreaID == nil
+                            ? "Önce bir alan çiz veya kayıtlı alanı seç."
+                            : "Sanal duvar, tavan ve zemin için iPhone'a özel 1K dokulu, boyutu "
+                                + "sınırlandırılmış kaliteli parçalar. Birini seçince yerleştirme açılır."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2),
+                        spacing: 10
+                    ) {
+                        ForEach(PropKind.customARAssetCases) { prop in
+                            Button {
+                                session.selectProp(prop)
+                                showingCustomARStudio = false
+                            } label: {
+                                VStack(spacing: 5) {
+                                    HStack(spacing: 6) {
+                                        Text(prop.symbol).font(.title2)
+                                        if prop == .modernCeilingLamp || prop == .hangingPictureFrame {
+                                            Text("YENİ")
+                                                .font(.caption2.weight(.black))
+                                                .foregroundStyle(.green)
+                                        }
+                                    }
+                                    Text(prop.title)
+                                        .font(.caption.weight(.semibold))
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.75)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 72)
+                                .background(
+                                    .thinMaterial,
+                                    in: RoundedRectangle(cornerRadius: 12)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(session.activeCustomARAreaID == nil)
+                        }
+                    }
+                }
+
+                Section("Duvar Ayarları") {
+                    Picker("Malzeme", selection: $session.customARWallStyle) {
+                        ForEach(CustomARWallStyle.allCases) { style in
+                            Text(style.title).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    customARSlider(
+                        title: "Duvar / tavan yüksekliği",
+                        valueText: String(format: "%.2f m", session.customARWallHeight),
+                        value: Binding(
+                            get: { Double(session.customARWallHeight) },
+                            set: { session.customARWallHeight = Float($0) }
+                        ),
+                        range: 1.50...4.50,
+                        step: 0.05
+                    )
+                    customARSlider(
+                        title: "Kalınlık",
+                        valueText: String(format: "%.0f cm", session.customARWallThickness * 100),
+                        value: Binding(
+                            get: { Double(session.customARWallThickness) },
+                            set: { session.customARWallThickness = Float($0) }
+                        ),
+                        range: 0.05...0.25,
+                        step: 0.01
+                    )
+
+                    Toggle("Tavan oluştur", isOn: $session.customARCeilingEnabled)
+                    Text("Tavan, çizdiğin alanın sınırlarına uyar ve seçilen duvar yüksekliğinde oluşur.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Button("Ayarları Aktif Alana Uygula") {
+                        session.applyCustomARWallSettings()
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+                }
+
+                Section("İç Duvar ve Kapı") {
+                    Button {
+                        session.beginCustomARInteriorWallDrawing()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("İç Duvar Çiz", systemImage: "rectangle.split.3x1")
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+
+                    customARSlider(
+                        title: "Kapı genişliği",
+                        valueText: String(format: "%.2f m", session.customARDoorWidth),
+                        value: Binding(
+                            get: { Double(session.customARDoorWidth) },
+                            set: { session.customARDoorWidth = Float($0) }
+                        ),
+                        range: 0.70...1.80,
+                        step: 0.05
+                    )
+                    customARSlider(
+                        title: "Kapı yüksekliği",
+                        valueText: String(format: "%.2f m", session.customARDoorHeight),
+                        value: Binding(
+                            get: { Double(session.customARDoorHeight) },
+                            set: { session.customARDoorHeight = Float($0) }
+                        ),
+                        range: 1.70...2.60,
+                        step: 0.05
+                    )
+                    Button {
+                        session.beginCustomARDoorPlacement()
+                        if session.isCustomAREditing { showingCustomARStudio = false }
+                    } label: {
+                        Label("Duvara Kapı Ekle", systemImage: "door.left.hand.open")
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+                }
+
+                Section("Durum") {
+                    HStack(alignment: .top, spacing: 8) {
+                        Circle()
+                            .fill(session.customARStatusColor)
+                            .frame(width: 9, height: 9)
+                            .padding(.top, 5)
+                        Text(session.customARStatus)
+                            .font(.caption)
+                    }
+                    Text(
+                        "Alan ve duvarlar AR dünya koordinatında saklanır. Normal Nesneler "
+                            + "menüsündeki duvar objelerini oluşturduğun sanal duvara da yerleştirebilirsin. "
+                            + "Kapı kanadına kamerada dokunmak kapıyı açar veya kapatır."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
+                if session.activeCustomARAreaID != nil {
+                    Section {
+                        Button("Aktif Alanı Sil", role: .destructive) {
+                            session.deleteActiveCustomARArea()
+                        }
+                        Button("Tüm Özel AR Alanlarını Sil", role: .destructive) {
+                            session.deleteAllCustomARAreas()
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Özel AR")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Bitti") { showingCustomARStudio = false }
+                }
+            }
+        }
+    }
+
+    private func customARSlider(
+        title: String,
+        valueText: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double
+    ) -> some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(valueText).font(.caption.monospacedDigit())
+            }
+            Slider(value: value, in: range, step: step)
+        }
+    }
+
     private func lightSliderRow(
         title: String,
         valueText: String,
@@ -10753,6 +11678,44 @@ struct ContentView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
+    private var customAREditBar: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "square.3.layers.3d.down.right")
+                .font(.title2)
+                .foregroundStyle(.cyan)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.customAREditMode.title)
+                    .font(.subheadline.weight(.bold))
+                Text(session.customARStatus)
+                    .font(.caption2)
+                    .foregroundStyle(session.customARStatusColor)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 4)
+            if session.customAREditMode == .drawingArea {
+                Button("Geri") { session.undoCustomARStep() }
+                    .disabled(session.customARDraftPointCount == 0)
+                Button("Alanı Kapat") { session.finishCustomARArea() }
+                    .disabled(session.customARDraftPointCount < 3)
+                    .buttonStyle(.borderedProminent)
+            } else if session.customAREditMode == .drawingWall {
+                Button("Geri") { session.undoCustomARStep() }
+                    .disabled(session.customARDraftPointCount == 0)
+                Button("Bitti") { session.finishCustomARWallDrawing() }
+                    .buttonStyle(.borderedProminent)
+            }
+            Button {
+                session.cancelCustomAREditing()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+        }
+        .padding(11)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
     private var placementReticle: some View {
         GeometryReader { proxy in
             let point = session.placementReticlePoint
@@ -10770,6 +11733,24 @@ struct ContentView: View {
                 Rectangle()
                     .fill(session.placementSurfaceColor)
                     .frame(width: 1, height: 66)
+            }
+            .position(point)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private var customARReticle: some View {
+        GeometryReader { proxy in
+            let point = session.placementReticlePoint
+                ?? CGPoint(x: proxy.size.width * 0.5, y: proxy.size.height * 0.5)
+            ZStack {
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(session.customARStatusColor, style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
+                    .frame(width: 50, height: 50)
+                Circle()
+                    .fill(session.customARStatusColor)
+                    .frame(width: 8, height: 8)
             }
             .position(point)
         }
@@ -11236,6 +12217,953 @@ struct ContentView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
         .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+````
+
+## `CineAR/CustomARDesign.swift`
+
+````swift
+import Foundation
+import simd
+
+struct CustomARVector3: Codable, Equatable, Sendable {
+    var x: Float
+    var y: Float
+    var z: Float
+
+    init(_ value: SIMD3<Float>) {
+        x = value.x
+        y = value.y
+        z = value.z
+    }
+
+    var simd: SIMD3<Float> { [x, y, z] }
+
+    var isFinite: Bool { x.isFinite && y.isFinite && z.isFinite }
+
+    func applying(_ transform: simd_float4x4, direction: Bool = false) -> CustomARVector3 {
+        let transformed = transform * SIMD4<Float>(simd, direction ? 0 : 1)
+        return CustomARVector3([transformed.x, transformed.y, transformed.z])
+    }
+}
+
+enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
+    case studioWhite
+    case concrete
+    case brick
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .studioWhite: "Stüdyo Beyazı"
+        case .concrete: "Beton"
+        case .brick: "Tuğla"
+        }
+    }
+}
+
+struct CustomARDoorRecord: Codable, Identifiable, Equatable, Sendable {
+    let id: UUID
+    /// Door centre measured as a fraction of the wall length.
+    var centerRatio: Float
+    var width: Float
+    var height: Float
+    var isOpen: Bool
+
+    var isValid: Bool {
+        centerRatio.isFinite && (0...1).contains(centerRatio)
+            && width.isFinite && (0.55...2.40).contains(width)
+            && height.isFinite && (1.20...3.20).contains(height)
+    }
+}
+
+struct CustomARCeilingRecord: Codable, Equatable, Sendable {
+    var height: Float
+    var thickness: Float
+    var style: CustomARWallStyle
+
+    var isValid: Bool {
+        height.isFinite && (0.60...6).contains(height)
+            && thickness.isFinite && (0.025...0.40).contains(thickness)
+    }
+}
+
+struct CustomARWallRecord: Codable, Identifiable, Equatable, Sendable {
+    let id: UUID
+    var start: CustomARVector3
+    var end: CustomARVector3
+    var height: Float
+    var thickness: Float
+    var style: CustomARWallStyle
+    var doors: [CustomARDoorRecord]
+
+    var length: Float { simd_distance(start.simd, end.simd) }
+
+    var isValid: Bool {
+        start.isFinite && end.isFinite
+            && length.isFinite && (0.30...20).contains(length)
+            && height.isFinite && (0.60...6).contains(height)
+            && thickness.isFinite && (0.025...0.40).contains(thickness)
+            && doors.count <= 8
+            && Set(doors.map(\.id)).count == doors.count
+            && doors.allSatisfy { door in
+                door.isValid && door.height <= height - 0.08 && door.width <= length - 0.10
+            }
+            && CustomARGeometry.doorsDoNotOverlap(doors, wallLength: length)
+    }
+}
+
+struct CustomARDesignRecord: Codable, Identifiable, Equatable, Sendable {
+    let id: UUID
+    var name: String
+    var boundary: [CustomARVector3]
+    var surfaceNormal: CustomARVector3
+    var walls: [CustomARWallRecord]
+    var ceiling: CustomARCeilingRecord?
+
+    var normal: SIMD3<Float> {
+        let value = surfaceNormal.simd
+        return simd_length_squared(value) > 0.000_001 ? simd_normalize(value) : [0, 1, 0]
+    }
+
+    var isValid: Bool {
+        let doorIDs = walls.flatMap { $0.doors.map(\.id) }
+        guard (3...24).contains(boundary.count), boundary.allSatisfy(\.isFinite),
+              surfaceNormal.isFinite, simd_length_squared(surfaceNormal.simd) > 0.80,
+              simd_length_squared(surfaceNormal.simd) < 1.20,
+              (0.20...400).contains(CustomARGeometry.area(of: boundary.map(\.simd), normal: normal)),
+              (boundary.count...64).contains(walls.count),
+              Set(walls.map(\.id)).count == walls.count,
+              Set(doorIDs).count == doorIDs.count,
+              walls.allSatisfy(\.isValid),
+              ceiling.map({ $0.isValid }) ?? true,
+              !CustomARGeometry.hasSelfIntersection(boundary.map(\.simd), normal: normal)
+        else { return false }
+
+        let origin = boundary[0].simd
+        let allOnSurface = boundary.allSatisfy {
+            abs(simd_dot($0.simd - origin, normal)) <= 0.025
+        }
+        let wallBasesOnSurface = walls.allSatisfy {
+            abs(simd_dot($0.start.simd - origin, normal)) <= 0.035
+                && abs(simd_dot($0.end.simd - origin, normal)) <= 0.035
+        }
+        let boundaryPoints = boundary.map(\.simd)
+        let wallBasesInsideArea = walls.allSatisfy {
+            CustomARGeometry.segmentIsInside(
+                start: $0.start.simd,
+                end: $0.end.simd,
+                boundary: boundaryPoints,
+                normal: normal
+            )
+        }
+        let perimeterMatchesBoundary = boundary.indices.allSatisfy { index in
+            let wall = walls[index]
+            return simd_distance(wall.start.simd, boundary[index].simd) <= 0.015
+                && simd_distance(
+                    wall.end.simd,
+                    boundary[(index + 1) % boundary.count].simd
+                ) <= 0.015
+        }
+        let ceilingCanRender = ceiling == nil
+            || !CustomARGeometry.triangulatedIndices(for: boundaryPoints, normal: normal).isEmpty
+        return allOnSurface && wallBasesOnSurface && wallBasesInsideArea
+            && perimeterMatchesBoundary && ceilingCanRender
+    }
+
+    func applying(_ transform: simd_float4x4) -> CustomARDesignRecord {
+        var copy = self
+        copy.boundary = boundary.map { $0.applying(transform) }
+        let transformedNormal = surfaceNormal.applying(transform, direction: true).simd
+        copy.surfaceNormal = CustomARVector3(
+            simd_length_squared(transformedNormal) > 0.000_001
+                ? simd_normalize(transformedNormal)
+                : normal
+        )
+        copy.walls = walls.map { wall in
+            var corrected = wall
+            corrected.start = wall.start.applying(transform)
+            corrected.end = wall.end.applying(transform)
+            return corrected
+        }
+        return copy
+    }
+}
+
+enum CustomARGeometryError: LocalizedError {
+    case tooFewPoints
+    case invalidSurface
+    case areaTooSmall
+    case selfIntersection
+    case wallTooShort
+    case outsideArea
+    case wallNotFound
+    case doorDoesNotFit
+    case doorOverlap
+
+    var errorDescription: String? {
+        switch self {
+        case .tooFewPoints: "Alan için en az üç köşe gerekli"
+        case .invalidSurface: "Noktalar aynı düz veya eğimli yüzeyde değil"
+        case .areaTooSmall: "Çizilen alan çok küçük"
+        case .selfIntersection: "Alan kenarları birbiriyle kesişemez"
+        case .wallTooShort: "Duvar en az 30 cm uzunluğunda olmalı"
+        case .outsideArea: "Duvar başlangıcı ve bitişi çizilen alanın içinde olmalı"
+        case .wallNotFound: "Kapı için bir özel AR duvarına dokun"
+        case .doorDoesNotFit: "Bu duvar seçilen kapı için yeterince geniş değil"
+        case .doorOverlap: "Yeni kapı mevcut bir kapıyla çakışıyor"
+        }
+    }
+}
+
+enum CustomARGeometry {
+    static func normalizedUpFacing(_ normal: SIMD3<Float>) -> SIMD3<Float>? {
+        guard [normal.x, normal.y, normal.z].allSatisfy(\.isFinite),
+              simd_length_squared(normal) > 0.000_001 else { return nil }
+        var result = simd_normalize(normal)
+        if simd_dot(result, [0, 1, 0]) < 0 { result = -result }
+        // A design floor may be inclined, but a near-vertical base is not usable.
+        return simd_dot(result, [0, 1, 0]) >= 0.20 ? result : nil
+    }
+
+    static func project(_ point: SIMD3<Float>, onto origin: SIMD3<Float>, normal: SIMD3<Float>) -> SIMD3<Float> {
+        point - normal * simd_dot(point - origin, normal)
+    }
+
+    static func basis(for normal: SIMD3<Float>) -> (u: SIMD3<Float>, v: SIMD3<Float>) {
+        let reference: SIMD3<Float> = abs(normal.y) < 0.90 ? [0, 1, 0] : [1, 0, 0]
+        let u = simd_normalize(simd_cross(reference, normal))
+        return (u, simd_normalize(simd_cross(normal, u)))
+    }
+
+    static func localPoints(_ points: [SIMD3<Float>], normal: SIMD3<Float>) -> [SIMD2<Float>] {
+        guard let origin = points.first else { return [] }
+        let axes = basis(for: normal)
+        return points.map {
+            let delta = $0 - origin
+            return [simd_dot(delta, axes.u), simd_dot(delta, axes.v)]
+        }
+    }
+
+    static func area(of points: [SIMD3<Float>], normal: SIMD3<Float>) -> Float {
+        let local = localPoints(points, normal: normal)
+        guard local.count >= 3 else { return 0 }
+        var doubled: Float = 0
+        for index in local.indices {
+            let next = local[(index + 1) % local.count]
+            doubled += local[index].x * next.y - next.x * local[index].y
+        }
+        return abs(doubled) * 0.5
+    }
+
+    static func hasSelfIntersection(_ points: [SIMD3<Float>], normal: SIMD3<Float>) -> Bool {
+        let polygon = localPoints(points, normal: normal)
+        guard polygon.count >= 4 else { return false }
+        for first in polygon.indices {
+            let firstNext = (first + 1) % polygon.count
+            for second in polygon.indices {
+                let secondNext = (second + 1) % polygon.count
+                if first == second || firstNext == second || secondNext == first { continue }
+                if first == 0 && secondNext == 0 { continue }
+                if segmentsIntersect(
+                    polygon[first], polygon[firstNext], polygon[second], polygon[secondNext]
+                ) { return true }
+            }
+        }
+        return false
+    }
+
+    static func contains(_ point: SIMD3<Float>, in boundary: [SIMD3<Float>], normal: SIMD3<Float>) -> Bool {
+        guard boundary.count >= 3 else { return false }
+        let axes = basis(for: normal)
+        let origin = boundary[0]
+        func local(_ value: SIMD3<Float>) -> SIMD2<Float> {
+            let delta = value - origin
+            return [simd_dot(delta, axes.u), simd_dot(delta, axes.v)]
+        }
+        let polygon = boundary.map(local)
+        let target = local(project(point, onto: origin, normal: normal))
+        var inside = false
+        var previous = polygon.count - 1
+        for current in polygon.indices {
+            let a = polygon[current]
+            let b = polygon[previous]
+            if pointToSegmentDistance(target, a, b) <= 0.04 { return true }
+            let crosses = (a.y > target.y) != (b.y > target.y)
+                && target.x < (b.x - a.x) * (target.y - a.y) / (b.y - a.y) + a.x
+            if crosses { inside.toggle() }
+            previous = current
+        }
+        return inside
+    }
+
+    static func makeDesign(
+        id: UUID = UUID(),
+        name: String,
+        boundary rawBoundary: [SIMD3<Float>],
+        normal rawNormal: SIMD3<Float>,
+        wallHeight: Float,
+        wallThickness: Float,
+        style: CustomARWallStyle,
+        ceilingEnabled: Bool = false
+    ) throws -> CustomARDesignRecord {
+        guard rawBoundary.count >= 3 else { throw CustomARGeometryError.tooFewPoints }
+        guard rawBoundary.count <= 24, let normal = normalizedUpFacing(rawNormal) else {
+            throw CustomARGeometryError.invalidSurface
+        }
+        let origin = rawBoundary[0]
+        guard rawBoundary.allSatisfy({ abs(simd_dot($0 - origin, normal)) <= 0.12 }) else {
+            throw CustomARGeometryError.invalidSurface
+        }
+        let boundary = rawBoundary.map { project($0, onto: origin, normal: normal) }
+        guard area(of: boundary, normal: normal) >= 0.20 else {
+            throw CustomARGeometryError.areaTooSmall
+        }
+        guard !hasSelfIntersection(boundary, normal: normal) else {
+            throw CustomARGeometryError.selfIntersection
+        }
+        let height = min(max(wallHeight, 0.60), 6)
+        let thickness = min(max(wallThickness, 0.025), 0.40)
+        var walls: [CustomARWallRecord] = []
+        for index in boundary.indices {
+            let next = boundary[(index + 1) % boundary.count]
+            guard simd_distance(boundary[index], next) >= 0.30 else {
+                throw CustomARGeometryError.wallTooShort
+            }
+            walls.append(CustomARWallRecord(
+                id: UUID(), start: CustomARVector3(boundary[index]), end: CustomARVector3(next),
+                height: height, thickness: thickness, style: style, doors: []
+            ))
+        }
+        let design = CustomARDesignRecord(
+            id: id,
+            name: name,
+            boundary: boundary.map { CustomARVector3($0) },
+            surfaceNormal: CustomARVector3(normal),
+            walls: walls,
+            ceiling: ceilingEnabled
+                ? CustomARCeilingRecord(height: height, thickness: thickness, style: style)
+                : nil
+        )
+        guard design.isValid else { throw CustomARGeometryError.invalidSurface }
+        return design
+    }
+
+    static func makeInteriorWall(
+        start rawStart: SIMD3<Float>,
+        end rawEnd: SIMD3<Float>,
+        in design: CustomARDesignRecord,
+        height: Float,
+        thickness: Float,
+        style: CustomARWallStyle
+    ) throws -> CustomARWallRecord {
+        let origin = design.boundary[0].simd
+        let start = project(rawStart, onto: origin, normal: design.normal)
+        let end = project(rawEnd, onto: origin, normal: design.normal)
+        guard segmentIsInside(
+            start: start,
+            end: end,
+            boundary: design.boundary.map(\.simd),
+            normal: design.normal
+        ) else {
+            throw CustomARGeometryError.outsideArea
+        }
+        guard simd_distance(start, end) >= 0.30 else { throw CustomARGeometryError.wallTooShort }
+        let wall = CustomARWallRecord(
+            id: UUID(), start: CustomARVector3(start), end: CustomARVector3(end),
+            height: min(max(height, 0.60), 6),
+            thickness: min(max(thickness, 0.025), 0.40),
+            style: style,
+            doors: []
+        )
+        guard wall.isValid else { throw CustomARGeometryError.invalidSurface }
+        return wall
+    }
+
+    static func door(
+        id: UUID = UUID(),
+        on wall: CustomARWallRecord,
+        at point: SIMD3<Float>,
+        width requestedWidth: Float = 0.90,
+        height requestedHeight: Float = 2.05
+    ) throws -> CustomARDoorRecord {
+        let direction = simd_normalize(wall.end.simd - wall.start.simd)
+        let distance = simd_dot(point - wall.start.simd, direction)
+        let width = min(max(requestedWidth, 0.55), 2.40)
+        let height = min(max(requestedHeight, 1.20), min(3.20, wall.height - 0.08))
+        guard wall.length >= width + 0.20, height >= 1.20 else {
+            throw CustomARGeometryError.doorDoesNotFit
+        }
+        let margin = width * 0.5 + 0.05
+        let center = min(max(distance, margin), wall.length - margin)
+        let candidate = CustomARDoorRecord(
+            id: id, centerRatio: center / wall.length,
+            width: width, height: height, isOpen: false
+        )
+        guard candidate.isValid else { throw CustomARGeometryError.doorDoesNotFit }
+        guard doorsDoNotOverlap(wall.doors + [candidate], wallLength: wall.length) else {
+            throw CustomARGeometryError.doorOverlap
+        }
+        return candidate
+    }
+
+    static func doorsDoNotOverlap(_ doors: [CustomARDoorRecord], wallLength: Float) -> Bool {
+        guard wallLength.isFinite, wallLength > 0 else { return false }
+        let intervals = doors.map {
+            let center = $0.centerRatio * wallLength
+            return (center - $0.width * 0.5, center + $0.width * 0.5)
+        }.sorted { $0.0 < $1.0 }
+        guard intervals.allSatisfy({ interval in
+            interval.0 >= 0.049 && interval.1 <= wallLength - 0.049
+        }) else { return false }
+        guard intervals.count >= 2 else { return true }
+        for index in 1..<intervals.count where intervals[index].0 < intervals[index - 1].1 + 0.05 {
+            return false
+        }
+        return true
+    }
+
+    static func segmentIsInside(
+        start: SIMD3<Float>,
+        end: SIMD3<Float>,
+        boundary: [SIMD3<Float>],
+        normal: SIMD3<Float>
+    ) -> Bool {
+        let length = simd_distance(start, end)
+        guard length.isFinite else { return false }
+        let steps = max(2, Int((length / 0.08).rounded(.up)))
+        for step in 0...steps {
+            let ratio = Float(step) / Float(steps)
+            if !contains(start + (end - start) * ratio, in: boundary, normal: normal) {
+                return false
+            }
+        }
+        return true
+    }
+
+    /// Returns triangles with winding toward `normal`. Ear clipping keeps the ceiling
+    /// inside concave user-drawn boundaries instead of covering their bounding box.
+    static func triangulatedIndices(
+        for points: [SIMD3<Float>],
+        normal: SIMD3<Float>
+    ) -> [UInt32] {
+        let polygon = localPoints(points, normal: normal)
+        guard polygon.count >= 3 else { return [] }
+
+        func cross(_ a: SIMD2<Float>, _ b: SIMD2<Float>, _ c: SIMD2<Float>) -> Float {
+            let ab = b - a, ac = c - a
+            return ab.x * ac.y - ab.y * ac.x
+        }
+        var signedArea: Float = 0
+        for index in polygon.indices {
+            let next = polygon[(index + 1) % polygon.count]
+            signedArea += polygon[index].x * next.y - next.x * polygon[index].y
+        }
+        guard abs(signedArea) > 0.000_001 else { return [] }
+        let winding: Float = signedArea > 0 ? 1 : -1
+
+        func isInsideTriangle(
+            _ point: SIMD2<Float>,
+            _ a: SIMD2<Float>,
+            _ b: SIMD2<Float>,
+            _ c: SIMD2<Float>
+        ) -> Bool {
+            let epsilon: Float = 0.000_001
+            return cross(a, b, point) * winding >= -epsilon
+                && cross(b, c, point) * winding >= -epsilon
+                && cross(c, a, point) * winding >= -epsilon
+        }
+
+        var remaining = Array(polygon.indices)
+        var result: [UInt32] = []
+        result.reserveCapacity((polygon.count - 2) * 3)
+        while remaining.count > 3 {
+            var clippedEar = false
+            for position in remaining.indices {
+                let previous = remaining[(position + remaining.count - 1) % remaining.count]
+                let current = remaining[position]
+                let next = remaining[(position + 1) % remaining.count]
+                guard cross(polygon[previous], polygon[current], polygon[next]) * winding
+                        > 0.000_001 else { continue }
+                let containsVertex = remaining.contains { candidate in
+                    guard candidate != previous, candidate != current, candidate != next else {
+                        return false
+                    }
+                    return isInsideTriangle(
+                        polygon[candidate], polygon[previous], polygon[current], polygon[next]
+                    )
+                }
+                guard !containsVertex else { continue }
+                if winding > 0 {
+                    result.append(contentsOf: [UInt32(previous), UInt32(current), UInt32(next)])
+                } else {
+                    result.append(contentsOf: [UInt32(previous), UInt32(next), UInt32(current)])
+                }
+                remaining.remove(at: position)
+                clippedEar = true
+                break
+            }
+            guard clippedEar else { return [] }
+        }
+        if winding > 0 {
+            result.append(contentsOf: remaining.map { UInt32($0) })
+        } else {
+            result.append(contentsOf: [UInt32(remaining[0]), UInt32(remaining[2]), UInt32(remaining[1])])
+        }
+        return result
+    }
+
+    private static func segmentsIntersect(
+        _ a: SIMD2<Float>, _ b: SIMD2<Float>, _ c: SIMD2<Float>, _ d: SIMD2<Float>
+    ) -> Bool {
+        func cross(_ p: SIMD2<Float>, _ q: SIMD2<Float>, _ r: SIMD2<Float>) -> Float {
+            let pq = q - p, pr = r - p
+            return pq.x * pr.y - pq.y * pr.x
+        }
+        func liesOnSegment(_ point: SIMD2<Float>, _ start: SIMD2<Float>, _ end: SIMD2<Float>) -> Bool {
+            let epsilon: Float = 0.000_1
+            return point.x >= min(start.x, end.x) - epsilon
+                && point.x <= max(start.x, end.x) + epsilon
+                && point.y >= min(start.y, end.y) - epsilon
+                && point.y <= max(start.y, end.y) + epsilon
+        }
+
+        let epsilon: Float = 0.000_001
+        let abC = cross(a, b, c), abD = cross(a, b, d)
+        let cdA = cross(c, d, a), cdB = cross(c, d, b)
+        if abC * abD < -epsilon && cdA * cdB < -epsilon { return true }
+        if abs(abC) <= epsilon, liesOnSegment(c, a, b) { return true }
+        if abs(abD) <= epsilon, liesOnSegment(d, a, b) { return true }
+        if abs(cdA) <= epsilon, liesOnSegment(a, c, d) { return true }
+        if abs(cdB) <= epsilon, liesOnSegment(b, c, d) { return true }
+        return false
+    }
+
+    private static func pointToSegmentDistance(
+        _ point: SIMD2<Float>, _ start: SIMD2<Float>, _ end: SIMD2<Float>
+    ) -> Float {
+        let segment = end - start
+        let lengthSquared = simd_length_squared(segment)
+        guard lengthSquared > 0.000_001 else { return simd_distance(point, start) }
+        let t = min(max(simd_dot(point - start, segment) / lengthSquared, 0), 1)
+        return simd_distance(point, start + segment * t)
+    }
+}
+````
+
+## `CineAR/CustomARRenderer.swift`
+
+````swift
+import RealityKit
+import UIKit
+import simd
+
+@MainActor
+final class CustomARRenderer {
+    private static let rootName = "synapmantis.custom-ar.root"
+    private static let wallPrefix = "synapmantis.custom-ar.wall."
+    private static let doorPrefix = "synapmantis.custom-ar.door."
+    private static let ceilingPrefix = "synapmantis.custom-ar.ceiling."
+
+    private(set) var rootEntity = AnchorEntity(world: .zero)
+    private var contentEntity = Entity()
+    private var draftEntity = Entity()
+    private weak var installedARView: ARView?
+
+    init() {
+        configureRoot()
+    }
+
+    var isVisible: Bool {
+        get { rootEntity.isEnabled }
+        set { rootEntity.isEnabled = newValue }
+    }
+
+    func install(in arView: ARView) {
+        if installedARView !== arView {
+            installedARView?.scene.removeAnchor(rootEntity)
+        }
+        if rootEntity.scene !== arView.scene {
+            rootEntity.scene?.removeAnchor(rootEntity)
+            arView.scene.addAnchor(rootEntity)
+        }
+        installedARView = arView
+    }
+
+    func reattachWorldAnchor(in arView: ARView) {
+        let wasVisible = rootEntity.isEnabled
+        rootEntity.scene?.removeAnchor(rootEntity)
+        contentEntity.removeFromParent()
+        draftEntity.removeFromParent()
+        rootEntity = AnchorEntity(world: .zero)
+        rootEntity.name = Self.rootName
+        rootEntity.isEnabled = wasVisible
+        rootEntity.addChild(contentEntity)
+        rootEntity.addChild(draftEntity)
+        arView.scene.addAnchor(rootEntity)
+        installedARView = arView
+    }
+
+    func clear() {
+        contentEntity.removeFromParent()
+        draftEntity.removeFromParent()
+        contentEntity = Entity()
+        draftEntity = Entity()
+        contentEntity.name = "synapmantis.custom-ar.content"
+        draftEntity.name = "synapmantis.custom-ar.draft"
+        rootEntity.addChild(contentEntity)
+        rootEntity.addChild(draftEntity)
+    }
+
+    func clearDraft() {
+        draftEntity.removeFromParent()
+        draftEntity = Entity()
+        draftEntity.name = "synapmantis.custom-ar.draft"
+        rootEntity.addChild(draftEntity)
+    }
+
+    func render(_ designs: [CustomARDesignRecord]) {
+        let staging = Entity()
+        staging.name = "synapmantis.custom-ar.content"
+        for design in designs where design.isValid {
+            let designRoot = Entity()
+            designRoot.name = "synapmantis.custom-ar.area.\(design.id.uuidString)"
+            addBoundary(design, to: designRoot)
+            for wall in design.walls {
+                if let wallEntity = makeWall(wall, surfaceNormal: design.normal) {
+                    designRoot.addChild(wallEntity)
+                }
+            }
+            if let ceiling = design.ceiling,
+               let ceilingEntity = makeCeiling(ceiling, for: design) {
+                designRoot.addChild(ceilingEntity)
+            }
+            staging.addChild(designRoot)
+        }
+        contentEntity.removeFromParent()
+        contentEntity = staging
+        rootEntity.addChild(contentEntity)
+    }
+
+    func showAreaDraft(points: [SIMD3<Float>], closeLoop: Bool) {
+        let staging = Entity()
+        staging.name = "synapmantis.custom-ar.draft"
+        let pointMaterial = SimpleMaterial(color: .systemYellow, roughness: 0.25, isMetallic: false)
+        let lineMaterial = SimpleMaterial(color: .systemCyan, roughness: 0.35, isMetallic: false)
+        for (index, point) in points.enumerated() {
+            let marker = ModelEntity(mesh: .generateSphere(radius: 0.035), materials: [pointMaterial])
+            marker.name = "synapmantis.custom-ar.draft.point.\(index)"
+            marker.position = point
+            staging.addChild(marker)
+            if index > 0 {
+                staging.addChild(makeLine(from: points[index - 1], to: point, material: lineMaterial))
+            }
+        }
+        if closeLoop, points.count >= 3, let first = points.first, let last = points.last {
+            staging.addChild(makeLine(from: last, to: first, material: lineMaterial))
+        }
+        replaceDraft(with: staging)
+    }
+
+    func showWallDraft(start: SIMD3<Float>?, end: SIMD3<Float>? = nil) {
+        let staging = Entity()
+        staging.name = "synapmantis.custom-ar.draft"
+        let material = SimpleMaterial(color: .systemOrange, roughness: 0.25, isMetallic: false)
+        if let start {
+            let marker = ModelEntity(mesh: .generateSphere(radius: 0.045), materials: [material])
+            marker.position = start
+            staging.addChild(marker)
+            if let end {
+                staging.addChild(makeLine(from: start, to: end, thickness: 0.025, material: material))
+            }
+        }
+        replaceDraft(with: staging)
+    }
+
+    func setDoor(id: UUID, isOpen: Bool, animated: Bool) {
+        guard let hinge = rootEntity.findEntity(named: Self.doorPrefix + id.uuidString) else { return }
+        var target = hinge.transform
+        target.rotation = simd_quatf(
+            angle: isOpen ? -.pi * 0.52 : 0,
+            axis: [0, 1, 0]
+        )
+        if animated, let parent = hinge.parent {
+            hinge.move(to: target, relativeTo: parent, duration: 0.38, timingFunction: .easeInOut)
+        } else {
+            hinge.transform = target
+        }
+    }
+
+    static func wallID(containing entity: Entity?) -> UUID? {
+        identifier(containing: entity, prefix: wallPrefix)
+    }
+
+    static func doorID(containing entity: Entity?) -> UUID? {
+        identifier(containing: entity, prefix: doorPrefix)
+    }
+
+    static func ceilingID(containing entity: Entity?) -> UUID? {
+        identifier(containing: entity, prefix: ceilingPrefix)
+    }
+
+    static func belongsToCustomAR(_ entity: Entity?) -> Bool {
+        var candidate = entity
+        while let current = candidate {
+            if current.name.hasPrefix("synapmantis.custom-ar.") { return true }
+            candidate = current.parent
+        }
+        return false
+    }
+
+    private func configureRoot() {
+        rootEntity.name = Self.rootName
+        contentEntity.name = "synapmantis.custom-ar.content"
+        draftEntity.name = "synapmantis.custom-ar.draft"
+        if contentEntity.parent == nil { rootEntity.addChild(contentEntity) }
+        if draftEntity.parent == nil { rootEntity.addChild(draftEntity) }
+    }
+
+    private func replaceDraft(with staging: Entity) {
+        draftEntity.removeFromParent()
+        draftEntity = staging
+        rootEntity.addChild(draftEntity)
+    }
+
+    private func addBoundary(_ design: CustomARDesignRecord, to parent: Entity) {
+        let points = design.boundary.map(\.simd)
+        guard points.count >= 3 else { return }
+        let material = SimpleMaterial(
+            color: UIColor.systemCyan.withAlphaComponent(0.82),
+            roughness: 0.30,
+            isMetallic: false
+        )
+        let lift = design.normal * 0.012
+        for index in points.indices {
+            parent.addChild(makeLine(
+                from: points[index] + lift,
+                to: points[(index + 1) % points.count] + lift,
+                thickness: 0.014,
+                material: material
+            ))
+        }
+    }
+
+    private func makeWall(
+        _ wall: CustomARWallRecord,
+        surfaceNormal: SIMD3<Float>
+    ) -> Entity? {
+        let vector = wall.end.simd - wall.start.simd
+        let length = simd_length(vector)
+        guard length >= 0.30 else { return nil }
+        let direction = vector / length
+        let up = simd_normalize(surfaceNormal)
+        let face = simd_cross(direction, up)
+        guard simd_length_squared(face) > 0.000_001 else { return nil }
+        let forward = simd_normalize(face)
+
+        let root = Entity()
+        root.name = Self.wallPrefix + wall.id.uuidString
+        var transform = matrix_identity_float4x4
+        transform.columns.0 = SIMD4<Float>(direction, 0)
+        transform.columns.1 = SIMD4<Float>(up, 0)
+        transform.columns.2 = SIMD4<Float>(forward, 0)
+        transform.columns.3 = SIMD4<Float>(wall.start.simd, 1)
+        root.transform = Transform(matrix: transform)
+
+        let material = wallMaterial(wall.style)
+        if wall.doors.isEmpty {
+            addWallBox(
+                to: root, width: length, height: wall.height, depth: wall.thickness,
+                center: [length * 0.5, wall.height * 0.5, 0], material: material
+            )
+            return root
+        }
+
+        let doors = wall.doors.sorted { $0.centerRatio < $1.centerRatio }
+        var cursor: Float = 0
+        for door in doors {
+            let center = door.centerRatio * length
+            let openingStart = max(cursor, center - door.width * 0.5)
+            let openingEnd = min(length, center + door.width * 0.5)
+            if openingStart > cursor + 0.01 {
+                let segment = openingStart - cursor
+                addWallBox(
+                    to: root, width: segment, height: wall.height, depth: wall.thickness,
+                    center: [cursor + segment * 0.5, wall.height * 0.5, 0], material: material
+                )
+            }
+            let lintelHeight = wall.height - door.height
+            if lintelHeight > 0.01 {
+                addWallBox(
+                    to: root, width: openingEnd - openingStart,
+                    height: lintelHeight, depth: wall.thickness,
+                    center: [
+                        (openingStart + openingEnd) * 0.5,
+                        door.height + lintelHeight * 0.5,
+                        0
+                    ],
+                    material: material
+                )
+            }
+            addDoor(
+                door, openingStart: openingStart, wallThickness: wall.thickness, to: root
+            )
+            cursor = openingEnd
+        }
+        if cursor < length - 0.01 {
+            let segment = length - cursor
+            addWallBox(
+                to: root, width: segment, height: wall.height, depth: wall.thickness,
+                center: [cursor + segment * 0.5, wall.height * 0.5, 0], material: material
+            )
+        }
+        return root
+    }
+
+    private func addWallBox(
+        to parent: Entity,
+        width: Float,
+        height: Float,
+        depth: Float,
+        center: SIMD3<Float>,
+        material: SimpleMaterial
+    ) {
+        guard width > 0.01, height > 0.01, depth > 0.01 else { return }
+        let size = SIMD3<Float>(width, height, depth)
+        let box = ModelEntity(
+            mesh: .generateBox(size: size, cornerRadius: min(depth * 0.08, 0.008)),
+            materials: [material]
+        )
+        box.name = "synapmantis.custom-ar.wall.segment"
+        box.position = center
+        box.collision = CollisionComponent(shapes: [ShapeResource.generateBox(size: size)])
+        parent.addChild(box)
+    }
+
+    private func addDoor(
+        _ door: CustomARDoorRecord,
+        openingStart: Float,
+        wallThickness: Float,
+        to parent: Entity
+    ) {
+        let hinge = Entity()
+        hinge.name = Self.doorPrefix + door.id.uuidString
+        hinge.position = [openingStart, 0, wallThickness * 0.54]
+        hinge.orientation = simd_quatf(
+            angle: door.isOpen ? -.pi * 0.52 : 0,
+            axis: [0, 1, 0]
+        )
+        let panelSize = SIMD3<Float>(door.width, door.height, max(0.035, wallThickness * 0.45))
+        let panel = ModelEntity(
+            mesh: .generateBox(size: panelSize, cornerRadius: 0.012),
+            materials: [SimpleMaterial(
+                color: UIColor(red: 0.16, green: 0.11, blue: 0.075, alpha: 1),
+                roughness: 0.72,
+                isMetallic: false
+            )]
+        )
+        panel.name = "synapmantis.custom-ar.door.panel"
+        panel.position = [door.width * 0.5, door.height * 0.5, 0]
+        panel.collision = CollisionComponent(shapes: [ShapeResource.generateBox(size: panelSize)])
+        hinge.addChild(panel)
+
+        let handle = ModelEntity(
+            mesh: .generateSphere(radius: 0.028),
+            materials: [SimpleMaterial(color: .lightGray, roughness: 0.22, isMetallic: true)]
+        )
+        handle.name = "synapmantis.custom-ar.door.handle"
+        handle.position = [door.width * 0.82, door.height * 0.52, panelSize.z * 0.58]
+        panel.addChild(handle)
+        parent.addChild(hinge)
+    }
+
+    private func makeCeiling(
+        _ ceiling: CustomARCeilingRecord,
+        for design: CustomARDesignRecord
+    ) -> ModelEntity? {
+        let basePoints = design.boundary.map { $0.simd + design.normal * ceiling.height }
+        let topFacingIndices = CustomARGeometry.triangulatedIndices(
+            for: basePoints,
+            normal: design.normal
+        )
+        guard topFacingIndices.count >= 3 else { return nil }
+
+        var undersideIndices: [UInt32] = []
+        undersideIndices.reserveCapacity(topFacingIndices.count)
+        for index in stride(from: 0, to: topFacingIndices.count, by: 3) {
+            undersideIndices.append(contentsOf: [
+                topFacingIndices[index], topFacingIndices[index + 2], topFacingIndices[index + 1]
+            ])
+        }
+        var descriptor = MeshDescriptor(name: "synapmantis.custom-ar.ceiling.mesh")
+        descriptor.positions = MeshBuffers.Positions(basePoints)
+        descriptor.normals = MeshBuffers.Normals(
+            Array(repeating: -design.normal, count: basePoints.count)
+        )
+        descriptor.primitives = .triangles(undersideIndices)
+        guard let mesh = try? MeshResource.generate(from: [descriptor]) else { return nil }
+        let entity = ModelEntity(mesh: mesh, materials: [wallMaterial(ceiling.style)])
+        entity.name = Self.ceilingPrefix + design.id.uuidString
+
+        var collisionShapes: [ShapeResource] = []
+        let lift = design.normal * ceiling.thickness
+        for index in stride(from: 0, to: topFacingIndices.count, by: 3) {
+            let a = basePoints[Int(topFacingIndices[index])]
+            let b = basePoints[Int(topFacingIndices[index + 1])]
+            let c = basePoints[Int(topFacingIndices[index + 2])]
+            collisionShapes.append(ShapeResource.generateConvex(from: [
+                a, b, c, a + lift, b + lift, c + lift
+            ]))
+        }
+        entity.collision = CollisionComponent(shapes: collisionShapes)
+        return entity
+    }
+
+    private func wallMaterial(_ style: CustomARWallStyle) -> SimpleMaterial {
+        switch style {
+        case .studioWhite:
+            SimpleMaterial(color: UIColor(white: 0.93, alpha: 1), roughness: 0.78, isMetallic: false)
+        case .concrete:
+            SimpleMaterial(color: UIColor(white: 0.43, alpha: 1), roughness: 0.94, isMetallic: false)
+        case .brick:
+            SimpleMaterial(
+                color: UIColor(red: 0.42, green: 0.16, blue: 0.095, alpha: 1),
+                roughness: 0.91,
+                isMetallic: false
+            )
+        }
+    }
+
+    private func makeLine(
+        from start: SIMD3<Float>,
+        to end: SIMD3<Float>,
+        thickness: Float = 0.018,
+        material: SimpleMaterial
+    ) -> ModelEntity {
+        let vector = end - start
+        let length = max(simd_length(vector), 0.001)
+        let line = ModelEntity(
+            mesh: .generateBox(size: [length, thickness, thickness], cornerRadius: thickness * 0.35),
+            materials: [material]
+        )
+        line.name = "synapmantis.custom-ar.guide"
+        line.position = (start + end) * 0.5
+        line.orientation = simd_quatf(from: [1, 0, 0], to: vector / length)
+        return line
+    }
+
+    private static func identifier(containing entity: Entity?, prefix: String) -> UUID? {
+        var candidate = entity
+        while let current = candidate {
+            if current.name.hasPrefix(prefix) {
+                let value = String(current.name.dropFirst(prefix.count))
+                if let id = UUID(uuidString: value) { return id }
+            }
+            candidate = current.parent
+        }
+        return nil
     }
 }
 ````
@@ -12120,7 +14048,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case bloodWaterfall
     case apple
 
-    // Curated Poly Haven CC0 photoreal catalog (36 props + 2 wall panels).
+    // Curated Poly Haven CC0 photoreal catalog (38 props + 2 wall panels).
     case metalOfficeDesk
     case schoolChair
     case schoolDesk
@@ -12142,8 +14070,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     case powerBox
     case payphone
     case wallClock
+    case hangingPictureFrame
     case cagedCeilingLight
     case industrialPendant
+    case modernCeilingLamp
     case ceilingFan
     case industrialWallLamp
     case cagedWallLight
@@ -12210,8 +14140,10 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .powerBox: "Elektrik Panosu"
         case .payphone: "Eski Ankesörlü Telefon"
         case .wallClock: "Duvar Saati"
+        case .hangingPictureFrame: "Asılı Sanat Çerçevesi"
         case .cagedCeilingLight: "Kafesli Tavan Işığı"
         case .industrialPendant: "Endüstriyel Sarkıt"
+        case .modernCeilingLamp: "Modern Tavan Lambası"
         case .ceilingFan: "Tavan Vantilatörü"
         case .industrialWallLamp: "Endüstriyel Duvar Işığı"
         case .cagedWallLight: "Kafesli Duvar Işığı"
@@ -12235,7 +14167,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .wall: "🧱"
         case .stage: "🎬"
         case .crate, .cardboardBox, .plasticCrate, .woodenCrate: "📦"
-        case .lightPanel, .cagedCeilingLight, .industrialPendant,
+        case .lightPanel, .cagedCeilingLight, .industrialPendant, .modernCeilingLamp,
              .industrialWallLamp, .cagedWallLight, .deskLamp: "💡"
         case .chair, .schoolChair, .plasticChair, .modernArmchair: "🪑"
         case .table, .metalOfficeDesk, .schoolDesk: "🗄️"
@@ -12270,6 +14202,7 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
         case .powerBox: "⚡"
         case .payphone: "☎️"
         case .wallClock: "🕒"
+        case .hangingPictureFrame: "🖼️"
         case .ceilingFan: "🌀"
         case .classicLaptop: "💻"
         case .boombox: "📻"
@@ -12287,13 +14220,22 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
     static let effectCases: [PropKind] = [.bloodWaterfall, .apple]
     static let furnitureCases: [PropKind] = photorealCases
 
+    /// High-detail, mobile-budgeted pieces surfaced directly inside the Custom AR
+    /// studio. The same cases remain in their normal library categories.
+    static let customARAssetCases: [PropKind] = [
+        .payphone, .hangingPictureFrame, .wallClock, .securityCamera, .powerBox,
+        .modernCeilingLamp, .cagedCeilingLight, .industrialPendant, .ceilingFan,
+        .industrialWallLamp, .cagedWallLight, .handTruck, .steelShelves, .modernCabinet
+    ]
+
     static let photorealCases: [PropKind] = [
         .metalOfficeDesk, .schoolChair, .schoolDesk, .metalTrashCan,
         .cardboardBox, .plasticCrate, .woodenCrate, .blueBarrel,
         .handTruck, .drawerCabinet, .filingCabinet, .steelShelves,
         .toolChest, .plasticChair, .woodenStool, .wetFloorSign,
         .fireExtinguisher, .securityCamera, .powerBox, .payphone,
-        .wallClock, .cagedCeilingLight, .industrialPendant, .ceilingFan,
+        .wallClock, .hangingPictureFrame, .cagedCeilingLight, .industrialPendant,
+        .modernCeilingLamp, .ceilingFan,
         .industrialWallLamp, .cagedWallLight, .deskLamp, .classicLaptop,
         .crtTelevision, .boombox, .leatherSofa, .vintageSofa,
         .modernArmchair, .marbleCoffeeTable, .modernCabinet, .pottedSucculent,
@@ -12344,10 +14286,14 @@ enum PropKind: String, CaseIterable, Identifiable, Codable {
             .init(assetName: "korean_public_payphone_01", dimensions: [0.31, 0.55, 0.29], surface: .wall, category: .wall, emitsLight: false)
         case .wallClock:
             .init(assetName: "wall_clock", dimensions: [0.39, 0.39, 0.07], surface: .wall, category: .wall, emitsLight: false)
+        case .hangingPictureFrame:
+            .init(assetName: "hanging_picture_frame_01", dimensions: [0.594, 0.841, 0.016], surface: .wall, category: .wall, emitsLight: false)
         case .cagedCeilingLight:
             .init(assetName: "caged_hanging_light", dimensions: [1.10, 0.72, 0.35], surface: .ceiling, category: .lighting, emitsLight: true)
         case .industrialPendant:
             .init(assetName: "hanging_industrial_lamp", dimensions: [0.55, 1.35, 0.55], surface: .ceiling, category: .lighting, emitsLight: true)
+        case .modernCeilingLamp:
+            .init(assetName: "modern_ceiling_lamp_01", dimensions: [0.432, 0.952, 0.432], surface: .ceiling, category: .lighting, emitsLight: true)
         case .ceilingFan:
             .init(assetName: "ceiling_fan", dimensions: [1.30, 0.46, 1.30], surface: .ceiling, category: .equipment, emitsLight: false)
         case .industrialWallLamp:
@@ -12732,10 +14678,12 @@ Poly Haven publishes these assets as public domain material. They may be used,
 modified, redistributed, and included in commercial applications without
 attribution. CineAR keeps this notice for provenance and reproducibility.
 
-The bundled USDZ files were generated from the official 1K glTF downloads with
-Blender 4.5 LTS. Textures are capped at 1024 px for predictable iPhone memory use.
+Most bundled USDZ files were generated from the official 1K glTF downloads with
+Blender 4.5 LTS. The two architecture-set additions noted below preserve Poly
+Haven's native 1K USD and are packaged with OpenUSD 26.8. Textures remain at 1K
+for predictable iPhone memory use.
 
-Included Poly Haven asset IDs (36):
+Included Poly Haven asset IDs (38):
 
 metal_office_desk
 SchoolChair_01
@@ -12758,6 +14706,8 @@ security_camera_01
 power_box_01
 korean_public_payphone_01
 wall_clock
+modern_ceiling_lamp_01
+hanging_picture_frame_01
 caged_hanging_light
 hanging_industrial_lamp
 ceiling_fan
@@ -12774,7 +14724,7 @@ coffee_table_round_01
 modern_wooden_cabinet
 potted_plant_04
 
-Additional wall cladding (2 USDZ panels, 38 photoreal catalog entries total):
+Additional wall cladding (2 USDZ panels, 40 photoreal catalog entries total):
 wall_cladding_brick.usdz uses https://polyhaven.com/a/brick_wall_001
 wall_cladding_wood.usdz uses https://polyhaven.com/a/wood_plank_wall
 These panels are generated by Tools/generate_wall_assets.py using the original
@@ -12784,6 +14734,11 @@ These bundled panels also act as material templates for automatically fitted
 walls. Runtime wall geometry is rebuilt from the scan with door/window cutouts;
 its triangle count depends on the outline and openings, not the template count.
 Powered by Poly Haven: https://polyhaven.com
+
+The native USD additions can be reproduced with
+Tools/package_polyhaven_usd_to_usdz.py. That tool verifies every API-provided
+MD5 digest, caps each output package at 8 MiB and reopens it with OpenUSD before
+accepting the USDZ.
 
 Individual source pages follow the form:
 https://polyhaven.com/a/<asset-id>
@@ -12808,6 +14763,7 @@ d99f126b5a2af640d6ff40e9ce8c5da4b1bdc9cfea9bf6a94f0a620a7adcb0f8  coffee_table_r
 351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68  drawer_cabinet.usdz
 fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486  hand_truck.usdz
 abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937  hanging_industrial_lamp.usdz
+43b901b41046e9fc969f18577fc905dd9298ba7a29340eb35f309719855d9a96  hanging_picture_frame_01.usdz
 41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9  industrial_wall_lamp.usdz
 c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee  industrial_wall_sconce.usdz
 a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7  kitchenFridge.usdz
@@ -12820,6 +14776,7 @@ e1ff365a2245f802cd0c31f6972927d8b3a82a4356a46a1f525e79d58558d3ad  loungeDesignSo
 ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba  metal_tool_chest.usdz
 d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871  metal_trash_can.usdz
 9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c  modern_arm_chair_01.usdz
+0a90110df54b6348403ee23c9fc43d4972cdf80890eede452262553e93cca210  modern_ceiling_lamp_01.usdz
 8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964  modern_wooden_cabinet.usdz
 c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9  plastic_crate_02.usdz
 6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a  plastic_monobloc_chair_01.usdz
@@ -16247,7 +18204,7 @@ enum FilmLookID: String, CaseIterable, Codable, Identifiable, Sendable {
 }
 
 struct SceneProject: Codable {
-    static let currentVersion = 7
+    static let currentVersion = 8
 
     var version = currentVersion
     var name = "Ana Set"
@@ -16268,6 +18225,11 @@ struct SceneProject: Codable {
     // corrected ARWorldMap coordinate space.
     var alignmentReference: StoredTransform?
     var roomAlignment: StoredTransform?
+    // Version-8 Custom AR structures live directly in the matching ARWorldMap
+    // coordinate space. Optional keeps every earlier scene.json decodable.
+    var customARDesigns: [CustomARDesignRecord]?
+
+    var effectiveCustomARDesigns: [CustomARDesignRecord] { customARDesigns ?? [] }
 }
 
 struct PlacementRecord: Codable, Identifiable {
@@ -16434,6 +18396,7 @@ enum SceneProjectStoreError: LocalizedError {
     case invalidVisualStyle
     case invalidSpatialCalibration
     case invalidAlignmentReference
+    case invalidCustomARDesign
     case worldMapOutOfDate
     case worldMapChecksumMismatch
     case emptyWorldMap
@@ -16462,6 +18425,8 @@ enum SceneProjectStoreError: LocalizedError {
             "Zemin/tavan kalibrasyonu geçersiz veya oda yüksekliği gerçekçi değil"
         case .invalidAlignmentReference:
             "Mekân hizalama referansı geçersiz"
+        case .invalidCustomARDesign:
+            "Özel AR alanı, duvarı veya kapı verisi geçersiz"
         case .worldMapOutOfDate:
             "Sahne son harita kaydından sonra değişmiş; önce yeniden Kaydet'e dokunun"
         case .worldMapChecksumMismatch:
@@ -16572,7 +18537,12 @@ final class SceneProjectStore {
             name: suppliedName.flatMap { $0.isEmpty ? nil : $0 } ?? Self.defaultSavedPlaceName(now),
             createdAt: now,
             updatedAt: now,
-            objectCount: snapshot.project.placements.count,
+            objectCount: snapshot.project.placements.count
+                + snapshot.project.effectiveCustomARDesigns.reduce(0) { total, design in
+                    total + design.walls.count
+                        + design.walls.reduce(0) { $0 + $1.doors.count }
+                        + (design.ceiling == nil ? 0 : 1)
+                },
             hasRoomScan: fileManager.fileExists(atPath: roomDataURL.path)
         )
 
@@ -16894,6 +18864,26 @@ final class SceneProjectStore {
         }
     }
 
+    func replaceCustomARDesigns(
+        _ designs: [CustomARDesignRecord],
+        invalidateWorldMap: Bool
+    ) throws {
+        try commit(invalidateWorldMap: invalidateWorldMap) { candidate in
+            let wallIDs = designs.flatMap { $0.walls.map(\.id) }
+            let doorIDs = designs.flatMap { design in
+                design.walls.flatMap { $0.doors.map(\.id) }
+            }
+            guard designs.count <= 8,
+                  Set(designs.map(\.id)).count == designs.count,
+                  Set(wallIDs).count == wallIDs.count,
+                  Set(doorIDs).count == doorIDs.count,
+                  designs.allSatisfy(\.isValid) else {
+                throw SceneProjectStoreError.invalidCustomARDesign
+            }
+            candidate.customARDesigns = designs
+        }
+    }
+
     func setCalibratedFloorY(_ floorY: Float) throws {
         try commit(invalidateWorldMap: true) { candidate in
             guard floorY.isFinite else {
@@ -17018,6 +19008,9 @@ final class SceneProjectStore {
                     }
                 }
                 candidate.placements[index].lightSettings = light
+            }
+            if let designs = candidate.customARDesigns {
+                candidate.customARDesigns = designs.map { $0.applying(correction) }
             }
         }
     }
@@ -17255,6 +19248,11 @@ final class SceneProjectStore {
             project.version = 7
             project.updatedAt = Date()
         }
+        if project.version < 8 {
+            project.customARDesigns = project.customARDesigns ?? []
+            project.version = 8
+            project.updatedAt = Date()
+        }
         try validate(project)
         return project
     }
@@ -17281,6 +19279,18 @@ final class SceneProjectStore {
         guard project.alignmentReference.map({ isValid($0) }) ?? true,
               project.roomAlignment.map({ isValid($0) }) ?? true else {
             throw SceneProjectStoreError.invalidAlignmentReference
+        }
+        let customDesigns = project.effectiveCustomARDesigns
+        let customWallIDs = customDesigns.flatMap { $0.walls.map(\.id) }
+        let customDoorIDs = customDesigns.flatMap { design in
+            design.walls.flatMap { $0.doors.map(\.id) }
+        }
+        guard customDesigns.count <= 8,
+              Set(customDesigns.map(\.id)).count == customDesigns.count,
+              Set(customWallIDs).count == customWallIDs.count,
+              Set(customDoorIDs).count == customDoorIDs.count,
+              customDesigns.allSatisfy(\.isValid) else {
+            throw SceneProjectStoreError.invalidCustomARDesign
         }
 
         var ids = Set<UUID>()
@@ -17997,6 +20007,16 @@ workflows:
             -o "$spatial_test_dir/spatial-tests"
           "$spatial_test_dir/spatial-tests"
 
+      - name: Test Custom AR area, wall and door geometry
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          custom_ar_test_dir="$(mktemp -d)"
+          xcrun swiftc CineAR/CustomARDesign.swift Tools/test_custom_ar_geometry.swift \
+            -o "$custom_ar_test_dir/custom-ar-tests"
+          "$custom_ar_test_dir/custom-ar-tests"
+
       - name: Apply provisioning profile for internal TestFlight
         script: |
           xcode-project use-profiles \
@@ -18127,7 +20147,7 @@ Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncelle
 4. Ikinci adim gercek iPhone SDK'si ile Release uygulamasini imzasiz derler.
    ARKit/RealityKit API ve Swift tur denetimi bu adimda yapilir. Simulator testi degildir.
    Kaynak ve uretilmis `.app` icindeki kamera/mikrofon/konusma/yerel ag izin
-   aciklamalari da okunup dogrulanir. Ayrica 52 cevrimdisi USDZ kaynakta checksum
+   aciklamalari da okunup dogrulanir. Ayrica 54 cevrimdisi USDZ kaynakta checksum
    ve paket butunlugu testinden gecer; uretilen `.app` icindeki `RoomAssets`
    klasorunun ayni dosyalari eksiksiz tasidigi tekrar kontrol edilir.
 5. Hata varsa `swift-tests.log`, `ios-build.log` ve `.xcresult` ciktisini incele.
@@ -18233,7 +20253,7 @@ incelemesine uygulama gondermesi mumkun degildir.
 ## `Docs/DEVICE_TEST.md`
 
 ````markdown
-# SynapMantis 0.17.17 cihaz kabul testi
+# SynapMantis 0.18.0 cihaz kabul testi
 
 ## Hedef donanim
 
@@ -18276,7 +20296,7 @@ incelemesine uygulama gondermesi mumkun degildir.
    zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
    durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
-6. 38 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
+6. 40 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
    gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
@@ -18289,6 +20309,11 @@ incelemesine uygulama gondermesi mumkun degildir.
    Modern Ahsap Konsol ve Saksili Sukulent modellerini sirayla ac. Yukleme sirasinda
    kamera takilmamali; dokuzdan fazla farkli gercekci model acildiginda eski onbellek
    girdileri atilmali, sahneye yerlestirilmis nesneler ise gorunur kalmali.
+   `Ozel AR` ekranindaki hizli varlik setini ac. Yeni `Asili Sanat Cercevesi`ni
+   sanal duvara, `Modern Tavan Lambasi`ni sonlu sanal tavana yerlestir. Ikisinin de
+   mavi yedek kutuda kalmadan 1K PBR gorunume gecmesini, cercevenin duvara ve lambanin
+   tavana sifir temas etmesini dogrula. Ankesorlu Telefon ile Yuk Arabasi da ayni
+   ekrandan secilebilmeli. Lambayi sectikten sonra sanal isik kontrolleri acilmali.
    Kapi ve pencereli bir odayi tara. `Tugla Duvar Kaplama` ve `Ahsap Duvar Kaplama`
    icin duvarin farkli noktalarina dokun; her seferinde ayni duvarin tum olcusune
    oturmali, kapi/pencere/acikliklar hem yukleme yedeginde hem son malzemede acik
@@ -18450,6 +20475,20 @@ incelemesine uygulama gondermesi mumkun degildir.
     kisiyi onde tutmali; 350 ms'den gec PC derinligi goruntuye uygulanmamali. Tavan
     armaturu dolap veya yuksek raf ustune degil, yalniz siniflandirilmis ya da kalibre
     edilmis gercek tavan kotuna yerlestirilebilmeli.
+29. `Ozel AR > Yeni Alan Ciz` ile once duz zeminde, sonra yaklasik 15-30 derece egimli
+    bir yuzeyde dort kose belirle. Ilk noktaya yaklasinca alan kapanmali, cevrede dort
+    duvar olusmali ve telefonla dolasirken duvarlar kamerayi takip etmemelidir. Alan
+    icin `Tavan olustur` acikken tavan secilen yukseklikte ve cokgen disina tasmadan
+    olusmali; ayar kapatilip alana uygulaninca tavan kalkmalidir. Tavan armaturu bu
+    sanal tavana yerlestirilebilmelidir. Alan icinde iki noktayla ic duvar ciz;
+    disaridaki nokta reddedilmelidir. Duvara 90 cm
+    kapi ekle; duvar gercek aciklik birakmali ve kapi kanadina her dokunusta kanat
+    animasyonla acilip kapanmalidir. Normal kutuphaneden saat/telefon secip Ozel AR
+    duvarina yerlestir; temas noktasi ayni kalmalidir. Bir kisi tum yapinin onunden
+    gecince LiDAR/kisi derinligi kisiyi onde tutmalidir. Kaydet, uygulamayi kapat,
+    ayni yeri gosterip Yukle; alan, ic duvar, kapi ve kapi durumu ayni koordinatta
+    geri gelmelidir. Referansla Hizala uygulaninca tum Ozel AR yapisi tek parca
+    kaymali; duvarlar kendi aralarinda ayrilmamalidir.
 
 ## Anlik LiDAR ortmesi regresyonu
 
@@ -18482,6 +20521,8 @@ Otomatik geometri testleri (Mac/Swift):
 ```sh
 swiftc CineAR/LiveDepthGeometry.swift Tools/test_live_depth_geometry.swift -o /tmp/cinear-depth-tests
 /tmp/cinear-depth-tests
+swiftc CineAR/CustomARDesign.swift Tools/test_custom_ar_geometry.swift -o /tmp/synapmantis-custom-ar-tests
+/tmp/synapmantis-custom-ar-tests
 ```
 
 Testler duz/egri yuzey, derinlik kopuklugu, eksik kose, guven degeri, gecersiz
@@ -18730,6 +20771,21 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.18.0: Ayri `Ozel AR` modu eklendi. Kullanici LiDAR ile duz veya egimli bir
+  yuzeyde 3-24 kose cizer; alan kapaninca cevre duvarlari dunya koordinatinda
+  sabitlenir. Alan icinde iki noktayla ek duvar cizilebilir, duvara gercek aciklik
+  olusturan olculu kapi eklenebilir ve kapi kanadi dokunusla animasyonlu acilip
+  kapanir. Duvar yuksekligi, kalinligi ve beyaz/beton/tugla malzemesi ayarlanir.
+  Istege bagli tavan, cizilen cokgenin sinirlarina tam uyar ve secilen duvar
+  yuksekliginde olusur; tavan armaturleri de bu sonlu sanal yuzeye sabitlenebilir.
+  Moda ozel hizli varlik seti; mevcut ankesorlu telefon, yuk arabasi ve mimari
+  ekipmana ek olarak yeni 1K PBR modern tavan lambasi ile duvara asilan sanat
+  cercevesini dogrudan sunar. Yeni USDZ'ler 1.9 MB altinda tutulmustur.
+  Normal nesne kutuphanesindeki duvar dekorlari Ozel AR duvarlarinin sonlu collision
+  yuzeyine yerlestirilebilir. Alanlar, duvarlar, tavanlar, kapilar ve acik/kapali durumu
+  `scene.json` ile mekana kaydolur; ARWorldMap ve referans hizalama duzeltmesiyle
+  birlikte ayni fiziksel koordinata geri gelir. Canli LiDAR/kisi derinligi bu
+  sanal yapilarda da gercek insan ve nesneleri onde tutar.
 - 0.17.17: RoomPlan taramasi bittikten sonra ayni ARSession'in dunya baslangici ve
   mevcut anchor'lari korunurken `sceneDepth`, kisi derinligi ve LiDAR mesh occlusion
   ayarlari yeniden etkinlestiriliyor. Boylece 0.17.15'te duzeltilen koordinat
@@ -18752,7 +20808,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
   saati, cerceve ve raf gibi yaklasik 1 cm veya daha fazla cikintilar artik
   kaplamanin onunde kalir.
   Disaridan eklenen kok `Entity` hiyerarsili USDZ dosyalari da cihazda acilir;
-  yerel yukleme zaman asimi 25 saniyedir. Paketteki 52 cevrimdisi USDZ'nin ad,
+  yerel yukleme zaman asimi 25 saniyedir. Paketteki 54 cevrimdisi USDZ'nin ad,
   checksum, ZIP/USD sahne butunlugu ile uygulama ve IPA icine kopyalanmasi Codemagic
   tarafindan derlemeden once ve sonra dogrulanir; bu katalog PC baglantisi kullanmaz.
 - 0.17.13: RoomPlan taramasi biterken halen calisan ortak `ARSession` artik yeni
@@ -18864,7 +20920,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 - Tarama sonrasinda opak oda kaplamasi olmadan gercek kamera goruntusu
 - `Oda Gercekligi` icinde gercek kamera ile hafif `Beyaz Hatlar` modu arasinda gecis
 - Beyaz hatlarin altinda, tum taranmis zemin ve duvarlari dokunulabilir yapan gorunmez collider'lar
-- Poly Haven kaynakli 1K PBR dokulu 38 fotogercekci CC0 USDZ dekor; mobilya,
+- Poly Haven kaynakli 1K PBR dokulu 40 fotogercekci CC0 USDZ dekor; mobilya,
   depolama, ekipman, duvar/tavan elemanlari, aydinlatma ve elektronik kategorileri
 - Eski kayitlari bozmamak icin 14 Kenney USDZ ve 4 hafif dekorla geriye donuk uyumluluk
 - Bundle yolu veya USDZ normalize islemi basarisiz olsa bile her semantik kategori icin
@@ -19011,7 +21067,7 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
    opak modelleri kamera uzerine cizilmez. Gerektiginde `Beyaz Hatlar` ile taranan
    sinirlari seffaf olarak acip yeniden `Gercek` moduna donebilirsiniz.
 6. Kompakt dock'taki `Nesneler` ile kutuphaneyi acin; hizli dekorlardan birini,
-   `Hazir 3B Nesne Kutuphanesi` icindeki 38 fotogercekci parcadan
+   `Hazir 3B Nesne Kutuphanesi` icindeki 40 fotogercekci parcadan
    birini veya `USDZ Ekle` ile kisisel bir model secin.
 7. Kontrol paneli otomatik kapandiginda hedefi istediginiz noktaya surukleyin.
    Hedef yesil ve metre degeri gorunurken zemine, yatay yuzeye, duvara veya tavana
@@ -19127,8 +21183,8 @@ cikisi HEVC'dir. ProRes, genlock, harici timecode, lens distortion calibration,
 10-bit log/HDR ve piksel seviyesinde temiz plate uretimi icin sonraki asamada
 ozel Metal renderer ve AVFoundation kamera yakalama hattina gecilmelidir.
 
-Bu surumde Poly Haven'dan donusturulmus 36 CC0 model ve fotografik dokularla
-uretilmis 2 duvar paneli olmak uzere 38 adet 1K PBR USDZ katalog varligi vardir.
+Bu surumde Poly Haven'dan alinmis 38 CC0 model ve fotografik dokularla
+uretilmis 2 duvar paneli olmak uzere 40 adet 1K PBR USDZ katalog varligi vardir.
 Modeller kullanici tarafindan kategorili kutuphaneden secilir, gercekci metre
 boyutlarina normalize edilir, sahne listesinde `genislik x yukseklik x derinlik`
 olarak gosterilir ve olculmus katalog modellerinin olcegi kilitlenir. Eski projeler icin
@@ -19157,6 +21213,20 @@ blender --background --factory-startup --python-exit-code 1 --python Tools/valid
 
 USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidir.
 
+### Ozel AR mimari varliklarini yeniden uretme
+
+Modern tavan lambasi ve asili sanat cercevesi Poly Haven'in resmi 1K native USD
+paketlerinden alinir. Indirilen ana sahne ve tum dokular API MD5 degerleriyle
+dogrulanir; OpenUSD olusturdugu USDZ'yi yeniden acmadan cikti kabul edilmez:
+
+```sh
+python3 -m pip install usd-core==26.8
+python3 Tools/package_polyhaven_usd_to_usdz.py --cache .asset-cache/polyhaven-usd --output CineAR/RoomAssets
+```
+
+Her yeni mimari model icin 8 MiB kesin paket siniri vardir; bu iki varlik 1.9 MiB
+altinda kalir. Uygulama calisirken indirme yapmaz.
+
 ### Otomatik duvar kaplama testleri
 
 `WallCladdingGeometry.swift` oda poligonunu ucgenleyip acikliklari cikarir;
@@ -19175,7 +21245,7 @@ cihaz dogrulamasinin yerini almaz; cihaz adimlari `Docs/DEVICE_TEST.md` icindedi
 ### Cevrimdisi 3B katalog testi
 
 Hazir modeller uygulama paketinin icindedir ve PC ya da ag baglantisi kullanmaz.
-Kaynak katalog adlarini, 52 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
+Kaynak katalog adlarini, 54 USDZ checksum'ini ve paket butunlugunu yerelde denetlemek icin:
 
 ```sh
 python3 Tools/test_bundled_assets.py --assets CineAR/RoomAssets --manifest CineAR/RoomAssets/MANIFEST.sha256 --prop-kind CineAR/PropKind.swift
@@ -19813,7 +21883,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Projenin amacı")
 [void]$builder.AppendLine()
-[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 38 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
+[void]$builder.AppendLine("CineAR; LiDAR destekli iPhone ile bir odayı RoomPlan üzerinden tarayan, gerçek kamera görüntüsünü opak tarama kaplamalarıyla örtmeden isteğe bağlı beyaz hatlarla gösteren ve 40 fotogerçekçi CC0 dekoru zemine, yatay yüzeye, duvara veya tavana yerleştiren yerel iOS uygulamasıdır. Dekorlar döndürülebilir, ölçeklendirilebilir ve ARWorldMap tabanlı proje olarak saklanabilir; sanal ışıkların gücü, sıcaklığı ve açısı ayarlanabilir.")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Teknoloji ve ana yetenekler")
 [void]$builder.AppendLine()
@@ -19828,8 +21898,8 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("- RoomPlan dönüşünde mevcut frame'i yoklayan deterministik AR hazır olma kurtarması")
 [void]$builder.AppendLine("- Yeni taramadan sonra normal takip gelir gelmez otomatik ve eşlenmiş ARWorldMap kaydı")
 [void]$builder.AppendLine("- Gerçek kamera görünümü, insan/mesh occlusion, tarama sırasında RoomPlan kılavuzları ve sonrasında isteğe bağlı hafif Beyaz Hatlar modu")
-[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 38 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
-[void]$builder.AppendLine("- PC/ağ gerektirmeyen toplam 52 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi")
+[void]$builder.AppendLine("- Poly Haven kaynaklı 1K PBR dokulu 40 fotogerçekçi CC0 USDZ varlığı ve yüzey türüne göre yerleştirme")
+[void]$builder.AppendLine("- PC/ağ gerektirmeyen toplam 54 paketli USDZ; kaynak, uygulama arşivi ve IPA içinde ad, SHA-256 ve USDZ paket bütünlüğü denetimi")
 [void]$builder.AppendLine("- Tuğla/ahşap kaplamayı taranan duvar ölçüsüne otomatik sığdırma; kapı/pencere/açıklık kesimleri, metre tabanlı tekrar eden doku ve kalıcı duvar geometrisi")
 [void]$builder.AppendLine("- 256 RoomPlan duvar parçasına kadar seçim; düşük güvenli tek depth pikseli yerine sonlu kayıtlı duvarı kullanan ve yalnız ölçülmüş ön engelde reddeden kararlı çok-kareli yüzey kilidi")
 [void]$builder.AppendLine("- Tavan/duvar/masa ışıklarında güç, renk sıcaklığı, yatay yön, dikey eğim, hüzme genişliği ve kalıcı sahne kaydı")
@@ -19866,7 +21936,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("| ``BundledRoomRealityAssetProvider`` | Gömülü USDZ prototiplerini rollere bağlama ve gerçekçi metre boyutlarına getirme |")
 [void]$builder.AppendLine("| ``SceneProjectStore`` | ``scene.json``, ``room.json``, ARWorldMap, içe aktarılan USDZ ve kayıt dosyaları |")
 [void]$builder.AppendLine("| ``ProfessionalRecorder`` | HEVC video, mikrofon sesi ve kayıt yaşam döngüsü |")
-[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri, 38 fotogerçekçi dekor ve eski kayıt uyumluluğu |")
+[void]$builder.AppendLine("| ``RealityTheme`` / ``PropKind`` | Materyal tarifleri, oda rolleri, 40 fotogerçekçi dekor ve eski kayıt uyumluluğu |")
 [void]$builder.AppendLine("| ``codemagic.yaml`` | Xcode 26.4 build, signing, artan build numarası ve App Store Connect yayını |")
 [void]$builder.AppendLine()
 [void]$builder.AppendLine("## Temel kullanıcı akışı")
@@ -19875,7 +21945,7 @@ $builder = [System.Text.StringBuilder]::new()
 [void]$builder.AppendLine("2. Kullanıcı **Oda Tara** ile aynı ARSession üzerinde RoomPlan taramasını açar.")
 [void]$builder.AppendLine("3. Sonuç compact ``room.json`` olarak arka planda hazırlanır ve kullanıcı onayıyla atomik biçimde kaydedilir.")
 [void]$builder.AppendLine("4. Tarayıcı kapandığında opak oda geometrisi çizilmeden gerçek kamera görünümüne dönülür; kullanıcı isterse **Beyaz Hatlar** ile tarama sınırlarını açar.")
-[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 38 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
+[void]$builder.AppendLine("5. Kullanıcı kompakt dock'tan hızlı dekor, 40 parçalık fotogerçekçi kütüphane veya kendi USDZ varlığını seçer; büyük panel otomatik kapanır ve yerleştirmeden sonra kompakt dock geri gelir.")
 [void]$builder.AppendLine("6. Kullanıcı zemine dokunur; AR düzlemi yoksa dokunma ışını bilinen veya kamera yüksekliğinden tahmin edilen zeminle kesiştirilir.")
 [void]$builder.AppendLine("7. RealityKit gesture'larıyla dekor taşınır, döndürülür ve ölçeklenir.")
 [void]$builder.AppendLine("8. İlk world map tarama sonrasında otomatik kaydedilir; sonraki **Kaydet** istekleri takip hazır değilse sıraya alınır. **HEVC Çekim** video/ses çıktısı üretir.")
@@ -20074,6 +22144,213 @@ if __name__ == "__main__":
     main()
 ````
 
+## `Tools/package_polyhaven_usd_to_usdz.py`
+
+````python
+"""Fetch selected Poly Haven 1K USD assets and package verified mobile USDZ files.
+
+This path preserves the author's native USD geometry/material setup and avoids a
+Blender round trip. It requires the official ``usd-core`` Python package:
+
+    python -m pip install usd-core==26.8
+    python Tools/package_polyhaven_usd_to_usdz.py \
+        --cache .asset-cache/polyhaven-usd --output CineAR/RoomAssets
+
+Downloads are verified against Poly Haven's API-provided MD5 hashes. The output
+package is then reopened through OpenUSD before it is accepted.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import tempfile
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
+
+try:
+    from pxr import Sdf, Usd, UsdShade, UsdUtils
+except ImportError as error:
+    raise SystemExit(
+        "OpenUSD is required. Install the pinned tool with: "
+        "python -m pip install usd-core==26.8"
+    ) from error
+
+
+API_ROOT = "https://api.polyhaven.com/files"
+USER_AGENT = "SynapMantisAssetPipeline/1.0"
+DEFAULT_ASSET_IDS = (
+    "modern_ceiling_lamp_01",
+    "hanging_picture_frame_01",
+)
+MAX_USDZ_BYTES = 8 * 1024 * 1024
+
+
+def arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cache", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("asset_ids", nargs="*", default=DEFAULT_ASSET_IDS)
+    return parser.parse_args()
+
+
+def api_json(asset_id: str) -> dict:
+    request = Request(f"{API_ROOT}/{asset_id}", headers={"User-Agent": USER_AGENT})
+    with urlopen(request, timeout=60) as response:
+        return json.load(response)
+
+
+def safe_destination(root: Path, relative_name: str) -> Path:
+    relative = PurePosixPath(relative_name)
+    if relative.is_absolute() or ".." in relative.parts:
+        raise RuntimeError(f"Unsafe dependency path: {relative_name}")
+    destination = (root / Path(*relative.parts)).resolve()
+    if root.resolve() not in destination.parents:
+        raise RuntimeError(f"Dependency escapes asset directory: {relative_name}")
+    return destination
+
+
+def md5(path: Path) -> str:
+    digest = hashlib.md5()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def download_verified(url: str, destination: Path, expected_md5: str) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.is_file() and md5(destination) == expected_md5.lower():
+        return
+
+    request = Request(url, headers={"User-Agent": USER_AGENT})
+    with urlopen(request, timeout=120) as response:
+        with tempfile.NamedTemporaryFile(
+            dir=destination.parent, prefix=destination.name, delete=False
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            while block := response.read(1024 * 1024):
+                temporary.write(block)
+
+    try:
+        actual_md5 = md5(temporary_path)
+        if actual_md5 != expected_md5.lower():
+            raise RuntimeError(
+                f"MD5 mismatch for {destination.name}: "
+                f"expected {expected_md5}, got {actual_md5}"
+            )
+        temporary_path.replace(destination)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def fetch_native_usd(asset_id: str, cache_root: Path) -> Path:
+    files = api_json(asset_id)
+    try:
+        entry = files["usd"]["1k"]["usd"]
+    except KeyError as error:
+        raise RuntimeError(f"Poly Haven has no native 1K USD for {asset_id}") from error
+
+    asset_root = (cache_root / asset_id).resolve()
+    asset_root.mkdir(parents=True, exist_ok=True)
+    main_name = Path(urlparse(entry["url"]).path).name
+    main_path = safe_destination(asset_root, main_name)
+    download_verified(entry["url"], main_path, entry["md5"])
+
+    for relative_name, dependency in entry.get("include", {}).items():
+        destination = safe_destination(asset_root, relative_name)
+        download_verified(dependency["url"], destination, dependency["md5"])
+
+    # Some Poly Haven native-USD entries currently list a JPG variant in their
+    # immediate `include` map even though the USDC material points to the EXR
+    # variant. Resolve the material's actual file inputs against the complete API
+    # response so the package never ships with a missing texture.
+    resources_by_name: dict[str, dict] = {}
+
+    def index_resources(value: object) -> None:
+        if isinstance(value, dict):
+            url = value.get("url")
+            expected_md5 = value.get("md5")
+            if isinstance(url, str) and isinstance(expected_md5, str):
+                resources_by_name[Path(urlparse(url).path).name] = value
+            for child in value.values():
+                index_resources(child)
+        elif isinstance(value, list):
+            for child in value:
+                index_resources(child)
+
+    index_resources(files)
+    stage = Usd.Stage.Open(str(main_path))
+    if not stage:
+        raise RuntimeError(f"Native USD did not open: {main_path}")
+    for prim in stage.Traverse():
+        if not prim.IsA(UsdShade.Shader):
+            continue
+        for shader_input in UsdShade.Shader(prim).GetInputs():
+            if shader_input.GetTypeName() != Sdf.ValueTypeNames.Asset:
+                continue
+            asset_path = shader_input.Get()
+            if not asset_path or not asset_path.path:
+                continue
+            relative_name = asset_path.path.removeprefix("./")
+            destination = safe_destination(asset_root, relative_name)
+            if destination.is_file():
+                continue
+            resource = resources_by_name.get(Path(relative_name).name)
+            if resource is None:
+                raise RuntimeError(
+                    f"Poly Haven API did not describe USD dependency: {relative_name}"
+                )
+            download_verified(resource["url"], destination, resource["md5"])
+    return main_path
+
+
+def package_usdz(source: Path, output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.unlink(missing_ok=True)
+
+    previous_directory = Path.cwd()
+    try:
+        os.chdir(source.parent)
+        stage = Usd.Stage.Open(source.name)
+        if not stage or not stage.GetPseudoRoot().GetChildren():
+            raise RuntimeError(f"Native USD did not open or has no root prim: {source}")
+        created = UsdUtils.CreateNewUsdzPackage(
+            Sdf.AssetPath(source.name), str(output.resolve()), source.name
+        )
+    finally:
+        os.chdir(previous_directory)
+
+    if not created or not output.is_file():
+        raise RuntimeError(f"USDZ packaging failed: {output}")
+    if output.stat().st_size > MAX_USDZ_BYTES:
+        output.unlink(missing_ok=True)
+        raise RuntimeError(f"USDZ exceeds mobile budget ({MAX_USDZ_BYTES} bytes): {output}")
+
+    packaged_stage = Usd.Stage.Open(str(output.resolve()))
+    if not packaged_stage or not packaged_stage.GetPseudoRoot().GetChildren():
+        output.unlink(missing_ok=True)
+        raise RuntimeError(f"Packaged USDZ could not be reopened: {output}")
+
+
+def main() -> None:
+    options = arguments()
+    cache_root = options.cache.resolve()
+    output_root = options.output.resolve()
+    for asset_id in options.asset_ids:
+        source = fetch_native_usd(asset_id, cache_root)
+        output = output_root / f"{asset_id}.usdz"
+        package_usdz(source, output)
+        print(f"SYNAPMANTIS_USDZ {asset_id} {output.stat().st_size}")
+
+
+if __name__ == "__main__":
+    main()
+````
+
 ## `Tools/render_usdz_thumbnails.py`
 
 ````python
@@ -20207,6 +22484,7 @@ def main():
         ("wall", ["-D", "WALL_GEOMETRY_TESTS"], "CineAR/WallCladdingGeometry.swift", "Tools/test_wall_cladding_geometry.swift"),
         ("depth", [], "CineAR/LiveDepthGeometry.swift", "Tools/test_live_depth_geometry.swift"),
         ("spatial", [], "CineAR/SpatialValidation.swift", "Tools/test_spatial_validation.swift"),
+        ("custom-ar", [], "CineAR/CustomARDesign.swift", "Tools/test_custom_ar_geometry.swift"),
     ]
     run([args.swiftc, "--version"], root)
     with tempfile.TemporaryDirectory(prefix="cinear-swift-tests-") as output:
@@ -20238,6 +22516,7 @@ import argparse
 import hashlib
 from pathlib import Path
 import re
+import struct
 import zipfile
 
 
@@ -20287,8 +22566,29 @@ def validate_usdz(path: Path, expected_digest: str) -> None:
         corrupt_member = archive.testzip()
         if corrupt_member is not None:
             raise AssertionError(f"Corrupt USDZ member: {path.name}/{corrupt_member}")
+        members = archive.infolist()
+        if not members or Path(members[0].filename).suffix.lower() not in {
+            ".usd", ".usda", ".usdc"
+        }:
+            raise AssertionError(f"USDZ first member is not a native USD scene: {path.name}")
         if not any(Path(name).suffix.lower() in {".usd", ".usda", ".usdc"} for name in archive.namelist()):
             raise AssertionError(f"USDZ contains no USD scene: {path.name}")
+        for member in members:
+            if member.flag_bits & 0x1:
+                raise AssertionError(
+                    f"USDZ member is encrypted: {path.name}/{member.filename}"
+                )
+            if member.compress_type != zipfile.ZIP_STORED:
+                raise AssertionError(
+                    f"USDZ member is compressed: {path.name}/{member.filename}"
+                )
+            archive.fp.seek(member.header_offset + 26)
+            name_length, extra_length = struct.unpack("<HH", archive.fp.read(4))
+            data_offset = member.header_offset + 30 + name_length + extra_length
+            if data_offset % 64 != 0:
+                raise AssertionError(
+                    f"USDZ member is not 64-byte aligned: {path.name}/{member.filename}"
+                )
 
 
 def main() -> None:
@@ -20325,6 +22625,122 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+````
+
+## `Tools/test_custom_ar_geometry.swift`
+
+````swift
+import Foundation
+import simd
+
+@main
+struct CustomARGeometryTests {
+    static func main() throws {
+        let boundary: [SIMD3<Float>] = [
+            [0, 0, 0], [3, 0, 0], [3, 0, 2], [0, 0, 2]
+        ]
+        let design = try CustomARGeometry.makeDesign(
+            name: "Test Alanı",
+            boundary: boundary,
+            normal: [0, 1, 0],
+            wallHeight: 2.5,
+            wallThickness: 0.10,
+            style: .studioWhite,
+            ceilingEnabled: true
+        )
+        precondition(design.isValid)
+        precondition(design.walls.count == 4)
+        precondition(design.ceiling?.height == 2.5)
+        precondition(CustomARGeometry.triangulatedIndices(
+            for: boundary, normal: [0, 1, 0]
+        ).count == 6)
+        precondition(abs(CustomARGeometry.area(of: boundary, normal: [0, 1, 0]) - 6) < 0.001)
+        precondition(CustomARGeometry.contains([1.5, 0, 1], in: boundary, normal: [0, 1, 0]))
+        precondition(!CustomARGeometry.contains([4, 0, 1], in: boundary, normal: [0, 1, 0]))
+
+        let interior = try CustomARGeometry.makeInteriorWall(
+            start: [0.5, 0.03, 1], end: [2.5, -0.02, 1], in: design,
+            height: 2.4, thickness: 0.08, style: .concrete
+        )
+        precondition(interior.isValid && abs(interior.length - 2) < 0.001)
+
+        let firstWall = design.walls[0]
+        let door = try CustomARGeometry.door(
+            on: firstWall, at: [1.5, 0, 0], width: 0.9, height: 2.05
+        )
+        precondition(door.isValid && abs(door.centerRatio - 0.5) < 0.001)
+        var occupiedWall = firstWall
+        occupiedWall.doors = [door]
+        do {
+            _ = try CustomARGeometry.door(
+                on: occupiedWall, at: [1.55, 0, 0], width: 0.8, height: 2
+            )
+            preconditionFailure("Overlapping doors must be rejected")
+        } catch CustomARGeometryError.doorOverlap {
+            // Expected.
+        }
+
+        let slopeNormal = simd_normalize(SIMD3<Float>(0, 1, 0.35))
+        let axes = CustomARGeometry.basis(for: slopeNormal)
+        let slopeOrigin = SIMD3<Float>(-1, 0.2, 0.5)
+        let slopeBoundary = [
+            slopeOrigin,
+            slopeOrigin + axes.u * 2,
+            slopeOrigin + axes.u * 2 + axes.v * 1.5,
+            slopeOrigin + axes.v * 1.5,
+        ]
+        let slope = try CustomARGeometry.makeDesign(
+            name: "Eğimli Alan", boundary: slopeBoundary, normal: slopeNormal,
+            wallHeight: 2, wallThickness: 0.08, style: .brick
+        )
+        precondition(slope.isValid)
+        precondition(abs(CustomARGeometry.area(of: slopeBoundary, normal: slopeNormal) - 3) < 0.001)
+
+        let concave: [SIMD3<Float>] = [
+            [0, 0, 0], [2, 0, 0], [2, 0, 1], [1, 0, 0.5], [0, 0, 1]
+        ]
+        precondition(CustomARGeometry.triangulatedIndices(
+            for: concave, normal: [0, 1, 0]
+        ).count == 9)
+        let concaveDesign = try CustomARGeometry.makeDesign(
+            name: "İçbükey", boundary: concave, normal: [0, 1, 0],
+            wallHeight: 2.4, wallThickness: 0.08, style: .studioWhite
+        )
+        do {
+            _ = try CustomARGeometry.makeInteriorWall(
+                start: [0.2, 0, 0.8], end: [1.8, 0, 0.8], in: concaveDesign,
+                height: 2.4, thickness: 0.08, style: .studioWhite
+            )
+            preconditionFailure("An interior wall may not leave a concave boundary")
+        } catch CustomARGeometryError.outsideArea {
+            // Expected.
+        }
+
+        let crossed: [SIMD3<Float>] = [
+            [0, 0, 0], [2, 0, 2], [0, 0, 2], [2, 0, 0]
+        ]
+        precondition(CustomARGeometry.hasSelfIntersection(crossed, normal: [0, 1, 0]))
+        do {
+            _ = try CustomARGeometry.makeDesign(
+                name: "Bozuk", boundary: crossed, normal: [0, 1, 0],
+                wallHeight: 2.5, wallThickness: 0.1, style: .studioWhite
+            )
+            preconditionFailure("Self-intersecting areas must be rejected")
+        } catch CustomARGeometryError.areaTooSmall {
+            // Bow-tie signed area cancels to zero before intersection validation.
+        } catch CustomARGeometryError.selfIntersection {
+            // Also acceptable if validation ordering changes.
+        }
+
+        var translation = matrix_identity_float4x4
+        translation.columns.3 = [4, 1, -2, 1]
+        let moved = design.applying(translation)
+        precondition(moved.isValid)
+        precondition(simd_distance(moved.boundary[0].simd, [4, 1, -2]) < 0.001)
+
+        print("Custom AR geometry tests passed")
+    }
+}
 ````
 
 ## `Tools/test_live_depth_geometry.swift`

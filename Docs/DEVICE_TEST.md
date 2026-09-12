@@ -1,4 +1,4 @@
-# SynapMantis 0.17.17 cihaz kabul testi
+# SynapMantis 0.18.0 cihaz kabul testi
 
 ## Hedef donanim
 
@@ -41,7 +41,7 @@
    zemin olmayan yatay yuzeyde kirmizi, dogrulanmis zeminde yesil olmali. Yesil
    durumda kaynak ve metre cinsinden derinlik gorunmeli. Her zemin dokunusunda kasa gorunmeli.
    Ayni testi once `Gercek`, sonra `Beyaz Hatlar` modunda tekrarla.
-6. 38 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
+6. 40 parcalik gercekci kutuphanenin Mobilya, Depolama, Ekipman, Dekor, Duvar, Isik ve
    Elektronik bolumlerini ac. Her bolumden en az iki model yerlestir; 1K PBR dokular
    gorunmeli, boyutlar gercekci olmali ve modeller yuzeyin altina gomulmemeli.
    Dokunustan hemen sonra katalog boyutunda yedek geometri gorunmeli; USDZ acilinca
@@ -54,6 +54,11 @@
    Modern Ahsap Konsol ve Saksili Sukulent modellerini sirayla ac. Yukleme sirasinda
    kamera takilmamali; dokuzdan fazla farkli gercekci model acildiginda eski onbellek
    girdileri atilmali, sahneye yerlestirilmis nesneler ise gorunur kalmali.
+   `Ozel AR` ekranindaki hizli varlik setini ac. Yeni `Asili Sanat Cercevesi`ni
+   sanal duvara, `Modern Tavan Lambasi`ni sonlu sanal tavana yerlestir. Ikisinin de
+   mavi yedek kutuda kalmadan 1K PBR gorunume gecmesini, cercevenin duvara ve lambanin
+   tavana sifir temas etmesini dogrula. Ankesorlu Telefon ile Yuk Arabasi da ayni
+   ekrandan secilebilmeli. Lambayi sectikten sonra sanal isik kontrolleri acilmali.
    Kapi ve pencereli bir odayi tara. `Tugla Duvar Kaplama` ve `Ahsap Duvar Kaplama`
    icin duvarin farkli noktalarina dokun; her seferinde ayni duvarin tum olcusune
    oturmali, kapi/pencere/acikliklar hem yukleme yedeginde hem son malzemede acik
@@ -215,6 +220,20 @@
     kisiyi onde tutmali; 350 ms'den gec PC derinligi goruntuye uygulanmamali. Tavan
     armaturu dolap veya yuksek raf ustune degil, yalniz siniflandirilmis ya da kalibre
     edilmis gercek tavan kotuna yerlestirilebilmeli.
+29. `Ozel AR > Yeni Alan Ciz` ile once duz zeminde, sonra yaklasik 15-30 derece egimli
+    bir yuzeyde dort kose belirle. Ilk noktaya yaklasinca alan kapanmali, cevrede dort
+    duvar olusmali ve telefonla dolasirken duvarlar kamerayi takip etmemelidir. Alan
+    icin `Tavan olustur` acikken tavan secilen yukseklikte ve cokgen disina tasmadan
+    olusmali; ayar kapatilip alana uygulaninca tavan kalkmalidir. Tavan armaturu bu
+    sanal tavana yerlestirilebilmelidir. Alan icinde iki noktayla ic duvar ciz;
+    disaridaki nokta reddedilmelidir. Duvara 90 cm
+    kapi ekle; duvar gercek aciklik birakmali ve kapi kanadina her dokunusta kanat
+    animasyonla acilip kapanmalidir. Normal kutuphaneden saat/telefon secip Ozel AR
+    duvarina yerlestir; temas noktasi ayni kalmalidir. Bir kisi tum yapinin onunden
+    gecince LiDAR/kisi derinligi kisiyi onde tutmalidir. Kaydet, uygulamayi kapat,
+    ayni yeri gosterip Yukle; alan, ic duvar, kapi ve kapi durumu ayni koordinatta
+    geri gelmelidir. Referansla Hizala uygulaninca tum Ozel AR yapisi tek parca
+    kaymali; duvarlar kendi aralarinda ayrilmamalidir.
 
 ## Anlik LiDAR ortmesi regresyonu
 
@@ -247,6 +266,8 @@ Otomatik geometri testleri (Mac/Swift):
 ```sh
 swiftc CineAR/LiveDepthGeometry.swift Tools/test_live_depth_geometry.swift -o /tmp/cinear-depth-tests
 /tmp/cinear-depth-tests
+swiftc CineAR/CustomARDesign.swift Tools/test_custom_ar_geometry.swift -o /tmp/synapmantis-custom-ar-tests
+/tmp/synapmantis-custom-ar-tests
 ```
 
 Testler duz/egri yuzey, derinlik kopuklugu, eksik kose, guven degeri, gecersiz

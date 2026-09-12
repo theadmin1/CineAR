@@ -172,6 +172,16 @@ workflows:
             -o "$spatial_test_dir/spatial-tests"
           "$spatial_test_dir/spatial-tests"
 
+      - name: Test Custom AR area, wall and door geometry
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          custom_ar_test_dir="$(mktemp -d)"
+          xcrun swiftc CineAR/CustomARDesign.swift Tools/test_custom_ar_geometry.swift \
+            -o "$custom_ar_test_dir/custom-ar-tests"
+          "$custom_ar_test_dir/custom-ar-tests"
+
       - name: Apply provisioning profile for internal TestFlight
         script: |
           xcode-project use-profiles \

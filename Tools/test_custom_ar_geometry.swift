@@ -1,0 +1,111 @@
+import Foundation
+import simd
+
+@main
+struct CustomARGeometryTests {
+    static func main() throws {
+        let boundary: [SIMD3<Float>] = [
+            [0, 0, 0], [3, 0, 0], [3, 0, 2], [0, 0, 2]
+        ]
+        let design = try CustomARGeometry.makeDesign(
+            name: "Test Alanı",
+            boundary: boundary,
+            normal: [0, 1, 0],
+            wallHeight: 2.5,
+            wallThickness: 0.10,
+            style: .studioWhite,
+            ceilingEnabled: true
+        )
+        precondition(design.isValid)
+        precondition(design.walls.count == 4)
+        precondition(design.ceiling?.height == 2.5)
+        precondition(CustomARGeometry.triangulatedIndices(
+            for: boundary, normal: [0, 1, 0]
+        ).count == 6)
+        precondition(abs(CustomARGeometry.area(of: boundary, normal: [0, 1, 0]) - 6) < 0.001)
+        precondition(CustomARGeometry.contains([1.5, 0, 1], in: boundary, normal: [0, 1, 0]))
+        precondition(!CustomARGeometry.contains([4, 0, 1], in: boundary, normal: [0, 1, 0]))
+
+        let interior = try CustomARGeometry.makeInteriorWall(
+            start: [0.5, 0.03, 1], end: [2.5, -0.02, 1], in: design,
+            height: 2.4, thickness: 0.08, style: .concrete
+        )
+        precondition(interior.isValid && abs(interior.length - 2) < 0.001)
+
+        let firstWall = design.walls[0]
+        let door = try CustomARGeometry.door(
+            on: firstWall, at: [1.5, 0, 0], width: 0.9, height: 2.05
+        )
+        precondition(door.isValid && abs(door.centerRatio - 0.5) < 0.001)
+        var occupiedWall = firstWall
+        occupiedWall.doors = [door]
+        do {
+            _ = try CustomARGeometry.door(
+                on: occupiedWall, at: [1.55, 0, 0], width: 0.8, height: 2
+            )
+            preconditionFailure("Overlapping doors must be rejected")
+        } catch CustomARGeometryError.doorOverlap {
+            // Expected.
+        }
+
+        let slopeNormal = simd_normalize(SIMD3<Float>(0, 1, 0.35))
+        let axes = CustomARGeometry.basis(for: slopeNormal)
+        let slopeOrigin = SIMD3<Float>(-1, 0.2, 0.5)
+        let slopeBoundary = [
+            slopeOrigin,
+            slopeOrigin + axes.u * 2,
+            slopeOrigin + axes.u * 2 + axes.v * 1.5,
+            slopeOrigin + axes.v * 1.5,
+        ]
+        let slope = try CustomARGeometry.makeDesign(
+            name: "Eğimli Alan", boundary: slopeBoundary, normal: slopeNormal,
+            wallHeight: 2, wallThickness: 0.08, style: .brick
+        )
+        precondition(slope.isValid)
+        precondition(abs(CustomARGeometry.area(of: slopeBoundary, normal: slopeNormal) - 3) < 0.001)
+
+        let concave: [SIMD3<Float>] = [
+            [0, 0, 0], [2, 0, 0], [2, 0, 1], [1, 0, 0.5], [0, 0, 1]
+        ]
+        precondition(CustomARGeometry.triangulatedIndices(
+            for: concave, normal: [0, 1, 0]
+        ).count == 9)
+        let concaveDesign = try CustomARGeometry.makeDesign(
+            name: "İçbükey", boundary: concave, normal: [0, 1, 0],
+            wallHeight: 2.4, wallThickness: 0.08, style: .studioWhite
+        )
+        do {
+            _ = try CustomARGeometry.makeInteriorWall(
+                start: [0.2, 0, 0.8], end: [1.8, 0, 0.8], in: concaveDesign,
+                height: 2.4, thickness: 0.08, style: .studioWhite
+            )
+            preconditionFailure("An interior wall may not leave a concave boundary")
+        } catch CustomARGeometryError.outsideArea {
+            // Expected.
+        }
+
+        let crossed: [SIMD3<Float>] = [
+            [0, 0, 0], [2, 0, 2], [0, 0, 2], [2, 0, 0]
+        ]
+        precondition(CustomARGeometry.hasSelfIntersection(crossed, normal: [0, 1, 0]))
+        do {
+            _ = try CustomARGeometry.makeDesign(
+                name: "Bozuk", boundary: crossed, normal: [0, 1, 0],
+                wallHeight: 2.5, wallThickness: 0.1, style: .studioWhite
+            )
+            preconditionFailure("Self-intersecting areas must be rejected")
+        } catch CustomARGeometryError.areaTooSmall {
+            // Bow-tie signed area cancels to zero before intersection validation.
+        } catch CustomARGeometryError.selfIntersection {
+            // Also acceptable if validation ordering changes.
+        }
+
+        var translation = matrix_identity_float4x4
+        translation.columns.3 = [4, 1, -2, 1]
+        let moved = design.applying(translation)
+        precondition(moved.isValid)
+        precondition(simd_distance(moved.boundary[0].simd, [4, 1, -2]) < 0.001)
+
+        print("Custom AR geometry tests passed")
+    }
+}
