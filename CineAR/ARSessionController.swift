@@ -943,11 +943,16 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegate = self
         arView?.renderOptions.remove(.disablePersonOcclusion)
         if let arView {
-            // RoomCaptureSession.stop(pauseARSession: false) leaves this exact shared
-            // ARSession running. Re-running a freshly built configuration here is both
-            // unnecessary and can break the coordinate continuity established during
-            // the scan. Keep that world origin and only renew RealityKit's attachment
-            // to its fixed world anchors.
+            // RoomCaptureSession leaves its own capture configuration on the shared
+            // ARSession. That configuration does not guarantee person segmentation,
+            // sceneDepth or mesh reconstruction, so keeping it made real hands and
+            // people render behind a virtual wall after scanning. Reapply the app's
+            // occlusion configuration with no RunOptions: no resetTracking and no
+            // removeExistingAnchors means ARKit retains the current world origin.
+            // Reattaching the world-zero roots afterwards preserves the coordinate
+            // continuity fix while restoring foreground depth.
+            arView.session.run(configuration(), options: [])
+            liveDepthRenderer.install(in: arView)
             roomRealityRenderer.reattachWorldAnchorsAfterRoomScan(in: arView)
         }
         refreshPhysicalRoomOcclusionIfPossible()

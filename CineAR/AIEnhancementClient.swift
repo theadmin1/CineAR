@@ -275,7 +275,7 @@ final class AIEnhancementClient {
             return AIEnhancementError.server("PC adresi bulunamadı: \(address)")
         case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
             return AIEnhancementError.server(
-                "iPhone ağ bağlantısı veya CineAR Yerel Ağ izni kapalı"
+                "iPhone ağ bağlantısı veya SynapMantis Yerel Ağ izni kapalı"
             )
         case .appTransportSecurityRequiresSecureConnection:
             return AIEnhancementError.server("iOS yerel HTTP bağlantısını engelledi")

@@ -73,7 +73,10 @@ final class LiveDepthOcclusionRenderer {
         }
         guard let view = arView else { return }
         install(in: view)
-        guard let depth = frame.sceneDepth, let confidenceBuffer = depth.confidenceMap else {
+        // Raw depth follows moving hands best. Keep smoothed depth as a valid fallback
+        // when the device supports it only in combination with person segmentation.
+        guard let depth = frame.sceneDepth ?? frame.smoothedSceneDepth,
+              let confidenceBuffer = depth.confidenceMap else {
             if acceptedTimestamp != nil || upload != nil || isBuilding { clear() }
             status = "Anlık derinlik yok — ARKit yüzey örtmesi kullanılıyor"
             return

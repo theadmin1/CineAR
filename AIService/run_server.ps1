@@ -76,7 +76,7 @@ if ($address) {
     }
     Write-Host "${addressLabel}: $address" -ForegroundColor Cyan
     Write-Host "iPhone sunucu adresi: http://${address}:8765"
-    Write-Host "CineAR bu adresi otomatik bulacak. iPhone ve PC ayni Wi-Fi'da olmali."
+    Write-Host "SynapMantis bu adresi otomatik bulacak. iPhone ve PC ayni Wi-Fi'da olmali."
 } else {
     Remove-Item Env:CINEAR_ADVERTISE_ADDRESS -ErrorAction SilentlyContinue
     Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."

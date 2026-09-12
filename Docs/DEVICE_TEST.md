@@ -1,4 +1,4 @@
-# CineAR cihaz kabul testi
+# SynapMantis 0.17.17 cihaz kabul testi
 
 ## Hedef donanim
 
@@ -69,8 +69,10 @@
    Taramasiz veya egri duvarda anlamli uyari gorunmeli. Capraz/egimli ust sinirda
    poligon disina tasma olmamali; cok karmasik/bozuk veride kati dikdortgen yedek
    cizilmemeli. Beyaz Hatlar acik/kapali ve duvarin iki yonunde secimi dene.
-   Duvar onunden bir kisi gecsin, onune sandalye koy: kisi/mobilya kaplamanin
-   onunde kalmali. Acili gorus, farkli isik ve puruzlu duvarda kesilme/titreme,
+   Taramayi bitirip ana kameraya doner donmez duvar onunden once yalniz bir el,
+   sonra tum bir kisi gecsin ve onune sandalye koy: el, kisi ve mobilya kaplamanin
+   onunde kalmali. Bu sirada kaplama ayni duvar kosesine gore dunya konumunu
+   korumali. Acili gorus, farkli isik ve puruzlu duvarda kesilme/titreme,
    FPS ve isinmayi kaydet. 6 mm pay sensor gurultusune karsi garanti degildir.
    Taramada hic algilanmayan bir pencere otomatik kesilemez; eksik tarama varsa
    yeniden tara. Eski Duvar ve Ankesorlu Telefon
@@ -128,7 +130,7 @@
    RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
-15. PC'de `AIService/run_server.ps1` calistir. Terminalde `CineAR Bonjour: advertising`
+15. PC'de `AIService/run_server.ps1` calistir. Terminalde `SynapMantis Bonjour: advertising`
     satirinin guncel yerel IP'yi gosterdigini dogrula. `AI Derinlik` ekranini ac;
     `Adres kaynagi` once `PC araniyor`, ardindan `Otomatik bulundu` olmali ve terminaldeki
     IP elle yazilmadan etkin adrese gelmeli. Basarili test AI anahtarini otomatik acmali.
@@ -190,7 +192,7 @@
     sifirdan buyuk `warmup_milliseconds` gorulmeli.
 25. `Kontroller > Guncelleme`ye bas. Internet varken denetim sekiz saniye icinde
     sonuc vermeli. TestFlight yapisinda `TestFlight'i Ac`, yayindaki App Store
-    surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
+    surumunden eski bir build'de `Guncelle`, en yeni surumde `SynapMantis guncel`
     gorunmeli. Internet kapaliyken uygulama acilmaya devam etmeli ve manuel kontrolde
     anlasilir hata mesaji cikmali.
 26. Ankesorlu telefon gibi bir duvar katalog nesnesini yaklasik 1 metre mesafeden

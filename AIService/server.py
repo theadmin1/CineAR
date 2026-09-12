@@ -50,7 +50,7 @@ def make_bonjour_service(address: str, hostname: str | None = None) -> ServiceIn
     service_url = f"http://{address}:{SERVICE_PORT}"
     return ServiceInfo(
         type_=BONJOUR_SERVICE_TYPE,
-        name=f"CineAR AI {hostname}.{BONJOUR_SERVICE_TYPE}",
+        name=f"SynapMantis AI {hostname}.{BONJOUR_SERVICE_TYPE}",
         addresses=[socket.inet_aton(address)],
         port=SERVICE_PORT,
         properties={"url": service_url, "api": "1"},
@@ -77,7 +77,7 @@ def register_bonjour_service(address: str | None = None) -> tuple[Zeroconf, Serv
     global bonjour_url
     address = (address or os.environ.get("CINEAR_ADVERTISE_ADDRESS", "")).strip()
     if not address:
-        print("CineAR Bonjour: LAN address is unavailable; manual URL remains usable.")
+        print("SynapMantis Bonjour: LAN address is unavailable; manual URL remains usable.")
         return None
     zeroconf: Zeroconf | None = None
     try:
@@ -87,13 +87,13 @@ def register_bonjour_service(address: str | None = None) -> tuple[Zeroconf, Serv
         bonjour_url = f"http://{address}:{SERVICE_PORT}"
         print(f"Mevcut ag IPv4 adresi: {address}")
         print(f"iPhone sunucu adresi: {bonjour_url}")
-        print(f"CineAR Bonjour: advertising {bonjour_url}")
+        print(f"SynapMantis Bonjour: advertising {bonjour_url}")
         return zeroconf, info
     except Exception as error:
         bonjour_url = None
         if zeroconf is not None:
             zeroconf.close()
-        print(f"CineAR Bonjour warning: {type(error).__name__}: {error}")
+        print(f"SynapMantis Bonjour warning: {type(error).__name__}: {error}")
         return None
 
 
@@ -303,7 +303,7 @@ async def lifespan(_: FastAPI):
             pass
 
 
-app = FastAPI(title="CineAR AI Depth", version="1.0", lifespan=lifespan)
+app = FastAPI(title="SynapMantis AI Depth", version="1.0", lifespan=lifespan)
 
 
 @app.get("/health")

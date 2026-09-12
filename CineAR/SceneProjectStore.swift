@@ -1024,7 +1024,7 @@ final class SceneProjectStore {
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         let suffix = UUID().uuidString.prefix(6)
         return recordingsDirectory.appendingPathComponent(
-            "CineAR-\(formatter.string(from: Date()))-\(suffix).mov"
+            "SynapMantis-\(formatter.string(from: Date()))-\(suffix).mov"
         )
     }
 

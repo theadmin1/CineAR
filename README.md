@@ -1,6 +1,6 @@
-# CineAR Virtual Production Prototype
+# SynapMantis Virtual Production
 
-CineAR, iPhone uzerinde gercek zamanli sanal dekor ve set onizlemesi icin gelistirilen
+SynapMantis, iPhone uzerinde gercek zamanli sanal dekor ve set onizlemesi icin gelistirilen
 yerel bir iOS uygulamasidir. Swift, ARKit, RealityKit, RoomPlan, AVFoundation ve
 ReplayKit tabanlidir.
 
@@ -23,6 +23,17 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.17: RoomPlan taramasi bittikten sonra ayni ARSession'in dunya baslangici ve
+  mevcut anchor'lari korunurken `sceneDepth`, kisi derinligi ve LiDAR mesh occlusion
+  ayarlari yeniden etkinlestiriliyor. Boylece 0.17.15'te duzeltilen koordinat
+  sabitlemesi korunurken gercek el, insan ve duvar onundeki nesneler sanal duvarin
+  onune gecebilir. Ham derinlik bulunmayan destekli kombinasyonlarda yumusatilmis
+  LiDAR derinligi de anlik ortme icin kullanilir.
+- 0.17.16: Uygulamanin ana ekran ve kullaniciya gorunen adi `SynapMantis` oldu.
+  AppIcon, siyah zemin uzerinde beyaz, kose hatli ve teknolojik mantis siluetiyle
+  yenilendi. App Store
+  baglantisini, Codemagic arsiv yollarini ve mevcut cihaz projelerini korumak icin
+  teknik Xcode target'i, bundle kimligi ve veri klasoru adlari degistirilmedi.
 - 0.17.15: Taranmis oda varken duvar dekorlari artik RoomPlan'in yaklasik duvar
   duzlemini temas noktasi olarak kullanmaz; iPhone'un ayni anda olctugu gercek LiDAR
   noktasi anchor temasidir. RoomPlan yalnizca kararlı duvar yonu ve sonlu siniri
@@ -347,7 +358,7 @@ belirtir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
 bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
-CineAR izni kontrol edilir.
+SynapMantis izni kontrol edilir.
 
 Kayitli PC adresi yalniz yedektir. Adres DHCP nedeniyle degisirse veya hotspot/Wi-Fi
 degistirilirse sunucu varsayilan rotayi 5 saniyede bir denetler, Bonjour yayinini yeni

@@ -460,11 +460,11 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
 
                     Text(
-                        "PC terminali açıldığında CineAR güncel Wi-Fi adresini otomatik bulur. "
+                        "PC terminali açıldığında SynapMantis güncel Wi-Fi adresini otomatik bulur. "
                             + "Bulamazsa terminaldeki http://...:8765 adresini elle gir ve "
                             + "iPhone Safari'de aynı adresin sonuna /health ekleyerek aç. "
                             + "Safari'de açılmıyorsa iki cihaz aynı Wi-Fi'da değildir; "
-                            + "Safari'de açılıp uygulamada açılmıyorsa CineAR için Yerel Ağ iznini etkinleştir."
+                            + "Safari'de açılıp uygulamada açılmıyorsa SynapMantis için Yerel Ağ iznini etkinleştir."
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)

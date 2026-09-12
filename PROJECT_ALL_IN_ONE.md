@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.17.15`
-- Proje build numarası: `49`
+- Uygulama sürümü: `0.17.17`
+- Proje build numarası: `51`
 - Git dalı: `main`
-- Kaynak commit: `8ed74de59a536cc9b983dee9bf5cfd95a6351fa3`
-- Oluşturulma zamanı: `2026-09-12 11:36:22 +03:00`
+- Kaynak commit: `c128f2856915d22c02f5603567c14de936d7a1de`
+- Oluşturulma zamanı: `2026-09-12 12:30:51 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -129,6 +129,7 @@ CineAR/ARViewContainer.swift
 CineAR/Assets.xcassets/AccentColor.colorset/Contents.json
 CineAR/Assets.xcassets/AppIcon.appiconset/CineAR-AppIcon-1024.png
 CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json
+CineAR/Assets.xcassets/AppIcon.appiconset/SynapMantis-AppIcon-1024.png
 CineAR/Assets.xcassets/Contents.json
 CineAR/BundledRoomRealityAssetProvider.swift
 CineAR/CineARApp.swift
@@ -226,7 +227,7 @@ Tools/validate_usdz_assets.py
 
 | Dosya | Boyut (byte) | SHA-256 |
 | --- | ---: | --- |
-| `CineAR/Assets.xcassets/AppIcon.appiconset/CineAR-AppIcon-1024.png` | 1280549 | `61704d12fadea91d1e96ae279d31a21ecf0c0e4f66f213b09cca658d5d3643ff` |
+| `CineAR/Assets.xcassets/AppIcon.appiconset/SynapMantis-AppIcon-1024.png` | 64466 | `f13b5ab4a1e73174546f2e1b5e8b0cdaf2e780653db4465d1bdb53d69acb2d20` |
 | `CineAR/RoomAssets/Barrel_02.usdz` | 537940 | `db44c3823a4313fcb39cc3363de427390b1126dbfccbaede42dfc4c62cc832fe` |
 | `CineAR/RoomAssets/bathroomSink.usdz` | 28447 | `2de87dbd39ec292d8575aaf526160310ac090659d6cba1fb0b9d7b231f0cc643` |
 | `CineAR/RoomAssets/bathtub.usdz` | 50915 | `3a24cebb0eac7b5dbf190958aeda8e3599b38a9d51c826cf349f703a2c44ce53` |
@@ -293,25 +294,25 @@ Yok.
 | `AIService/fusion.py` | 100 | 3952 |
 | `AIService/README.md` | 105 | 5042 |
 | `AIService/requirements.txt` | 11 | 205 |
-| `AIService/run_server.ps1` | 94 | 3936 |
-| `AIService/server.py` | 375 | 14771 |
+| `AIService/run_server.ps1` | 94 | 3941 |
+| `AIService/server.py` | 375 | 14796 |
 | `AIService/setup_windows.ps1` | 42 | 1945 |
 | `AIService/test_fusion.py` | 27 | 835 |
 | `AIService/THIRD_PARTY_NOTICES.md` | 21 | 745 |
 | `CineAR.xcodeproj/project.pbxproj` | 294 | 15656 |
 | `CineAR.xcodeproj/xcshareddata/xcschemes/CineAR.xcscheme` | 25 | 2137 |
-| `CineAR/AIEnhancementClient.swift` | 464 | 19585 |
-| `CineAR/ARSessionController.swift` | 7019 | 298196 |
+| `CineAR/AIEnhancementClient.swift` | 464 | 19590 |
+| `CineAR/ARSessionController.swift` | 7024 | 298569 |
 | `CineAR/ARViewContainer.swift` | 14 | 274 |
 | `CineAR/Assets.xcassets/AccentColor.colorset/Contents.json` | 22 | 330 |
-| `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 223 |
+| `CineAR/Assets.xcassets/AppIcon.appiconset/Contents.json` | 15 | 228 |
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
-| `CineAR/CineARApp.swift` | 180 | 6728 |
-| `CineAR/ContentView.swift` | 1478 | 62936 |
-| `CineAR/Info.plist` | 62 | 2252 |
+| `CineAR/CineARApp.swift` | 180 | 6748 |
+| `CineAR/ContentView.swift` | 1478 | 62946 |
+| `CineAR/Info.plist` | 62 | 2253 |
 | `CineAR/LiveDepthGeometry.swift` | 95 | 4350 |
-| `CineAR/LiveDepthOcclusionRenderer.swift` | 214 | 10898 |
+| `CineAR/LiveDepthOcclusionRenderer.swift` | 217 | 11113 |
 | `CineAR/ProfessionalRecorder.swift` | 415 | 14546 |
 | `CineAR/PropKind.swift` | 413 | 17104 |
 | `CineAR/RealityTheme.swift` | 233 | 8307 |
@@ -320,15 +321,15 @@ Yok.
 | `CineAR/RoomAssets/MANIFEST.sha256` | 53 | 4540 |
 | `CineAR/RoomRealityRenderer.swift` | 2287 | 90626 |
 | `CineAR/RoomScanner.swift` | 999 | 38097 |
-| `CineAR/SceneProjectStore.swift` | 1191 | 47907 |
+| `CineAR/SceneProjectStore.swift` | 1191 | 47912 |
 | `CineAR/SpatialValidation.swift` | 191 | 9611 |
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
-| `codemagic.yaml` | 279 | 10343 |
-| `Docs/CODEMAGIC.md` | 123 | 6806 |
-| `Docs/DEVICE_TEST.md` | 394 | 27548 |
-| `Docs/ICON_PROMPT.md` | 25 | 1421 |
+| `codemagic.yaml` | 279 | 10352 |
+| `Docs/CODEMAGIC.md` | 123 | 6841 |
+| `Docs/DEVICE_TEST.md` | 396 | 27727 |
+| `Docs/ICON_PROMPT.md` | 25 | 1846 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 465 | 31954 |
+| `README.md` | 476 | 32767 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
@@ -813,7 +814,7 @@ if ($address) {
     }
     Write-Host "${addressLabel}: $address" -ForegroundColor Cyan
     Write-Host "iPhone sunucu adresi: http://${address}:8765"
-    Write-Host "CineAR bu adresi otomatik bulacak. iPhone ve PC ayni Wi-Fi'da olmali."
+    Write-Host "SynapMantis bu adresi otomatik bulacak. iPhone ve PC ayni Wi-Fi'da olmali."
 } else {
     Remove-Item Env:CINEAR_ADVERTISE_ADDRESS -ErrorAction SilentlyContinue
     Write-Warning "Etkin Wi-Fi/Ethernet IPv4 adresi bulunamadi. Ag baglantisini kontrol edin."
@@ -885,7 +886,7 @@ def make_bonjour_service(address: str, hostname: str | None = None) -> ServiceIn
     service_url = f"http://{address}:{SERVICE_PORT}"
     return ServiceInfo(
         type_=BONJOUR_SERVICE_TYPE,
-        name=f"CineAR AI {hostname}.{BONJOUR_SERVICE_TYPE}",
+        name=f"SynapMantis AI {hostname}.{BONJOUR_SERVICE_TYPE}",
         addresses=[socket.inet_aton(address)],
         port=SERVICE_PORT,
         properties={"url": service_url, "api": "1"},
@@ -912,7 +913,7 @@ def register_bonjour_service(address: str | None = None) -> tuple[Zeroconf, Serv
     global bonjour_url
     address = (address or os.environ.get("CINEAR_ADVERTISE_ADDRESS", "")).strip()
     if not address:
-        print("CineAR Bonjour: LAN address is unavailable; manual URL remains usable.")
+        print("SynapMantis Bonjour: LAN address is unavailable; manual URL remains usable.")
         return None
     zeroconf: Zeroconf | None = None
     try:
@@ -922,13 +923,13 @@ def register_bonjour_service(address: str | None = None) -> tuple[Zeroconf, Serv
         bonjour_url = f"http://{address}:{SERVICE_PORT}"
         print(f"Mevcut ag IPv4 adresi: {address}")
         print(f"iPhone sunucu adresi: {bonjour_url}")
-        print(f"CineAR Bonjour: advertising {bonjour_url}")
+        print(f"SynapMantis Bonjour: advertising {bonjour_url}")
         return zeroconf, info
     except Exception as error:
         bonjour_url = None
         if zeroconf is not None:
             zeroconf.close()
-        print(f"CineAR Bonjour warning: {type(error).__name__}: {error}")
+        print(f"SynapMantis Bonjour warning: {type(error).__name__}: {error}")
         return None
 
 
@@ -1138,7 +1139,7 @@ async def lifespan(_: FastAPI):
             pass
 
 
-app = FastAPI(title="CineAR AI Depth", version="1.0", lifespan=lifespan)
+app = FastAPI(title="SynapMantis AI Depth", version="1.0", lifespan=lifespan)
 
 
 @app.get("/health")
@@ -1541,13 +1542,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 49;
+				CURRENT_PROJECT_VERSION = 51;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.15;
+				MARKETING_VERSION = 0.17.17;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1565,12 +1566,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 49;
+				CURRENT_PROJECT_VERSION = 51;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.17.15;
+				MARKETING_VERSION = 0.17.17;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1918,7 +1919,7 @@ final class AIEnhancementClient {
             return AIEnhancementError.server("PC adresi bulunamadı: \(address)")
         case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
             return AIEnhancementError.server(
-                "iPhone ağ bağlantısı veya CineAR Yerel Ağ izni kapalı"
+                "iPhone ağ bağlantısı veya SynapMantis Yerel Ağ izni kapalı"
             )
         case .appTransportSecurityRequiresSecureConnection:
             return AIEnhancementError.server("iOS yerel HTTP bağlantısını engelledi")
@@ -3054,11 +3055,16 @@ final class ARSessionController: NSObject, ObservableObject {
         arView?.session.delegate = self
         arView?.renderOptions.remove(.disablePersonOcclusion)
         if let arView {
-            // RoomCaptureSession.stop(pauseARSession: false) leaves this exact shared
-            // ARSession running. Re-running a freshly built configuration here is both
-            // unnecessary and can break the coordinate continuity established during
-            // the scan. Keep that world origin and only renew RealityKit's attachment
-            // to its fixed world anchors.
+            // RoomCaptureSession leaves its own capture configuration on the shared
+            // ARSession. That configuration does not guarantee person segmentation,
+            // sceneDepth or mesh reconstruction, so keeping it made real hands and
+            // people render behind a virtual wall after scanning. Reapply the app's
+            // occlusion configuration with no RunOptions: no resetTracking and no
+            // removeExistingAnchors means ARKit retains the current world origin.
+            // Reattaching the world-zero roots afterwards preserves the coordinate
+            // continuity fix while restoring foreground depth.
+            arView.session.run(configuration(), options: [])
+            liveDepthRenderer.install(in: arView)
             roomRealityRenderer.reattachWorldAnchorsAfterRoomScan(in: arView)
         }
         refreshPhysicalRoomOcclusionIfPossible()
@@ -9179,7 +9185,7 @@ struct ARViewContainer: UIViewRepresentable {
 {
   "images" : [
     {
-      "filename" : "CineAR-AppIcon-1024.png",
+      "filename" : "SynapMantis-AppIcon-1024.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -9695,14 +9701,14 @@ final class AppUpdateChecker: ObservableObject {
                     URL(string: "https://apps.apple.com/app/id\($0)")
                 }
                 notice = Notice(
-                    title: "Yeni CineAR sürümü hazır",
+                    title: "Yeni SynapMantis sürümü hazır",
                     message: "Yüklü sürüm \(currentVersion), yeni sürüm \(storeResult.version). Güncelleme App Store üzerinden güvenli biçimde kurulacak.",
                     actionTitle: "Güncelle",
                     actionURL: storeResult.trackViewUrl ?? fallbackStoreURL
                 )
             } else if showCurrentStatus {
                 notice = Notice(
-                    title: "CineAR güncel",
+                    title: "SynapMantis güncel",
                     message: "En yeni sürümü kullanıyorsun: \(currentVersion).",
                     actionTitle: nil,
                     actionURL: nil
@@ -9736,14 +9742,14 @@ final class AppUpdateChecker: ObservableObject {
         if isTestFlightBuild {
             notice = Notice(
                 title: "TestFlight sürümü",
-                message: "Beta güncellemeleri TestFlight tarafından kurulur. TestFlight'ı açıp CineAR için Güncelle düğmesini kullan.",
+                message: "Beta güncellemeleri TestFlight tarafından kurulur. TestFlight'ı açıp SynapMantis için Güncelle düğmesini kullan.",
                 actionTitle: "TestFlight'ı Aç",
                 actionURL: Self.testFlightURL
             )
         } else {
             notice = Notice(
                 title: "App Store kaydı bulunamadı",
-                message: "CineAR henüz bu App Store bölgesinde yayınlanmamış olabilir.",
+                message: "SynapMantis henüz bu App Store bölgesinde yayınlanmamış olabilir.",
                 actionTitle: nil,
                 actionURL: nil
             )
@@ -10217,11 +10223,11 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
 
                     Text(
-                        "PC terminali açıldığında CineAR güncel Wi-Fi adresini otomatik bulur. "
+                        "PC terminali açıldığında SynapMantis güncel Wi-Fi adresini otomatik bulur. "
                             + "Bulamazsa terminaldeki http://...:8765 adresini elle gir ve "
                             + "iPhone Safari'de aynı adresin sonuna /health ekleyerek aç. "
                             + "Safari'de açılmıyorsa iki cihaz aynı Wi-Fi'da değildir; "
-                            + "Safari'de açılıp uygulamada açılmıyorsa CineAR için Yerel Ağ iznini etkinleştir."
+                            + "Safari'de açılıp uygulamada açılmıyorsa SynapMantis için Yerel Ağ iznini etkinleştir."
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -11244,7 +11250,7 @@ struct ContentView: View {
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>CineAR</string>
+	<string>SynapMantis</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -11252,7 +11258,7 @@ struct ContentView: View {
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>SynapMantis</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -11477,7 +11483,10 @@ final class LiveDepthOcclusionRenderer {
         }
         guard let view = arView else { return }
         install(in: view)
-        guard let depth = frame.sceneDepth, let confidenceBuffer = depth.confidenceMap else {
+        // Raw depth follows moving hands best. Keep smoothed depth as a valid fallback
+        // when the device supports it only in combination with person segmentation.
+        guard let depth = frame.sceneDepth ?? frame.smoothedSceneDepth,
+              let confidenceBuffer = depth.confidenceMap else {
             if acceptedTimestamp != nil || upload != nil || isBuilding { clear() }
             status = "Anlık derinlik yok — ARKit yüzey örtmesi kullanılıyor"
             return
@@ -17160,7 +17169,7 @@ final class SceneProjectStore {
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         let suffix = UUID().uuidString.prefix(6)
         return recordingsDirectory.appendingPathComponent(
-            "CineAR-\(formatter.string(from: Date()))-\(suffix).mov"
+            "SynapMantis-\(formatter.string(from: Date()))-\(suffix).mov"
         )
     }
 
@@ -17816,7 +17825,7 @@ enum WallCladdingMeshFactory {
 ````yaml
 workflows:
   cinear-preflight:
-    name: CineAR - Unsigned Preflight (No TestFlight)
+    name: SynapMantis - Unsigned Preflight (No TestFlight)
     instance_type: mac_mini_m2
     max_build_duration: 30
     # Intentionally manual: no push trigger, Apple integration, signing or publishing.
@@ -17873,7 +17882,7 @@ workflows:
       - build/preflight/*.xcresult
 
   cinear-testflight:
-    name: CineAR - TestFlight
+    name: SynapMantis - TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -18097,7 +18106,7 @@ workflows:
 ## `Docs/CODEMAGIC.md`
 
 ````markdown
-# CineAR Codemagic ve TestFlight kurulumu
+# SynapMantis Codemagic ve TestFlight kurulumu
 
 Bu depo, `cinear-testflight` is akisi ile Release `.xcarchive` ve imzali `.ipa`
 uretir ve basarili IPA'yi App Store Connect'e yukler. Islenen build,
@@ -18107,7 +18116,7 @@ gonderildiginde kendiliginden yayin yapmaz.
 
 ## Dagitimdan once imzasiz on kontrol
 
-`cinear-preflight` / `CineAR - Unsigned Preflight (No TestFlight)` is akisi,
+`cinear-preflight` / `SynapMantis - Unsigned Preflight (No TestFlight)` is akisi,
 Apple hesabi, sertifika, provisioning profile veya `cinear_config` gerektirmez.
 Otomatik tetikleme ve yayinlama icermez; bu akisin sonucunda TestFlight guncellenmez.
 
@@ -18150,16 +18159,16 @@ yetkilere sahip ekip uyesi yapmalidir.
 1. Apple Developer > Certificates, Identifiers & Profiles > Identifiers
    bolumunde Explicit App ID olusturun. Bundle ID tam olarak
    `com.cinear.virtualproduction` olmalidir.
-2. App Store Connect > Apps > `+` > New App ile CineAR kaydi olusturun ve ayni
+2. App Store Connect > Apps > `+` > New App ile SynapMantis kaydi olusturun ve ayni
    Bundle ID'yi secin. SKU serbesttir; ornegin `CINEAR-IOS-001`.
 3. App Store Connect > Users and Access > Integrations > App Store Connect API
    bolumunde `App Manager` yetkili ayri bir API key olusturun. `.p8` dosyasini
    hemen indirin; Apple bu dosyanin yalnizca bir kez indirilmesine izin verir.
    Issuer ID ve Key ID degerlerini not edin.
-4. CineAR uygulamasinda TestFlight > Internal Testing altinda adi tam olarak
+4. SynapMantis uygulamasinda TestFlight > Internal Testing altinda adi tam olarak
    `CineAR Internal Testers` olan bir grup olusturun ve test edecek App Store
    Connect kullanicilarini ekleyin. Codemagic, her yeni build'i bu gruba atar.
-5. App Store Connect > CineAR > General > App Information altindaki sayisal
+5. App Store Connect > SynapMantis > General > App Information altindaki sayisal
    Apple ID'yi not edin. Bu deger Bundle ID degildir.
 
 ## Codemagic Apple entegrasyonu ve degisken grubu
@@ -18174,7 +18183,7 @@ altinda `cinear_config` grubunu olusturun.
 
 | Degisken | Deger |
 | --- | --- |
-| `APP_STORE_APPLE_ID` | App Store Connect'teki CineAR uygulamasinin sayisal Apple ID'si; build sirasinda guvenli guncelleme baglantisi icin Info.plist'e de eklenir |
+| `APP_STORE_APPLE_ID` | App Store Connect'teki SynapMantis uygulamasinin sayisal Apple ID'si; build sirasinda guvenli guncelleme baglantisi icin Info.plist'e de eklenir |
 
 Apple ID gizli bir anahtar degildir; `Secret` secilmesi gerekmez. Entegrasyon,
 grup ve degisken adlari buyuk/kucuk harf dahil burada yazildigi gibi olmalidir.
@@ -18184,13 +18193,13 @@ grup ve degisken adlari buyuk/kucuk harf dahil burada yazildigi gibi olmalidir.
 1. `codemagic.yaml` dosyasinin deponun kokunde oldugunu kontrol edin.
 2. Codemagic uygulama sayfasinda **Check for configuration file** ile YAML'i
    yeniden taratin.
-3. **Start new build** secin, gonderilen dali ve `CineAR - TestFlight` is
+3. **Start new build** secin, gonderilen dali ve `SynapMantis - TestFlight` is
    akisini secerek derlemeyi baslatin.
 4. Is akisi sirasiyla yapilandirmayi kontrol eder, App Store profili ve dagitim
    sertifikasini Apple'dan getirir/olusturur, App Store Connect'teki en yuksek
    build numarasini bir artirir, Release archive ve IPA olusturur ve TestFlight'a
    yukler.
-5. Apple'in build islemesi tamamlaninca App Store Connect > CineAR > TestFlight
+5. Apple'in build islemesi tamamlaninca App Store Connect > SynapMantis > TestFlight
    ekranindan durumu kontrol edin. Ilk build'de ihracat uygunlugu veya beta test
    bilgileri icin Apple ek alanlar isterse bunlari App Store Connect'te doldurun.
 
@@ -18224,7 +18233,7 @@ incelemesine uygulama gondermesi mumkun degildir.
 ## `Docs/DEVICE_TEST.md`
 
 ````markdown
-# CineAR cihaz kabul testi
+# SynapMantis 0.17.17 cihaz kabul testi
 
 ## Hedef donanim
 
@@ -18295,8 +18304,10 @@ incelemesine uygulama gondermesi mumkun degildir.
    Taramasiz veya egri duvarda anlamli uyari gorunmeli. Capraz/egimli ust sinirda
    poligon disina tasma olmamali; cok karmasik/bozuk veride kati dikdortgen yedek
    cizilmemeli. Beyaz Hatlar acik/kapali ve duvarin iki yonunde secimi dene.
-   Duvar onunden bir kisi gecsin, onune sandalye koy: kisi/mobilya kaplamanin
-   onunde kalmali. Acili gorus, farkli isik ve puruzlu duvarda kesilme/titreme,
+   Taramayi bitirip ana kameraya doner donmez duvar onunden once yalniz bir el,
+   sonra tum bir kisi gecsin ve onune sandalye koy: el, kisi ve mobilya kaplamanin
+   onunde kalmali. Bu sirada kaplama ayni duvar kosesine gore dunya konumunu
+   korumali. Acili gorus, farkli isik ve puruzlu duvarda kesilme/titreme,
    FPS ve isinmayi kaydet. 6 mm pay sensor gurultusune karsi garanti degildir.
    Taramada hic algilanmayan bir pencere otomatik kesilemez; eksik tarama varsa
    yeniden tara. Eski Duvar ve Ankesorlu Telefon
@@ -18354,7 +18365,7 @@ incelemesine uygulama gondermesi mumkun degildir.
    RoomPlan'in masa olarak tanidigi gercek bir masanin arkasina sanal dekor koy;
    masa tablasi ve ayaklari dekoru dogru bolgelerde ortmeli, masa alti tamamen kapali
    bir kutu gibi gorunmemeli.
-15. PC'de `AIService/run_server.ps1` calistir. Terminalde `CineAR Bonjour: advertising`
+15. PC'de `AIService/run_server.ps1` calistir. Terminalde `SynapMantis Bonjour: advertising`
     satirinin guncel yerel IP'yi gosterdigini dogrula. `AI Derinlik` ekranini ac;
     `Adres kaynagi` once `PC araniyor`, ardindan `Otomatik bulundu` olmali ve terminaldeki
     IP elle yazilmadan etkin adrese gelmeli. Basarili test AI anahtarini otomatik acmali.
@@ -18416,7 +18427,7 @@ incelemesine uygulama gondermesi mumkun degildir.
     sifirdan buyuk `warmup_milliseconds` gorulmeli.
 25. `Kontroller > Guncelleme`ye bas. Internet varken denetim sekiz saniye icinde
     sonuc vermeli. TestFlight yapisinda `TestFlight'i Ac`, yayindaki App Store
-    surumunden eski bir build'de `Guncelle`, en yeni surumde `CineAR guncel`
+    surumunden eski bir build'de `Guncelle`, en yeni surumde `SynapMantis guncel`
     gorunmeli. Internet kapaliyken uygulama acilmaya devam etmeli ve manuel kontrolde
     anlasilir hata mesaji cikmali.
 26. Ankesorlu telefon gibi bir duvar katalog nesnesini yaklasik 1 metre mesafeden
@@ -18622,30 +18633,30 @@ isik, mekan dokusu ve sahne buyuklugu ile birlikte kaydedilmelidir.
 ## `Docs/ICON_PROMPT.md`
 
 ````markdown
-# CineAR uygulama ikonu
+# SynapMantis uygulama ikonu
 
-Uygulama ikonu Codex'in yerleşik ImageGen aracıyla üretildi. Xcode'da kullanılan
-son dosya:
+Uygulama ikonu Codex'in yerlesik ImageGen araci kullanilarak uretildi. Xcode'da
+kullanilan son dosya:
 
-`CineAR/Assets.xcassets/AppIcon.appiconset/CineAR-AppIcon-1024.png`
+`CineAR/Assets.xcassets/AppIcon.appiconset/SynapMantis-AppIcon-1024.png`
 
-## Son üretim promptu
+## Son uretim promptu
 
 ```text
 Use case: logo-brand
-Asset type: iOS App Store icon, 1024 x 1024 square
-Primary request: create a premium cinematic augmented-reality icon for an app named CineAR
-Subject: a bold camera aperture/lens symbol seamlessly combined with a simple perspective wireframe room and one solid 3D cube anchored inside it
-Style/medium: polished high-end 3D icon, minimal, instantly readable at small size, professional virtual-production aesthetic
-Composition/framing: centered emblem, strong silhouette, generous safe area, full-bleed square artwork; do not bake rounded corners because iOS applies its own mask
-Lighting/mood: dark cinematic depth with subtle volumetric glow
-Color palette: near-black navy background, electric cyan spatial-grid accents, restrained warm amber highlight
-Materials/textures: refined glass and brushed metal, crisp edges, controlled reflections
-Constraints: no words, no letters, no typography, no watermark, no people, no photorealistic room clutter, opaque background, high contrast, app-store-ready
+Asset type: final iOS App Store icon for SynapMantis, an augmented-reality spatial scanning and virtual-production app
+Primary request: design an original ultra-minimal futuristic praying mantis head silhouette that looks technological, precise, and premium—not organic, cute, microbial, or virus-like
+Subject: one frontal symmetrical angular mantis head made as a bold pure-white geometric silhouette; two short thin tapered antenna strokes with sharp cut ends and absolutely no round tips; two narrow black negative-space visor eyes; one subtle straight black vertical scan slit in the center
+Style/medium: flat monochrome vector logo, brutal geometric precision, chamfered corners, clean sci-fi industrial design, strong silhouette, highly simplified
+Composition/framing: centered mark occupying 55–60 percent of a pure-black square, generous safe padding, readable at 29 pixels, no rounded-corner mask baked in
+Color palette: exactly pure white #FFFFFF symbol and pure black #000000 background
+Text: none
+Constraints: only one mantis head; fully opaque; strict bilateral symmetry; hard clean edges; no circles; no dots; no antenna bulbs; no hexagon; no nodes; no molecule; no virus shape; no insect body; no mandibles clutter; no outline; no thin decorative lines; no gray except antialiasing; no gradient; no glow; no shadow; no texture; no 3D; no mockup; no border; no watermark; no letters; no words
 ```
 
-Dosya 1024 x 1024 piksele yeniden örneklendi; sRGB, 8-bit RGB ve şeffaflıksız
-PNG olarak kaydedildi. iOS yuvarlatılmış köşe maskesini kurulum sırasında uygular.
+Son gorsel 1024 x 1024 piksele yeniden orneklendi; sRGB uyumlu, 8-bit RGB,
+seffafliksiz PNG olarak kaydedildi. iOS yuvarlatilmis kose maskesini kurulum
+sirasinda uygular.
 ````
 
 ## `Docs/PREFLIGHT_AUDIT.md`
@@ -18694,9 +18705,9 @@ Bu inceleme sirasinda GitHub push veya uzak Codemagic build baslatilmadi.
 ## `README.md`
 
 ````markdown
-# CineAR Virtual Production Prototype
+# SynapMantis Virtual Production
 
-CineAR, iPhone uzerinde gercek zamanli sanal dekor ve set onizlemesi icin gelistirilen
+SynapMantis, iPhone uzerinde gercek zamanli sanal dekor ve set onizlemesi icin gelistirilen
 yerel bir iOS uygulamasidir. Swift, ARKit, RealityKit, RoomPlan, AVFoundation ve
 ReplayKit tabanlidir.
 
@@ -18719,6 +18730,17 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.17.17: RoomPlan taramasi bittikten sonra ayni ARSession'in dunya baslangici ve
+  mevcut anchor'lari korunurken `sceneDepth`, kisi derinligi ve LiDAR mesh occlusion
+  ayarlari yeniden etkinlestiriliyor. Boylece 0.17.15'te duzeltilen koordinat
+  sabitlemesi korunurken gercek el, insan ve duvar onundeki nesneler sanal duvarin
+  onune gecebilir. Ham derinlik bulunmayan destekli kombinasyonlarda yumusatilmis
+  LiDAR derinligi de anlik ortme icin kullanilir.
+- 0.17.16: Uygulamanin ana ekran ve kullaniciya gorunen adi `SynapMantis` oldu.
+  AppIcon, siyah zemin uzerinde beyaz, kose hatli ve teknolojik mantis siluetiyle
+  yenilendi. App Store
+  baglantisini, Codemagic arsiv yollarini ve mevcut cihaz projelerini korumak icin
+  teknik Xcode target'i, bundle kimligi ve veri klasoru adlari degistirilmedi.
 - 0.17.15: Taranmis oda varken duvar dekorlari artik RoomPlan'in yaklasik duvar
   duzlemini temas noktasi olarak kullanmaz; iPhone'un ayni anda olctugu gercek LiDAR
   noktasi anchor temasidir. RoomPlan yalnizca kararlı duvar yonu ve sonlu siniri
@@ -19043,7 +19065,7 @@ belirtir. Ayrintili komutlar ve model secimi `AIService/README.md`
 dosyasindadir. Kamera/derinlik yalniz kullanicinin girdigi yerel adrese gonderilir;
 bulut servisi kullanilmaz. Baglanti kurulamazsa iPhone Safari'de ayni adresin
 `/health` yolu acilir ve uygulamadaki `iPhone Yerel Ag ayarini ac` dugmesinden
-CineAR izni kontrol edilir.
+SynapMantis izni kontrol edilir.
 
 Kayitli PC adresi yalniz yedektir. Adres DHCP nedeniyle degisirse veya hotspot/Wi-Fi
 degistirilirse sunucu varsayilan rotayi 5 saniyede bir denetler, Bonjour yayinini yeni

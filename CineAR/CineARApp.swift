@@ -122,14 +122,14 @@ final class AppUpdateChecker: ObservableObject {
                     URL(string: "https://apps.apple.com/app/id\($0)")
                 }
                 notice = Notice(
-                    title: "Yeni CineAR sürümü hazır",
+                    title: "Yeni SynapMantis sürümü hazır",
                     message: "Yüklü sürüm \(currentVersion), yeni sürüm \(storeResult.version). Güncelleme App Store üzerinden güvenli biçimde kurulacak.",
                     actionTitle: "Güncelle",
                     actionURL: storeResult.trackViewUrl ?? fallbackStoreURL
                 )
             } else if showCurrentStatus {
                 notice = Notice(
-                    title: "CineAR güncel",
+                    title: "SynapMantis güncel",
                     message: "En yeni sürümü kullanıyorsun: \(currentVersion).",
                     actionTitle: nil,
                     actionURL: nil
@@ -163,14 +163,14 @@ final class AppUpdateChecker: ObservableObject {
         if isTestFlightBuild {
             notice = Notice(
                 title: "TestFlight sürümü",
-                message: "Beta güncellemeleri TestFlight tarafından kurulur. TestFlight'ı açıp CineAR için Güncelle düğmesini kullan.",
+                message: "Beta güncellemeleri TestFlight tarafından kurulur. TestFlight'ı açıp SynapMantis için Güncelle düğmesini kullan.",
                 actionTitle: "TestFlight'ı Aç",
                 actionURL: Self.testFlightURL
             )
         } else {
             notice = Notice(
                 title: "App Store kaydı bulunamadı",
-                message: "CineAR henüz bu App Store bölgesinde yayınlanmamış olabilir.",
+                message: "SynapMantis henüz bu App Store bölgesinde yayınlanmamış olabilir.",
                 actionTitle: nil,
                 actionURL: nil
             )
