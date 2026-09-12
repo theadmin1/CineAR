@@ -1003,6 +1003,77 @@ struct ContentView: View {
                     .disabled(session.customARAreas.count >= 8)
                 }
 
+                Section("Duvar Görünümü") {
+                    Text("Oluşturduğun bütün duvarlar için 14 görünümden birini seç.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(CustomARWallStyle.allCases) { style in
+                                Button {
+                                    session.customARWallStyle = style
+                                } label: {
+                                    VStack(spacing: 7) {
+                                        Image(systemName: style.isBackrooms
+                                            ? "lightbulb.max.fill"
+                                            : "square.fill")
+                                            .font(.title3)
+                                        Text(style.title)
+                                            .font(.caption2.weight(.semibold))
+                                            .lineLimit(2)
+                                            .multilineTextAlignment(.center)
+                                        if session.customARWallStyle == style {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                        }
+                                    }
+                                    .frame(width: 112, height: 88)
+                                    .background(
+                                        session.customARWallStyle == style
+                                            ? Color.green.opacity(0.16)
+                                            : Color.secondary.opacity(0.10),
+                                        in: RoundedRectangle(cornerRadius: 12)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    customARSlider(
+                        title: "Duvar / tavan yüksekliği",
+                        valueText: String(format: "%.2f m", session.customARWallHeight),
+                        value: Binding(
+                            get: { Double(session.customARWallHeight) },
+                            set: { session.customARWallHeight = Float($0) }
+                        ),
+                        range: 1.50...4.50,
+                        step: 0.05
+                    )
+                    customARSlider(
+                        title: "Kalınlık",
+                        valueText: String(format: "%.0f cm", session.customARWallThickness * 100),
+                        value: Binding(
+                            get: { Double(session.customARWallThickness) },
+                            set: { session.customARWallThickness = Float($0) }
+                        ),
+                        range: 0.05...0.25,
+                        step: 0.01
+                    )
+
+                    Toggle("Tavan oluştur", isOn: $session.customARCeilingEnabled)
+                    Text("Tavan, çizdiğin alanın sınırlarına uyar ve seçilen duvar yüksekliğinde oluşur.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Button("Görünümü Aktif Alana Uygula") {
+                        session.applyCustomARWallSettings()
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+                }
+
                 Section("Backrooms Kiti") {
                     Button {
                         session.applyCustomARBackroomsPreset()
@@ -1082,46 +1153,6 @@ struct ContentView: View {
                             .disabled(session.activeCustomARAreaID == nil)
                         }
                     }
-                }
-
-                Section("Duvar Ayarları") {
-                    Picker("Malzeme", selection: $session.customARWallStyle) {
-                        ForEach(CustomARWallStyle.allCases) { style in
-                            Text(style.title).tag(style)
-                        }
-                    }
-                    .pickerStyle(.menu)
-
-                    customARSlider(
-                        title: "Duvar / tavan yüksekliği",
-                        valueText: String(format: "%.2f m", session.customARWallHeight),
-                        value: Binding(
-                            get: { Double(session.customARWallHeight) },
-                            set: { session.customARWallHeight = Float($0) }
-                        ),
-                        range: 1.50...4.50,
-                        step: 0.05
-                    )
-                    customARSlider(
-                        title: "Kalınlık",
-                        valueText: String(format: "%.0f cm", session.customARWallThickness * 100),
-                        value: Binding(
-                            get: { Double(session.customARWallThickness) },
-                            set: { session.customARWallThickness = Float($0) }
-                        ),
-                        range: 0.05...0.25,
-                        step: 0.01
-                    )
-
-                    Toggle("Tavan oluştur", isOn: $session.customARCeilingEnabled)
-                    Text("Tavan, çizdiğin alanın sınırlarına uyar ve seçilen duvar yüksekliğinde oluşur.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Button("Ayarları Aktif Alana Uygula") {
-                        session.applyCustomARWallSettings()
-                    }
-                    .disabled(session.activeCustomARAreaID == nil)
                 }
 
                 Section("İç Duvar ve Kapı") {

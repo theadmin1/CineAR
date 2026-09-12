@@ -23,6 +23,12 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.20.2: Yeni 13 fotogercekci model, iPhone RealityKit'in dogrudan destekledigi
+  tek `UsdPreviewSurface` malzeme agiyla Blender uzerinden yeniden paketlendi;
+  MaterialX aglari kaldirildi, renk/normal/puruzluluk/metal dokulari USDZ icine
+  alindi ve kaplamasiz yedek sekilde kalma regresyonu giderildi. Ozel AR duvar
+  gorunumu uzun varlik listesinin ustune tasindi ve yatay secim kartlariyla acikca
+  gorunur oldu. Dokulu tugla ve dokulu ahsap dahil 14 duvar gorunumu sunulur.
 - 0.20.1: Ozel AR alaninin sonlu taban cokgeni artik dolap, koltuk ve diger zemin
   nesneleri icin tek dokunusla kullanilan kalici bir yerlestirme yuzeyidir. Backrooms
   halisi duvar-zemin birlesim golgesini kapatmaz; nesne temas golgeleri gercek alt
@@ -505,13 +511,15 @@ USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidi
 ### Ozel AR mimari varliklarini yeniden uretme
 
 Modern tavan lambasi, Backrooms floresani, dort asili sanat cercevesi ve yedi yeni
-gercekci dekor Poly Haven'in resmi 1K native USD
-paketlerinden alinir. Indirilen ana sahne ve tum dokular API MD5 degerleriyle
-dogrulanir; OpenUSD olusturdugu USDZ'yi yeniden acmadan cikti kabul edilmez:
+gercekci dekor Poly Haven'in resmi 1K native USD paketlerinden alinir. Indirilen ana
+sahne ve tum dokular API MD5 degerleriyle dogrulanir. Ilk komut dogrulanmis Y-up
+kaynagi hazirlar; ikinci komut MaterialX aglarini RealityKit uyumlu tek
+`UsdPreviewSurface` agina cevirip mobil USDZ'yi uretir:
 
 ```sh
 python3 -m pip install usd-core==26.8
 python3 Tools/package_polyhaven_usd_to_usdz.py --cache .asset-cache/polyhaven-usd --output CineAR/RoomAssets
+blender --background --factory-startup --python-exit-code 1 --python Tools/convert_polyhaven_native_usd_to_usdz.py -- .asset-cache/polyhaven-usd CineAR/RoomAssets
 ```
 
 Backrooms PBR sablonlari, resmi kaynak paketleri `.asset-cache/backrooms-materials`

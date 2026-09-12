@@ -60,6 +60,8 @@ struct CustomARGeometryTests {
         )
         precondition(restoredBackrooms == backrooms)
         precondition(CustomARWallStyle.allCases.filter(\.isBackrooms).count == 10)
+        precondition(CustomARWallStyle.brick.wallpaperAssetName == "wall_cladding_brick")
+        precondition(CustomARWallStyle.wood.wallpaperAssetName == "wall_cladding_wood")
         precondition(CustomARWallStyle.backrooms02.backroomsWallpaperAssetName == "backrooms_yasu_wall_02")
         precondition(CustomARWallStyle.backrooms04.backroomsCeilingAssetName == "backrooms_yasu_ceiling_04")
         precondition(CustomARWallStyle.backroomsClassic.backroomsWallpaperAssetName == "wall_cladding_backrooms_001")

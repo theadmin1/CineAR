@@ -26,6 +26,7 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
     case studioWhite
     case concrete
     case brick
+    case wood
     case backrooms
     case backrooms02
     case backrooms03
@@ -43,7 +44,8 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .studioWhite: "Stüdyo Beyazı"
         case .concrete: "Beton"
-        case .brick: "Tuğla"
+        case .brick: "Dokulu Tuğla"
+        case .wood: "Dokulu Ahşap"
         case .backrooms: "Backrooms Yasu 01"
         case .backrooms02: "Backrooms Yasu 02"
         case .backrooms03: "Backrooms Yasu 03"
@@ -59,7 +61,7 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
 
     var isBackrooms: Bool {
         switch self {
-        case .studioWhite, .concrete, .brick: false
+        case .studioWhite, .concrete, .brick, .wood: false
         default: true
         }
     }
@@ -76,7 +78,15 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .backrooms08: "backrooms_yasu_wall_08"
         case .backrooms09: "backrooms_yasu_wall_09"
         case .backroomsClassic: "wall_cladding_backrooms_001"
-        case .studioWhite, .concrete, .brick: nil
+        case .studioWhite, .concrete, .brick, .wood: nil
+        }
+    }
+
+    var wallpaperAssetName: String? {
+        switch self {
+        case .brick: "wall_cladding_brick"
+        case .wood: "wall_cladding_wood"
+        default: backroomsWallpaperAssetName
         }
     }
 
@@ -90,7 +100,7 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
             "backrooms_yasu_ceiling_03"
         case .backrooms04, .backrooms08:
             "backrooms_yasu_ceiling_04"
-        case .studioWhite, .concrete, .brick:
+        case .studioWhite, .concrete, .brick, .wood:
             nil
         }
     }

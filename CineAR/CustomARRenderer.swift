@@ -590,19 +590,22 @@ final class CustomARRenderer {
                 roughness: 0.94,
                 isMetallic: false
             )
-        case .brick:
-            return SimpleMaterial(
-                color: UIColor(red: 0.42, green: 0.16, blue: 0.095, alpha: 1),
-                roughness: 0.91,
-                isMetallic: false
-            )
         default:
+            let fallbackColor: UIColor
+            switch style {
+            case .brick:
+                fallbackColor = UIColor(red: 0.42, green: 0.16, blue: 0.095, alpha: 1)
+            case .wood:
+                fallbackColor = UIColor(red: 0.34, green: 0.20, blue: 0.10, alpha: 1)
+            default:
+                fallbackColor = UIColor(red: 0.57, green: 0.50, blue: 0.25, alpha: 1)
+            }
             let fallback = SimpleMaterial(
-                color: UIColor(red: 0.57, green: 0.50, blue: 0.25, alpha: 1),
+                color: fallbackColor,
                 roughness: 0.96,
                 isMetallic: false
             )
-            guard let assetName = style.backroomsWallpaperAssetName else { return fallback }
+            guard let assetName = style.wallpaperAssetName else { return fallback }
             return bundledMaterial(named: assetName, fallback: fallback)
         }
     }

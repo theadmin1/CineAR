@@ -13,6 +13,21 @@ import zipfile
 
 MAX_USDZ_BYTES = 8 * 1024 * 1024
 MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  ([^/\\]+\.usdz)$")
+REALITYKIT_TEXTURED_ASSETS = {
+    "cassette_player.usdz",
+    "fancy_picture_frame_01.usdz",
+    "hanging_picture_frame_01.usdz",
+    "hanging_picture_frame_02.usdz",
+    "hanging_picture_frame_03.usdz",
+    "modern_ceiling_lamp_01.usdz",
+    "mounted_fluorescent_lights.usdz",
+    "office_notepads.usdz",
+    "painted_wooden_cabinet_02.usdz",
+    "painted_wooden_sofa.usdz",
+    "security_light.usdz",
+    "vintage_radio_transceiver.usdz",
+    "vintage_suitcase.usdz",
+}
 
 
 def parse_manifest(path: Path) -> dict[str, str]:
@@ -84,6 +99,22 @@ def validate_usdz(path: Path, expected_digest: str) -> None:
                 f"USDZ must contain one flattened RealityKit scene: "
                 f"{path.name} ({scene_members})"
             )
+        root_scene = scene_members[0]
+        if path.name in REALITYKIT_TEXTURED_ASSETS:
+            expected_root = path.with_suffix(".usdc").name
+            if root_scene != expected_root:
+                raise AssertionError(
+                    f"RealityKit asset must come from the Blender PreviewSurface pipeline: "
+                    f"{path.name}/{root_scene}; expected {expected_root}"
+                )
+            texture_members = [
+                name for name in archive.namelist()
+                if Path(name).suffix.lower() in {".jpg", ".jpeg", ".png"}
+            ]
+            if not texture_members:
+                raise AssertionError(
+                    f"RealityKit asset has no packaged texture: {path.name}"
+                )
         for member in members:
             if member.flag_bits & 0x1:
                 raise AssertionError(

@@ -259,11 +259,18 @@
     ayni duvara kapi koy;
     fiziksel arka plan derinligi kapinin eklenmesini engellememeli, kol/panel odanin
     ic tarafinda olmali ve kanat iki farkli duvar yonunde de iceri acilmalidir.
-    Malzeme menusundeki dokuz `Backrooms Yasu` secenegini ve `Backrooms Klasik CC0`
-    secenegini sirayla uygula; desenler duvar boyuna gore uzamamali ve arayuz dokular
+    Varlik listesinin ustundeki yatay duvar gorunumu kartlarinda `Dokulu Tugla`,
+    `Dokulu Ahsap`, dokuz `Backrooms Yasu` ve `Backrooms Klasik CC0` seceneklerini
+    sirayla uygula; desenler duvar boyuna gore uzamamali ve arayuz dokular
     yuklenirken donmamalidir. Yasu 01-04 secimlerinde dort farkli tavan eslesmesi
     gorunmeli. Duvar kategorisindeki `Backrooms Duvar Kaplama` taranmis duvar olcusune
     oturmali, kapi/pencere bosluklarini kapatmamalidir.
+31. Yeni 13 fotogercekci modeli temiz kurulumdan sonra en az birer kez yerlestir.
+    Mavi/gri gecici sekil birkac saniye icinde asil modele donmeli; dolap ve koltukta
+    ahsap/boya, bavul ve elektroniklerde renk/metal, dort tabloda cerceve ve resim,
+    lambalarda govde kaplamalari gorunmelidir. Her model ikinci kez onbellekten
+    gelirken de ayni dokular korunmali; hicbiri beyaz veya tek renk geometri olarak
+    kalmamalidir.
 
 ## Anlik LiDAR ortmesi regresyonu
 

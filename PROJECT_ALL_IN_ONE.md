@@ -3,11 +3,11 @@
 > Bu belge, CineAR deposunun paylaşılabilir ve aranabilir tek Markdown görünümüdür.
 > Metin tabanlı proje dosyaları eksiksiz gömülür; binary varlıklar boyut ve SHA-256 ile listelenir.
 
-- Uygulama sürümü: `0.20.1`
-- Proje build numarası: `55`
+- Uygulama sürümü: `0.20.2`
+- Proje build numarası: `56`
 - Git dalı: `main`
-- Kaynak commit: `8dee8e7af815bf1da45f921e71de18f09ae21a60`
-- Oluşturulma zamanı: `2026-09-12 18:25:04 +03:00`
+- Kaynak commit: `ad328a5a87984a7c14474624874f2fe1042a8be3`
+- Oluşturulma zamanı: `2026-09-12 19:51:24 +03:00`
 - Bundle ID: `com.cinear.virtualproduction`
 - Deployment target: iOS 17.0
 
@@ -237,6 +237,7 @@ Docs/ICON_PROMPT.md
 Docs/PREFLIGHT_AUDIT.md
 README.md
 Tools/convert_kenney_to_usdz.py
+Tools/convert_polyhaven_native_usd_to_usdz.py
 Tools/convert_polyhaven_to_usdz.py
 Tools/fetch_polyhaven_props.ps1
 Tools/fetch_wall_textures.ps1
@@ -284,19 +285,19 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/boombox.usdz` | 3479128 | `23d131aee04991d1b89989b6d74e2e769b70aca2d1cdd17a990e768019310e0b` |
 | `CineAR/RoomAssets/caged_hanging_light.usdz` | 3952770 | `b4834b13750c18ee2ba3da62fe4392257f66d06330b47966b42c316d0e227025` |
 | `CineAR/RoomAssets/cardboard_box_01.usdz` | 2992902 | `f0968ac22285b3d7a9af0bfbe4576dc2f9074378dcfbbd2ec093064f9a5e48b0` |
-| `CineAR/RoomAssets/cassette_player.usdz` | 1216554 | `e9524372a685c2b30a18bcb1b85b880dee7a35b70c0c33d7ec2cab369290fb13` |
+| `CineAR/RoomAssets/cassette_player.usdz` | 1209496 | `0e413eaf2b270b76bb0855f8ec96ad350763d8abd9da05d246d1c5ea230f7021` |
 | `CineAR/RoomAssets/ceiling_fan.usdz` | 2535342 | `f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d` |
 | `CineAR/RoomAssets/chairModernCushion.usdz` | 10190 | `11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e` |
 | `CineAR/RoomAssets/classic_laptop.usdz` | 2745811 | `f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145` |
 | `CineAR/RoomAssets/coffee_table_round_01.usdz` | 1729283 | `d99f126b5a2af640d6ff40e9ce8c5da4b1bdc9cfea9bf6a94f0a620a7adcb0f8` |
 | `CineAR/RoomAssets/desk_lamp_arm_01.usdz` | 3902780 | `6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a` |
 | `CineAR/RoomAssets/drawer_cabinet.usdz` | 2219127 | `351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68` |
-| `CineAR/RoomAssets/fancy_picture_frame_01.usdz` | 846037 | `614b9c3c7fe797e1f274890a1274593b49c9e3527da457e86674dc4128649f08` |
+| `CineAR/RoomAssets/fancy_picture_frame_01.usdz` | 840974 | `a870809e51fc247e3ff541af0a4ab9e3d1a3e64036987834671439d359ab7b33` |
 | `CineAR/RoomAssets/hand_truck.usdz` | 3639690 | `fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486` |
 | `CineAR/RoomAssets/hanging_industrial_lamp.usdz` | 3604302 | `abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937` |
-| `CineAR/RoomAssets/hanging_picture_frame_01.usdz` | 827019 | `3eea79509623d54b84a814a1414baafb8d5501a7a141f828fce5befd2bc3fdb4` |
-| `CineAR/RoomAssets/hanging_picture_frame_02.usdz` | 802971 | `37a0e37a2ddabcb98ad05a5a85cbcdc7621678c9e30b21074f1e3b589427a8a4` |
-| `CineAR/RoomAssets/hanging_picture_frame_03.usdz` | 1728811 | `ebaffb937edf4d3ea92d5a85c3f57c3e81a57106e715d7697d0a866d2f48532c` |
+| `CineAR/RoomAssets/hanging_picture_frame_01.usdz` | 863704 | `473c249590755916929367bca3becced91a97caf11a76443cec61605249551c2` |
+| `CineAR/RoomAssets/hanging_picture_frame_02.usdz` | 869043 | `e747ad711763811d84ee77f0189d896e02b8c2b7c21643faad43a107055323c6` |
+| `CineAR/RoomAssets/hanging_picture_frame_03.usdz` | 2210491 | `af72fe09b080a5ff0263318cf24f366aa62b98d9d070fccc7aba3374a1559a2a` |
 | `CineAR/RoomAssets/industrial_wall_lamp.usdz` | 3955877 | `41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9` |
 | `CineAR/RoomAssets/industrial_wall_sconce.usdz` | 2264430 | `c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee` |
 | `CineAR/RoomAssets/kitchenFridge.usdz` | 24080 | `a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7` |
@@ -309,12 +310,12 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/metal_tool_chest.usdz` | 2896433 | `ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba` |
 | `CineAR/RoomAssets/metal_trash_can.usdz` | 5583572 | `d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871` |
 | `CineAR/RoomAssets/modern_arm_chair_01.usdz` | 3086703 | `9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c` |
-| `CineAR/RoomAssets/modern_ceiling_lamp_01.usdz` | 482014 | `6a4d3a943bea0ff6b7fc54c6f541d30ce39975859fa155bf3f0c3a0f05eee39c` |
+| `CineAR/RoomAssets/modern_ceiling_lamp_01.usdz` | 727563 | `e8bcc1480b7cab581b1d4adea07d66d0b8f4d52dde182655c9f3f4ad73c8064a` |
 | `CineAR/RoomAssets/modern_wooden_cabinet.usdz` | 3599448 | `8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964` |
-| `CineAR/RoomAssets/mounted_fluorescent_lights.usdz` | 1367187 | `7e574e2a4db790973e70731bdccf48a6ab22024bde93f57d03dba6206be5ed42` |
-| `CineAR/RoomAssets/office_notepads.usdz` | 682268 | `74c88bf3a43c7a283c63be5eba32bc317b4bbf5141183b03975da432fa305ef6` |
-| `CineAR/RoomAssets/painted_wooden_cabinet_02.usdz` | 865191 | `0cefec24160faa292741f3a37848ca5d9ceac79d39796c1e78d425bf4d69f998` |
-| `CineAR/RoomAssets/painted_wooden_sofa.usdz` | 1283824 | `d83e1e794c9b838fbf8ee7575d3a4fe61fafb9eb623c4ab83e1d987e39bc9fcc` |
+| `CineAR/RoomAssets/mounted_fluorescent_lights.usdz` | 1838975 | `cc7a28bdb5ecdf52ab4c7d43df5377933eaf865fb51d32bd846f22301bea9fef` |
+| `CineAR/RoomAssets/office_notepads.usdz` | 688477 | `7ae55e29389f486fcb4c2a2de9454059b5a1d6f0c6036c8da6b02800437eb92f` |
+| `CineAR/RoomAssets/painted_wooden_cabinet_02.usdz` | 877556 | `358735dbd6d4ccb10a0aa06ac23bfe14954da6fdce791b00f85f31f93df7928d` |
+| `CineAR/RoomAssets/painted_wooden_sofa.usdz` | 1396960 | `0d2b1828538dfa1a735583d7dfdb1d897477a482411303157570bddfac8a9b4a` |
 | `CineAR/RoomAssets/plastic_crate_02.usdz` | 2088182 | `c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9` |
 | `CineAR/RoomAssets/plastic_monobloc_chair_01.usdz` | 2086673 | `6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a` |
 | `CineAR/RoomAssets/potted_plant_04.usdz` | 2512941 | `22f20d0ddd99b10d3c96b97fd3cfabb4997d2991791a08ad9941a2f149afa34f` |
@@ -322,7 +323,7 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/SchoolChair_01.usdz` | 711033 | `738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6` |
 | `CineAR/RoomAssets/SchoolDesk_01.usdz` | 589809 | `b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596` |
 | `CineAR/RoomAssets/security_camera_01.usdz` | 2355175 | `ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a` |
-| `CineAR/RoomAssets/security_light.usdz` | 1514149 | `e3e231b8e04f84ad71272da937081a6a0c6325d0c41aab00aa36083aef2b70d9` |
+| `CineAR/RoomAssets/security_light.usdz` | 1603081 | `1ba17f5b2e6b9ae6fef9b44cf6bcd60dcd85fda525684805e48151c81c2efb9b` |
 | `CineAR/RoomAssets/sofa_02.usdz` | 548337 | `a0033e27a6e82cd725159e85066b8aa6539ef45c9acf96118231ca7793e46890` |
 | `CineAR/RoomAssets/sofa_03.usdz` | 1014368 | `63ca8d488b487ac6abc9f7589ebe464bf66f4c6de10b58298dfb855a845de2e8` |
 | `CineAR/RoomAssets/stairs.usdz` | 27638 | `683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b` |
@@ -331,8 +332,8 @@ Tools/validate_usdz_assets.py
 | `CineAR/RoomAssets/television_02.usdz` | 1332571 | `dc44f800926690dc281aed2f7fccb9340d70e253395c26ee59a80af3e097eaea` |
 | `CineAR/RoomAssets/televisionModern.usdz` | 8484 | `a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819` |
 | `CineAR/RoomAssets/toilet.usdz` | 22209 | `b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9` |
-| `CineAR/RoomAssets/vintage_radio_transceiver.usdz` | 4616337 | `330c639f5672ec43d2702bf83ec4652ff8d2ac3a16dd4980e14834fea8e1f436` |
-| `CineAR/RoomAssets/vintage_suitcase.usdz` | 1671439 | `3859936f12698768f0d0a7689630918196761c769a233cba546d39a05f88936f` |
+| `CineAR/RoomAssets/vintage_radio_transceiver.usdz` | 5259702 | `5efe696822ed09d593315a5d6bb83378b5d37a7fe9562f65ddeaa2a24d3467c9` |
+| `CineAR/RoomAssets/vintage_suitcase.usdz` | 1906440 | `ded5cd966e17d890bb2afa21f434e991aeb2d2c7c14fbf087e9103d61436cd84` |
 | `CineAR/RoomAssets/vintage_wooden_drawer_01.usdz` | 952403 | `e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe` |
 | `CineAR/RoomAssets/wall_cladding_backrooms_001.usdz` | 203926 | `113f45bb64393934b097a49dd6d24e0fac30a2e02709506315884780c15a434b` |
 | `CineAR/RoomAssets/wall_cladding_brick.usdz` | 1085268 | `120420d91647a5567356e933d10c02a41f5b151080b26e5eeeb94dbff23d2b6d` |
@@ -371,9 +372,9 @@ Yok.
 | `CineAR/Assets.xcassets/Contents.json` | 8 | 64 |
 | `CineAR/BundledRoomRealityAssetProvider.swift` | 360 | 15400 |
 | `CineAR/CineARApp.swift` | 180 | 6748 |
-| `CineAR/ContentView.swift` | 1825 | 79141 |
-| `CineAR/CustomARDesign.swift` | 641 | 25668 |
-| `CineAR/CustomARRenderer.swift` | 795 | 32310 |
+| `CineAR/ContentView.swift` | 1856 | 80968 |
+| `CineAR/CustomARDesign.swift` | 651 | 25952 |
+| `CineAR/CustomARRenderer.swift` | 798 | 32454 |
 | `CineAR/Info.plist` | 62 | 2253 |
 | `CineAR/LiveDepthGeometry.swift` | 95 | 4350 |
 | `CineAR/LiveDepthOcclusionRenderer.swift` | 228 | 11564 |
@@ -391,11 +392,12 @@ Yok.
 | `CineAR/WallCladdingGeometry.swift` | 286 | 12400 |
 | `codemagic.yaml` | 289 | 10742 |
 | `Docs/CODEMAGIC.md` | 123 | 6841 |
-| `Docs/DEVICE_TEST.md` | 447 | 31792 |
+| `Docs/DEVICE_TEST.md` | 454 | 32295 |
 | `Docs/ICON_PROMPT.md` | 25 | 1846 |
 | `Docs/PREFLIGHT_AUDIT.md` | 39 | 2078 |
-| `README.md` | 552 | 38026 |
+| `README.md` | 560 | 38759 |
 | `Tools/convert_kenney_to_usdz.py` | 122 | 3767 |
+| `Tools/convert_polyhaven_native_usd_to_usdz.py` | 116 | 4112 |
 | `Tools/convert_polyhaven_to_usdz.py` | 162 | 5192 |
 | `Tools/fetch_polyhaven_props.ps1` | 94 | 2919 |
 | `Tools/fetch_wall_textures.ps1` | 30 | 1284 |
@@ -405,8 +407,8 @@ Yok.
 | `Tools/package_polyhaven_usd_to_usdz.py` | 360 | 15028 |
 | `Tools/render_usdz_thumbnails.py` | 98 | 3779 |
 | `Tools/run_swift_regressions.py` | 47 | 2152 |
-| `Tools/test_bundled_assets.py` | 139 | 5909 |
-| `Tools/test_custom_ar_geometry.swift` | 187 | 8447 |
+| `Tools/test_bundled_assets.py` | 170 | 7139 |
+| `Tools/test_custom_ar_geometry.swift` | 189 | 8625 |
 | `Tools/test_live_depth_geometry.swift` | 76 | 3977 |
 | `Tools/test_privacy_plist.py` | 37 | 1416 |
 | `Tools/test_spatial_validation.swift` | 130 | 8367 |
@@ -1619,13 +1621,13 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.20.1;
+				MARKETING_VERSION = 0.20.2;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -1643,12 +1645,12 @@ their published license is CC-BY-NC-4.0 and CineAR may be commercially distribut
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = CineAR/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.20.1;
+				MARKETING_VERSION = 0.20.2;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Kamera, odanızı LiDAR ile taramak ve sanal dekorları gerçek kamera görüntüsü üzerinde doğru konumda göstermek için kullanılır.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cinear.virtualproduction;
@@ -11808,6 +11810,77 @@ struct ContentView: View {
                     .disabled(session.customARAreas.count >= 8)
                 }
 
+                Section("Duvar Görünümü") {
+                    Text("Oluşturduğun bütün duvarlar için 14 görünümden birini seç.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(CustomARWallStyle.allCases) { style in
+                                Button {
+                                    session.customARWallStyle = style
+                                } label: {
+                                    VStack(spacing: 7) {
+                                        Image(systemName: style.isBackrooms
+                                            ? "lightbulb.max.fill"
+                                            : "square.fill")
+                                            .font(.title3)
+                                        Text(style.title)
+                                            .font(.caption2.weight(.semibold))
+                                            .lineLimit(2)
+                                            .multilineTextAlignment(.center)
+                                        if session.customARWallStyle == style {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                        }
+                                    }
+                                    .frame(width: 112, height: 88)
+                                    .background(
+                                        session.customARWallStyle == style
+                                            ? Color.green.opacity(0.16)
+                                            : Color.secondary.opacity(0.10),
+                                        in: RoundedRectangle(cornerRadius: 12)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    customARSlider(
+                        title: "Duvar / tavan yüksekliği",
+                        valueText: String(format: "%.2f m", session.customARWallHeight),
+                        value: Binding(
+                            get: { Double(session.customARWallHeight) },
+                            set: { session.customARWallHeight = Float($0) }
+                        ),
+                        range: 1.50...4.50,
+                        step: 0.05
+                    )
+                    customARSlider(
+                        title: "Kalınlık",
+                        valueText: String(format: "%.0f cm", session.customARWallThickness * 100),
+                        value: Binding(
+                            get: { Double(session.customARWallThickness) },
+                            set: { session.customARWallThickness = Float($0) }
+                        ),
+                        range: 0.05...0.25,
+                        step: 0.01
+                    )
+
+                    Toggle("Tavan oluştur", isOn: $session.customARCeilingEnabled)
+                    Text("Tavan, çizdiğin alanın sınırlarına uyar ve seçilen duvar yüksekliğinde oluşur.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Button("Görünümü Aktif Alana Uygula") {
+                        session.applyCustomARWallSettings()
+                    }
+                    .disabled(session.activeCustomARAreaID == nil)
+                }
+
                 Section("Backrooms Kiti") {
                     Button {
                         session.applyCustomARBackroomsPreset()
@@ -11887,46 +11960,6 @@ struct ContentView: View {
                             .disabled(session.activeCustomARAreaID == nil)
                         }
                     }
-                }
-
-                Section("Duvar Ayarları") {
-                    Picker("Malzeme", selection: $session.customARWallStyle) {
-                        ForEach(CustomARWallStyle.allCases) { style in
-                            Text(style.title).tag(style)
-                        }
-                    }
-                    .pickerStyle(.menu)
-
-                    customARSlider(
-                        title: "Duvar / tavan yüksekliği",
-                        valueText: String(format: "%.2f m", session.customARWallHeight),
-                        value: Binding(
-                            get: { Double(session.customARWallHeight) },
-                            set: { session.customARWallHeight = Float($0) }
-                        ),
-                        range: 1.50...4.50,
-                        step: 0.05
-                    )
-                    customARSlider(
-                        title: "Kalınlık",
-                        valueText: String(format: "%.0f cm", session.customARWallThickness * 100),
-                        value: Binding(
-                            get: { Double(session.customARWallThickness) },
-                            set: { session.customARWallThickness = Float($0) }
-                        ),
-                        range: 0.05...0.25,
-                        step: 0.01
-                    )
-
-                    Toggle("Tavan oluştur", isOn: $session.customARCeilingEnabled)
-                    Text("Tavan, çizdiğin alanın sınırlarına uyar ve seçilen duvar yüksekliğinde oluşur.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Button("Ayarları Aktif Alana Uygula") {
-                        session.applyCustomARWallSettings()
-                    }
-                    .disabled(session.activeCustomARAreaID == nil)
                 }
 
                 Section("İç Duvar ve Kapı") {
@@ -12660,6 +12693,7 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
     case studioWhite
     case concrete
     case brick
+    case wood
     case backrooms
     case backrooms02
     case backrooms03
@@ -12677,7 +12711,8 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         switch self {
         case .studioWhite: "Stüdyo Beyazı"
         case .concrete: "Beton"
-        case .brick: "Tuğla"
+        case .brick: "Dokulu Tuğla"
+        case .wood: "Dokulu Ahşap"
         case .backrooms: "Backrooms Yasu 01"
         case .backrooms02: "Backrooms Yasu 02"
         case .backrooms03: "Backrooms Yasu 03"
@@ -12693,7 +12728,7 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
 
     var isBackrooms: Bool {
         switch self {
-        case .studioWhite, .concrete, .brick: false
+        case .studioWhite, .concrete, .brick, .wood: false
         default: true
         }
     }
@@ -12710,7 +12745,15 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .backrooms08: "backrooms_yasu_wall_08"
         case .backrooms09: "backrooms_yasu_wall_09"
         case .backroomsClassic: "wall_cladding_backrooms_001"
-        case .studioWhite, .concrete, .brick: nil
+        case .studioWhite, .concrete, .brick, .wood: nil
+        }
+    }
+
+    var wallpaperAssetName: String? {
+        switch self {
+        case .brick: "wall_cladding_brick"
+        case .wood: "wall_cladding_wood"
+        default: backroomsWallpaperAssetName
         }
     }
 
@@ -12724,7 +12767,7 @@ enum CustomARWallStyle: String, CaseIterable, Codable, Identifiable, Sendable {
             "backrooms_yasu_ceiling_03"
         case .backrooms04, .backrooms08:
             "backrooms_yasu_ceiling_04"
-        case .studioWhite, .concrete, .brick:
+        case .studioWhite, .concrete, .brick, .wood:
             nil
         }
     }
@@ -13869,19 +13912,22 @@ final class CustomARRenderer {
                 roughness: 0.94,
                 isMetallic: false
             )
-        case .brick:
-            return SimpleMaterial(
-                color: UIColor(red: 0.42, green: 0.16, blue: 0.095, alpha: 1),
-                roughness: 0.91,
-                isMetallic: false
-            )
         default:
+            let fallbackColor: UIColor
+            switch style {
+            case .brick:
+                fallbackColor = UIColor(red: 0.42, green: 0.16, blue: 0.095, alpha: 1)
+            case .wood:
+                fallbackColor = UIColor(red: 0.34, green: 0.20, blue: 0.10, alpha: 1)
+            default:
+                fallbackColor = UIColor(red: 0.57, green: 0.50, blue: 0.25, alpha: 1)
+            }
             let fallback = SimpleMaterial(
-                color: UIColor(red: 0.57, green: 0.50, blue: 0.25, alpha: 1),
+                color: fallbackColor,
                 roughness: 0.96,
                 isMetallic: false
             )
-            guard let assetName = style.backroomsWallpaperAssetName else { return fallback }
+            guard let assetName = style.wallpaperAssetName else { return fallback }
             return bundledMaterial(named: assetName, fallback: fallback)
         }
     }
@@ -15798,19 +15844,19 @@ c658a28c0afb73daa53330d9747f0651056f172f990df8acecf29003511d0297  bedDouble.usdz
 23d131aee04991d1b89989b6d74e2e769b70aca2d1cdd17a990e768019310e0b  boombox.usdz
 b4834b13750c18ee2ba3da62fe4392257f66d06330b47966b42c316d0e227025  caged_hanging_light.usdz
 f0968ac22285b3d7a9af0bfbe4576dc2f9074378dcfbbd2ec093064f9a5e48b0  cardboard_box_01.usdz
-e9524372a685c2b30a18bcb1b85b880dee7a35b70c0c33d7ec2cab369290fb13  cassette_player.usdz
+0e413eaf2b270b76bb0855f8ec96ad350763d8abd9da05d246d1c5ea230f7021  cassette_player.usdz
 f8343f8c3647a46c87bfb2188ed5e943ffc32ada06e8dd155b94914bc6e5697d  ceiling_fan.usdz
 11ae4610ca26984e5f1318c4aba81e5a9090e0c820e4969d4105bd75f147ea9e  chairModernCushion.usdz
 f927c1c0cd84346380eb2aa8a720be3b40acb27e02881505619013f15a3f7145  classic_laptop.usdz
 d99f126b5a2af640d6ff40e9ce8c5da4b1bdc9cfea9bf6a94f0a620a7adcb0f8  coffee_table_round_01.usdz
 6dc22925edb49c4ea4580c5c92eae78901119f734f7e659537ea0db54d44b96a  desk_lamp_arm_01.usdz
 351c5a13e7b4321717eb10ec9696825b1399a872aad41c3739dc8c4223f44f68  drawer_cabinet.usdz
-614b9c3c7fe797e1f274890a1274593b49c9e3527da457e86674dc4128649f08  fancy_picture_frame_01.usdz
+a870809e51fc247e3ff541af0a4ab9e3d1a3e64036987834671439d359ab7b33  fancy_picture_frame_01.usdz
 fb69f9da5eee8a94b8751c34576f86385ed89e997873d549268774fe307b4486  hand_truck.usdz
 abb5fb8f34f63408885db1bace875ce69fa7c2fcc3eb59c1741f5d1b5e42f937  hanging_industrial_lamp.usdz
-3eea79509623d54b84a814a1414baafb8d5501a7a141f828fce5befd2bc3fdb4  hanging_picture_frame_01.usdz
-37a0e37a2ddabcb98ad05a5a85cbcdc7621678c9e30b21074f1e3b589427a8a4  hanging_picture_frame_02.usdz
-ebaffb937edf4d3ea92d5a85c3f57c3e81a57106e715d7697d0a866d2f48532c  hanging_picture_frame_03.usdz
+473c249590755916929367bca3becced91a97caf11a76443cec61605249551c2  hanging_picture_frame_01.usdz
+e747ad711763811d84ee77f0189d896e02b8c2b7c21643faad43a107055323c6  hanging_picture_frame_02.usdz
+af72fe09b080a5ff0263318cf24f366aa62b98d9d070fccc7aba3374a1559a2a  hanging_picture_frame_03.usdz
 41dd0ce90dbc114ac6bed1ff58a4ca9b9cf45526d44fcca75f958647bad34ea9  industrial_wall_lamp.usdz
 c665e13f562047084407f0fb42e12dbf10db3ccaec6ce1e1ea1bfac9cc10bbee  industrial_wall_sconce.usdz
 a69f54abdfe4d08aa9408acd80b5d43f8d8126762456988c113a9ae5f94729b7  kitchenFridge.usdz
@@ -15823,12 +15869,12 @@ e1ff365a2245f802cd0c31f6972927d8b3a82a4356a46a1f525e79d58558d3ad  loungeDesignSo
 ddf665fc24dbda1019d726c54288afc71500758c5bddd3289dc4cb87fc194bba  metal_tool_chest.usdz
 d253968b18ad9982405358c23428602936c0c8342e1d225fdd4041e854619871  metal_trash_can.usdz
 9928ae63826534655d33b796296a36babd45a34e4f93e3f1f9cde63d459db30c  modern_arm_chair_01.usdz
-6a4d3a943bea0ff6b7fc54c6f541d30ce39975859fa155bf3f0c3a0f05eee39c  modern_ceiling_lamp_01.usdz
+e8bcc1480b7cab581b1d4adea07d66d0b8f4d52dde182655c9f3f4ad73c8064a  modern_ceiling_lamp_01.usdz
 8eac7b3d43751d42584a24a41d4240436dabcb4442433be25000a80989edb964  modern_wooden_cabinet.usdz
-7e574e2a4db790973e70731bdccf48a6ab22024bde93f57d03dba6206be5ed42  mounted_fluorescent_lights.usdz
-74c88bf3a43c7a283c63be5eba32bc317b4bbf5141183b03975da432fa305ef6  office_notepads.usdz
-0cefec24160faa292741f3a37848ca5d9ceac79d39796c1e78d425bf4d69f998  painted_wooden_cabinet_02.usdz
-d83e1e794c9b838fbf8ee7575d3a4fe61fafb9eb623c4ab83e1d987e39bc9fcc  painted_wooden_sofa.usdz
+cc7a28bdb5ecdf52ab4c7d43df5377933eaf865fb51d32bd846f22301bea9fef  mounted_fluorescent_lights.usdz
+7ae55e29389f486fcb4c2a2de9454059b5a1d6f0c6036c8da6b02800437eb92f  office_notepads.usdz
+358735dbd6d4ccb10a0aa06ac23bfe14954da6fdce791b00f85f31f93df7928d  painted_wooden_cabinet_02.usdz
+0d2b1828538dfa1a735583d7dfdb1d897477a482411303157570bddfac8a9b4a  painted_wooden_sofa.usdz
 c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9  plastic_crate_02.usdz
 6866f6d1b1d3323d522d261a89b6a9c79907c3ae5a8b6c7d9d1daf3d9204ce3a  plastic_monobloc_chair_01.usdz
 22f20d0ddd99b10d3c96b97fd3cfabb4997d2991791a08ad9941a2f149afa34f  potted_plant_04.usdz
@@ -15836,7 +15882,7 @@ c11bdb1dbad63f969123893423f44a7865558d5883759efac6d3e3697907a7a9  plastic_crate_
 738a489ba9b5aebb46539e4c1a5e22488709b3804b21f3deaf1c72677fcff4f6  SchoolChair_01.usdz
 b21c081a220d72d0f837170f3dbe6c319db62910efa54b5d7f7bd7bced252596  SchoolDesk_01.usdz
 ee59094614b7e7a096dab1f7fd934b6dc9d5cc1b277382418481ebe896ade92a  security_camera_01.usdz
-e3e231b8e04f84ad71272da937081a6a0c6325d0c41aab00aa36083aef2b70d9  security_light.usdz
+1ba17f5b2e6b9ae6fef9b44cf6bcd60dcd85fda525684805e48151c81c2efb9b  security_light.usdz
 a0033e27a6e82cd725159e85066b8aa6539ef45c9acf96118231ca7793e46890  sofa_02.usdz
 63ca8d488b487ac6abc9f7589ebe464bf66f4c6de10b58298dfb855a845de2e8  sofa_03.usdz
 683484e342a13f68b78dda26ab97e0861d0ff36cbe2bbe39e4b4162b3cdb953b  stairs.usdz
@@ -15845,8 +15891,8 @@ a809a38664d4e8a65bb067d89a9f74985c1bc24c297b855fa14af4eed807700b  steel_frame_sh
 dc44f800926690dc281aed2f7fccb9340d70e253395c26ee59a80af3e097eaea  television_02.usdz
 a1f811cf0f1e9b4d8f3ca52e6ac0783d33e04809d97a8badda1a432e3b269819  televisionModern.usdz
 b6b52edf4f9d1403a261bf2ab56dd86f7a92840d0346ea23663f17510d972ff9  toilet.usdz
-330c639f5672ec43d2702bf83ec4652ff8d2ac3a16dd4980e14834fea8e1f436  vintage_radio_transceiver.usdz
-3859936f12698768f0d0a7689630918196761c769a233cba546d39a05f88936f  vintage_suitcase.usdz
+5efe696822ed09d593315a5d6bb83378b5d37a7fe9562f65ddeaa2a24d3467c9  vintage_radio_transceiver.usdz
+ded5cd966e17d890bb2afa21f434e991aeb2d2c7c14fbf087e9103d61436cd84  vintage_suitcase.usdz
 e9f71c22852b4d505872ee41211c7e52297f09a683309a3f50fb36e3328468fe  vintage_wooden_drawer_01.usdz
 113f45bb64393934b097a49dd6d24e0fac30a2e02709506315884780c15a434b  wall_cladding_backrooms_001.usdz
 120420d91647a5567356e933d10c02a41f5b151080b26e5eeeb94dbff23d2b6d  wall_cladding_brick.usdz
@@ -21590,11 +21636,18 @@ incelemesine uygulama gondermesi mumkun degildir.
     ayni duvara kapi koy;
     fiziksel arka plan derinligi kapinin eklenmesini engellememeli, kol/panel odanin
     ic tarafinda olmali ve kanat iki farkli duvar yonunde de iceri acilmalidir.
-    Malzeme menusundeki dokuz `Backrooms Yasu` secenegini ve `Backrooms Klasik CC0`
-    secenegini sirayla uygula; desenler duvar boyuna gore uzamamali ve arayuz dokular
+    Varlik listesinin ustundeki yatay duvar gorunumu kartlarinda `Dokulu Tugla`,
+    `Dokulu Ahsap`, dokuz `Backrooms Yasu` ve `Backrooms Klasik CC0` seceneklerini
+    sirayla uygula; desenler duvar boyuna gore uzamamali ve arayuz dokular
     yuklenirken donmamalidir. Yasu 01-04 secimlerinde dort farkli tavan eslesmesi
     gorunmeli. Duvar kategorisindeki `Backrooms Duvar Kaplama` taranmis duvar olcusune
     oturmali, kapi/pencere bosluklarini kapatmamalidir.
+31. Yeni 13 fotogercekci modeli temiz kurulumdan sonra en az birer kez yerlestir.
+    Mavi/gri gecici sekil birkac saniye icinde asil modele donmeli; dolap ve koltukta
+    ahsap/boya, bavul ve elektroniklerde renk/metal, dort tabloda cerceve ve resim,
+    lambalarda govde kaplamalari gorunmelidir. Her model ikinci kez onbellekten
+    gelirken de ayni dokular korunmali; hicbiri beyaz veya tek renk geometri olarak
+    kalmamalidir.
 
 ## Anlik LiDAR ortmesi regresyonu
 
@@ -21877,6 +21930,12 @@ regresyonlarini calistirir; TestFlight'a yukleme yapmaz. Ayrintilar
 
 ## Mevcut sistem
 
+- 0.20.2: Yeni 13 fotogercekci model, iPhone RealityKit'in dogrudan destekledigi
+  tek `UsdPreviewSurface` malzeme agiyla Blender uzerinden yeniden paketlendi;
+  MaterialX aglari kaldirildi, renk/normal/puruzluluk/metal dokulari USDZ icine
+  alindi ve kaplamasiz yedek sekilde kalma regresyonu giderildi. Ozel AR duvar
+  gorunumu uzun varlik listesinin ustune tasindi ve yatay secim kartlariyla acikca
+  gorunur oldu. Dokulu tugla ve dokulu ahsap dahil 14 duvar gorunumu sunulur.
 - 0.20.1: Ozel AR alaninin sonlu taban cokgeni artik dolap, koltuk ve diger zemin
   nesneleri icin tek dokunusla kullanilan kalici bir yerlestirme yuzeyidir. Backrooms
   halisi duvar-zemin birlesim golgesini kapatmaz; nesne temas golgeleri gercek alt
@@ -22359,13 +22418,15 @@ USDZ dosyalari yeniden uretildiginde `MANIFEST.sha256` ozetleri de yenilenmelidi
 ### Ozel AR mimari varliklarini yeniden uretme
 
 Modern tavan lambasi, Backrooms floresani, dort asili sanat cercevesi ve yedi yeni
-gercekci dekor Poly Haven'in resmi 1K native USD
-paketlerinden alinir. Indirilen ana sahne ve tum dokular API MD5 degerleriyle
-dogrulanir; OpenUSD olusturdugu USDZ'yi yeniden acmadan cikti kabul edilmez:
+gercekci dekor Poly Haven'in resmi 1K native USD paketlerinden alinir. Indirilen ana
+sahne ve tum dokular API MD5 degerleriyle dogrulanir. Ilk komut dogrulanmis Y-up
+kaynagi hazirlar; ikinci komut MaterialX aglarini RealityKit uyumlu tek
+`UsdPreviewSurface` agina cevirip mobil USDZ'yi uretir:
 
 ```sh
 python3 -m pip install usd-core==26.8
 python3 Tools/package_polyhaven_usd_to_usdz.py --cache .asset-cache/polyhaven-usd --output CineAR/RoomAssets
+blender --background --factory-startup --python-exit-code 1 --python Tools/convert_polyhaven_native_usd_to_usdz.py -- .asset-cache/polyhaven-usd CineAR/RoomAssets
 ```
 
 Backrooms PBR sablonlari, resmi kaynak paketleri `.asset-cache/backrooms-materials`
@@ -22525,6 +22586,126 @@ def main() -> None:
     source, output = arguments()
     for asset_name in ASSET_NAMES:
         convert(source, output, asset_name)
+
+
+if __name__ == "__main__":
+    main()
+````
+
+## `Tools/convert_polyhaven_native_usd_to_usdz.py`
+
+````python
+"""Re-export native Poly Haven USD assets as RealityKit-safe mobile USDZ.
+
+The native files contain both MaterialX and USD Preview Surface networks. RealityKit
+can expose the mesh while dropping those materials on device. Blender imports the
+authored PBR textures and writes one compact USD Preview Surface network, matching
+the proven pipeline used by the rest of SynapMantis' phone-only asset catalog.
+
+Run with Blender 4.5 or newer:
+  blender --background --factory-startup \
+    --python Tools/convert_polyhaven_native_usd_to_usdz.py -- \
+    .asset-cache/polyhaven-usd CineAR/RoomAssets
+"""
+
+from pathlib import Path
+import sys
+
+import bpy
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from convert_polyhaven_to_usdz import export_mobile_usdz
+
+
+ASSET_IDS = (
+    "modern_ceiling_lamp_01",
+    "hanging_picture_frame_01",
+    "mounted_fluorescent_lights",
+    "hanging_picture_frame_02",
+    "fancy_picture_frame_01",
+    "hanging_picture_frame_03",
+    "painted_wooden_cabinet_02",
+    "vintage_suitcase",
+    "cassette_player",
+    "vintage_radio_transceiver",
+    "painted_wooden_sofa",
+    "office_notepads",
+    "security_light",
+)
+MAX_USDZ_BYTES = 8 * 1024 * 1024
+
+
+def arguments() -> tuple[Path, Path, tuple[str, ...]]:
+    try:
+        separator = sys.argv.index("--")
+        source_value, output_value = sys.argv[separator + 1 : separator + 3]
+    except (ValueError, IndexError) as error:
+        raise SystemExit("Expected: -- <native USD cache> <output directory> [asset IDs]") from error
+    source = Path(source_value).resolve()
+    output = Path(output_value).resolve()
+    requested = tuple(sys.argv[separator + 3 :])
+    unknown = sorted(set(requested) - set(ASSET_IDS))
+    if unknown:
+        raise SystemExit("Unknown asset IDs: " + ", ".join(unknown))
+    if not source.is_dir():
+        raise SystemExit(f"Native USD cache does not exist: {source}")
+    output.mkdir(parents=True, exist_ok=True)
+    return source, output, requested or ASSET_IDS
+
+
+def source_stage(asset_root: Path, asset_id: str) -> Path:
+    preferred = asset_root / f"{asset_id}_package_yup.usda"
+    fallback = asset_root / f"{asset_id}_1k_yup.usda"
+    for candidate in (preferred, fallback):
+        if candidate.is_file():
+            return candidate
+    raise RuntimeError(f"No normalized Y-up source for {asset_id}: {asset_root}")
+
+
+def convert(cache: Path, output: Path, asset_id: str) -> None:
+    source = source_stage(cache / asset_id, asset_id)
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    imported = bpy.ops.wm.usd_import(filepath=str(source))
+    if "FINISHED" not in imported:
+        raise RuntimeError(f"USD import failed: {source}")
+
+    meshes = [item for item in bpy.context.scene.objects if item.type == "MESH"]
+    if not meshes:
+        raise RuntimeError(f"No mesh found in native USD: {source}")
+    materials = [slot.material for item in meshes for slot in item.material_slots if slot.material]
+    texture_images = [
+        image for image in bpy.data.images
+        if image.type != "RENDER_RESULT" and min(image.size) > 0
+    ]
+    if not materials or not texture_images:
+        raise RuntimeError(
+            f"PBR material import failed for {asset_id}: "
+            f"materials={len(materials)}, textures={len(texture_images)}"
+        )
+
+    for item in list(bpy.context.scene.objects):
+        if item.type in {"CAMERA", "LIGHT"}:
+            bpy.data.objects.remove(item, do_unlink=True)
+
+    destination = output / f"{asset_id}.usdz"
+    export_mobile_usdz(destination)
+    if destination.stat().st_size > MAX_USDZ_BYTES:
+        destination.unlink(missing_ok=True)
+        raise RuntimeError(f"USDZ exceeds mobile budget: {destination}")
+    print(
+        "SYNAPMANTIS_REALITYKIT_USDZ",
+        asset_id,
+        f"meshes={len(meshes)}",
+        f"materials={len(materials)}",
+        f"textures={len(texture_images)}",
+        f"bytes={destination.stat().st_size}",
+    )
+
+
+def main() -> None:
+    cache, output, asset_ids = arguments()
+    for asset_id in asset_ids:
+        convert(cache, output, asset_id)
 
 
 if __name__ == "__main__":
@@ -24065,6 +24246,21 @@ import zipfile
 
 MAX_USDZ_BYTES = 8 * 1024 * 1024
 MANIFEST_LINE = re.compile(r"^([0-9a-f]{64})  ([^/\\]+\.usdz)$")
+REALITYKIT_TEXTURED_ASSETS = {
+    "cassette_player.usdz",
+    "fancy_picture_frame_01.usdz",
+    "hanging_picture_frame_01.usdz",
+    "hanging_picture_frame_02.usdz",
+    "hanging_picture_frame_03.usdz",
+    "modern_ceiling_lamp_01.usdz",
+    "mounted_fluorescent_lights.usdz",
+    "office_notepads.usdz",
+    "painted_wooden_cabinet_02.usdz",
+    "painted_wooden_sofa.usdz",
+    "security_light.usdz",
+    "vintage_radio_transceiver.usdz",
+    "vintage_suitcase.usdz",
+}
 
 
 def parse_manifest(path: Path) -> dict[str, str]:
@@ -24136,6 +24332,22 @@ def validate_usdz(path: Path, expected_digest: str) -> None:
                 f"USDZ must contain one flattened RealityKit scene: "
                 f"{path.name} ({scene_members})"
             )
+        root_scene = scene_members[0]
+        if path.name in REALITYKIT_TEXTURED_ASSETS:
+            expected_root = path.with_suffix(".usdc").name
+            if root_scene != expected_root:
+                raise AssertionError(
+                    f"RealityKit asset must come from the Blender PreviewSurface pipeline: "
+                    f"{path.name}/{root_scene}; expected {expected_root}"
+                )
+            texture_members = [
+                name for name in archive.namelist()
+                if Path(name).suffix.lower() in {".jpg", ".jpeg", ".png"}
+            ]
+            if not texture_members:
+                raise AssertionError(
+                    f"RealityKit asset has no packaged texture: {path.name}"
+                )
         for member in members:
             if member.flag_bits & 0x1:
                 raise AssertionError(
@@ -24255,6 +24467,8 @@ struct CustomARGeometryTests {
         )
         precondition(restoredBackrooms == backrooms)
         precondition(CustomARWallStyle.allCases.filter(\.isBackrooms).count == 10)
+        precondition(CustomARWallStyle.brick.wallpaperAssetName == "wall_cladding_brick")
+        precondition(CustomARWallStyle.wood.wallpaperAssetName == "wall_cladding_wood")
         precondition(CustomARWallStyle.backrooms02.backroomsWallpaperAssetName == "backrooms_yasu_wall_02")
         precondition(CustomARWallStyle.backrooms04.backroomsCeilingAssetName == "backrooms_yasu_ceiling_04")
         precondition(CustomARWallStyle.backroomsClassic.backroomsWallpaperAssetName == "wall_cladding_backrooms_001")
